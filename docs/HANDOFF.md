@@ -326,10 +326,12 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
   ([`log/2026-10-21-toolchain.md`](log/2026-10-21-toolchain.md)); the
   image's other iOS runtime, 27.1, holds only iPhone Duo. On 2026-10-30
   CI was still on 27.1: Apple released Xcode 27.2 (27B52) on 2026-10-29,
-  but GitHub's image held only its release candidate, and CI moves by
-  itself once GitHub installs the release and Apple's releases feed
-  lists it
-  ([`log/2026-10-30-xcode-27-2.md`](log/2026-10-30-xcode-27-2.md)). Since
+  but GitHub's image held only its release candidate
+  ([`log/2026-10-30-xcode-27-2.md`](log/2026-10-30-xcode-27-2.md)). By
+  2026-11-05 CI had moved by itself: pull request #81's run 42042331740
+  built with 27.2 (27B52) and passed its unit and UI tests on iOS 27.2
+  simulators; on 2026-11-06 some machines still had the older image
+  (*Known gaps*). Since
   PR #13 the UI tests run on the newest iPad Pro 13-inch and the
   newest standard iPhone, after a warm-up launch, and fail when no test
   ran ([`log/2026-10-21-test-seams.md`](log/2026-10-21-test-seams.md));
@@ -832,7 +834,8 @@ release in docs/ROADMAP.md when no thread has it yet.
   frame). A device check says whether it binds. Since 2026-11-12 the
   card's rows are scored too, where the card shows without scrolling
   (`SettingsChainsTests`, and `SettingsOnHomeTests` with
-  `--check-in-due`; untested in the app until CI runs that change):
+  `--check-in-due`, which passed on CI's iPad and iPhone at both text
+  sizes in pull request #103's run 43249231746, on `0c53792`):
   once the card is answered, the first step Set Up Step by Step opens
   on that visit starts its answers below where the card's rows were,
   so on CI's windows its first screenful shows no answer, and the second
@@ -1259,8 +1262,9 @@ Talking's frame, the answers below every place a look can be resting,
 and Next only moving on, which ends, modelled on CI's windows and on
 the 630 swept ones now drawn through the first step, both the closing
 on the phone at its largest size and every held look that saved a
-setup answer; untested until CI runs it (docs/DECISIONS.md, "The first
-step's own rows").
+setup answer, and CI's UI run of that change (pull request #66) found
+neither in the chains its UI tests score on CI's windows
+(docs/DECISIONS.md, "The first step's own rows").
 Every change follows AGENTS.md, *Apple's current frameworks first*: the
 legacy uses kept, and the moves still planned with who owns each, are in
 docs/DECISIONS.md under that title

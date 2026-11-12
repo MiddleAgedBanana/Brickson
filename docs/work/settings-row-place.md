@@ -2,7 +2,8 @@
 
 *Roadmap: Wave 3 item 7 (R0 items 4 and 7), the half left by PR #53.
 Owner: the Settings' first row thread (a cloud session; GitHub CI is its
-build). Status: building (untested until CI passes).*
+build). Status: done; merged in pull request #56 on 2026-10-25, after
+CI's unit and UI tests passed on its final head (run 40188414972).*
 
 ## Intent
 

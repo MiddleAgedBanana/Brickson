@@ -4,8 +4,8 @@
 the first App Review build by the owner's decision of 2026-10-30
 (docs/DECISIONS.md, "Items 8 and 9 come before the first App Review
 build"). Owner: the item 9 thread (a cloud session; GitHub CI is its
-build). Status: built, in review; untested in the app until CI runs
-it.*
+build). Status: done; merged in pull request #74 on 2026-11-02, after
+CI's unit and UI tests passed on its final head (run 41427429086).*
 
 ## Intent
 

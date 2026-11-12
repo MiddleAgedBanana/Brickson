@@ -2,10 +2,10 @@
 
 *Roadmap: R0 item 6, the rest of it after the library core (PR #14).
 Owner: the thread "Let families edit and back up phrases" (2026-11-05).
-Status: built in one pull request, from a cloud session; untested until
-CI passes. Where building it changed this spec, *What building it
-changed*, at the end, says how, and docs/DECISIONS.md holds what was
-decided.*
+Status: done; merged in pull request #80 on 2026-11-05, after CI's unit
+and UI tests passed on its final head (run 42014189828). Where building
+it changed this spec, *What building it changed*, at the end, says how,
+and docs/DECISIONS.md holds what was decided.*
 
 ## Intent
 

@@ -464,7 +464,10 @@ anything the new Xcode reports.
   released. Until CI moves, the owner's Mac is where the newer Xcode is
   checked, in the pull request that records the move
   (docs/log/2026-10-30-xcode-27-2.md); nothing in the repository
-  changes to name it.
+  changes to name it. *By 2026-11-05* CI had moved by itself: pull
+  request #81's run 42042331740 built with 27.2 (27B52) and passed its
+  unit and UI tests on iOS 27.2 simulators. Machines with the older
+  image ran for a while longer (docs/HANDOFF.md, *Known gaps*).
 - **Simulators.** `scripts/test.sh` tests on the newest iPad simulator,
   and runs UI tests on the newest standard iPhone too, each between the
   deployment target and the SDK of the Xcode in use. No version is
@@ -3089,7 +3092,11 @@ engine, not five scripts".
     frame, its guide is a cover with Done in Back to Talking's frame,
     the answers start below every place a look can be resting on the
     way in, and Next only moves on (*The first step's own rows*).
-    `SettingsOnHomeTests` fails on any save. Untested until CI runs it.
+    `SettingsOnHomeTests` fails on any save, and CI's run of that
+    change (pull request #66; run 41005078813, on `380ef7d`) found none
+    on the 13-inch iPad in portrait at the default size and AX5 and in
+    landscape, or on the iPhone 17 at both sizes; the 630 swept windows
+    stay modelled.
     *Tried 2026-10-24 and held* (ROADMAP Wave 3 item 7,
     [`log/2026-10-24-settings-chains.md`](log/2026-10-24-settings-chains.md)):
     the first step opening on its words, filled down to where Family
@@ -3144,9 +3151,11 @@ engine, not five scripts".
     only navigates. One closing is still expected strictly, on the phone
     at its largest size, where Set Up Step by Step's first step shows no
     answer above Next and its Back to Talking is nearest (*Settings'
-    first row, placed from Home's frames*). Untested until CI runs it.
-    *2026-10-30:* that one too, modelled: Learn About Each Way takes Set
-    Up Step by Step's frame on the first step, so the look meets a
+    first row, placed from Home's frames*). Measured so by CI's runs of
+    PR #56 (40183035156, and 40188414972 on its final head).
+    *2026-10-30:* that one too, modelled, and measured by CI's run of
+    PR #66 (41005078813): Learn About Each Way takes Set Up Step by
+    Step's frame on the first step, so the look meets a
     control that only opens the guide (*The first step's own rows*).
     `SettingsOnHomeTests` fails on any closing.
 
@@ -3602,10 +3611,10 @@ plan's places (*Home's slot plan*).
   tests, or its measured cost goes to the owner before a dwell, switch,
   head or gaze profile ships. *2026-10-25:* item 7 did, modelled on
   CI's windows and across 630 swept ones, except the phone at its
-  largest size, still strictly expected; untested until CI runs it
-  (*Settings' first row, placed from Home's frames*). *2026-10-30:* the
-  phone at its largest size too, modelled (*The first step's own
-  rows*).
+  largest size, still strictly expected, as CI's runs of PR #56 then
+  measured (*Settings' first row, placed from Home's frames*).
+  *2026-10-30:* the phone at its largest size too, modelled, and
+  measured by CI's run of PR #66 (*The first step's own rows*).
 - **The held guide link stays held** (*One chain engine for dwell
   safety*, *Open: a held look saves an answer in Set Up Step by Step*).
   Modelled on the moved frames, Learn About Each Way still clears every
@@ -3886,8 +3895,10 @@ stays open for the owner.* The intent, spec and plan are
 Figma screens it links; the record is
 [`log/2026-10-25-settings-row-place.md`](log/2026-10-25-settings-row-place.md).
 Everything below was modelled on PR #53's CI frames in the unit tests,
-not drawn by the app: it is untested until CI's UI tests pass on this
-change.
+not drawn by the app, until CI's UI tests passed on this change: the
+run on its final head (40188414972, on `f44f17f`) passed the unit and
+UI tests, which read the real frames on CI's windows (the record,
+*Verified*). The swept windows stay modelled.
 
 - **What it fixes.** CI's first run on PR #53 found a closing nobody
   chose (*Typing on Home*, *Settings closing, rescored*): on the 13-inch
@@ -4051,8 +4062,16 @@ on passive words at least as tall as the row
 owner objects. It accepts no exception to an invariant.* The record is
 [`log/2026-10-30-first-step-rows.md`](log/2026-10-30-first-step-rows.md).
 Everything below was modelled in the unit tests on CI's frames of PR #56
-and on 630 swept windows, not drawn by the app: it is untested until
-CI's UI tests pass on this change.
+and on 630 swept windows, not drawn by the app, until CI's UI tests
+passed on this change: run 41005078813, on `380ef7d` (Xcode 27.1; the
+13-inch iPad and the iPhone 17 on iOS 27.0), passed the unit and UI
+tests with no expected failure, so on CI's windows no chain the UI
+tests score (from Home's Settings through Settings' first screen,
+Family Setup, and the first step with its guide, each as it first
+shows) saves an answer or closes Settings
+([`log/2026-11-12-ci-has-run-it.md`](log/2026-11-12-ci-has-run-it.md)).
+The 630 swept windows stay modelled, and what *Not scored* lists below
+stays unscored.
 
 - **What it fixes.** The two hazards PR #56 left (*Settings' first row,
   placed from Home's frames*, *What remains, each a strict known issue
