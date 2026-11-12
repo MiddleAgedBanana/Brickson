@@ -7,7 +7,9 @@ import SwiftData
 /// version has to migrate from whatever 1.0 ships. A change to a stored
 /// property is never made in place: add `PhraseLibrarySchemaV2` with copies of
 /// the models, add a stage to `PhraseLibraryMigrationPlan`, and keep this
-/// version exactly as it is (docs/DECISIONS.md, "Versioned storage").
+/// version exactly as it is (docs/DECISIONS.md, "Versioned storage"). The
+/// new version also commits the store it saves, for `SavedStoreTests` to
+/// open in every later build.
 ///
 /// The shapes also follow SwiftData's iCloud rules (every stored property has
 /// a default, relationships are optional, nothing is `.unique`), so turning on

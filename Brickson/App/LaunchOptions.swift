@@ -50,6 +50,9 @@ import SwiftData
 /// - `--restore-sample-backup`: with test storage only, the Library's
 ///   Restore from a Backup opens a sample backup (`sampleBackup(from:)`)
 ///   instead of the system's file picker, which UI tests cannot drive.
+/// - `--check-in-due`: with test storage only, the setup record is made
+///   due for a check-in at launch (`CheckInPolicy.makeDue`), so UI tests
+///   reach Family Setup's check-in card without waiting three months.
 ///
 /// Text size still uses UIKit's `-UIPreferredContentSizeCategoryName`
 /// argument. Appearance needs an app-local option because command-line
@@ -127,6 +130,8 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
     var homeFollowsAnswer = false
     /// Never applied to ordinary storage or in a release build.
     var restoresSampleBackup = false
+    /// Never applied to ordinary storage or in a release build.
+    var checkInDue = false
     /// Arguments written like these options but not understood: a misspelt
     /// name, an unknown value. They are logged at launch, so a typo in a
     /// test shows up instead of quietly running with the defaults.
@@ -192,6 +197,8 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
                 options.homeFollowsAnswer = true
             case ("restore-sample-backup", nil):
                 options.restoresSampleBackup = true
+            case ("check-in-due", nil):
+                options.checkInDue = true
             default:
                 options.unrecognized.append(argument)
             }
@@ -223,6 +230,13 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
     var activeRestoresSampleBackup: Bool {
         guard Self.readsLaunchArguments, storage != .standard else { return false }
         return restoresSampleBackup
+    }
+
+    /// Whether a test asked for a check-in to be due at launch, only with
+    /// test storage in a debug build: never for the person's own record.
+    var activeCheckInDue: Bool {
+        guard Self.readsLaunchArguments, storage != .standard else { return false }
+        return checkInDue
     }
 
     /// The phrase the sample backup brings that the starter library does

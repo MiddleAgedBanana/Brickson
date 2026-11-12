@@ -100,6 +100,60 @@ struct SetupAnswersPlaceTests {
         #expect(lower.top == 700)
     }
 
+    /// The ways into the first step (`SetupAnswersPlace.arrivals`), on the
+    /// phone with a check-in card under Set Up Step by Step, its rows from
+    /// 560 down. Fails if, opened from the card's Go Through Setup Again
+    /// with Learn About Each Way in its place, the answers start where a
+    /// point of that button lies as near the first answer, or start below
+    /// the card's other rows as if Home's Settings or the root's row could
+    /// lead there; or if, opened with Set Up Step by Step once the card was
+    /// answered, a point where the card's rows were lies as near the first
+    /// answer as the link.
+    @Test func theAnswersStartClearOfTheCheckInCard() throws {
+        let phone = try #require(Self.windows.first)
+        let goThrough = CGRect(x: 16, y: 560, width: 370, height: 78)
+        let rows = CGRect(x: 16, y: 560, width: 370, height: 3 * 78 + 2 * 16)
+        func place(_ entry: GuidedSetupEntry, link: CGRect) -> SetupAnswersPlace {
+            SetupAnswersPlace(
+                arrivals: SetupAnswersPlace.arrivals(
+                    from: entry, homesSettings: phone.homesSettings, rootRow: phone.rootRow, opener: link, checkInRows: rows
+                ),
+                link: link, answersMinX: 16, answersWidth: 370, answerHeight: 64, earliest: link.maxY + 16
+            )
+        }
+        func holds(_ frames: [CGRect], link: CGRect, top: CGFloat) -> Bool {
+            let answer = CGRect(x: 16, y: top, width: 370, height: 64)
+            return frames.flatMap { SettingsRowPlace.points(across: $0, every: 4) }
+                .allSatisfy { SettingsRowPlace.isNearer($0, toOneOf: [link], thanAny: [answer], margin: SettingsRowPlace.margin) }
+        }
+
+        let fromCard = place(.checkIn, link: goThrough)
+        #expect(fromCard.top >= goThrough.maxY + 16)
+        #expect(holds([goThrough], link: goThrough, top: fromCard.top), "answers at \(fromCard.top)")
+        #expect(fromCard.top < rows.maxY, "answers at \(fromCard.top) start below Stop Asking")
+
+        let plain = place(.setUpStepByStep, link: phone.guided)
+        #expect(plain.top == Self.place(phone).top)
+        let afterCard = place(.setUpStepByStepAfterTheCheckIn, link: phone.guided)
+        #expect(afterCard.top > rows.maxY, "answers at \(afterCard.top)")
+        #expect(holds([phone.homesSettings, phone.rootRow, phone.guided, rows], link: phone.guided, top: afterCard.top))
+        #expect(!holds([rows], link: phone.guided, top: plain.top))
+    }
+
+    /// Go Through Setup Again's place, for the step it opens, is where it
+    /// showed: its frame in Family Setup's content less what Family Setup
+    /// had scrolled, and never above the content's top, where it still
+    /// showed in the gutter under the bar. Fails if the scroll is left out
+    /// (Learn About Each Way then lies lower than the look) or added, or if
+    /// a row half under the bar is placed above the content.
+    @Test func goThroughSetupAgainIsPlacedWhereItShowed() {
+        let row = CGRect(x: 16, y: 678.5, width: 370, height: 78)
+        #expect(SetupAnswersPlace.shown(row, scrolledBy: 0) == row)
+        #expect(SetupAnswersPlace.shown(row, scrolledBy: 400) == CGRect(x: 16, y: 278.5, width: 370, height: 78))
+        #expect(SetupAnswersPlace.shown(row, scrolledBy: 690) == CGRect(x: 16, y: 0, width: 370, height: 78))
+        #expect(SetupAnswersPlace.shown(row, scrolledBy: -30) == CGRect(x: 16, y: 708.5, width: 370, height: 78))
+    }
+
     /// The search as it was before it halved and read a frame across the
     /// answers' width by its corners, kept as the plain way to compare
     /// with: every point of every frame, down 8 points at a time, then back

@@ -62,6 +62,25 @@ nonisolated enum CheckInPolicy {
         record.checkInsStopped = false
     }
 
+    /// For UI tests only (`LaunchOptions.activeCheckInDue`): the record as
+    /// if the app had first launched, and setup had last been answered, at
+    /// least one check-in interval and a day before `now`, with no wait and
+    /// check-ins on, so Family Setup shows the card. The answers themselves
+    /// are kept. The extra day covers a clock time that does not exist on
+    /// the earlier date, as on the day daylight saving starts, which the
+    /// calendar moves an hour later.
+    static func makeDue(_ record: inout SetupRecord, now: Date, calendar: Calendar) {
+        guard let months = interval.month,
+              let monthsBefore = calendar.date(byAdding: .month, value: -months, to: now),
+              let since = calendar.date(byAdding: .day, value: -1, to: monthsBefore) else { return }
+        record.createdAt = min(record.createdAt, since)
+        if let answeredAt = record.answeredAt {
+            record.answeredAt = min(answeredAt, since)
+        }
+        record.checkInSnoozedUntil = nil
+        record.checkInsStopped = false
+    }
+
     /// The family chose to go through setup again from the check-in card:
     /// that answers it, with the answers as they are, which the first step
     /// then changes if anything has.

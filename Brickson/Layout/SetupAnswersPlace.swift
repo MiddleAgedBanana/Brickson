@@ -11,7 +11,9 @@ import Foundation
 /// first step through Home's Settings, Settings' Family Setup row and
 /// Family Setup's Set Up Step by Step, each of which only opens the next
 /// screen, and the step's Learn About Each Way takes Set Up Step by Step's
-/// place. An answer is saved the moment it is chosen, so the answers start
+/// place; or from the check-in card's Go Through Setup Again, whose place
+/// it then takes (`arrivals(from:homesSettings:rootRow:opener:)`). An
+/// answer is saved the moment it is chosen, so the answers start
 /// where every point of those frames lies nearer Learn About Each Way than
 /// the first answer, by centre and by edge, with `SettingsRowPlace.margin`
 /// to spare. Lower answers are farther still. Where that is below what
@@ -52,6 +54,47 @@ nonisolated struct SetupAnswersPlace: Equatable, Sendable {
             .map { $0.y + SettingsRowPlace.centreDistance(from: $0, to: link) }.max()
             .map { $0 + SettingsRowPlace.margin + 1 } ?? earliest
         top = Self.firstTop(from: earliest, to: deepest, where: holds)
+    }
+
+    /// Where a held look can be resting as the first step appears, in the
+    /// window, with `opener` the control it was opened with, whose place
+    /// Learn About Each Way takes. Opened with Set Up Step by Step, the
+    /// look may have come all the way from Home: Home's Settings, the
+    /// root's Family Setup row and the row itself; and once the check-in
+    /// card was answered in its place, also from where the card's rows
+    /// were (`checkInRows`), since a look held after Not Now, Stop Asking
+    /// or a return from Go Through Setup Again rests over the words that
+    /// keep the card's place and can meet Set Up Step by Step from there.
+    /// Opened from the check-in card, only Go Through Setup Again: no held
+    /// look comes to it from another control, since every control before
+    /// it is placed so a look that stays meets one that only opens the next
+    /// screen, and one that did would have answered the check-in unasked, a
+    /// hazard the chains report there (`SettingsChains`).
+    static func arrivals(
+        from entry: GuidedSetupEntry, homesSettings: CGRect, rootRow: CGRect, opener: CGRect, checkInRows: CGRect
+    ) -> [CGRect] {
+        switch entry {
+        case .setUpStepByStep: [homesSettings, rootRow, opener]
+        case .setUpStepByStepAfterTheCheckIn: [homesSettings, rootRow, opener, checkInRows]
+        case .checkIn: [opener]
+        }
+    }
+
+    /// Where `row`, measured in its screen's content, showed as it was
+    /// chosen, with that screen scrolled `offset` points down: in the
+    /// content of a screen as it first shows, since every Settings screen's
+    /// content starts at the same place in the window, and never above that
+    /// content's top, as the Library's questions take their row's place
+    /// (`LibraryQuestionPlace`). Go Through Setup Again is placed this way,
+    /// so the step it opens puts Learn About Each Way where a look on it
+    /// still rests, however far Family Setup had scrolled: placed from the
+    /// content instead, Learn About Each Way lay lower than the look, which
+    /// then met Back to Talking (docs/DECISIONS.md, "The first step's own
+    /// rows", *From the check-in card*).
+    static func shown(_ row: CGRect, scrolledBy offset: CGFloat) -> CGRect {
+        var shown = row.offsetBy(dx: 0, dy: -offset)
+        shown.origin.y = max(0, shown.minY)
+        return shown
     }
 
     /// The answers' top that the plain search finds: down 8 points at a

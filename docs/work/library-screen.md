@@ -2,10 +2,10 @@
 
 *Roadmap: R0 item 6, the rest of it after the library core (PR #14).
 Owner: the thread "Let families edit and back up phrases" (2026-11-05).
-Status: built in one pull request, from a cloud session; untested until
-CI passes. Where building it changed this spec, *What building it
-changed*, at the end, says how, and docs/DECISIONS.md holds what was
-decided.*
+Status: done; merged in pull request #80 on 2026-11-05, after CI's unit
+and UI tests passed on its final head (run 42014189828). Where building
+it changed this spec, *What building it changed*, at the end, says how,
+and docs/DECISIONS.md holds what was decided.*
 
 ## Intent
 
@@ -103,6 +103,9 @@ decided.*
      version* come first in the emergency repair record's list, but the
      probe can crash the whole unit run and the store fixture needs a
      store file made on a Mac, so each stays a pull request of its own.
+     Stores from every schema version were built on 2026-11-12, with
+     the store made on CI instead
+     ([`../log/2026-11-12-stores-from-every-version.md`](../log/2026-11-12-stores-from-every-version.md)).
 
 ## Spec
 

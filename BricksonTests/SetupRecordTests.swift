@@ -180,4 +180,49 @@ struct SetupRecordTests {
         let record = SetupRecord(createdAt: launch)
         #expect(!CheckInPolicy.isDue(record, now: days(-400, after: launch), calendar: calendar))
     }
+
+    /// The UI tests' `--check-in-due` makes a record due on any day and at
+    /// any hour, month ends and daylight-saving changes included (at 2 a.m.
+    /// three months after the day daylight saving starts, the hour that
+    /// day skips put it an hour short), whether it was
+    /// just made, just answered, put off with Not Now or stopped, and
+    /// keeps the answers. Fails if one of those records is left not due,
+    /// or if an answer, the rest board or Family Setup's having been opened
+    /// is changed.
+    @Test func makingACheckInDueWorksOnEveryDayAndKeepsTheAnswers() {
+        let board = UUID()
+        for day in 0..<(2 * 366) {
+            for hour in [0, 2, 7, 12, 23] {
+                let now = calendar.date(byAdding: .hour, value: hour, to: calendar.startOfDay(for: days(day, after: launch)))!
+                var fresh = SetupRecord(createdAt: now)
+                var answered = SetupRecord(createdAt: launch)
+                answered.familySetupOpened = true
+                answered.chooseRestBoard(board)
+                CheckInPolicy.answered(&answered, methods: [.eyeTracking, .someoneElse], now: now)
+                var snoozed = answered
+                CheckInPolicy.notNow(&snoozed, now: now, calendar: calendar)
+                var stopped = answered
+                CheckInPolicy.stopAsking(&stopped)
+                for var record in [fresh, answered, snoozed, stopped] {
+                    CheckInPolicy.makeDue(&record, now: now, calendar: calendar)
+                    #expect(CheckInPolicy.isDue(record, now: now, calendar: calendar), "\(now)")
+                    #expect(CheckInPolicy.afterword(for: record) == .answered)
+                }
+                CheckInPolicy.makeDue(&fresh, now: now, calendar: calendar)
+                #expect(fresh.accessMethods == nil && fresh.answeredAt == nil && !fresh.familySetupOpened)
+                CheckInPolicy.makeDue(&answered, now: now, calendar: calendar)
+                #expect(answered.accessMethods == [.eyeTracking, .someoneElse])
+                #expect(answered.restBoardCategory == board && answered.familySetupOpened)
+            }
+        }
+    }
+
+    /// Made due, a record that was already due keeps its dates: a check-in
+    /// made due for a test is never pushed later.
+    @Test func makingACheckInDueNeverMovesItLater() {
+        var record = SetupRecord(createdAt: launch)
+        let longAfter = calendar.date(byAdding: .month, value: 9, to: launch)!
+        CheckInPolicy.makeDue(&record, now: longAfter, calendar: calendar)
+        #expect(record.createdAt == launch)
+    }
 }

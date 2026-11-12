@@ -464,7 +464,10 @@ anything the new Xcode reports.
   released. Until CI moves, the owner's Mac is where the newer Xcode is
   checked, in the pull request that records the move
   (docs/log/2026-10-30-xcode-27-2.md); nothing in the repository
-  changes to name it.
+  changes to name it. *By 2026-11-05* CI had moved by itself: pull
+  request #81's run 42042331740 built with 27.2 (27B52) and passed its
+  unit and UI tests on iOS 27.2 simulators. Machines with the older
+  image ran for a while longer (docs/HANDOFF.md, *Known gaps*).
 - **Simulators.** `scripts/test.sh` tests on the newest iPad simulator,
   and runs UI tests on the newest standard iPhone too, each between the
   deployment target and the SDK of the Xcode in use. No version is
@@ -772,6 +775,24 @@ add `PhraseLibrarySchemaV2` with copies of the models, add a migration
 stage, move the `PhraseCategory` and `Phrase` type aliases, and never edit
 V1. Models carry a stable `uuid` for backups, restores and (later) Siri and
 Shortcuts.
+
+Every schema version has a saved store (2026-11-12, the follow-up of
+`docs/log/2026-10-21-library-core.md`). A store the app wrote with each
+version is committed in `BricksonTests/SavedStores`
+(`library-v1.0.0.store` for version 1) and never rewritten, and
+`SavedStoreTests` opens each with today's schema and launch on every
+unit run: it must open, the launch must neither seed nor repair it,
+every row must come back byte for byte, Home must show every category
+and phrase in its place, and an edit must save. A test fails while a
+version in `PhraseLibraryMigrationPlan` has no saved store or no record
+of what it holds (`SavedLibraryStore.all`). The store is made on CI, not
+by hand: every unit run writes the newest version's contents with
+today's models and keeps the files in its results, and the pull request
+that adds a version commits the files its own run kept
+(`docs/log/2026-11-12-stores-from-every-version.md`, *Making the next
+version's store*). The saved store was written by its version's models
+as they were, so it is also opened against any later edit of that
+version, which this section forbids.
 
 Deleting a category does not cascade to its phrases (`.nullify`); the code
 that deletes a category deletes its phrases in the same save
@@ -3071,7 +3092,11 @@ engine, not five scripts".
     frame, its guide is a cover with Done in Back to Talking's frame,
     the answers start below every place a look can be resting on the
     way in, and Next only moves on (*The first step's own rows*).
-    `SettingsOnHomeTests` fails on any save. Untested until CI runs it.
+    `SettingsOnHomeTests` fails on any save, and CI's run of that
+    change (pull request #66; run 41005078813, on `380ef7d`) found none
+    on the 13-inch iPad in portrait at the default size and AX5 and in
+    landscape, or on the iPhone 17 at both sizes; the 630 swept windows
+    stay modelled.
     *Tried 2026-10-24 and held* (ROADMAP Wave 3 item 7,
     [`log/2026-10-24-settings-chains.md`](log/2026-10-24-settings-chains.md)):
     the first step opening on its words, filled down to where Family
@@ -3126,9 +3151,11 @@ engine, not five scripts".
     only navigates. One closing is still expected strictly, on the phone
     at its largest size, where Set Up Step by Step's first step shows no
     answer above Next and its Back to Talking is nearest (*Settings'
-    first row, placed from Home's frames*). Untested until CI runs it.
-    *2026-10-30:* that one too, modelled: Learn About Each Way takes Set
-    Up Step by Step's frame on the first step, so the look meets a
+    first row, placed from Home's frames*). Measured so by CI's runs of
+    PR #56 (40183035156, and 40188414972 on its final head).
+    *2026-10-30:* that one too, modelled, and measured by CI's run of
+    PR #66 (41005078813): Learn About Each Way takes Set Up Step by
+    Step's frame on the first step, so the look meets a
     control that only opens the guide (*The first step's own rows*).
     `SettingsOnHomeTests` fails on any closing.
 
@@ -3584,10 +3611,10 @@ plan's places (*Home's slot plan*).
   tests, or its measured cost goes to the owner before a dwell, switch,
   head or gaze profile ships. *2026-10-25:* item 7 did, modelled on
   CI's windows and across 630 swept ones, except the phone at its
-  largest size, still strictly expected; untested until CI runs it
-  (*Settings' first row, placed from Home's frames*). *2026-10-30:* the
-  phone at its largest size too, modelled (*The first step's own
-  rows*).
+  largest size, still strictly expected, as CI's runs of PR #56 then
+  measured (*Settings' first row, placed from Home's frames*).
+  *2026-10-30:* the phone at its largest size too, modelled, and
+  measured by CI's run of PR #66 (*The first step's own rows*).
 - **The held guide link stays held** (*One chain engine for dwell
   safety*, *Open: a held look saves an answer in Set Up Step by Step*).
   Modelled on the moved frames, Learn About Each Way still clears every
@@ -3868,8 +3895,10 @@ stays open for the owner.* The intent, spec and plan are
 Figma screens it links; the record is
 [`log/2026-10-25-settings-row-place.md`](log/2026-10-25-settings-row-place.md).
 Everything below was modelled on PR #53's CI frames in the unit tests,
-not drawn by the app: it is untested until CI's UI tests pass on this
-change.
+not drawn by the app, until CI's UI tests passed on this change: the
+run on its final head (40188414972, on `f44f17f`) passed the unit and
+UI tests, which read the real frames on CI's windows (the record,
+*Verified*). The swept windows stay modelled.
 
 - **What it fixes.** CI's first run on PR #53 found a closing nobody
   chose (*Typing on Home*, *Settings closing, rescored*): on the 13-inch
@@ -4033,8 +4062,16 @@ on passive words at least as tall as the row
 owner objects. It accepts no exception to an invariant.* The record is
 [`log/2026-10-30-first-step-rows.md`](log/2026-10-30-first-step-rows.md).
 Everything below was modelled in the unit tests on CI's frames of PR #56
-and on 630 swept windows, not drawn by the app: it is untested until
-CI's UI tests pass on this change.
+and on 630 swept windows, not drawn by the app, until CI's UI tests
+passed on this change: run 41005078813, on `380ef7d` (Xcode 27.1; the
+13-inch iPad and the iPhone 17 on iOS 27.0), passed the unit and UI
+tests with no expected failure, so on CI's windows no chain the UI
+tests score (from Home's Settings through Settings' first screen,
+Family Setup, and the first step with its guide, each as it first
+shows) saves an answer or closes Settings
+([`log/2026-11-12-ci-has-run-it.md`](log/2026-11-12-ci-has-run-it.md)).
+The 630 swept windows stay modelled, and what *Not scored* lists below
+stays unscored.
 
 - **What it fixes.** The two hazards PR #56 left (*Settings' first row,
   placed from Home's frames*, *What remains, each a strict known issue
@@ -4121,12 +4158,67 @@ CI's UI tests pass on this change.
   the question and the link but no answer, and a family scrolls to
   answer. The first step has one more control. Going through the steps
   answers a check-in only from the card, or by choosing an answer.
-- **Not scored:** the check-in card's rows (no test can make a check-in
-  due); where a look rests after Go Through Setup Again, over whatever
-  the first step has at that spot, as when it was a link; the steps
-  after the first; and the guide scrolled. Where a pointer rests after
-  an activation, and how Snap to Item picks, need a real device
-  (docs/HANDOFF.md, "Checks that need a real device").
+- **From the check-in card** (2026-11-12;
+  [`log/2026-11-12-check-in-card.md`](log/2026-11-12-check-in-card.md)).
+  Go Through Setup Again opens the first step with Learn About Each Way
+  in its frame (`SettingsLanding.goThroughRow`), as Set Up Step by Step
+  does, and the answers below it (`GuidedSetupEntry.checkIn`). A look
+  comes to the card's button from no other control, since every control
+  before it only opens the next screen and one that did would have
+  answered the check-in unasked. Once the card is answered in its
+  place, a look held over the words that keep that place can meet Set
+  Up Step by Step, the nearest row, so the first step it opens on that
+  visit also starts its answers below where the card's rows were
+  (`GuidedSetupEntry.setUpStepByStepAfterTheCheckIn`). Laid out as
+  before, a held look saved an answer both ways on the phone at the
+  default size, and the second way on the iPad at AX5 too
+  (`SettingsChainsTests.theStepsLaidOutAsBeforeWouldSaveAnAnswer`).
+  Each of the card's rows changes data in the chain map, so a chain
+  that answers the check-in unasked is a hazard. Modelled on CI's
+  windows, Learn About Each Way's top is Go Through's (678.7 on the
+  iPhone 17, 615.1 on the 13-inch iPad in portrait, 615.6 in landscape
+  and 1119.2 at AX5) and Touch starts at 792.7, 760.1, 773.6 and 1266.2;
+  on the phone at AX5 the card lies below the first screenful. After
+  the card is answered, the first step's first screenful shows no
+  answer on any CI window, and a family scrolls to answer, the cost
+  already accepted on narrow windows at large text sizes. The second
+  step that first step leads to keeps its choices clear of the same
+  place, since a look over it meets that step's Next (*The late-stage
+  profile*, *After the check-in, clear of the card's place too*).
+- **Where Go Through Setup Again showed, scrolled or not.** Its frame is
+  taken as it is chosen, less what Family Setup has scrolled, and never
+  above the content's top (`SetupAnswersPlace.shown`), the rule the
+  Library's question screens follow (*The Library's question screens*),
+  so Learn About Each Way lies where a look on the button still rests.
+  The first version took the button's place in Family Setup's content,
+  as Set Up Step by Step takes its row's (*Settings' first row, placed
+  from Home's frames*, *A scrolled first screen*); CodeRabbit's review
+  of PR #103 pointed at the difference, and the chain model found what it
+  costs: with Family Setup scrolled far enough (320 points or more at
+  the default size), Learn About Each Way lay that much lower than the
+  look, which met Back to Talking and closed Settings onto Home's Get
+  Attention, which sounds, or No, which speaks, on the iPhone 17 at the
+  default size and AX5 and the iPad at the default size, and onto a
+  phrase on the iPad at AX5
+  (`SettingsChainsTests.goThroughSetupAgainPlacedFromTheContentWouldSoundTheAlarm`).
+  Placed where it showed, no chain from Go Through Setup Again meets a
+  hazard on CI's windows with Family Setup scrolled 0 to 2,400 points,
+  40 at a time, wherever some of the button shows: 14 scrolls on the
+  iPhone 17, 17 at AX5 (where the card shows only once Family Setup has
+  scrolled), 13 on the iPad in portrait and in landscape, and 25 at AX5
+  (`goThroughSetupAgainOpensItsStepUnderTheLookHoweverFamilySetupScrolled`).
+  A place that follows where the person scrolled is not one that
+  follows usage or time (invariant 8): it is where the control they
+  just chose was, as the Library's Keep takes its asking row's place.
+  Whether Set Up Step by Step should follow the same rule is the next
+  Settings thread's to decide (docs/HANDOFF.md, *Known gaps*).
+- **Not scored:** Family Setup scrolled before Not Now, Stop Asking or
+  Set Up Step by Step is chosen, the card on the phone at the largest
+  text size included, where it lies below the first screenful; resting
+  over the card's own heading and sentence; the steps after the second;
+  and the guide scrolled. Where a pointer rests after an activation, and how
+  Snap to Item picks, need a real device (docs/HANDOFF.md, "Checks that
+  need a real device").
 
 *Before:* the first step opened on its question with the answers under
 it (Touch at 322.67 on the iPhone 17), Next saved the answers, and the
@@ -4470,6 +4562,38 @@ Step by Step. The work file is
   the 630 windows (53 at the default text size, 99 at AX3, 51 at AX5);
   Codex's review of pull request #74 found the step unscored. The steps
   after it are not followed (docs/HANDOFF.md, *Known gaps*).
+- **After the check-in, clear of the card's place too** (pull request
+  #103, 2026-11-12). Once the check-in card is answered with Not Now or
+  Stop Asking and Set Up Step by Step is chosen in the same visit, a
+  held look can arrive at this step still over where the card's rows
+  were: it rested there over the words that keep the card's place, met
+  Set Up Step by Step, then the first step's Next, since that step's
+  answers start below the place (*The first step's own rows*). That
+  place can lie past Next's foot, over the sound line, where the choices
+  the family scrolls to wait under the bar. So on that way in, each
+  choice also keeps every point of the card's three rows, from Go
+  Through Setup Again's top to Stop Asking's foot, nearer Next than
+  itself, by the same two measures and margin
+  (`SetupChoicesPlace.arrivals(from:checkInRows:)`); every other way in
+  is placed as before. The first step's Next opens this step from the
+  same control the steps were opened with
+  (`SettingsRoute.advance(_:from:entry:)`), and the route has no default
+  entry, so no step can be opened as if from Set Up Step by Step by
+  leaving it out: until Codex's and CodeRabbit's reviews of the same
+  pull request found it, Next did that, and this placement never ran in the app. CI's UI run found the hazard on the iPhone 17 at
+  the default size and the 13-inch iPad at AX5: a look at Not Now's
+  lower corner or Stop Asking's centre, partly or wholly under the sound
+  line, chose a category the step had placed under the bar (848 and
+  1,346 points down). The unit model did not, since it drew no second
+  step on CI's windows; it now does, and finds the same chains with the
+  choices placed from Next alone
+  (`SettingsChainsTests.theSecondStepLaidOutAsBeforeWouldSaveAChoice`).
+  The cost, on that one way in: on the phone the three choices below the
+  bar start 1,073 points down rather than 846, and on the iPad at AX5
+  the third choice leaves the first screenful, so two show above the bar
+  rather than three, with the rest from 1,546 rather than 953 and 1,344.
+  Whether a pointer can rest on a control drawn under the sound line,
+  as the chains assume, is a device check.
 - **The late stage's floors** (`HomeLayout.Profile.lateStage`), held at
   163 points per inch (*Layouts from the space available*), angles at
   46 cm:
@@ -4720,7 +4844,14 @@ Again answers it as it opens the first step, with the answers as they
 are (`CheckInPolicy.wentThroughAgain`; *The first step's own rows*). Once it is answered on screen,
 passive words take its place at the card's own size until Family Setup
 closes (`CheckInPolicy.afterword`), so the rows below never move up under
-the button just chosen (invariant 10). These times use `Date` and
+the button just chosen (invariant 10). *2026-11-12:* its three
+buttons are full-width rows, one under another, like every other
+Settings row. Side by side, Not Now and Stop Asking each had about 111
+points for their words at the largest text size on CI's iPhone 17, and
+broke mid-word ("Asking" is about 170 points wide there; AGENTS.md,
+"Words never break"). Tests make a check-in due with `--check-in-due`
+(debug builds on test storage only; `CheckInPolicy.makeDue`). These
+times use `Date` and
 `Calendar`, an exception to "Time is `ContinuousClock`": they must survive
 relaunches and restarts, which `ContinuousClock` does not, and a clock
 set backwards only delays a card.
