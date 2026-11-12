@@ -1600,9 +1600,16 @@ category.
   hold, so neither goes farther under four: an edit that takes one
   already short of four to fewer phrases still is refused
   (`.emergencyShortOfFour`, `.restBoardShortOfFour`; 2026-11-12), and
-  changing a phrase's words, adding and moving phrases in stay open. A
-  backup that would cross, or go farther under, is refused whole
-  (invariant 7). The Library dims Delete Phrase and Delete Category
+  changing a phrase's words, adding and moving phrases in stay open.
+  Deleting a board's category leaves the choice stored, so a backup that
+  brings that category back under its identity makes it the board
+  again: it comes back with four or not at all
+  (`.restBoardComesBackShort`, which names it and says to answer Set
+  Up's "Which phrases does Home show?" with Every Category or another
+  category first; 2026-11-12,
+  `docs/log/2026-11-12-rest-board-comes-back-full.md`). A
+  backup that would cross, go farther under or bring the board back
+  short is refused whole (invariant 7). The Library dims Delete Phrase and Delete Category
   with the reason beside them.
 - **The Library says how many more.** A category's screen with fewer
   than four phrases says, under them, that Home shows it once it has
@@ -1637,12 +1644,12 @@ category.
   after the Snap to Item check.
 - **Open: a rest board with fewer than four.** A board chosen with four
   keeps them, and Set Up no longer offers a short one, so no edit makes
-  one, and none takes one farther under four (2026-11-12). A damaged or
-  hand-made store can hold one, and so can one rare restore, which is
-  not refused because the board was not in the library before it: the
-  chosen category is deleted, which leaves the choice stored
-  (`SetupRecord.restBoardCategory`), and an older backup that held it with
-  fewer than four brings it back under the same identity. Measured on
+  one, none takes one farther under four, and no restore brings a
+  deleted board back short (all 2026-11-12; until then a restore could:
+  deleting the chosen category leaves the choice stored, in
+  `SetupRecord.restBoardCategory`, and an older backup that held it with
+  fewer than four brought it back under the same identity). Only a
+  damaged or hand-made store can hold one. Measured on
   2026-11-05
   (`LateStageProfileTests.aShortBoardsEmptyCellsMeetOnlyClearPutBackAndPhrases`,
   448 windows at the four profiles a board takes, every pair of category

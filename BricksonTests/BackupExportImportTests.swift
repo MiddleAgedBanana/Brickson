@@ -118,11 +118,27 @@ struct RestoreChoicesTests {
         #expect(fifth.add == .failure(.rejected(.homeHasRoomForFour)))
     }
 
+    /// The family deleted the rest board's category, and this backup holds
+    /// it, under the same identity, with one phrase. Fails if Add or
+    /// Replace is offered, which would make it Home's board with empty
+    /// spaces, or if the same backup is refused where it is not the board.
+    @Test func aBackupThatBringsTheRestBoardBackShortIsRefusedWhole() throws {
+        let backup = LibrarySnapshot(categories: [F.emergency, F.needs, Self.family])
+        let board = RestoreChoices(
+            backup: backup, library: F.library, starter: F.library, restBoard: Self.family.id, makeID: SequentialIDs().make
+        )
+        #expect(board.add == .failure(.rejected(.restBoardComesBackShort("Family"))))
+        #expect(board.replace == .failure(.rejected(.restBoardComesBackShort("Family"))))
+        _ = try choices(backup, starter: F.library).add.get()
+        _ = try choices(backup, starter: F.library).replace.get()
+    }
+
     /// Every refusal has words of its own. Fails if one is empty or two
     /// read the same.
     @Test func everyRefusalHasItsOwnWords() {
         let refusals: [RestoreChoices.Refusal] = [
-            .rejected(.homeNeedsThree), .wouldRemoveOwnWords, .nameTooWide("Entertainment"), .nothingToAdd, .alreadyTheSame,
+            .rejected(.homeNeedsThree), .rejected(.restBoardComesBackShort("Family")), .wouldRemoveOwnWords,
+            .nameTooWide("Entertainment"), .nothingToAdd, .alreadyTheSame,
         ]
         for refusal in refusals {
             #expect(!refusal.message.isEmpty)

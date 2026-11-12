@@ -967,6 +967,9 @@
     "These are in Settings > Accessibility > Switch Control." : {
 
     },
+    "This backup brings back “%@” with fewer than four phrases, and Home's rest board is set to show it, so Home would show it with empty spaces. First, in Set Up Step by Step, answer “Which phrases does Home show?” with Every Category or another category." : {
+
+    },
     "This backup is damaged and couldn't be read. Nothing was changed." : {
 
     },

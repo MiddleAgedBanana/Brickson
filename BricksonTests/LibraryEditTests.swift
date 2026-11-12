@@ -748,11 +748,11 @@ struct LibraryEditTests {
     }
 
     /// Home shows the rest board whatever it holds (docs/DECISIONS.md, "The
-    /// late-stage profile"), so a board already under four, which a
-    /// damaged or hand-made store or one rare restore can hold, goes no
-    /// farther under, as Emergency does. Fails if a delete, a move out or a
-    /// replace can take the board farther under, if an edit that does not
-    /// is refused, or if the rule reaches a category that is not the board.
+    /// late-stage profile"), so a board already under four, which only a
+    /// damaged or hand-made store can hold, goes no farther under, as
+    /// Emergency does. Fails if a delete, a move out or a replace can take
+    /// the board farther under, if an edit that does not is refused, or if
+    /// the rule reaches a category that is not the board.
     @Test func aShortRestBoardGoesNoFartherUnder() throws {
         let short = library(emergency: 6, everyday: [3, 6, 6, 6])
         let board = F.id(5100)
@@ -785,6 +785,43 @@ struct LibraryEditTests {
             try LibraryEdit.deletePhrase(phraseID(2, 0))
                 .plan(in: library(emergency: 6, everyday: [3, 4, 6, 6]), restBoard: F.id(5200))
         }
+    }
+
+    /// Deleting the rest board's category leaves the choice stored
+    /// (`SetupRecord.restBoardCategory`), and Home shows every category
+    /// until a category with that identity is back. A backup that brings
+    /// it back with fewer than four would make it a short board, so Add
+    /// and Replace are refused whole, naming it. Fails if either can bring
+    /// the board back short (none or three), if one that brings it back
+    /// with four is refused, or if the rule reaches a category that is not
+    /// the board.
+    @Test func aRestBoardComesBackWithFourOrNotAtAll() throws {
+        // Category 4 was the board, and has been deleted.
+        let withoutBoard = library(emergency: 6, everyday: [6, 6, 6])
+        let board = F.id(5400)
+        func plan(_ edit: LibraryEdit, restBoard: UUID? = board) throws -> LibraryPlan {
+            try edit.plan(in: withoutBoard, restBoard: restBoard, makeID: SequentialIDs().make)
+        }
+        for short in [0, 3] {
+            // An older backup that held the board under its own identity.
+            let backup = library(emergency: 6, everyday: [6, 6, 6, short])
+            #expect(throws: LibraryEditRejection.restBoardComesBackShort("Full 4")) {
+                try plan(.merge(backup))
+            }
+            #expect(throws: LibraryEditRejection.restBoardComesBackShort("Full 4")) {
+                try plan(.replace(backup))
+            }
+            // With no board, or another one, it comes back as any short
+            // category does, and Home dims it.
+            _ = try plan(.merge(backup), restBoard: nil)
+            _ = try plan(.replace(backup), restBoard: F.id(5100))
+        }
+        // With four it comes back as the board.
+        let full = library(emergency: 6, everyday: [6, 6, 6, 4])
+        let merged = try plan(.merge(full))
+        #expect(merged.after.categories.last?.id == board)
+        #expect(merged.after.categories.last?.phrases.count == 4)
+        _ = try plan(.replace(full))
     }
 
     /// Home offers an everyday category only once it has four, so a
