@@ -1455,14 +1455,18 @@ settings, date) and summarise it here.
 - On the owner's Mac, Antigravity's only Brickson folder is
   `~/code/brickson-antigravity`, and since 2026-11-08 local, git-ignored
   hooks hold Antigravity and Codex to what the guard below refuses
-  (Codex not for input typed into a command already running). Once #91
-  merges, a thread on the Mac hands them a job and reads the result with
+  (Codex not for input typed into a command already running). Since #91,
+  a thread on the Mac hands them a job and reads the result with
   `scripts/agent-bridge.py`
   ([`log/2026-11-08-codex-antigravity-setup.md`](log/2026-11-08-codex-antigravity-setup.md)).
   Its jobs cannot push by mistake, but that is a guard, not a sandbox: an
   agent that unsets the job's no-push settings can still push, and
   isolation outside the agent is not built
-  ([record](log/2026-11-08-agent-bridge.md), *Known limits*).
+  ([record](log/2026-11-08-agent-bridge.md), *Known limits*). Since #99,
+  an agy job runs only with agy's hook exactly as installed, and if the
+  job changes the hook, the bridge puts it back and the job fails; the
+  guard's own code in agy's folder is not put back
+  ([record](log/2026-11-12-bridge-safety-gaps.md)).
 - Claude Code sessions with one repository run a guard before Bash and
   the selected GitHub tools named in `.claude/settings.json`
   (`.claude/hooks/guard.py`; AGENTS.md, *Guardrails for agents*). Repository
