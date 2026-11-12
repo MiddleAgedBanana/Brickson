@@ -62,14 +62,14 @@ struct SavedStoreTests {
         // the end of a launch, before the next opens the file.
         do {
             let container = try launch(url)
-            try expectRows(of: container, equal: saved)
+            #expect(try rows(of: container) == saved.rows())
             #expect(try homeArrangement(container) == saved.home)
             // The Library's screens and a backup read the same library.
             #expect(try LibraryEditor.read(container) == saved.library)
         }
         do {
             let container = try launch(url)
-            try expectRows(of: container, equal: saved)
+            #expect(try rows(of: container) == saved.rows())
             #expect(try homeArrangement(container) == saved.home)
 
             let addedID = Self.addedID
@@ -84,7 +84,7 @@ struct SavedStoreTests {
             // (`StoredLibrary.write`): the places stay, the numbers change.
             var edited = saved
             edited.phrases.append(.init(uuid: Self.addedID, text: Self.addedText, sortOrder: 0, category: saved.editedCategory))
-            try expectRows(of: container, equal: edited, comparingSortOrders: false)
+            #expect(try rows(of: container, comparingSortOrders: false) == edited.rows(comparingSortOrders: false))
             var home = saved.home
             home.grids[saved.editedCategory, default: []].append(Self.addedID)
             #expect(try homeArrangement(container) == home)
@@ -107,31 +107,7 @@ struct SavedStoreTests {
         defer { try? FileManager.default.removeItem(at: folder) }
         let url = folder.appending(path: "\(saved.fileName).store")
 
-        do {
-            let container = try PhraseLibraryStore.makeContainer(configuration(url))
-            let context = ModelContext(container)
-            context.autosaveEnabled = false
-            var categories: [UUID: PhraseCategory] = [:]
-            for row in saved.categories {
-                let category = PhraseCategory(
-                    name: row.name,
-                    symbolName: row.symbolName,
-                    sortOrder: row.sortOrder,
-                    isEmergency: row.isEmergency,
-                    uuid: row.uuid
-                )
-                context.insert(category)
-                categories[row.uuid] = category
-            }
-            for row in saved.phrases {
-                var category: PhraseCategory?
-                if let id = row.category {
-                    category = try #require(categories[id], "Phrase \(row.uuid) names a category that is not written")
-                }
-                context.insert(Phrase(text: row.text, sortOrder: row.sortOrder, category: category, uuid: row.uuid))
-            }
-            try context.save()
-        }
+        try write(saved, to: url)
 
         // The store's own files, as SQLite left them once the container
         // was released.
@@ -145,9 +121,62 @@ struct SavedStoreTests {
 
         do {
             let container = try launch(url)
-            try expectRows(of: container, equal: saved)
+            #expect(try rows(of: container) == saved.rows())
             #expect(try homeArrangement(container) == saved.home)
             #expect(try LibraryEditor.read(container) == saved.library)
+        }
+    }
+
+    // MARK: The checks can fail
+
+    /// The checks above catch what a migration could get wrong. Each wrong
+    /// result is written as a store of its own, by the app's models, and
+    /// compared with what the saved store holds. Fails if rows are compared
+    /// as Swift's `==` compares text, which calls a word stored with a
+    /// combining accent equal to the same word with the accent as one
+    /// character; if a phrase in no category stops counting; or if a phrase
+    /// that moves goes unnoticed.
+    @Test func theChecksCatchAChangedWordALostPhraseAndAMovedOne() throws {
+        let saved = SavedLibraryStore.newest
+        let combining = SavedLibraryStore.id(4002)
+        let composed = "Caf\u{00E9} au lait."
+        let stored = try #require(saved.phrases.first(where: { $0.uuid == combining })?.text)
+        // Equal to Swift, different in bytes: what a person wrote, changed.
+        #expect(composed == stored)
+        #expect(!LibraryText.sameBytes(composed, stored))
+
+        let changes: [(name: String, movesAPhrase: Bool, change: (inout [SavedLibraryStore.PhraseRow]) -> Void)] = [
+            ("a word's bytes", false, { phrases in
+                for index in phrases.indices where phrases[index].uuid == combining {
+                    phrases[index].text = composed
+                }
+            }),
+            ("a phrase in no category", false, { phrases in
+                phrases.removeAll { $0.category == nil }
+            }),
+            // The first of the two tied at the top of Places, now after the
+            // second.
+            ("a phrase's place", true, { phrases in
+                for index in phrases.indices where phrases[index].uuid == SavedLibraryStore.id(4001) {
+                    phrases[index].sortOrder = 1
+                }
+            }),
+        ]
+        for (name, movesAPhrase, change) in changes {
+            var wrong = saved
+            change(&wrong.phrases)
+            #expect(wrong.rows() != saved.rows(), "\(name)")
+            let folder = URL.temporaryDirectory.appending(path: "SavedStoreTests-\(UUID().uuidString)")
+            try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+            defer { try? FileManager.default.removeItem(at: folder) }
+            let url = folder.appending(path: "\(saved.fileName).store")
+            try write(wrong, to: url)
+            do {
+                let container = try launch(url)
+                #expect(try rows(of: container) == wrong.rows(), "\(name)")
+                #expect(try rows(of: container) != saved.rows(), "\(name)")
+                #expect(try (homeArrangement(container) != saved.home) == movesAPhrase, "\(name)")
+            }
         }
     }
 
@@ -178,48 +207,55 @@ struct SavedStoreTests {
     }
 
     /// Every stored category and phrase, read without the ordering code,
-    /// against what `saved` holds: the same rows, no more and no fewer,
-    /// each value the same, words byte for byte.
-    private func expectRows(
-        of container: ModelContainer,
-        equal saved: SavedLibraryStore,
-        comparingSortOrders: Bool = true,
-        sourceLocation: SourceLocation = #_sourceLocation
-    ) throws {
+    /// as rows in order of identity, to compare with what a saved store
+    /// holds (`SavedLibraryStore.rows`): the same rows, no more and no
+    /// fewer, each value the same, words byte for byte. Sort orders are
+    /// left at zero where `comparingSortOrders` is false.
+    private func rows(of container: ModelContainer, comparingSortOrders: Bool = true) throws -> SavedLibraryStore.Rows {
         let context = ModelContext(container)
-        let categories = try context.fetch(FetchDescriptor<PhraseCategory>()).map {
-            SavedLibraryStore.CategoryRow(
-                uuid: $0.uuid,
-                name: $0.name,
-                symbolName: $0.symbolName,
-                sortOrder: comparingSortOrders ? $0.sortOrder : 0,
-                isEmergency: $0.isEmergency
-            )
-        }
-        let phrases = try context.fetch(FetchDescriptor<Phrase>()).map {
-            SavedLibraryStore.PhraseRow(
-                uuid: $0.uuid,
-                text: $0.text,
-                sortOrder: comparingSortOrders ? $0.sortOrder : 0,
-                category: $0.category?.uuid
-            )
-        }
-        let expectedCategories = saved.categories.map { row in
-            var row = row
-            if !comparingSortOrders { row.sortOrder = 0 }
-            return row
-        }
-        let expectedPhrases = saved.phrases.map { row in
-            var row = row
-            if !comparingSortOrders { row.sortOrder = 0 }
-            return row
-        }
-        #expect(byIdentity(categories, \.uuid) == byIdentity(expectedCategories, \.uuid), sourceLocation: sourceLocation)
-        #expect(byIdentity(phrases, \.uuid) == byIdentity(expectedPhrases, \.uuid), sourceLocation: sourceLocation)
+        return SavedLibraryStore.Rows(
+            categories: try context.fetch(FetchDescriptor<PhraseCategory>()).map {
+                SavedLibraryStore.CategoryRow(
+                    uuid: $0.uuid,
+                    name: $0.name,
+                    symbolName: $0.symbolName,
+                    sortOrder: $0.sortOrder,
+                    isEmergency: $0.isEmergency
+                )
+            },
+            phrases: try context.fetch(FetchDescriptor<Phrase>()).map {
+                SavedLibraryStore.PhraseRow(uuid: $0.uuid, text: $0.text, sortOrder: $0.sortOrder, category: $0.category?.uuid)
+            },
+            comparingSortOrders: comparingSortOrders
+        )
     }
 
-    private func byIdentity<Row>(_ rows: [Row], _ id: (Row) -> UUID) -> [Row] {
-        rows.sorted { id($0).uuidString < id($1).uuidString }
+    /// Writes `saved`'s rows, in their order, with today's schema and the
+    /// app's own models, in one save, as the app writes its library.
+    private func write(_ saved: SavedLibraryStore, to url: URL) throws {
+        let container = try PhraseLibraryStore.makeContainer(configuration(url))
+        let context = ModelContext(container)
+        context.autosaveEnabled = false
+        var categories: [UUID: PhraseCategory] = [:]
+        for row in saved.categories {
+            let category = PhraseCategory(
+                name: row.name,
+                symbolName: row.symbolName,
+                sortOrder: row.sortOrder,
+                isEmergency: row.isEmergency,
+                uuid: row.uuid
+            )
+            context.insert(category)
+            categories[row.uuid] = category
+        }
+        for row in saved.phrases {
+            var category: PhraseCategory?
+            if let id = row.category {
+                category = try #require(categories[id], "Phrase \(row.uuid) names a category that is not written")
+            }
+            context.insert(Phrase(text: row.text, sortOrder: row.sortOrder, category: category, uuid: row.uuid))
+        }
+        try context.save()
     }
 
     /// Where Home puts each category and phrase, worked out as `HomeView`
@@ -306,6 +342,30 @@ nonisolated struct SavedLibraryStore: Sendable, CustomTestStringConvertible {
         }
     }
 
+    /// A store's rows in order of identity, as `==` compares them: no
+    /// more and no fewer, each value the same.
+    nonisolated struct Rows: Equatable, Sendable {
+        var categories: [CategoryRow]
+        var phrases: [PhraseRow]
+
+        init(categories: [CategoryRow], phrases: [PhraseRow], comparingSortOrders: Bool = true) {
+            self.categories = categories
+                .map { (row: CategoryRow) -> CategoryRow in
+                    var row = row
+                    if !comparingSortOrders { row.sortOrder = 0 }
+                    return row
+                }
+                .sorted { $0.uuid.uuidString < $1.uuid.uuidString }
+            self.phrases = phrases
+                .map { (row: PhraseRow) -> PhraseRow in
+                    var row = row
+                    if !comparingSortOrders { row.sortOrder = 0 }
+                    return row
+                }
+                .sorted { $0.uuid.uuidString < $1.uuid.uuidString }
+        }
+    }
+
     /// Where Home shows the library, as identities, written out by hand:
     /// every category in Home's order (the Library's too), the category
     /// row, the category the Emergency control opens, and each category's
@@ -323,6 +383,10 @@ nonisolated struct SavedLibraryStore: Sendable, CustomTestStringConvertible {
     var home: Home
     /// The everyday category the opening test adds a phrase to.
     var editedCategory: UUID
+
+    func rows(comparingSortOrders: Bool = true) -> Rows {
+        Rows(categories: categories, phrases: phrases, comparingSortOrders: comparingSortOrders)
+    }
 
     /// The store's file name without its extension.
     var fileName: String { "library-v\(version.major).\(version.minor).\(version.patch)" }
