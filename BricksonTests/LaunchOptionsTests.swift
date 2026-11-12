@@ -152,6 +152,25 @@ struct LaunchOptionsTests {
         #expect(options.unrecognized == typos)
     }
 
+    // A check-in is made due only in a UI test: reaching a person's launch,
+    // or one without test storage, fails this, and so does a misspelt or
+    // valued option being taken for it.
+    @Test func aCheckInIsMadeDueOnlyWithDebugAndTestStorage() {
+        #expect(LaunchOptions.standard.activeCheckInDue == false)
+        let ordinary = LaunchOptions.parse(["--check-in-due"])
+        #expect(ordinary.checkInDue)
+        #expect(ordinary.activeCheckInDue == false)
+        for storage in ["--test-storage", "--fresh-test-storage"] {
+            let options = LaunchOptions.parse([storage, "--check-in-due"])
+            #expect(options.activeCheckInDue == LaunchOptions.readsLaunchArguments)
+            #expect(options.unrecognized.isEmpty)
+        }
+        let typos = ["--check-in-due=yes", "--check-in", "--checkin-due"]
+        let options = LaunchOptions.parse(["--test-storage"] + typos)
+        #expect(options.checkInDue == false)
+        #expect(options.unrecognized == typos)
+    }
+
     // The UI tests restore it to see one phrase arrive and nothing go. Fails
     // if it changes anything but adding that phrase, or if Add would bring
     // more than it or Replace would remove the person's words on a fresh
