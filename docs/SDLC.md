@@ -1,7 +1,7 @@
 # How Brickson is made
 
 The way of working for everyone who builds Brickson: the owner, and the
-Claude Code, Codex and Jules agents. It follows the six stages of
+Claude Code, Codex and Antigravity agents. It follows the six stages of
 Anthropic's playbook for an AI-native software development life cycle
 (the owner's copy, 2026; not in this repository, and page numbers below
 are the PDF's), adapted to a project with one owner who is new to
@@ -155,9 +155,10 @@ stepping on each other.
   "AGENTS.md puts first what Codex reads").
 - **Test first** (AGENTS.md, *Workflow rules*): a failing test before new
   behaviour, a failing reproduction before a fix.
-- **Cloud agents cannot build Swift.** Claude Code on the web, Codex cloud
-  and Jules have no Xcode, so for them GitHub CI is the compiler. They say
-  so, and never call unbuilt code working.
+- **Cloud agents cannot build Swift.** Codex cloud, and Claude Code on
+  the web with no route to the owner's Mac, have no Xcode, so for them
+  GitHub CI is the compiler (AGENTS.md, *Build and test*). They say so,
+  and never call unbuilt code working.
 
 **Gate:** a written plan before the first code commit, which the
 pull request's reviewers check the diff against.
@@ -320,8 +321,9 @@ can hold that rule, a test (p50: add an eval for the incident).
   the owner's gates are the few that matter, and agents carry the rest.
 - **Hooks, managed settings and telemetry** (pp. 27, 40-43). They suit a
   company that manages its engineers' machines. Claude Code hooks bind
-  only Claude Code, not Codex or Jules, so GitHub's ruleset is the backstop
-  for every agent, once the guardrails work makes it bind them (*Deploy*). A small `.claude/settings.json` hook that
+  only Claude Code; Codex and Antigravity are held to the same guard only
+  on the owner's Mac, by local hooks (AGENTS.md, *Guardrails for agents*),
+  so GitHub's ruleset is the backstop for every agent, once the guardrails work makes it bind them (*Deploy*). A small `.claude/settings.json` hook that
   blocks `git add -A`, a push to `main` and edits to the generated Xcode
   project would add a second line of defence for Claude Code; the first
   two were built on 2026-10-21 (AGENTS.md, *Guardrails for agents*), and

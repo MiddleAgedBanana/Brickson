@@ -46,11 +46,52 @@ enum LibraryFixtures {
         ]
     )
 
+    /// Small, and outside the bounds Home asks for, as only a damaged or
+    /// hand-made store can be: two everyday categories where Home needs
+    /// three, and Emergency with two phrases where it keeps four
+    /// (docs/DECISIONS.md, "Three or four everyday categories" and "Four
+    /// phrases in every category"). An edit may bring it back or leave it
+    /// as it is, but never take it farther out, so no edit deletes one of
+    /// its categories or one of Emergency's phrases: `libraryOfFour` is
+    /// the library for those.
     static let library = LibrarySnapshot(categories: [basics, emergency, needs])
 
-    /// One edit of each kind that changes `library`. The switch has no
-    /// default, so adding a kind of edit without a sample here fails to
-    /// compile, and every per-kind test covers it.
+    static let friendsID = id(600)
+    static let tripsID = id(700)
+
+    static let friends = LibrarySnapshot.Category(
+        id: friendsID,
+        name: "Friends",
+        symbolName: "person.fill",
+        isEmergency: false,
+        phrases: [
+            .init(id: id(601), text: "Call my friend."),
+        ]
+    )
+
+    static let trips = LibrarySnapshot.Category(
+        id: tripsID,
+        name: "Trips",
+        symbolName: "car.fill",
+        isEmergency: false,
+        phrases: [
+            .init(id: id(701), text: "Let's go out."),
+        ]
+    )
+
+    /// `library` with four everyday categories, so deleting one leaves the
+    /// three Home needs.
+    static let libraryOfFour = LibrarySnapshot(categories: [basics, emergency, needs, friends, trips])
+
+    /// The library each kind's sample edit is made in: `library`, except
+    /// for deleting a category, which needs `libraryOfFour`.
+    static func sampleLibrary(_ kind: LibraryEdit.Kind) -> LibrarySnapshot {
+        kind == .deleteCategory ? libraryOfFour : library
+    }
+
+    /// One edit of each kind that changes `sampleLibrary(kind)`. The switch
+    /// has no default, so adding a kind of edit without a sample here fails
+    /// to compile, and every per-kind test covers it.
     static func sampleEdit(_ kind: LibraryEdit.Kind) -> LibraryEdit {
         switch kind {
         case .addCategory:
@@ -78,11 +119,15 @@ enum LibraryFixtures {
                 ]),
             ]))
         case .replace:
+            // Three everyday categories, so it brings `library` back toward
+            // the bounds and keeps `libraryOfFour`, less one, inside them.
             .replace(LibrarySnapshot(categories: [
                 emergency,
+                needs,
                 .init(id: id(400), name: "Family", symbolName: "person.2.fill", isEmergency: false, phrases: [
                     .init(id: id(401), text: "Where is everyone?"),
                 ]),
+                trips,
             ]))
         }
     }

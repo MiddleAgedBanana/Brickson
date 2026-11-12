@@ -13,6 +13,15 @@ struct LibraryEditTests {
         return try edit.plan(in: library ?? self.library, makeID: ids.make)
     }
 
+    /// `library` with Emergency down to its first phrase, as only a damaged
+    /// or hand-made store can be: no edit takes Emergency farther under
+    /// four ("Four phrases in every category").
+    private var withOneEmergencyPhrase: LibrarySnapshot {
+        var one = library
+        one.categories[1].phrases.removeLast()
+        return one
+    }
+
     private func names(_ library: LibrarySnapshot) -> [String] {
         library.categories.map(\.name)
     }
@@ -24,14 +33,14 @@ struct LibraryEditTests {
     // MARK: Every kind
 
     /// Fails if a kind of edit is added whose sample changes nothing, or
-    /// that the planner refuses on an ordinary library.
+    /// that the planner refuses on the library it is made in.
     @Test(arguments: LibraryEdit.Kind.allCases)
     func everyKindPlansAChange(kind: LibraryEdit.Kind) throws {
         let edit = F.sampleEdit(kind)
         #expect(edit.kind == kind)
-        let plan = try makePlan(edit)
+        let plan = try makePlan(edit, in: F.sampleLibrary(kind))
         #expect(plan.kind == kind)
-        #expect(plan.before == library)
+        #expect(plan.before == F.sampleLibrary(kind))
         #expect(!plan.changes.isEmpty)
         #expect(plan.after.keepsEmergencyWorking)
         #expect(plan.after.hasUniqueIDs)
@@ -122,7 +131,10 @@ struct LibraryEditTests {
         let added = try makePlan(.addCategory(name: name, symbolName: "star.fill"))
         #expect(LibraryText.sameBytes(try #require(added.after.categories.last).name, name))
         let importedName = "Needs" + blank
+        // Two everyday categories, so a replace leaves the library no
+        // farther under three ("Three or four everyday categories").
         let incoming = LibrarySnapshot(categories: [
+            F.friends,
             .init(id: F.id(800), name: importedName, symbolName: "star.fill", isEmergency: false,
                   phrases: [.init(id: F.id(801), text: blank + "Words." + blank)]),
         ])
@@ -321,7 +333,7 @@ struct LibraryEditTests {
         #expect(throws: LibraryEditRejection.emptyText) {
             try makePlan(.editPhrase(F.id(101), text: blank))
         }
-        let one = try makePlan(.deletePhrase(F.id(202))).after
+        let one = withOneEmergencyPhrase
         #expect(throws: LibraryEditRejection.emptyText) {
             try makePlan(.editPhrase(F.id(201), text: blank), in: one)
         }
@@ -338,7 +350,7 @@ struct LibraryEditTests {
         #expect(LibraryText.sameBytes(try #require(category.after.categories.last).name, text))
         let phrase = try makePlan(.addPhrase(text: text, category: F.basicsID))
         #expect(LibraryText.sameBytes(try #require(phrase.after.categories[0].phrases.last).text, text))
-        let one = try makePlan(.deletePhrase(F.id(202))).after
+        let one = withOneEmergencyPhrase
         let edited = try makePlan(.editPhrase(F.id(201), text: text), in: one)
         #expect(edited.after.keepsEmergencyWorking)
         #expect(LibraryText.sameBytes(edited.after.categories[1].phrases[0].text, text))
@@ -393,11 +405,11 @@ struct LibraryEditTests {
     }
 
     @Test func deletingACategoryDeletesItsPhrases() throws {
-        let plan = try makePlan(.deleteCategory(F.basicsID))
-        #expect(names(plan.after) == ["Emergency", "Needs"])
+        let plan = try makePlan(.deleteCategory(F.basicsID), in: F.libraryOfFour)
+        #expect(names(plan.after) == ["Emergency", "Needs", "Friends", "Trips"])
         #expect(plan.changes.categoriesRemoved == 1)
         #expect(plan.changes.phrasesRemoved == 3)
-        #expect(plan.after.phraseCount == 3)
+        #expect(plan.after.phraseCount == 5)
     }
 
     // MARK: Emergency (decision E1)
@@ -411,7 +423,7 @@ struct LibraryEditTests {
     }
 
     @Test func theEmergencyCategoryKeepsItsLastPhrase() throws {
-        let one = try makePlan(.deletePhrase(F.id(202))).after
+        let one = withOneEmergencyPhrase
         #expect(throws: LibraryEditRejection.emergencyCategoryNeedsAPhrase) {
             try LibraryEdit.deletePhrase(F.id(201)).plan(in: one)
         }
@@ -434,12 +446,17 @@ struct LibraryEditTests {
 
     /// Fails if an imported blank lets a delete or move remove Emergency's
     /// last phrase with words. Imports must still keep the blank's bytes.
+    /// The backup gives Emergency five phrases, one with words, so that
+    /// removing a blank leaves the four it keeps ("Four phrases in every
+    /// category").
     @Test(arguments: [" \n\t", "\u{00A0}", "\u{2060}", "\u{FEFF}", "\u{200D}", "\u{FE0F}", "\u{034F}", "\u{E0100}", "\u{0000}", "\u{0007}", " \u{2060}\u{FE0F}\u{0000}\n"])
     func importedBlankCannotReplaceTheLastEmergencyWords(blank: String) throws {
         var backup = library
         backup.categories[1].phrases[1].text = blank
+        backup.categories[1].phrases += (203...205).map { .init(id: F.id($0), text: blank) }
         let imported = try makePlan(.replace(backup)).after
         #expect(imported.keepsEmergencyWorking)
+        #expect(imported.categories[1].phrases.count == 5)
         #expect(Array(imported.categories[1].phrases[1].text.utf8) == Array(blank.utf8))
 
         #expect(throws: LibraryEditRejection.emergencyCategoryNeedsAPhrase) {
@@ -452,7 +469,7 @@ struct LibraryEditTests {
         // Removing the blank, editing the words, and reordering within
         // Emergency all keep a reachable phrase with words.
         let removedBlank = try makePlan(.deletePhrase(F.id(202)), in: imported)
-        #expect(texts(removedBlank.after, F.emergencyID) == ["I need help now."])
+        #expect(texts(removedBlank.after, F.emergencyID) == ["I need help now.", blank, blank, blank])
         let edited = try makePlan(.editPhrase(F.id(201), text: "Help me."), in: imported)
         #expect(edited.after.keepsEmergencyWorking)
         let reordered = try makePlan(.movePhrase(F.id(201), category: F.emergencyID, before: nil), in: imported)
@@ -551,18 +568,51 @@ struct LibraryEditTests {
     }
 
     /// Only a damaged or hand-made store can be outside the bounds. It can
-    /// still be edited, so the family can bring it back, and so can the
-    /// libraries the other tests use. Fails if the rule refuses an edit
-    /// that does not cross a bound.
+    /// still be edited, so the family can bring it back, by any edit that
+    /// leaves it no farther out. Fails if the rule refuses one.
     @Test func aLibraryOutsideTheBoundsCanStillBeEdited() throws {
         let two = libraryWith(everyday: 2)
-        _ = try makePlan(.deleteCategory(F.id(1100)), in: two)
-        _ = try makePlan(.replace(libraryWith(everyday: 1)), in: two)
+        let third = try makePlan(.addCategory(name: "Family", symbolName: "person.2.fill"), in: two)
+        #expect(third.after.everydayCategoryCount == 3)
+        _ = try makePlan(.addPhrase(text: "More.", category: F.id(1100)), in: two)
+        _ = try makePlan(.renameCategory(F.id(1100), name: "First"), in: two)
+        _ = try makePlan(.merge(libraryWith(everyday: 1, from: 3)), in: two)
+        _ = try makePlan(.replace(libraryWith(everyday: 2, from: 3)), in: two)
         let six = libraryWith(everyday: 6)
-        _ = try makePlan(.deleteCategory(F.id(1100)), in: six)
+        let fifth = try makePlan(.deleteCategory(F.id(1100)), in: six)
+        #expect(fifth.after.everydayCategoryCount == 5)
         _ = try makePlan(.addPhrase(text: "More.", category: F.id(1600)), in: six)
         _ = try makePlan(.replace(libraryWith(everyday: 5)), in: six)
-        // Crossing from one side to the other is still refused.
+        _ = try makePlan(.replace(libraryWith(everyday: 6, from: 7)), in: six)
+    }
+
+    /// A library outside the bounds goes no farther out: one with more than
+    /// four everyday categories gains none, and one with fewer than three
+    /// loses none (docs/DECISIONS.md, "Three or four everyday categories").
+    /// Fails if a delete, an add, a merge or a replace can take it farther
+    /// out, or if crossing from one side to the other is allowed.
+    @Test func aLibraryOutsideTheBoundsGoesNoFartherOut() throws {
+        let two = libraryWith(everyday: 2)
+        #expect(throws: LibraryEditRejection.homeNeedsThree) {
+            try makePlan(.deleteCategory(F.id(1100)), in: two)
+        }
+        #expect(throws: LibraryEditRejection.homeNeedsThree) {
+            try makePlan(.replace(libraryWith(everyday: 1)), in: two)
+        }
+        #expect(throws: LibraryEditRejection.homeNeedsThree) {
+            try makePlan(.deleteCategory(F.id(1100)), in: libraryWith(everyday: 1))
+        }
+        let six = libraryWith(everyday: 6)
+        #expect(throws: LibraryEditRejection.homeHasRoomForFour) {
+            try makePlan(.addCategory(name: "Family", symbolName: "person.2.fill"), in: six)
+        }
+        #expect(throws: LibraryEditRejection.homeHasRoomForFour) {
+            try makePlan(.merge(libraryWith(everyday: 1, from: 7)), in: six)
+        }
+        #expect(throws: LibraryEditRejection.homeHasRoomForFour) {
+            try makePlan(.replace(libraryWith(everyday: 7)), in: six)
+        }
+        // Crossing from one side to the other is refused as before.
         #expect(throws: LibraryEditRejection.homeHasRoomForFour) {
             try makePlan(.replace(libraryWith(everyday: 5)), in: two)
         }
@@ -647,23 +697,94 @@ struct LibraryEditTests {
         #expect(deleted.after.categories[0].phrases.count == 5)
     }
 
-    /// Only crossing the bound is refused. A new category starts with
-    /// none, and one that never reached four, or Emergency already under
-    /// it, can still be edited, so a damaged or hand-made library can be
-    /// brought back. Fails if the rule refuses an edit that does not cross.
+    /// An everyday category under four is dimmed on Home, so only crossing
+    /// the bound is refused for it: a new category starts with none, and
+    /// one that never reached four can still be edited, a phrase deleted
+    /// included. Emergency, and a rest board, which Home shows whatever
+    /// they hold, can still grow back. Fails if the rule refuses an edit
+    /// that does not cross, or takes nothing farther under.
     @Test func aCategoryUnderFourCanStillBeEdited() throws {
         let short = library(emergency: 2, everyday: [3, 6, 6])
         let added = try makePlan(.addCategory(name: "Trips", symbolName: "car.fill"), in: short)
         #expect(added.after.categories.last?.phrases.isEmpty == true)
         _ = try makePlan(.deletePhrase(phraseID(1, 0)), in: short)
-        _ = try makePlan(.deletePhrase(phraseID(0, 0)), in: short)
+        _ = try makePlan(.movePhrase(phraseID(1, 0), category: F.id(5200), before: nil), in: short)
         let grown = try makePlan(.addPhrase(text: "One more.", category: F.id(5100)), in: short)
         #expect(grown.after.categories[1].phrases.count == 4)
+        let emergencyGrown = try makePlan(.addPhrase(text: "Come now.", category: F.id(5000)), in: short)
+        #expect(emergencyGrown.after.categories[0].phrases.count == 3)
         // A backup may bring a category with fewer: Home dims it.
         _ = try makePlan(.merge(LibrarySnapshot(categories: [category(4, phrases: 2)])), in: library(emergency: 6, everyday: [6, 6, 6]))
         // And a replace may bring one under its own identity, new here.
         let withNew = LibrarySnapshot(categories: library(emergency: 6, everyday: [6, 6, 6]).categories + [category(4, phrases: 1)])
         _ = try makePlan(.replace(withNew), in: library(emergency: 6, everyday: [6, 6, 6]))
+    }
+
+    /// Home never dims Emergency (invariant 2), so an Emergency already
+    /// under four, which only a damaged or hand-made store holds, shows
+    /// empty cells; no edit adds to them (docs/DECISIONS.md, "Four phrases
+    /// in every category"). Fails if a delete, a move out or a replace can
+    /// take it farther under, or if an edit that does not is refused.
+    @Test func emergencyUnderFourGoesNoFartherUnder() throws {
+        let three = library(emergency: 3, everyday: [6, 6, 6])
+        #expect(throws: LibraryEditRejection.emergencyShortOfFour) {
+            try makePlan(.deletePhrase(phraseID(0, 0)), in: three)
+        }
+        #expect(throws: LibraryEditRejection.emergencyShortOfFour) {
+            try makePlan(.movePhrase(phraseID(0, 0), category: F.id(5100), before: nil), in: three)
+        }
+        #expect(throws: LibraryEditRejection.emergencyShortOfFour) {
+            try makePlan(.replace(library(emergency: 2, everyday: [6, 6, 6])), in: three)
+        }
+        // Its words can change, its order too, and it can grow.
+        _ = try makePlan(.editPhrase(phraseID(0, 0), text: "Help me."), in: three)
+        _ = try makePlan(.movePhrase(phraseID(0, 2), category: F.id(5000), before: phraseID(0, 0)), in: three)
+        let grown = try makePlan(.movePhrase(phraseID(1, 0), category: F.id(5000), before: nil), in: three)
+        #expect(grown.after.categories[0].phrases.count == 4)
+        // Its last phrase with words keeps its own reason.
+        #expect(throws: LibraryEditRejection.emergencyCategoryNeedsAPhrase) {
+            try makePlan(.deletePhrase(phraseID(0, 0)), in: library(emergency: 1, everyday: [6, 6, 6]))
+        }
+    }
+
+    /// Home shows the rest board whatever it holds (docs/DECISIONS.md, "The
+    /// late-stage profile"), so a board already under four, which a
+    /// damaged or hand-made store or one rare restore can hold, goes no
+    /// farther under, as Emergency does. Fails if a delete, a move out or a
+    /// replace can take the board farther under, if an edit that does not
+    /// is refused, or if the rule reaches a category that is not the board.
+    @Test func aShortRestBoardGoesNoFartherUnder() throws {
+        let short = library(emergency: 6, everyday: [3, 6, 6, 6])
+        let board = F.id(5100)
+        func plan(_ edit: LibraryEdit, restBoard: UUID? = board) throws -> LibraryPlan {
+            try edit.plan(in: short, restBoard: restBoard, makeID: SequentialIDs().make)
+        }
+        #expect(throws: LibraryEditRejection.restBoardShortOfFour) {
+            try plan(.deletePhrase(phraseID(1, 0)))
+        }
+        #expect(throws: LibraryEditRejection.restBoardShortOfFour) {
+            try plan(.movePhrase(phraseID(1, 0), category: F.id(5200), before: nil))
+        }
+        #expect(throws: LibraryEditRejection.restBoardShortOfFour) {
+            try plan(.replace(library(emergency: 6, everyday: [2, 6, 6, 6])))
+        }
+        // Its words and order can change, and it can grow.
+        _ = try plan(.editPhrase(phraseID(1, 0), text: "New words."))
+        _ = try plan(.movePhrase(phraseID(1, 2), category: board, before: phraseID(1, 0)))
+        let grown = try plan(.addPhrase(text: "One more.", category: board))
+        #expect(grown.after.categories[1].phrases.count == 4)
+        // Deleting the board is not refused: Home then shows every category.
+        _ = try plan(.deleteCategory(board))
+        // Another category under four is not the board, and with no board
+        // this one is dimmed on Home like any other.
+        _ = try plan(.deletePhrase(phraseID(1, 0)), restBoard: F.id(5200))
+        _ = try plan(.deletePhrase(phraseID(1, 0)), restBoard: nil)
+        // A board with four or more keeps four by the rule for every
+        // category.
+        #expect(throws: LibraryEditRejection.categoryKeepsFour) {
+            try LibraryEdit.deletePhrase(phraseID(2, 0))
+                .plan(in: library(emergency: 6, everyday: [3, 4, 6, 6]), restBoard: F.id(5200))
+        }
     }
 
     /// Home offers an everyday category only once it has four, so a
@@ -689,7 +810,9 @@ struct LibraryEditTests {
 }
 
 /// Bringing a backup into a library: `LibraryImport` through
-/// `LibraryEdit.merge` and `.replace`.
+/// `LibraryEdit.merge` and `.replace`. `library` has two everyday
+/// categories, and no replace takes it to fewer ("Three or four everyday
+/// categories"), so a backup replaced into it here brings at least two.
 struct LibraryImportTests {
     private typealias F = LibraryFixtures
     private let library = LibraryFixtures.library
@@ -788,7 +911,7 @@ struct LibraryImportTests {
         #expect(texts(plan.after, F.id(400)) == ["Where is everyone?", "Where is everyone?"])
         #expect(plan.after.categories.last?.phrases.map(\.id) == [F.id(401), F.id(402)])
 
-        let replaced = try replace(with: LibrarySnapshot(categories: [F.emergency] + incoming.categories))
+        let replaced = try replace(with: LibrarySnapshot(categories: [F.emergency, F.needs] + incoming.categories))
         #expect(texts(replaced.after, F.id(400)) == ["Where is everyone?", "Where is everyone?"])
 
         let twice = try LibraryEdit.merge(incoming).plan(in: plan.after, makeID: SequentialIDs(startingAt: 950).make)
@@ -919,7 +1042,7 @@ struct LibraryImportTests {
             ]),
         ])
         let merged = try merge(incoming)
-        let replaced = try replace(with: LibrarySnapshot(categories: [F.emergency] + incoming.categories))
+        let replaced = try replace(with: LibrarySnapshot(categories: [F.emergency, F.needs] + incoming.categories))
         for plan in [merged, replaced] {
             let category = try #require(plan.after.categories.last)
             #expect(LibraryText.sameBytes(category.name, blank))
@@ -935,6 +1058,8 @@ struct LibraryImportTests {
             .init(id: F.id(600), name: "Emergency", symbolName: "star.fill", isEmergency: true, phrases: [
                 .init(id: F.id(601), text: blank),
             ]),
+            F.basics,
+            F.needs,
         ])
         let plan = try replace(with: incoming)
         #expect(plan.after.keepsEmergencyWorking)
@@ -973,7 +1098,7 @@ struct LibraryImportTests {
     // MARK: Replace
 
     @Test func replaceMakesTheLibraryMatchTheBackup() throws {
-        let incoming = LibrarySnapshot(categories: [F.needs, F.emergency])
+        let incoming = LibrarySnapshot(categories: [F.needs, F.emergency, F.friends])
         let plan = try replace(with: incoming)
 
         #expect(plan.after == incoming)
@@ -1010,7 +1135,7 @@ struct LibraryImportTests {
     /// Invariant 7: a replace that would lose the person's words needs a
     /// safety copy first. Fails if the check is dropped or inverted.
     @Test func replacingThePersonsWordsNeedsASafetyCopy() throws {
-        let incoming = LibrarySnapshot(categories: [F.emergency])
+        let incoming = LibrarySnapshot(categories: [F.emergency, F.friends, F.trips])
         #expect(try replace(with: incoming).needsSafetyCopy)
         // Compared with the starter library, untouched starter items are not
         // the person's words, but an edited one is.
@@ -1031,16 +1156,18 @@ struct LibraryImportTests {
 
     /// Fails if a replace can leave Emergency with nothing to open.
     @Test func replaceKeepsTheCurrentEmergencyPhrasesWhenTheBackupHasNone() throws {
-        let noEmergency = LibrarySnapshot(categories: [F.needs])
+        let noEmergency = LibrarySnapshot(categories: [F.needs, F.friends])
         let plan = try replace(with: noEmergency)
         #expect(plan.after.keepsEmergencyWorking)
         #expect(texts(plan.after, F.emergencyID) == ["I need help now.", "Please come here."])
         #expect(plan.importReport?.keptCurrentEmergencyPhrases == true)
 
         let blankEmergency = LibrarySnapshot(categories: [
-            .init(id: F.id(600), name: "Emergency", symbolName: "star.fill", isEmergency: true, phrases: [
-                .init(id: F.id(601), text: " "),
+            .init(id: F.id(800), name: "Emergency", symbolName: "star.fill", isEmergency: true, phrases: [
+                .init(id: F.id(801), text: " "),
             ]),
+            F.needs,
+            F.friends,
         ])
         let blank = try replace(with: blankEmergency)
         #expect(blank.after.keepsEmergencyWorking)
@@ -1052,6 +1179,7 @@ struct LibraryImportTests {
         // Emergency, under new identities.
         let elsewhere = LibrarySnapshot(categories: [
             .init(id: F.id(400), name: "Saved", symbolName: "star.fill", isEmergency: false, phrases: F.emergency.phrases),
+            F.friends,
         ])
         let moved = try replace(with: elsewhere)
         #expect(moved.after.hasUniqueIDs)

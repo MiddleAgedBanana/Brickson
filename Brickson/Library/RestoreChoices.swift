@@ -48,25 +48,34 @@ struct RestoreChoices: Equatable {
     ///   - starter: the bundled starter library, so a replace can tell the
     ///     person's own words from untouched starter phrases; without it,
     ///     every word counts as theirs.
+    ///   - restBoard: the category Home's rest board shows
+    ///     (`SetupRecord.restBoardCategory`), which a replace takes no
+    ///     farther under four phrases (`LibraryEdit.plan`).
     ///   - makeID: identities for what the backup brings that clash with
     ///     the library's. Tests pass a predictable one.
-    init(backup: LibrarySnapshot, library: LibrarySnapshot, starter: LibrarySnapshot?, makeID: () -> UUID = { UUID() }) {
+    init(
+        backup: LibrarySnapshot,
+        library: LibrarySnapshot,
+        starter: LibrarySnapshot?,
+        restBoard: UUID?,
+        makeID: () -> UUID = { UUID() }
+    ) {
         self.backup = backup
-        add = Self.check(LibraryEdit.merge(backup), in: library, starter: starter, makeID: makeID).flatMap { plan in
+        add = Self.check(LibraryEdit.merge(backup), in: library, starter: starter, restBoard: restBoard, makeID: makeID).flatMap { plan in
             plan.changes.isEmpty ? .failure(.nothingToAdd) : .success(plan)
         }
-        replace = Self.check(LibraryEdit.replace(backup), in: library, starter: starter, makeID: makeID).flatMap { plan in
+        replace = Self.check(LibraryEdit.replace(backup), in: library, starter: starter, restBoard: restBoard, makeID: makeID).flatMap { plan in
             if plan.needsSafetyCopy { return .failure(.wouldRemoveOwnWords) }
             return plan.changes.isEmpty ? .failure(.alreadyTheSame) : .success(plan)
         }
     }
 
     private static func check(
-        _ edit: LibraryEdit, in library: LibrarySnapshot, starter: LibrarySnapshot?, makeID: () -> UUID
+        _ edit: LibraryEdit, in library: LibrarySnapshot, starter: LibrarySnapshot?, restBoard: UUID?, makeID: () -> UUID
     ) -> Result<LibraryPlan, Refusal> {
         let plan: LibraryPlan
         do {
-            plan = try edit.plan(in: library, starter: starter, makeID: makeID)
+            plan = try edit.plan(in: library, starter: starter, restBoard: restBoard, makeID: makeID)
         } catch {
             return .failure(.rejected(error))
         }

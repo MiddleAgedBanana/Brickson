@@ -25,6 +25,7 @@ private struct LibraryCategoryContent: View {
     @Binding var path: [SettingsRoute]
 
     @Environment(LibraryModel.self) private var library
+    @Environment(SetupStore.self) private var setup
 
     var body: some View {
         let category = library.category(categoryID)
@@ -83,7 +84,7 @@ private struct LibraryCategoryContent: View {
     /// Why Delete Category is dimmed (Home needs three everyday
     /// categories), or nil where it can ask.
     private var deleteRefusal: String? {
-        library.refusal(of: .deleteCategory(categoryID))
+        library.refusal(of: .deleteCategory(categoryID), restBoard: setup.record.restBoardCategory)
     }
 
     /// What the line at the top can say: a phrase deleted, or the category

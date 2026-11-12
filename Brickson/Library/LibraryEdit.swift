@@ -110,11 +110,16 @@ nonisolated extension LibraryEdit {
     ///   - starter: the bundled starter library. A replace compares against
     ///     it to tell the person's own words from untouched starter phrases;
     ///     without it, every word counts as the person's.
+    ///   - restBoard: the everyday category Home's rest board shows
+    ///     (`SetupRecord.restBoardCategory`), if one was chosen. Home shows
+    ///     it whatever it holds, so, like Emergency, a board already under
+    ///     four phrases is taken no farther under.
     ///   - makeID: makes identities for new categories and phrases. Tests
     ///     pass a predictable one; the app uses random ones.
     func plan(
         in library: LibrarySnapshot,
         starter: LibrarySnapshot? = nil,
+        restBoard: UUID? = nil,
         makeID: () -> UUID = { UUID() }
     ) throws(LibraryEditRejection) -> LibraryPlan {
         guard library.hasUniqueIDs else { throw .libraryNeedsRepair }
@@ -238,25 +243,28 @@ nonisolated extension LibraryEdit {
             throw .libraryNeedsACategory
         }
         // Home has a cell for four everyday categories and needs three
-        // (docs/DECISIONS.md, "Three or four everyday categories"). Only an
-        // edit that crosses a bound is refused, so a damaged or hand-made
-        // store outside them can still be edited back. Import keeps every
-        // word, so a backup that would cross one is refused whole.
+        // (docs/DECISIONS.md, "Three or four everyday categories"). An edit
+        // may leave a library outside them only where it was already as
+        // far out: one that crosses a bound, or takes a damaged or
+        // hand-made store farther out, is refused, and any other edit is
+        // made, so such a store can still be edited back. Import keeps
+        // every word, so a backup that would do either is refused whole.
         let everydayBefore = library.everydayCategoryCount
         let everydayAfter = after.everydayCategoryCount
-        if everydayBefore <= LibraryRules.mostEverydayCategories && everydayAfter > LibraryRules.mostEverydayCategories {
+        if everydayAfter > LibraryRules.mostEverydayCategories && everydayAfter > everydayBefore {
             throw .homeHasRoomForFour
         }
-        if everydayBefore >= LibraryRules.fewestEverydayCategories && everydayAfter < LibraryRules.fewestEverydayCategories {
+        if everydayAfter < LibraryRules.fewestEverydayCategories && everydayAfter < everydayBefore {
             throw .homeNeedsThree
         }
         // Four phrases in every category (docs/DECISIONS.md, "Four phrases
         // in every category"): a category with fewer leaves empty cells in
         // Home's top row, where a resting look meets the controls above.
-        // As above, only an edit that crosses the bound is refused: a new
-        // category starts with none and is dimmed on Home until it has
-        // four, and a library already under it can still be edited.
-        try Self.keepsFour(from: library, to: after)
+        // A new category starts with none and is dimmed on Home until it
+        // has four, so for an everyday category only crossing the bound is
+        // refused. Emergency and the rest board, which Home shows whatever
+        // they hold, are also taken no farther under it.
+        try Self.keepsFour(from: library, to: after, restBoard: restBoard)
         guard after.hasUniqueIDs else { throw .libraryNeedsRepair }
 
         return LibraryPlan(
@@ -273,19 +281,29 @@ nonisolated extension LibraryEdit {
 nonisolated extension LibraryEdit {
     /// Refuses a change that takes a category, matched by identity (or
     /// Emergency, by its flag), from `LibraryRules.fewestPhrases` phrases
-    /// or more to fewer, or that leaves Home no everyday category to offer
-    /// where it had one.
-    static func keepsFour(from library: LibrarySnapshot, to after: LibrarySnapshot) throws(LibraryEditRejection) {
+    /// or more to fewer; that takes Emergency, or the everyday category
+    /// `restBoard` names, from fewer to fewer still; or that leaves Home no
+    /// everyday category to offer where it had one.
+    static func keepsFour(
+        from library: LibrarySnapshot,
+        to after: LibrarySnapshot,
+        restBoard: UUID?
+    ) throws(LibraryEditRejection) {
         let fewest = LibraryRules.fewestPhrases
         if let before = library.categories.first(where: \.isEmergency)?.phrases.count,
            let now = after.categories.first(where: \.isEmergency)?.phrases.count,
-           before >= fewest, now < fewest {
-            throw .emergencyKeepsFour
+           now < fewest, now < before {
+            throw before >= fewest ? .emergencyKeepsFour : .emergencyShortOfFour
         }
         for category in after.categories where !category.isEmergency && category.phrases.count < fewest {
-            let before = library.categories.first { $0.id == category.id && !$0.isEmergency }
-            if let before, before.phrases.count >= fewest {
+            guard let before = library.categories.first(where: { $0.id == category.id && !$0.isEmergency }) else {
+                continue
+            }
+            if before.phrases.count >= fewest {
                 throw .categoryKeepsFour
+            }
+            if category.id == restBoard && category.phrases.count < before.phrases.count {
+                throw .restBoardShortOfFour
             }
         }
         if library.offeredEverydayCategoryCount > 0 && after.offeredEverydayCategoryCount == 0 {
