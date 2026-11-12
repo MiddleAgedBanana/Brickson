@@ -227,6 +227,12 @@ nonisolated enum LibraryEditRejection: Error, Equatable, Sendable {
     /// The edit would leave no everyday category with four phrases, so
     /// Home would offer none.
     case homeNeedsAFullCategory
+    /// Emergency already has fewer than four phrases, and the edit would
+    /// leave it fewer still.
+    case emergencyShortOfFour
+    /// The everyday category Home's rest board shows already has fewer
+    /// than four phrases, and the edit would leave it fewer still.
+    case restBoardShortOfFour
     /// The category or phrase is no longer in the library.
     case notFound
     /// Two items in the stored library share an identity, so an edit
@@ -265,6 +271,10 @@ nonisolated enum LibraryEditRejection: Error, Equatable, Sendable {
             String(localized: "Emergency keeps at least four phrases, so Home never shows it with empty spaces. Change a phrase's words instead, or add a phrase first.")
         case .homeNeedsAFullCategory:
             String(localized: "Home needs at least one category besides Emergency with four phrases, and this would leave none.")
+        case .emergencyShortOfFour:
+            String(localized: "Emergency has fewer than four phrases, so Home shows it with empty spaces, and this would make more of them. Change a phrase's words instead, or add phrases first.")
+        case .restBoardShortOfFour:
+            String(localized: "Home's rest board has fewer than four phrases, so Home shows it with empty spaces, and this would make more of them. Change a phrase's words instead, or add phrases first.")
         case .notFound:
             String(localized: "This was changed or deleted somewhere else. Go back and try again.")
         case .libraryNeedsRepair:

@@ -116,7 +116,7 @@ private struct LibraryDeleteContent: View {
     /// Why Delete for Good is dimmed, or nil where it can delete. Once the
     /// item is deleted, nothing: the line says what was done.
     private var refusal: String? {
-        isDone ? nil : library.refusal(of: change)
+        isDone ? nil : library.refusal(of: change, restBoard: setup.record.restBoardCategory)
     }
 
     private var question: String {
@@ -146,7 +146,7 @@ private struct LibraryDeleteContent: View {
         case .phrase(let id): categoryID = library.phrase(id)?.category.id
         case .category: categoryID = nil
         }
-        switch library.perform(change, in: modelContext.container) {
+        switch library.perform(change, in: modelContext.container, restBoard: setup.record.restBoardCategory) {
         case .saved:
             isDone = true
             result = line
@@ -193,6 +193,7 @@ private struct LibraryMoveContent: View {
     @Binding var path: [SettingsRoute]
 
     @Environment(LibraryModel.self) private var library
+    @Environment(SetupStore.self) private var setup
     @Environment(SettingsActivity.self) private var activity: SettingsActivity?
     @Environment(\.modelContext) private var modelContext
     @State private var result: String?
@@ -286,7 +287,7 @@ private struct LibraryMoveContent: View {
         case .category(let id):
             change = .moveCategory(id, before: place.before)
         }
-        switch library.perform(change, in: modelContext.container) {
+        switch library.perform(change, in: modelContext.container, restBoard: setup.record.restBoardCategory) {
         case .saved(let plan):
             result = plan.changes.isEmpty ? String(localized: "It's already there.") : String(localized: "Moved.")
         case .refused(let reason):
@@ -319,6 +320,7 @@ private struct LibraryPictureContent: View {
     @Binding var path: [SettingsRoute]
 
     @Environment(LibraryModel.self) private var library
+    @Environment(SetupStore.self) private var setup
     @Environment(SettingsActivity.self) private var activity: SettingsActivity?
     @Environment(\.modelContext) private var modelContext
     @State private var result: String?
@@ -377,7 +379,9 @@ private struct LibraryPictureContent: View {
 
     private func choose(_ symbol: String) {
         activity?.recordActivity()
-        switch library.perform(.changeCategorySymbol(categoryID, symbolName: symbol), in: modelContext.container) {
+        switch library.perform(
+            .changeCategorySymbol(categoryID, symbolName: symbol), in: modelContext.container, restBoard: setup.record.restBoardCategory
+        ) {
         case .saved:
             result = String(localized: "Saved.")
         case .refused(let reason):

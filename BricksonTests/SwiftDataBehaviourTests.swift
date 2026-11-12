@@ -175,7 +175,7 @@ struct SwiftDataBehaviourTests {
         try await settle { probe.basics == ["Hello.", "Thank you.", "Goodbye."] && probe.needs == ["I'm thirsty."] }
         #expect(probe.needs == ["I'm thirsty."])
 
-        let outcome = LibraryModel().perform(.movePhrase(F.id(103), category: F.needsID, before: nil), in: container)
+        let outcome = LibraryModel().perform(.movePhrase(F.id(103), category: F.needsID, before: nil), in: container, restBoard: nil)
         guard case .saved = outcome else {
             Issue.record("the move was refused: \(outcome)")
             return

@@ -75,10 +75,15 @@ final class LibraryModel {
     /// Plans `edit` against the library as stored now and writes it in one
     /// save, or changes nothing and says why. It reads the store as
     /// `refresh` does, so a read that fails here keeps no library either.
+    ///
+    /// - Parameter restBoard: the category Home's rest board shows
+    ///   (`SetupRecord.restBoardCategory`), read as the change is made,
+    ///   because Home shows it whatever it holds (`LibraryEdit.plan`).
     @discardableResult
     func perform(
         _ edit: LibraryEdit,
         in container: ModelContainer,
+        restBoard: UUID?,
         read: @MainActor (ModelContainer) throws(LibraryEditError) -> LibrarySnapshot = LibraryEditor.read
     ) -> Outcome {
         refresh(container, read: read)
@@ -87,7 +92,7 @@ final class LibraryModel {
         }
         let plan: LibraryPlan
         do {
-            plan = try edit.plan(in: library, starter: starter)
+            plan = try edit.plan(in: library, starter: starter, restBoard: restBoard)
         } catch {
             return .refused(error.message)
         }
@@ -135,11 +140,12 @@ final class LibraryModel {
 
     /// Why `edit` would be refused on the library as last read, or nil
     /// where it would not: a control that would only be refused is dimmed
-    /// in place, with this reason beside it.
-    func refusal(of edit: LibraryEdit) -> String? {
+    /// in place, with this reason beside it. `restBoard` is as for
+    /// `perform`.
+    func refusal(of edit: LibraryEdit, restBoard: UUID?) -> String? {
         guard let snapshot else { return readFailure }
         do {
-            _ = try edit.plan(in: snapshot, starter: starter)
+            _ = try edit.plan(in: snapshot, starter: starter, restBoard: restBoard)
             return nil
         } catch {
             return error.message

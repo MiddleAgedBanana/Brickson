@@ -63,7 +63,7 @@ struct RestoreChoicesTests {
     private typealias F = LibraryFixtures
 
     private func choices(_ backup: LibrarySnapshot, starter: LibrarySnapshot? = nil) -> RestoreChoices {
-        RestoreChoices(backup: backup, library: F.library, starter: starter, makeID: SequentialIDs().make)
+        RestoreChoices(backup: backup, library: F.library, starter: starter, restBoard: nil, makeID: SequentialIDs().make)
     }
 
     private static let family = LibrarySnapshot.Category(
@@ -74,7 +74,9 @@ struct RestoreChoicesTests {
     /// Fails if Add stops adding what the backup brings, or Replace may
     /// remove words the person wrote (here every word counts as theirs).
     @Test func addAddsAndReplaceKeepsThePersonsWords() throws {
-        let backup = LibrarySnapshot(categories: [F.emergency, Self.family])
+        // Two everyday categories, as `F.library` has: a replace takes it no
+        // farther under three ("Three or four everyday categories").
+        let backup = LibrarySnapshot(categories: [F.emergency, F.needs, Self.family])
         let choices = choices(backup)
         let add = try choices.add.get()
         #expect(add.changes.categoriesAdded == 1)
@@ -102,7 +104,7 @@ struct RestoreChoicesTests {
     @Test func aBackupHomeCannotShowIsRefusedWhole() {
         var wide = Self.family
         wide.name = "Entertainment"
-        let tooWide = choices(LibrarySnapshot(categories: [F.emergency, wide]), starter: F.library)
+        let tooWide = choices(LibrarySnapshot(categories: [F.emergency, F.needs, wide]), starter: F.library)
         #expect(tooWide.add == .failure(.nameTooWide("Entertainment")))
         #expect(tooWide.replace == .failure(.nameTooWide("Entertainment")))
 

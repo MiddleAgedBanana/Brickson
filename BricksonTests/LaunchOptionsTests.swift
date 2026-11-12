@@ -166,7 +166,7 @@ struct LaunchOptionsTests {
         #expect(changes.categoriesChanged == 0 && changes.categoriesMoved == 0)
         let everyday = try #require(backup.categories.first { !$0.isEmergency })
         #expect(everyday.phrases.last?.text == LaunchOptions.samplePhrase)
-        let choices = RestoreChoices(backup: backup, library: starter, starter: starter)
+        let choices = RestoreChoices(backup: backup, library: starter, starter: starter, restBoard: nil)
         #expect(try choices.add.get().changes.phrasesAdded == 1)
         #expect(try choices.replace.get().changes.phrasesRemoved == 0)
     }
