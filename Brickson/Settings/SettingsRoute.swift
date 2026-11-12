@@ -9,7 +9,9 @@ import Foundation
 /// (docs/DECISIONS.md, "The Library in Settings").
 nonisolated enum SettingsRoute: Hashable, Sendable {
     case familySetup
-    case guidedSetup(GuidedSetupStep)
+    /// A step of Set Up Step by Step, and the control the steps were opened
+    /// with, whose place the first step's Learn About Each Way takes.
+    case guidedSetup(GuidedSetupStep, from: GuidedSetupEntry = .setUpStepByStep)
     case voice
     case reachingTheScreen
     case keepOpen
@@ -45,6 +47,24 @@ nonisolated enum SettingsRoute: Hashable, Sendable {
             false
         }
     }
+}
+
+/// The control Set Up Step by Step was opened with. The first step's Learn
+/// About Each Way takes its place as Family Setup drew it, so a look still
+/// resting there meets a control that only opens the guide, and the
+/// answers start below every place a look can be resting on the way in
+/// (`SetupAnswersPlace.arrivals(from:homesSettings:rootRow:opener:checkInRows:)`;
+/// docs/DECISIONS.md, "The first step's own rows").
+nonisolated enum GuidedSetupEntry: Hashable, Sendable {
+    /// Family Setup's Set Up Step by Step.
+    case setUpStepByStep
+    /// Family Setup's Set Up Step by Step, once the check-in card was
+    /// answered in its place on the same visit: a look can then be resting
+    /// where the card's rows were, over the passive words that keep their
+    /// place.
+    case setUpStepByStepAfterTheCheckIn
+    /// The check-in card's Go Through Setup Again.
+    case checkIn
 }
 
 /// The steps of Set Up Step by Step, in order.

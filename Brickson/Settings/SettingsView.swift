@@ -126,8 +126,8 @@ struct SettingsView: View {
         switch route {
         case .familySetup:
             FamilySetupView(path: $path)
-        case .guidedSetup(let step):
-            GuidedSetupView(step: step, path: $path)
+        case .guidedSetup(let step, let entry):
+            GuidedSetupView(step: step, entry: entry, path: $path)
         case .voice:
             VoiceSettingsView()
         case .reachingTheScreen:
@@ -287,19 +287,34 @@ struct SettingsAudioStatus: View {
     }
 }
 
-/// The root's Family Setup row and Family Setup's Set Up Step by Step as
-/// drawn, their button style's insets included, each in its screen's
-/// content (`SettingsMetrics.contentSpace`). Set Up Step by Step takes the
-/// root row's place, at least as tall, and the first step's Learn About
-/// Each Way takes Set Up Step by Step's, so a look still resting where a
-/// row was meets a control that only opens the next screen (AGENTS.md,
-/// invariant 10; docs/DECISIONS.md, "Settings' first row, placed from
-/// Home's frames", "The first step's own rows"). They are measured,
-/// because the style's insets are the system's, not ours.
+/// The root's Family Setup row, Family Setup's Set Up Step by Step and the
+/// check-in card's Go Through Setup Again as drawn, their button style's
+/// insets included, each in its screen's content
+/// (`SettingsMetrics.contentSpace`). Set Up Step by Step takes the root
+/// row's place, at least as tall, and the first step's Learn About Each Way
+/// takes the place of whichever of the other two opened it, so a look still
+/// resting where a row was meets a control that only opens the next screen
+/// (AGENTS.md, invariant 10; docs/DECISIONS.md, "Settings' first row,
+/// placed from Home's frames", "The first step's own rows"). They are
+/// measured, because the style's insets are the system's, not ours.
 @Observable
 final class SettingsLanding {
     var rootRow: CGRect?
     var guidedRow: CGRect?
+    var goThroughRow: CGRect?
+    /// The check-in card's three rows together, from Go Through Setup
+    /// Again's top to Stop Asking's foot, while the card or the words that
+    /// keep its place show.
+    var checkInRows: CGRect?
+
+    /// Where the first step's Learn About Each Way goes when the steps were
+    /// opened from `entry`; nil until that control has been drawn.
+    func opener(_ entry: GuidedSetupEntry) -> CGRect? {
+        switch entry {
+        case .setUpStepByStep, .setUpStepByStepAfterTheCheckIn: guidedRow
+        case .checkIn: goThroughRow
+        }
+    }
 }
 
 /// Settings' first screen: one large way into Family Setup, and a short

@@ -23,6 +23,7 @@ final class SettingsTests: XCTestCase {
     private func openSettings(
         textSize: UITestTextSize = .large,
         appearance: UITestAppearance = .light,
+        storage: UITestStorage = .fresh,
         shortTimeouts: Bool = false,
         arguments: [String] = [],
         file: StaticString = #filePath,
@@ -31,6 +32,7 @@ final class SettingsTests: XCTestCase {
         let app = launchedApp(
             textSize: textSize,
             appearance: appearance,
+            storage: storage,
             arguments: ["--screen=settings"] + arguments,
             shortTimeouts: shortTimeouts,
             waitsForHome: false,
@@ -185,6 +187,127 @@ final class SettingsTests: XCTestCase {
                 first.frame.minY, link.frame.maxY + 16 - 1, "the first answer starts too near Learn About Each Way (\(context))"
             )
         }
+    }
+
+    // MARK: The check-in card
+
+    /// The check-in card's rows, by identifier, with their words.
+    private static let checkInRows = [
+        ("checkInGoThrough", "Go Through Setup Again"), ("checkInNotNow", "Not Now"), ("checkInStopAsking", "Stop Asking"),
+    ]
+
+    /// Drags Family Setup's content a little at a time, from the gutter
+    /// at the trailing side of its rows so no row is touched and the edge
+    /// that swipes back is not either, until `element` lies wholly between
+    /// the navigation bar and the foot of the content.
+    @MainActor
+    private func scrollIntoView(_ element: XCUIElement, in app: XCUIApplication, title: String, context: String) {
+        let scroll = app.scrollViews.containing(.button, identifier: "library").firstMatch
+        let bar = app.navigationBars[title]
+        for _ in 0..<40 {
+            let frame = element.frame
+            let (top, bottom) = (bar.frame.maxY, scroll.frame.maxY)
+            if frame.minY >= top && frame.maxY <= bottom { return }
+            let (from, to): (CGFloat, CGFloat) = frame.maxY > bottom ? (0.75, 0.6) : (0.6, 0.75)
+            let gutter = scroll.coordinate(withNormalizedOffset: .zero)
+            let x = scroll.frame.width - 6
+            gutter.withOffset(CGVector(dx: x, dy: scroll.frame.height * from)).press(
+                forDuration: 0.1, thenDragTo: gutter.withOffset(CGVector(dx: x, dy: scroll.frame.height * to)),
+                withVelocity: .slow, thenHoldForDuration: 0.1
+            )
+        }
+        XCTFail("\(element.identifier) did not scroll into view at \(element.frame) (\(context))")
+    }
+
+    /// Family Setup's check-in card (`--check-in-due`), at the default text
+    /// size, light and dark, and at the largest. Fails if a row of the card
+    /// is missing, less than 44 points tall, or not across the content as
+    /// Phrases and Categories is; if a row's words are not each drawn whole
+    /// once the row is scrolled wholly into view (`RenderedWords`, without
+    /// the expected words or language correction); or if Apple's
+    /// accessibility audit finds anything with the card's rows in view.
+    /// When Not Now and Stop Asking shared a row, each had about 111 points
+    /// for its words at the largest size on CI's iPhone 17, where "Asking"
+    /// is about 170 wide and "Stop" and "Now" about 115 (SF Pro Semibold at
+    /// 55 points), so each broke mid-word.
+    @MainActor
+    func testTheCheckInCardDrawsItsWordsWholeAndPassesTheAudit() async throws {
+        continueAfterFailure = true
+        for (textSize, appearance) in [(UITestTextSize.large, UITestAppearance.light), (.large, .dark), (.ax5, .light)] {
+            let app = openSettings(textSize: textSize, appearance: appearance, arguments: ["--check-in-due"])
+            let context = "the check-in card, \(textSize.name), \(appearance.rawValue)"
+            open("familySetup", in: app, waitingFor: "Family Setup")
+            let library = app.buttons["library"]
+            XCTAssertTrue(library.waitForExistence(timeout: 10), "Phrases and Categories is missing (\(context))")
+            for (identifier, label) in Self.checkInRows {
+                let row = app.buttons[identifier]
+                XCTAssertTrue(row.waitForExistence(timeout: 10), "\(identifier) is missing (\(context))")
+                guard row.exists else { continue }
+                scrollIntoView(row, in: app, title: "Family Setup", context: context)
+                XCTAssertGreaterThanOrEqual(row.frame.height, 44, "\(identifier) at \(row.frame) (\(context))")
+                XCTAssertEqual(row.frame.minX, library.frame.minX, accuracy: 1, "\(identifier) is not across the content (\(context))")
+                XCTAssertEqual(row.frame.width, library.frame.width, accuracy: 1, "\(identifier) is not across the content (\(context))")
+                let screenshot = row.screenshot()
+                let attachment = XCTAttachment(screenshot: screenshot)
+                attachment.name = "\(context), \(identifier)"
+                attachment.lifetime = .keepAlways
+                add(attachment)
+                let image = try XCTUnwrap(screenshot.image.cgImage)
+                let words = try await RenderedWords.read(image)
+                // Each word whole: a row's words may take several lines.
+                XCTAssertTrue(
+                    label.split(separator: " ").allSatisfy { RenderedWords.show(String($0), in: words) },
+                    "Rendered \(label) is unreadable (\(context)); recognized \(words)"
+                )
+            }
+            attachCapture(app, name: context)
+            try assertPassesAccessibilityAudit(app, context: context)
+        }
+    }
+
+    /// Stop Asking and Not Now, at the default text size. Fails if a row of
+    /// the card is still there once it is answered, if the words saying
+    /// what happens next do not show, or if any of Family Setup's rows
+    /// moves (each measured from Set Up Step by Step, so scrolling to reach
+    /// a row does not count): rows moving up under the button just chosen
+    /// could be opened by a held look (invariant 10). After Not Now, fails
+    /// if the next launch shows the card or its words again.
+    @MainActor
+    func testAnsweringTheCheckInKeepsItsPlace() {
+        continueAfterFailure = true
+        let others = ["library", "voiceSettings", "reachingTheScreen", "keepOpen", "about"]
+        for (identifier, afterword) in [
+            ("checkInStopAsking", "Check-ins are off. Set Up Step by Step is always here."),
+            ("checkInNotNow", "Family Setup will ask again in 30 days."),
+        ] {
+            let app = openSettings(arguments: ["--check-in-due"])
+            let context = "\(identifier), default text"
+            open("familySetup", in: app, waitingFor: "Family Setup")
+            let guided = app.buttons["guidedSetup"]
+            XCTAssertTrue(guided.waitForExistence(timeout: 10), "guidedSetup is missing (\(context))")
+            func offsets() -> [String: CGFloat] {
+                Dictionary(uniqueKeysWithValues: others.map { ($0, app.buttons[$0].frame.minY - guided.frame.minY) })
+            }
+            let before = offsets()
+            app.buttons[identifier].tap()
+            XCTAssertTrue(app.staticTexts[afterword].waitForExistence(timeout: 10), "\(afterword) did not show (\(context))")
+            attachCapture(app, name: context)
+            for (row, _) in Self.checkInRows {
+                XCTAssertFalse(app.buttons[row].exists, "\(row) is still there once the check-in was answered (\(context))")
+            }
+            for (name, offset) in offsets() {
+                XCTAssertEqual(offset, before[name] ?? .nan, accuracy: 1, "\(name) moved once the check-in was answered (\(context))")
+            }
+        }
+
+        // The answer is kept: launched again without making a check-in due.
+        let again = openSettings(storage: .kept)
+        open("familySetup", in: again, waitingFor: "Family Setup")
+        XCTAssertTrue(again.buttons["library"].waitForExistence(timeout: 10), "Family Setup did not open again")
+        XCTAssertFalse(again.buttons["checkInGoThrough"].exists, "the check-in card came back the next launch after Not Now")
+        XCTAssertFalse(
+            again.staticTexts["Family Setup will ask again in 30 days."].exists, "Not Now's words came back the next launch"
+        )
     }
 
     /// App Review Guideline 5.1.1(i): the policy is inside the app. It is

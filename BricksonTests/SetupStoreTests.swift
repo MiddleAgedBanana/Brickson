@@ -141,8 +141,10 @@ struct SetupStoreTests {
     // MARK: Go Through Setup Again
 
     /// The check-in card's Go Through Setup Again answers the check-in,
-    /// with the answers as they are, and only then opens the first step.
-    /// Fails if it opens anything else, or if the answer is not kept.
+    /// with the answers as they are, and only then opens the first step,
+    /// from the card, so the step's Learn About Each Way takes the button's
+    /// place. Fails if it opens anything else, opens the first step as Set
+    /// Up Step by Step does, or if the answer is not kept.
     @Test func goingThroughSetupAgainAnswersTheCheckInThenOpensTheFirstStep() {
         let defaults = makeDefaults()
         let store = SetupStore(defaults: defaults, now: launch)
@@ -152,7 +154,8 @@ struct SetupStoreTests {
 
         store.goThroughSetupAgain(path: &path, now: due)
 
-        #expect(path == [.familySetup, .guidedSetup(.access)])
+        #expect(path == [.familySetup, .guidedSetup(.access, from: .checkIn)])
+        #expect(path.last != .guidedSetup(.access))
         #expect(store.record.accessMethods == [.eyeTracking])
         #expect(store.record.answeredAt == due)
         #expect(store.issue == nil)

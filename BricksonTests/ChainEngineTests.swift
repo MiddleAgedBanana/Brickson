@@ -610,7 +610,8 @@ struct SettingsChainsTests {
         root: [(SettingsChains.backToTalking, backToTalking), (SettingsChains.familySetupRow, CGRect(x: 16, y: 236, width: 370, height: 110))],
         familySetup: [
             (SettingsChains.backToTalking, backToTalking), (SettingsChains.back, back),
-            (SettingsChains.guidedSetupRow, row(362)), ("voiceSettings", row(456)),
+            (SettingsChains.guidedSetupRow, row(362)), (SettingsChains.checkInGoThrough, row(550)),
+            (SettingsChains.checkInNotNow, row(644)), (SettingsChains.checkInStopAsking, row(738)), ("voiceSettings", row(832)),
         ],
         firstStep: [
             (SettingsChains.backToTalking, backToTalking), (SettingsChains.back, back),
@@ -621,6 +622,16 @@ struct SettingsChainsTests {
         secondStep: [
             (SettingsChains.backToTalking, backToTalking), (SettingsChains.back, back),
             ("restBoardEveryCategory", row(362)), ("restBoardCategory", row(456)), ("restBoardCategory", row(550)),
+            (SettingsChains.firstStepNext, CGRect(x: 0, y: 694.3, width: 402, height: 110)),
+        ],
+        firstStepFromCheckIn: [
+            (SettingsChains.backToTalking, backToTalking), (SettingsChains.back, back),
+            (SettingsChains.learnAboutEachWay, row(550)), ("Touch", row(760)),
+            (SettingsChains.firstStepNext, CGRect(x: 0, y: 694.3, width: 402, height: 110)),
+        ],
+        firstStepAfterCheckIn: [
+            (SettingsChains.backToTalking, backToTalking), (SettingsChains.back, back),
+            (SettingsChains.learnAboutEachWay, row(362)), ("Touch", row(850)),
             (SettingsChains.firstStepNext, CGRect(x: 0, y: 694.3, width: 402, height: 110)),
         ]
     )
@@ -635,7 +646,14 @@ struct SettingsChainsTests {
     /// answer, the guide's Done stops returning to the first step, or, on
     /// the second step, Back stops returning to the first step, Next stops
     /// leading on to the third, or a choice of which phrases Home shows
-    /// stops counting as saving one.
+    /// stops counting as saving one; or if a row of the check-in card stops
+    /// counting as saving an answer to it, Go Through Setup Again stops
+    /// opening the first step from the card, Not Now or Stop Asking stops
+    /// leaving Family Setup with the card's rows gone and the rest in their
+    /// places, Set Up Step by Step there stops opening the first step after
+    /// the check-in, or the first step from the card or after it, its guide
+    /// and its second step stop leading back to each other and to Family
+    /// Setup with the check-in answered.
     @Test func eachControlDoesWhatSettingsDoes() {
         let built = SettingsChains.map(Self.screens, closingOnto: Self.home)
         #expect(built.unknown.isEmpty)
@@ -669,6 +687,58 @@ struct SettingsChainsTests {
         let choices = (built.map.states[SettingsChains.secondStep] ?? []).filter { $0.name.hasPrefix("restBoard") }
         #expect(choices.count == 3)
         #expect(choices.allSatisfy { $0.effect == .changesData && $0.leadsTo == nil })
+
+        #expect(familySetup[SettingsChains.checkInGoThrough]?.effect == .changesData)
+        #expect(familySetup[SettingsChains.checkInGoThrough]?.leadsTo == SettingsChains.firstStepFromCheckIn)
+        for row in [SettingsChains.checkInNotNow, SettingsChains.checkInStopAsking] {
+            #expect(familySetup[row]?.effect == .changesData)
+            #expect(familySetup[row]?.leadsTo == SettingsChains.familySetupAfterCheckIn)
+        }
+        let answered = Self.controls(built.map, SettingsChains.familySetupAfterCheckIn)
+        let kept = (built.map.states[SettingsChains.familySetup] ?? []).filter { !SettingsChains.checkInRows.contains($0.name) }
+        #expect((built.map.states[SettingsChains.familySetupAfterCheckIn] ?? []).map(\.name) == kept.map(\.name))
+        #expect((built.map.states[SettingsChains.familySetupAfterCheckIn] ?? []).map(\.frame) == kept.map(\.frame))
+        #expect(answered.count == 4)
+        #expect(answered[SettingsChains.guidedSetupRow]?.leadsTo == SettingsChains.firstStepAfterCheckIn)
+        #expect(answered[SettingsChains.back]?.leadsTo == SettingsChains.root)
+        #expect(answered["voiceSettings"]?.leadsTo == "voiceSettings")
+        for (step, guide, second) in [
+            (SettingsChains.firstStepFromCheckIn, SettingsChains.eachWayFromCheckIn, SettingsChains.secondStepFromCheckIn),
+            (SettingsChains.firstStepAfterCheckIn, SettingsChains.eachWayAfterCheckIn, SettingsChains.secondStepAfterCheckIn),
+        ] {
+            let first = Self.controls(built.map, step)
+            #expect(first[SettingsChains.backToTalking]?.leadsTo == Self.home, "\(step)")
+            #expect(first[SettingsChains.back]?.leadsTo == SettingsChains.familySetupAfterCheckIn, "\(step)")
+            #expect(first[SettingsChains.learnAboutEachWay]?.leadsTo == guide, "\(step)")
+            #expect(first[SettingsChains.learnAboutEachWay]?.effect == .navigates, "\(step)")
+            #expect(first["Touch"]?.effect == .changesData, "\(step)")
+            #expect(first[SettingsChains.firstStepNext]?.leadsTo == second, "\(step)")
+            let cover = Self.controls(built.map, guide)
+            #expect(cover.count == 1, "\(guide)")
+            #expect(cover[SettingsChains.eachWayDone]?.leadsTo == step, "\(guide)")
+            let next = Self.controls(built.map, second)
+            #expect(next[SettingsChains.back]?.leadsTo == step, "\(second)")
+            #expect(next[SettingsChains.firstStepNext]?.leadsTo == SettingsChains.thirdStep, "\(second)")
+            #expect(
+                (built.map.states[second] ?? []).map(\.frame) == (built.map.states[SettingsChains.secondStep] ?? []).map(\.frame),
+                "\(second)"
+            )
+        }
+
+        // Without the card or the steps from it and after it, none is in
+        // the map.
+        var withoutTheCard = Self.screens
+        withoutTheCard.familySetup = withoutTheCard.familySetup?.filter { !SettingsChains.checkInRows.contains($0.name) }
+        withoutTheCard.firstStepFromCheckIn = nil
+        withoutTheCard.firstStepAfterCheckIn = nil
+        let plain = SettingsChains.map(withoutTheCard, closingOnto: Self.home).map
+        for state in [
+            SettingsChains.familySetupAfterCheckIn, SettingsChains.firstStepFromCheckIn, SettingsChains.eachWayFromCheckIn,
+            SettingsChains.secondStepFromCheckIn, SettingsChains.firstStepAfterCheckIn, SettingsChains.eachWayAfterCheckIn,
+            SettingsChains.secondStepAfterCheckIn,
+        ] {
+            #expect(plain.states[state] == nil, "\(state)")
+        }
     }
 
     /// Fails if the starts through Settings stop being what filtering every
@@ -688,6 +758,9 @@ struct SettingsChainsTests {
         let map = home.merging(SettingsChains.map(Self.screens, closingOnto: Self.home).map)
         let screens: Set = [
             SettingsChains.root, SettingsChains.familySetup, SettingsChains.firstStep, SettingsChains.eachWay, SettingsChains.secondStep,
+            SettingsChains.familySetupAfterCheckIn, SettingsChains.firstStepFromCheckIn, SettingsChains.eachWayFromCheckIn,
+            SettingsChains.secondStepFromCheckIn, SettingsChains.firstStepAfterCheckIn, SettingsChains.eachWayAfterCheckIn,
+            SettingsChains.secondStepAfterCheckIn,
         ]
         #expect(SettingsChains.screens == screens)
         let starts = SettingsChains.starts(in: map, home: Self.home)
@@ -707,6 +780,8 @@ struct SettingsChainsTests {
         screens.root.append(("somethingNew", Self.row(400)))
         screens.familySetup?.append(("anotherNew", Self.row(550)))
         screens.firstStep = nil
+        screens.firstStepFromCheckIn = nil
+        screens.firstStepAfterCheckIn = nil
         screens.eachWay?.append(("Open Dwell Control Settings", Self.row(600)))
         screens.secondStep?.append(("somethingElse", Self.row(644)))
         let built = SettingsChains.map(screens, closingOnto: Self.home)
@@ -743,8 +818,15 @@ struct SettingsChainsTests {
             )
         }
         #expect(SettingsChains.kind(of: chain(SettingsChains.firstStep, answer, .staysOnControl)) == .savesAnAnswer)
+        #expect(SettingsChains.kind(of: chain(SettingsChains.firstStepFromCheckIn, answer, .staysOnControl)) == .savesAnAnswer)
+        #expect(SettingsChains.kind(of: chain(SettingsChains.firstStepAfterCheckIn, answer, .staysOnControl)) == .savesAnAnswer)
         let choice = ChainControl("restBoardCategory", Self.row(456), .changesData)
         #expect(SettingsChains.kind(of: chain(SettingsChains.secondStep, choice, .returnsToLook)) == .savesAnAnswer)
+        #expect(SettingsChains.kind(of: chain(SettingsChains.secondStepFromCheckIn, choice, .returnsToLook)) == .savesAnAnswer)
+        #expect(SettingsChains.kind(of: chain(SettingsChains.secondStepAfterCheckIn, choice, .returnsToLook)) == .savesAnAnswer)
+        // A check-in answered unasked is new.
+        let notNow = ChainControl(SettingsChains.checkInNotNow, Self.row(644), .changesData)
+        #expect(SettingsChains.kind(of: chain(SettingsChains.familySetup, notNow, .returnsToLook)) == .unexpected)
         #expect(SettingsChains.kind(of: chain(Self.home, tile, .returnsToLook)) == .closesUnderTheLook)
         #expect(SettingsChains.kind(of: chain(Self.home, tile, .staysOnControl)) == .unexpected)
         #expect(SettingsChains.kind(of: chain(Self.home, tile, .returnsToLook, .settles)) == nil)
@@ -792,6 +874,8 @@ struct SettingsChainsTests {
             (SettingsChains.firstStepNext, CGRect(x: 0, y: 694.3, width: 402, height: 110)),
         ]
         screens.eachWay = nil
+        screens.firstStepFromCheckIn = nil
+        screens.firstStepAfterCheckIn = nil
         let settings = SettingsChains.map(screens, closingOnto: atRest)
         #expect(settings.unknown.isEmpty)
         let map = home.merging(settings.map)
@@ -909,12 +993,46 @@ struct SettingsChainsTests {
         case cover, pushed
     }
 
+    /// Whether a check-in is due, and how the first steps its card leads
+    /// to are laid out: the one its Go Through Setup Again opens, and the
+    /// one Set Up Step by Step opens once the card is answered.
+    enum CheckIn {
+        case notDue
+        /// As the app lays them out: from the card, Learn About Each Way in
+        /// Go Through Setup Again's place, at least as tall, with the
+        /// answers below it; after it, the answers also clear of where the
+        /// card's rows were.
+        case due
+        /// Both as Set Up Step by Step's first step was laid out before the
+        /// card was answered, as main laid them out before.
+        case dueWithTheStepsAsBefore
+    }
+
     struct Model {
         let map: ChainMap
         let starts: [ChainStart]
         let row: CGRect
         let guided: CGRect
         let firstStep: [(name: String, frame: CGRect)]
+        /// The check-in card's Go Through Setup Again, while a check-in is
+        /// due, the first step it opens and the first step Set Up Step by
+        /// Step opens once the card is answered, as drawn.
+        var goThrough: CGRect? = nil
+        var firstStepFromCheckIn: [(name: String, frame: CGRect)] = []
+        var firstStepAfterCheckIn: [(name: String, frame: CGRect)] = []
+    }
+
+    static let checkInHeading = "Time for a check-in"
+    static let checkInSentence = "Needs can change. Is the screen still reached the same way? Going through setup again takes a few minutes."
+
+    /// The check-in card's words, in its outline across `width`: the
+    /// heading and the sentence modelled as the first step's question and
+    /// sentence are (`SweptFamilySetup`), 12 points apart, with 16 points
+    /// of padding around them.
+    static func checkInWordsHeight(_ width: CGFloat, body: CGFloat) -> CGFloat {
+        let room = width - 32
+        return 16 + SweptFamilySetup.lines(checkInHeading, room: room, size: 1.25 * body) * 1.2 * 1.25 * body + 12
+            + SweptFamilySetup.lines(checkInSentence, room: room, size: body) * 1.2 * body + 16
     }
 
     /// Home's frames from the layout engine in `window`, typing states
@@ -931,7 +1049,19 @@ struct SettingsChainsTests {
     /// `SetupAnswersPlace` puts them, from Home's Settings, the root's row
     /// and Set Up Step by Step. Only what shows in the window is kept, as
     /// the UI test reads it.
-    static func modelled(_ window: ModelledWindow, guide: Guide = .cover) -> Model {
+    ///
+    /// While a check-in is due, the card sits under Set Up Step by Step and
+    /// its words, 16 points down: its words (`checkInWordsHeight`), then Go
+    /// Through Setup Again, Not Now and Stop Asking across the content,
+    /// each as tall as Family Setup's rows, 16 points apart, with Family
+    /// Setup's other rows 16 points under it. The first step it opens puts
+    /// Learn About Each Way in Go Through Setup Again's place, at least as
+    /// tall, with the question beside it, above it or under it, and the
+    /// answers below both and where `SetupAnswersPlace` puts them from Go
+    /// Through Setup Again alone. Once the card is answered, Set Up Step by
+    /// Step's first step has its answers where `SetupAnswersPlace` puts
+    /// them from the card's three rows too.
+    static func modelled(_ window: ModelledWindow, guide: Guide = .cover, checkIn: CheckIn = .notDue) -> Model {
         let layout = HomeLayout(space: .init(size: window.size, safeArea: window.safeArea), text: window.text, modes: .phrasesAndTyping)
         let backToTalking = layout.backToTalking
         let stackTop = backToTalking.maxY + 8
@@ -958,10 +1088,21 @@ struct SettingsChainsTests {
             wordsHeight: { window.words * max(1, content.width / $0) }
         )
         let guided = leadIn.control.offsetBy(dx: content.minX, dy: content.minY)
+        let body = 17 + (50 - 17) * (window.text.categoryLine - 22) / (65 - 22)
+        var card: [(name: String, frame: CGRect)] = []
+        var cardHeight: CGFloat = 0
+        if checkIn != .notDue {
+            var y = content.minY + leadIn.size.height + 16 + Self.checkInWordsHeight(content.width, body: body) + 16
+            for name in [SettingsChains.checkInGoThrough, SettingsChains.checkInNotNow, SettingsChains.checkInStopAsking] {
+                card.append((name, CGRect(x: content.minX, y: y, width: content.width, height: window.familyRow.height)))
+                y += window.familyRow.height + 16
+            }
+            cardHeight = y - (content.minY + leadIn.size.height + 16)
+        }
         let familyRows = ["library", "voiceSettings", "reachingTheScreen", "keepOpen", "callsSiriAndShortcuts", "moreAccessibility", "privacyPolicy", "about"]
             .enumerated().map { index, name in
                 (name, CGRect(
-                    x: content.minX, y: content.minY + leadIn.size.height + 16 + window.familyRow.step * CGFloat(index),
+                    x: content.minX, y: content.minY + leadIn.size.height + 16 + cardHeight + window.familyRow.step * CGFloat(index),
                     width: content.width, height: window.familyRow.height
                 ))
             }
@@ -994,16 +1135,69 @@ struct SettingsChainsTests {
         func onScreen(_ controls: [(name: String, frame: CGRect)]) -> [(name: String, frame: CGRect)] {
             controls.filter { $0.frame.intersects(shown) }
         }
+        let goThrough = card.first?.frame
+        var fromCheckIn: [(name: String, frame: CGRect)] = []
+        var afterCheckIn: [(name: String, frame: CGRect)] = []
+        if let goThrough, let stopAsking = card.last?.frame, checkIn == .due {
+            let rows = goThrough.union(stopAsking)
+            let afterCard = SetupAnswersPlace(
+                arrivals: SetupAnswersPlace.arrivals(
+                    from: .setUpStepByStepAfterTheCheckIn, homesSettings: layout.frame(.settings), rootRow: rootRow, opener: guided,
+                    checkInRows: rows
+                ),
+                link: link, answersMinX: content.minX, answersWidth: content.width, answerHeight: 64, earliest: link.maxY + 16
+            )
+            afterCheckIn = [(SettingsChains.learnAboutEachWay, link)]
+                + Self.answers(
+                    x: content.minX, width: content.width, top: max(content.minY + question.size.height + 16, afterCard.top),
+                    heights: window.answerHeights
+                )
+                + [(SettingsChains.firstStepNext, window.next)]
+            let lead = SettingsLeadIn(
+                width: content.width, spacing: 16,
+                control: SettingsLeadIn.control(
+                    inPlaceOf: goThrough.offsetBy(dx: -content.minX, dy: -content.minY), width: content.width, height: guidedHeight
+                ),
+                besideWidth: window.guidedIdealWidth,
+                wordsHeight: {
+                    window.question * max(1, content.width / $0) + SweptFamilySetup.sizesHeight($0, body: body)
+                }
+            )
+            let learn = lead.control.offsetBy(dx: content.minX, dy: content.minY)
+            let fromCard = SetupAnswersPlace(
+                arrivals: SetupAnswersPlace.arrivals(
+                    from: .checkIn, homesSettings: layout.frame(.settings), rootRow: rootRow, opener: goThrough, checkInRows: rows
+                ),
+                link: goThrough, answersMinX: content.minX, answersWidth: content.width, answerHeight: 64, earliest: goThrough.maxY + 16
+            )
+            fromCheckIn = [(SettingsChains.learnAboutEachWay, learn)]
+                + Self.answers(
+                    x: content.minX, width: content.width, top: max(content.minY + lead.size.height + 16, fromCard.top),
+                    heights: window.answerHeights
+                )
+                + [(SettingsChains.firstStepNext, window.next)]
+        } else if goThrough != nil {
+            fromCheckIn = firstStep
+            afterCheckIn = firstStep
+        }
         let screens = SettingsChains.Screens(
             root: [(SettingsChains.backToTalking, backToTalking), (SettingsChains.familySetupRow, rootRow)],
             familySetup: onScreen(
                 [(SettingsChains.backToTalking, backToTalking), (SettingsChains.back, window.back), (SettingsChains.guidedSetupRow, guided)]
-                    + familyRows
+                    + card + familyRows
             ),
             firstStep: onScreen([(SettingsChains.backToTalking, backToTalking), (SettingsChains.back, window.back)] + firstStep),
             eachWay: guide == .cover
                 ? [(SettingsChains.eachWayDone, backToTalking)]
-                : [(SettingsChains.backToTalking, backToTalking), (SettingsChains.back, window.back)]
+                : [(SettingsChains.backToTalking, backToTalking), (SettingsChains.back, window.back)],
+            // Read only where Go Through Setup Again shows, as the UI test
+            // reads it.
+            firstStepFromCheckIn: goThrough.map { shown.intersects($0) } == true
+                ? onScreen([(SettingsChains.backToTalking, backToTalking), (SettingsChains.back, window.back)] + fromCheckIn)
+                : nil,
+            firstStepAfterCheckIn: goThrough.map { shown.intersects($0) } == true
+                ? onScreen([(SettingsChains.backToTalking, backToTalking), (SettingsChains.back, window.back)] + afterCheckIn)
+                : nil
         )
         let categories = (1...HomeLayout.categoryCapacity).map { "category \($0)" }
         let atRest = HomeChains.name(of: HomeChains.State(), categories: categories)
@@ -1019,7 +1213,8 @@ struct SettingsChainsTests {
         let map = HomeLayoutEngineTests.chainMap(layout, typing: true).merging(settings)
         return Model(
             map: map, starts: SettingsChains.starts(in: map, home: atRest), row: rootRow, guided: guided,
-            firstStep: screens.firstStep ?? []
+            firstStep: screens.firstStep ?? [], goThrough: goThrough, firstStepFromCheckIn: screens.firstStepFromCheckIn ?? [],
+            firstStepAfterCheckIn: screens.firstStepAfterCheckIn ?? []
         )
     }
 
@@ -1063,6 +1258,52 @@ struct SettingsChainsTests {
         let phone = Self.modelled(.phone, guide: .pushed)
         #expect(Self.paths(.closesUnderTheLook, in: phone).contains("choosing learnAboutEachWay → backToTalking (navigates) → getAttention (alarms)"))
         #expect(Self.paths(.closesUnderTheLook, in: Self.modelled(.phone)) == [])
+    }
+
+    /// With a check-in due, on the same windows: fails if any chain through
+    /// Settings, the check-in card's rows and the first steps they lead to
+    /// included, closes Settings under the look, meets anything new, a
+    /// check-in answered unasked among them, or saves an answer
+    /// (docs/DECISIONS.md, "The first step's own rows"); if Learn About
+    /// Each Way stops taking Go Through Setup Again's place on the step it
+    /// opens; or if Go Through Setup Again stops showing, so those steps go
+    /// unscored, on the windows where it shows without scrolling: the
+    /// iPhone 17 and the iPad at the default size.
+    @Test func theCheckInCardsRowsCloseNothingAndSaveNothingUnderTheLook() {
+        var scored: [String] = []
+        for window in ModelledWindow.all {
+            let model = Self.modelled(window, checkIn: .due)
+            let context = "\(window.name), Go Through Setup Again \(String(describing: model.goThrough)), "
+                + "from it \(model.firstStepFromCheckIn), after it \(model.firstStepAfterCheckIn)"
+            #expect(model.goThrough != nil, "\(context)")
+            #expect(Self.paths(.unexpected, in: model) == [], "\(context)")
+            #expect(Self.paths(.closesUnderTheLook, in: model) == [], "\(context)")
+            #expect(Self.paths(.savesAnAnswer, in: model) == [], "\(context)")
+            if !model.firstStepFromCheckIn.isEmpty {
+                scored.append(window.name)
+                let learn = model.firstStepFromCheckIn.first { $0.name == SettingsChains.learnAboutEachWay }?.frame
+                #expect(learn.map { $0.minX == model.goThrough?.minX && $0.minY == model.goThrough?.minY } == true, "\(context)")
+                #expect(learn.map { $0.height >= (model.goThrough?.height ?? .infinity) } == true, "\(context)")
+                #expect(!model.firstStepAfterCheckIn.isEmpty, "\(context)")
+            }
+        }
+        #expect(Set(["iPhone 17", "iPad portrait", "iPad landscape"]).isSubset(of: scored), "\(scored)")
+    }
+
+    /// Why the first steps the check-in card leads to are laid out as they
+    /// are (docs/DECISIONS.md, "The first step's own rows"). Laid out as
+    /// Set Up Step by Step's first step was before the card was answered,
+    /// a held look on the phone saves an answer two ways: one that chose Go
+    /// Through Setup Again rests over an answer of the step it opens; and
+    /// one that chose Not Now rests over the words that keep the card's
+    /// place, meets Set Up Step by Step, the nearest row, and then an
+    /// answer. Fails once that layout no longer saves one either way, so it
+    /// can be scored to come back.
+    @Test func theStepsLaidOutAsBeforeWouldSaveAnAnswer() {
+        let saved = Self.paths(.savesAnAnswer, in: Self.modelled(.phone, checkIn: .dueWithTheStepsAsBefore))
+        #expect(saved.contains { $0.hasPrefix("choosing \(SettingsChains.checkInGoThrough) → ") }, "\(saved)")
+        #expect(saved.contains { $0.hasPrefix("choosing \(SettingsChains.checkInNotNow) → \(SettingsChains.guidedSetupRow) ") }, "\(saved)")
+        #expect(Self.paths(.savesAnAnswer, in: Self.modelled(.phone, checkIn: .due)) == [])
     }
 
     /// Family Setup and the first step as the sweep draws them over a

@@ -21,15 +21,18 @@ import SwiftUI
 /// setup again from the check-in card answers the check-in there
 /// (`CheckInPolicy.wentThroughAgain`), so Next never saves.
 ///
-/// The first step opens on Learn About Each Way, which opens the Reaching
-/// the Screen guide as a cover of its own (`EachWayCover`), and starts its
-/// answers below every place a look can be resting on the way in
+/// The first step opens on Learn About Each Way, in the place of the control
+/// that opened it (`GuidedSetupEntry`), which opens the Reaching the Screen
+/// guide as a cover of its own (`EachWayCover`), and starts its answers
+/// below every place a look can be resting on the way in
 /// (`SetupAccessQuestion`; docs/DECISIONS.md, "The first step's own rows").
 /// The second step places its choices where a look resting on Next meets
 /// Next again (`SetupRestBoardQuestion`; docs/DECISIONS.md, "The
 /// late-stage profile").
 struct GuidedSetupView: View {
     let step: GuidedSetupStep
+    /// What opened the steps: only the first step's layout depends on it.
+    let entry: GuidedSetupEntry
     @Binding var path: [SettingsRoute]
 
     @Environment(SetupStore.self) private var setup
@@ -64,7 +67,7 @@ struct GuidedSetupView: View {
     private var content: some View {
         switch step {
         case .access:
-            SetupAccessQuestion(chosen: chosen, saveFailed: saveFailed, answer: answer) {
+            SetupAccessQuestion(entry: entry, chosen: chosen, saveFailed: saveFailed, answer: answer) {
                 activity?.recordActivity()
                 showsEachWay = true
             }
@@ -161,19 +164,23 @@ extension AccessMethod {
 
 /// The first step's question: how the screen is reached.
 ///
-/// Learn About Each Way takes Set Up Step by Step's place as Family Setup
-/// drew it (`SettingsLanding`), at least as tall, so a look still resting
-/// there meets a control that only opens the guide; the question and its
-/// sentence go beside it, above it or under it (`SettingsLeadIn`). The
-/// answers start where every point of Home's Settings, the root's row and
-/// Set Up Step by Step lies nearer the link than the first answer
-/// (`SetupAnswersPlace`), so a held look on the way in saves nothing
-/// (docs/DECISIONS.md, "The first step's own rows").
+/// Learn About Each Way takes the place of the control that opened the
+/// steps as Family Setup drew it (`SettingsLanding`): Set Up Step by Step,
+/// or the check-in card's Go Through Setup Again. It is at least as tall,
+/// so a look still resting there meets a control that only opens the
+/// guide; the question and its sentence go beside it, above it or under it
+/// (`SettingsLeadIn`). The answers start where every point a look can be
+/// resting on the way in lies nearer the link than the first answer
+/// (`SetupAnswersPlace`): Home's Settings, the root's row and Set Up Step by
+/// Step, with the check-in card's rows once the card was answered in its
+/// place, or Go Through Setup Again. So a held look on the way in saves
+/// nothing (docs/DECISIONS.md, "The first step's own rows").
 ///
 /// Choices only ever select: a repeated activation of a choice leaves it
 /// chosen rather than undoing it (AGENTS.md, invariant 10). Clear My
 /// Choices is a separate button at the end.
 private struct SetupAccessQuestion: View {
+    let entry: GuidedSetupEntry
     let chosen: Set<AccessMethod>
     let saveFailed: Bool
     let answer: (Set<AccessMethod>) -> Void
@@ -242,7 +249,7 @@ private struct SetupAccessQuestion: View {
     }
 
     private var placement: SettingsLeadInLayout.Placement {
-        guard let row = landing?.guidedRow else { return .atTheTop }
+        guard let row = landing?.opener(entry) else { return .atTheTop }
         return .inPlaceOf(row)
     }
 
@@ -257,12 +264,16 @@ private struct SetupAccessQuestion: View {
     /// above where `SetupAnswersPlace` starts the answers, in the content.
     /// Until the screen knows where it sits and what led to it, nothing.
     private var leadInHeight: CGFloat {
-        guard let cover, let frames, let guided = landing?.guidedRow else { return 0 }
+        guard let cover, let frames, let opener = landing?.opener(entry) else { return 0 }
         let origin = frames.content.origin
-        let link = guided.offsetBy(dx: origin.x, dy: origin.y)
+        let link = opener.offsetBy(dx: origin.x, dy: origin.y)
         let root = landing?.rootRow?.offsetBy(dx: origin.x, dy: origin.y) ?? .null
+        let card = landing?.checkInRows?.offsetBy(dx: origin.x, dy: origin.y) ?? .null
         let place = SetupAnswersPlace(
-            arrivals: [cover.home.frame(.settings), root, link], link: link,
+            arrivals: SetupAnswersPlace.arrivals(
+                from: entry, homesSettings: cover.home.frame(.settings), rootRow: root, opener: link, checkInRows: card
+            ),
+            link: link,
             answersMinX: frames.content.minX, answersWidth: frames.content.width,
             answerHeight: SettingsMetrics.rowHeight, earliest: link.maxY + SettingsMetrics.rowSpacing
         )
