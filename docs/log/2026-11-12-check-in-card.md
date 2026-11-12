@@ -190,6 +190,14 @@ frames", whose bullet on a scrolled first screen gives the reason), so
 the two rows now follow different rules; whether it should follow Go Through Setup Again is a
 follow-up, below.
 
+Codex's code review of the first push found nothing, and its security
+review finished. Copilot's review, asked for once on opening, was
+refused for lack of the month's remaining Copilot allowance, and was
+not asked for again. CI's runs on the first push were still queued,
+none started, when the fixes were pushed, so the push cancelled no
+running job; the second push's runs are the first to test this pull
+request's code.
+
 ## Not verified
 
 - Everything in the app until CI's runs pass: the card's drawing, the
