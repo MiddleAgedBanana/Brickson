@@ -174,6 +174,23 @@ if 'unhook' in mode:
     elif how == 'folder':  # a folder where the file was, which cannot be put back
         os.remove(hooks)
         os.makedirs(os.path.join(hooks, 'inside'))
+if 'nested' in mode:  # a repository inside the job's, whose own settings run a command
+    import subprocess
+    os.makedirs('sub')
+    def inner(*args):
+        subprocess.run(['git', '-C', 'sub', *args], check=True, capture_output=True)
+    inner('init', '-q')
+    with open(os.path.join('sub', 'f'), 'w') as tracked:
+        tracked.write('hi\n')
+    inner('add', 'f')
+    inner('-c', 'user.name=x', '-c', 'user.email=x@example.com', 'commit', '-q', '-m', 'inner')
+    with open(os.path.join('sub', '.gitattributes'), 'w') as attributes:
+        attributes.write('* filter=x\n')
+    inner('config', 'filter.x.clean',
+          "sh -c 'echo ran >> \"%s/ran\"; cat'" % os.environ['STUB_OUTSIDE'])
+    with open(os.path.join('sub', 'f'), 'w') as tracked:  # same size, new time: git reads it
+        tracked.write('ho\n')
+    os.utime(os.path.join('sub', 'f'), (1900000000, 1900000000))
 if 'plantpyc' in mode:
     # A cache of a weakened privacy check, which Python loads without
     # comparing it with the source (an unchecked hash-based .pyc).
@@ -1059,6 +1076,24 @@ class BridgeTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
         self.assertEqual(len(summary['commits']), 1, summary)
         self.assertEqual(summary['bridge_commit'], 'nothing to commit')
+
+    def test_a_repository_left_in_the_job_is_never_staged_or_committed(self):
+        # git lists a repository inside the job's as one entry; staged, it
+        # becomes a link to that repository, and git then runs what that
+        # repository's own settings name (here a filter), outside the sandbox.
+        outside = Path(self.temp.name) / 'outside'
+        outside.mkdir()
+        result, folder, out, summary = self.codex_write('nested', mode='nested work',
+                                                        STUB_OUTSIDE=str(outside))
+        self.assertEqual(result.returncode, 1, result.stderr + result.stdout)
+        self.assertEqual(list(outside.iterdir()), [])
+        self.assertEqual(summary['commits'], [])
+        self.assertEqual(self.staged(folder), b'')
+        for text in (summary['bridge_commit'], summary['status']):
+            self.assertIn('not committed', text)
+            self.assertIn('repository or a whole folder', text)
+            self.assertIn('sub/', text)
+        self.assertIn('?? docs/new.md', summary['changed_files'])
 
     def test_a_bytecode_cache_left_beside_the_guards_code_is_removed(self):
         # guard.py loads scripts/privacy-check.py through Python's loader,

@@ -761,6 +761,16 @@ def commit_codex_work(checkout, out, branch, answer, run_result, privacy_kept):
         git(checkout, 'reset', '-q', check=False)  # nothing is left staged
         return f'not committed: {reason}', f'finished, but its work is not committed: {reason}'
 
+    # git lists a repository inside the checkout, or a folder it cannot look
+    # into, as one entry ("sub/"). Staged, a repository becomes a link to it,
+    # and git then runs what its own settings name (a filter, say) outside
+    # the sandbox, whatever settings the bridge's git is given.
+    whole = [name for name in names if name.endswith('/') or os.path.lexists(checkout / name / '.git')
+             or ((checkout / name).is_dir() and not (checkout / name).is_symlink())]
+    if whole:
+        return refused('the job left a repository or a whole folder git lists as one entry '
+                       f'({", ".join(whole)}), which the bridge never stages')
+
     try:
         current = PRIVACY_CHECK.read_bytes()
     except OSError:
