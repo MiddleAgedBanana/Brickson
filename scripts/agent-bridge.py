@@ -456,8 +456,17 @@ def restore_guard_code(checkout, saved, head):
     until someone has read that commit."""
     entry, problem = put_back(checkout, saved, "the guard's own code",
                               'the guard is checked out again from origin/main')
-    committed = git(checkout, 'diff', '--name-only', head, 'HEAD', '--', *AGY_GUARD_CODE,
-                    check=False) if head else ''
+    try:
+        committed = git(checkout, 'diff', '--name-only', head, 'HEAD', '--', *AGY_GUARD_CODE,
+                        check=False) if head else ''
+    except Stop as error:  # a job that broke git's settings still ends with done
+        if entry == 'unchanged':
+            entry = 'unchanged in the folder'
+        entry += f'; what the job committed could not be read ({error})'
+        problem = '; '.join(filter(None, [problem, (
+            "the bridge could not check whether the job committed a change to the guard's own "
+            f'code ({error}); read its commits before the next agy job')]))
+        return entry, problem
     if committed:
         names = ', '.join(committed.splitlines())
         if entry == 'unchanged':
@@ -666,13 +675,23 @@ def run(command, cwd, out, timeout_minutes):
 
 def finish(out, checkout, before, run_result, extra, problem=None):
     """Write summary.json, then `done` last, with the final verdict, so a
-    reader that waits for `done` never sees a verdict that later changes."""
+    reader that waits for `done` never sees a verdict that later changes.
+    A job can leave git unable to read its own settings (agy, with no
+    sandbox, can break the settings every worktree shares), and the
+    bridge's git then stops rather than run with a filter on; the job
+    still ends with done, saying what could not be read, and what it could
+    not read is null (CodeRabbit, on #108)."""
     code, seconds, interrupted = run_result
-    after = git_state(checkout)
-    commits = []
-    if before['head'] and after['head'] and before['head'] != after['head']:
-        commits = git(checkout, 'log', '--format=%h %s', f'{before["head"]}..{after["head"]}',
-                      check=False).splitlines()
+    unread = None
+    try:
+        after = git_state(checkout)
+        commits = []
+        if before['head'] and after['head'] and before['head'] != after['head']:
+            commits = git(checkout, 'log', '--format=%h %s', f'{before["head"]}..{after["head"]}',
+                          check=False).splitlines()
+    except Stop as error:
+        after, commits = {'branch': None, 'head': None, 'changed': None, 'contents': None}, None
+        unread = f'the bridge could not read the checkout after the job ({error})'
     status = 'finished' if code == 0 else ('timed out' if code is None else f'failed (exit {code})')
     summary = {'status': status, 'exit_code': code, 'seconds': seconds,
                'branch': after['branch'], 'commits': commits,
@@ -680,9 +699,10 @@ def finish(out, checkout, before, run_result, extra, problem=None):
     # A checkout moved to another commit or branch changes files without
     # leaving a changed file or a new commit behind.
     moved = before['head'] != after['head'] or before['branch'] != after['branch']
-    if extra.get('read_only') and (moved or after['changed'] != before['changed']
-                                   or after['contents'] != before['contents']):
+    if extra.get('read_only') and not unread and (moved or after['changed'] != before['changed']
+                                                  or after['contents'] != before['contents']):
         summary['status'] = 'changed files in a read-only job'
+    problem = '; '.join(filter(None, [problem, unread]))
     if problem:  # a job that did not finish still says so first
         summary['status'] = problem if status == 'finished' else f'{status}; {problem}'
     if interrupted:
@@ -715,7 +735,12 @@ def commit_codex_work(checkout, out, branch, run_result, answer):
     code, _seconds, interrupted = run_result
     if code != 0 or interrupted:
         return 'not made: the job did not finish, so its changes are left uncommitted', None
-    paths = [path for _line, path in changed_files(checkout)]
+    try:
+        paths = [path for _line, path in changed_files(checkout)]
+    except Stop as error:  # the job still ends with done (finish)
+        return (f'not made: {error}',
+                f'finished, but the bridge could not read its changes ({error}); they are left '
+                'uncommitted')
     if not paths:
         return 'nothing to commit', None
     message = (answer.strip() or f'Codex\'s work on {branch}') + (
@@ -728,7 +753,10 @@ def commit_codex_work(checkout, out, branch, run_result, answer):
         return (f'not made: {error}',
                 f'finished, but the bridge could not commit its work ({error}); its changes are '
                 'left staged, not committed')
-    return f'made {git(checkout, "rev-parse", "--short", "HEAD")}', None
+    try:
+        return f'made {git(checkout, "rev-parse", "--short", "HEAD")}', None
+    except Stop as error:
+        return f'made, but its name could not be read ({error})', None
 
 
 def codex_review(args):

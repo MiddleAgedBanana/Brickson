@@ -161,6 +161,15 @@ if 'unguard' in mode:
     elif how == 'remove':
         shutil.rmtree('.claude')
         os.remove(check)
+if 'badconfig' in mode:
+    # Break the git settings every worktree shares, as an agent with no
+    # sandbox could (or another job while this one runs), so every git
+    # command fails from here on.
+    import subprocess
+    shared = subprocess.run(['git', 'rev-parse', '--path-format=absolute', '--git-common-dir'],
+                            check=True, capture_output=True, text=True).stdout.strip()
+    with open(os.path.join(shared, 'config'), 'a') as config:
+        config.write('[broken\n')
 if entry['tool'] == 'codex':
     if args and args[0] == 'review':
         print('No P0 or P1 findings.')
@@ -492,6 +501,50 @@ class BridgeTests(unittest.TestCase):
         self.assertIn('filters', result.stderr)
         self.assertFalse(mark.exists())
         self.assertEqual(self.calls(), [])
+
+    def test_a_job_that_leaves_git_unable_to_read_its_settings_still_ends_with_done(self):
+        # The bridge's git stops when it cannot read which filters to turn
+        # off, so a job that breaks the git settings every worktree shares
+        # left no summary.json or done, and a caller waiting for done
+        # waited forever (CodeRabbit, on #108). The job now ends with both,
+        # saying what could not be read.
+        self.point_agy_at(self.agy_folder)
+        self.install_agy_hook()
+        self.install_codex_hook()
+        shared = Path(git_out(self.owner, 'rev-parse', '--path-format=absolute',
+                              '--git-common-dir').strip()) / 'config'
+        good = shared.read_bytes()
+        committed = {name: (self.agy_folder / name).read_bytes() for name in GUARD_CODE}
+        for agent, args, mode in (('agy', [], 'badconfig'),
+                                  ('codex', ['--write', '--branch', 'tests'], 'edit badconfig')):
+            with self.subTest(agent):
+                result = self.bridge(agent, '--brief', str(self.brief), *args,
+                                     env={'STUB_MODE': mode})
+                broken = shared.read_bytes()
+                shared.write_bytes(good)  # so the next case, and these checks, can read git
+                self.assertNotEqual(broken, good)  # the agent did break it
+                self.assertEqual(result.returncode, 1, result.stderr)
+                out = self.job_folder(result)
+                summary = json.loads((out / 'summary.json').read_text())
+                self.assertIn('could not read the checkout after the job', summary['status'])
+                self.assertIn('could not read which git filters to turn off', summary['status'])
+                self.assertEqual((out / 'done').read_text(), summary['status'] + '\n')
+                if agent == 'agy':
+                    self.assertIn("could not check whether the job committed a change to the "
+                                  "guard's own code", summary['status'])
+                    self.assertTrue(summary['guard_code'].startswith('unchanged in the folder; '),
+                                    summary['guard_code'])
+                    for name in GUARD_CODE:
+                        self.assertEqual((self.agy_folder / name).read_bytes(), committed[name])
+                else:
+                    self.assertTrue(summary['status'].startswith(
+                        'finished, but the bridge could not read its changes'), summary['status'])
+                    self.assertTrue(summary['bridge_commit'].startswith('not made: '),
+                                    summary['bridge_commit'])
+                    folder = self.home / 'code' / 'brickson-codex-tests'
+                    self.assertIn(' M AGENTS.md', git_out(folder, 'status', '--porcelain'))
+                    self.assertEqual(git_out(folder, 'rev-parse', 'HEAD'),
+                                     git_out(folder, 'rev-parse', 'origin/main'))
 
     def test_the_bridges_git_ignores_a_repository_named_in_its_environment(self):
         # git uses GIT_INDEX_FILE (and GIT_DIR and the like) over the folder
