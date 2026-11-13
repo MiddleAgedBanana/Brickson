@@ -1027,6 +1027,33 @@ class BridgeTests(unittest.TestCase):
                     for word in ('Zorblatt', 'Quennick', 'Vashti'):
                         self.assertNotIn(word, text)
 
+    def test_nothing_is_committed_when_the_commits_identity_holds_a_private_word(self):
+        # The author and committer the commit would record are read before
+        # the branch moves, whether they come from git's settings or, as
+        # here, from the bridge's environment.
+        cases = [('author name', {'GIT_AUTHOR_NAME': 'Zorblatt'}),
+                 ('committer name', {'GIT_COMMITTER_NAME': 'Quennick Vashti'}),
+                 ('address', {'GIT_AUTHOR_EMAIL': 'zorblatt@example.com'})]
+        for number, (case, env) in enumerate(cases):
+            with self.subTest(case):
+                topic = f'identity-{number}'
+                result, folder, out, summary = self.codex_write(topic, **env)
+                self.assertEqual(result.returncode, 1, result.stderr + result.stdout)
+                self.assertIn('not committed', summary['status'])
+                self.assertTrue(summary['bridge_commit'].startswith('not committed'), summary)
+                self.assertEqual(summary['commits'], [])
+                self.assertEqual(self.git_out(folder, 'rev-parse', f'codex/{topic}'),
+                                 self.git_out(folder, 'rev-parse', 'origin/main'))
+                self.assertEqual(self.staged(folder), b'')
+                self.assertTrue((folder / 'docs' / 'new.md').is_file())
+                self.assertIn(b'a change from the agent', (folder / 'AGENTS.md').read_bytes())
+                self.assertIn('Found', (out / 'privacy-check.txt').read_text())
+                for text in ((out / 'privacy-check.txt').read_text(),
+                             (out / 'summary.json').read_text(), (out / 'done').read_text(),
+                             result.stdout, result.stderr):
+                    for word in ('Zorblatt', 'zorblatt', 'Quennick', 'Vashti'):
+                        self.assertNotIn(word, text)
+
     def test_nothing_is_committed_without_a_private_list(self):
         (self.home / '.config' / 'brickson' / 'private-words.txt').unlink()
         result, folder, out, summary = self.codex_write('no-list')

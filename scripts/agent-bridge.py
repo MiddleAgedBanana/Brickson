@@ -36,7 +36,8 @@ the commits and pushes. agy commits by itself. Codex cannot, because its
 sandbox keeps a worktree's git folder read-only, so it leaves its work
 uncommitted and the bridge, once Codex has exited 0, commits every changed
 file outside build/ in one commit, after the privacy check beside this
-script has passed what the commit would hold and its message; it commits
+script has passed the commit itself (files, message, author and
+committer), made before the branch moves to it; it commits
 nothing if the job left a repository, or a folder git lists as one entry,
 or if the bridge is told to stop first
 (docs/log/2026-11-12-bridge-commits-and-guard-code.md). A write job needs
@@ -750,14 +751,17 @@ def commit_message(answer, branch, job):
     return '\n\n'.join(part for part in parts if part) + '\n'
 
 
-def privacy_check(checkout, message):
-    """Run the privacy check beside the bridge on what checkout has staged
-    and on message, for at most 15 minutes, ending it at once if the
-    bridge is told to stop (STOPS). Returns its output and exit code (None
-    if it could not run, did not finish or was stopped)."""
+def privacy_check(checkout, message, commits):
+    """Run the privacy check beside the bridge on what checkout would
+    publish (--outgoing: its staged and changed files and its commits no
+    remote has), on the commits of the range commits (each one's files,
+    message, author and committer, as git keeps them) and on message, for
+    at most 15 minutes, ending it at once if the bridge is told to stop
+    (STOPS). Returns its output and exit code (None if it could not run,
+    did not finish or was stopped)."""
     try:
         process = subprocess.Popen([sys.executable, '-I', str(PRIVACY_CHECK), '--outgoing',
-                                    '--text', '-', str(checkout)],
+                                    '--commits', commits, '--text', '-', str(checkout)],
                                    stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                    stderr=subprocess.STDOUT, text=True, cwd=str(checkout),
                                    env=plain_environment())
@@ -783,10 +787,13 @@ def commit_codex_work(checkout, out, branch, answer, run_result, privacy_kept):
     when Codex exited 0; every changed, new or deleted file outside build/,
     staged by name and literally, and never a repository or a folder git
     lists as one entry (staged, a repository's own settings would run);
-    nothing if the bridge is told to stop (STOPS) first; through the bridge's own git, so no hook
-    or fsmonitor in the checkout runs outside the sandbox; after the
-    privacy check beside this script passes what the commit would hold and
-    its message; unsigned, as nobody can answer a signing prompt here.
+    nothing if the bridge is told to stop (STOPS) first; through the
+    bridge's own git, so no hook or fsmonitor in the checkout runs outside
+    the sandbox; unsigned, as nobody can answer a signing prompt here. The
+    commit is made as an object first (write-tree, commit-tree), with the
+    author and committer git gives it, and the branch moves to it only
+    after the privacy check beside this script has passed that very
+    commit: its files, message, author and committer.
     Returns summary.json's bridge_commit, and the job's status when the
     work was not committed although Codex finished."""
     code, _seconds, interrupted = run_result
@@ -837,21 +844,37 @@ def commit_codex_work(checkout, out, branch, answer, run_result, privacy_kept):
             return refused('something under build/ was staged, which is never committed')
         if STOPS:
             return stopped()
-        report, returncode = privacy_check(checkout, message)
+        ref = f'refs/heads/{branch}'
+        if git(checkout, 'symbolic-ref', '-q', 'HEAD', check=False) != ref:
+            return refused(f'the checkout is no longer on {branch}')
+        old = git(checkout, 'rev-parse', '--verify', 'HEAD^{commit}')
+        tree = git(checkout, 'write-tree')
+        if tree == git(checkout, 'rev-parse', '--verify', 'HEAD^{tree}'):
+            git(checkout, 'reset', '-q', check=False)
+            return 'nothing to commit', None
+        # The exact commit, made without moving the branch, so the check
+        # reads the author and committer it records, wherever git took them
+        # from (its settings, or GIT_AUTHOR_* and GIT_COMMITTER_* here).
+        new = git(checkout, 'commit-tree', '--no-gpg-sign', tree, '-p', old, '-F', '-',
+                  input=message)
+        report, returncode = privacy_check(checkout, message, f'{old}..{new}')
         if STOPS:
             return stopped()
         # Places and kinds only: the check never prints the words it finds.
         write_in(out, 'privacy-check.txt', report)
         if returncode == 1:
-            return refused('the privacy check found personal details in it or its message, '
-                           'or failed (privacy-check.txt says which)')
+            return refused('the privacy check found personal details in the commit (its files, '
+                           'message, author or committer), or failed (privacy-check.txt says '
+                           'which)')
         if returncode != 0:
             return refused('the privacy check could not run, or has no private list '
                            '(privacy-check.txt says why)')
         if STOPS:
             return stopped()
-        git(checkout, '-c', 'commit.gpgsign=false', 'commit', '-q', '--no-verify', '-F', '-',
-            input=message)
+        # Only if the branch is still where it was; the index already holds
+        # the commit's tree, so the folder shows nothing left to commit.
+        git(checkout, 'update-ref', '-m', f'agent-bridge: commit for job {out.name}', ref, new,
+            old)
     except Stop as error:
         return refused(str(error))
     return f'committed {git(checkout, "rev-parse", "--short", "HEAD")}', None
