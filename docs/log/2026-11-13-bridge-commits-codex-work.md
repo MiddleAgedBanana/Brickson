@@ -97,7 +97,19 @@ inherited `GIT_CONFIG`, which points `git config` alone at another file:
 the bridge reads the filters it turns off, and the push URL it refuses,
 with `git config`, so with one set it found neither in the file the rest
 of git reads, turned no filter off, and let a checkout with its own push
-URL have a job (CodeRabbit's review of the third push).
+URL have a job (CodeRabbit's review of the third push). CodeRabbit's
+review of the final push found two more ways round the filter switches.
+Settings can switch a filter on for one branch or worktree alone
+(`includeIf "onbranch:codex/"`): where the bridge starts it is off, so
+the bridge did not name it, but `git worktree add` filled the new
+worktree on its `codex/` branch, where it is on, and ran its smudge
+command. The bridge now makes the worktree empty (`--no-checkout`) and
+fills it with its own git from inside (`git reset --hard`), where it
+sees that filter and turns it off. And the bridge read a failed `git
+config` (a `GIT_CONFIG_COUNT` that is not a number, which only the one
+who starts the bridge can set) as no filters, then put a good count in
+its place, so its git ran every filter; a failure other than "none
+set" now stops the job.
 
 **A job that did not finish still says so first.** When a job that
 failed or timed out also has a problem to report (its guard changed, or
@@ -128,20 +140,24 @@ that check says it was done.
   git.
 - `a932f54` Record the GIT_CONFIG_PARAMETERS fix and its test.
 - `37efe21` Leave an inherited GIT_CONFIG out of the bridge's git.
-- The commit that adds this list, with the record of that fix, and a
-  merge of `main` after #107 merged, with no conflict.
+- `f91a97d` Record the GIT_CONFIG fix, the commits, and a narrower
+  isolation claim.
+- `f01cbd0` Merge main, after pull request #107 merged.
+- The commits after the final push, made for CodeRabbit's review of it
+  and pushed only with the owner's yes: the two fixes and their tests,
+  and this record of them.
 
 ## Verified
 
 In a cloud container (Linux, git 2.43), with Python 3.13 and with
 Python 3.9.25, the version of the Mac's `/usr/bin/python3`:
 
-- `scripts/test-agent-bridge.py`: 50 of 50 on both. Ten tests are new
-  and two older ones changed. The first seven new ones failed on `main`'s
-  bridge, as did the first changed one; the next two failed on this pull
-  request's first push, and the last on its second. The `GIT_CONFIG`
-  cases added to the last one and to the second changed one failed on
-  its third:
+- `scripts/test-agent-bridge.py`: 52 of 52 on both. Twelve tests are
+  new and two older ones changed. The first seven new ones failed on
+  `main`'s bridge, as did the first changed one; the next two failed on
+  this pull request's first push, the next on its second, and the last
+  two on its final push. The `GIT_CONFIG` cases added to the third
+  round's test and to the second changed one failed on its third push:
   - `test_the_bridge_commits_a_codex_write_jobs_work_outside_the_sandbox`:
     a stand-in Codex changes `AGENTS.md`, deletes a file and adds three
     (one with a space, one with letters outside ASCII, one named
@@ -185,6 +201,15 @@ Python 3.9.25, the version of the Mac's `/usr/bin/python3`:
   - `test_a_checkout_with_its_own_push_url_is_refused` now also runs the
     bridge with `GIT_CONFIG` set to an empty file; the third push's
     bridge started that job.
+  - `test_a_filter_set_for_the_jobs_branch_never_runs_while_its_worktree_is_made`:
+    the shared settings include a file defining a filter for `codex/`
+    branches only, and `.git/info/attributes` names it for every file;
+    the write job's worktree is made, filled and committed with no mark.
+    The final push's bridge left the mark while making the worktree.
+  - `test_the_bridge_stops_when_it_cannot_read_which_filters_to_turn_off`:
+    the bridge runs with `GIT_CONFIG_COUNT=many` while the shared
+    settings define a clean filter; it stops (exit 2) before Codex
+    starts, with no mark. The final push's bridge ran the job.
 - Eight broken copies of the new code each failed the tests named:
   staging without `--literal-pathspecs` and never committing (the commit
   test and the failed-commit test); committing a job that did not finish
@@ -195,7 +220,8 @@ Python 3.9.25, the version of the Mac's `/usr/bin/python3`:
   test). Two more failed the round-two tests: filters left on, and
   `GIT_INDEX_FILE` kept. And the code of the second and third pushes,
   `GIT_CONFIG_PARAMETERS` kept and then `GIT_CONFIG` kept, failed the
-  cases added after each.
+  cases added after each, and the final push's code failed the two
+  tests added after it.
 - `scripts/test-docs.py`, `scripts/test-runner.py`,
   `scripts/test-hooks.py` and `scripts/test-privacy.py` (results in the
   pull request), and `scripts/privacy-check.py --outgoing --no-list`: a
