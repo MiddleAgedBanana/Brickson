@@ -1158,6 +1158,22 @@ NOT_STRICT = re.compile(
     r'|\bstrict\s*:\s*false\b')
 
 
+def reasons(source, name, opening):
+    """The strings that say why a skip happens: those in the call's
+    arguments, never in its condition (XCTSkipIf's and XCTSkipUnless's
+    first argument, a trait's `if:`), whose strings say nothing of why."""
+    found = []
+    closing = source.closing(opening)
+    # A lone string argument is blank in the code, so it splits to nothing.
+    spans = argument_spans(source.code, opening, closing) or [(opening + 1, closing)]
+    for index, (start, end) in enumerate(spans):
+        if label(source.code[start:end]) == 'if' or (
+                index == 0 and name in ('XCTSkipIf', 'XCTSkipUnless')):
+            continue
+        found += source.top_level_strings(start - 1, end)
+    return found
+
+
 def check_test_file(source):
     """What a test file must not do: a known issue that is not strict or
     names no decision, or a skip that does not say why (AGENTS.md, *Code
@@ -1184,8 +1200,7 @@ def check_test_file(source):
               'a known issue is strict: it fails the run once the issue is fixed, so the '
               'record is updated (AGENTS.md, *Code Review Rules*).')
     for match in SKIP_CALL.finditer(source.code):
-        opening = match.end() - 1
-        if not source.top_level_strings(opening, source.closing(opening)):
+        if not reasons(source, match.group('name'), match.end() - 1):
             found(match.start(), 'unexplained skip',
                   f'`{match.group("name")}` says why, in a string in the call.')
     for attribute in TRAIT_ATTRIBUTE.finditer(source.code):
@@ -1200,11 +1215,7 @@ def check_test_file(source):
             if depth or not re.search(r'[(,]\s*$', source.code[opening:trait.start()]):
                 continue
             rest = re.match(r'\s*\(', source.code[trait.end():closing])
-            reason = []
-            if rest:
-                trait_opening = trait.end() + rest.end() - 1
-                reason = source.top_level_strings(trait_opening, source.closing(trait_opening))
-            if not reason:
+            if not (rest and reasons(source, trait.group('name'), trait.end() + rest.end() - 1)):
                 found(trait.start(), 'unexplained skip',
                       f'`.{trait.group("name")}` says why, in a string in the trait.')
     return findings
@@ -1302,11 +1313,14 @@ def inline_entries(number, path, value):
     entries of their own, so every rule reads `{a: b}` as it reads a
     block."""
     entries = []
-    for key, inner in flow_mapping(value) or []:
-        entries.append(Entry(number, path + (key,), key, inner, '', True))
+    # Each value as written: a quoted one is a string, never a collection
+    # (`PATTERN: '[0-9]+'`), and a collection's items are shorter than it.
+    for key, inner in flow_mapping(value, quoted=True) or []:
+        entries.append(Entry(number, path + (key,), key, unquote(inner), '', True))
         entries += inline_entries(number, path + (key,), inner)
-    if value.strip().startswith('['):  # a one-line list's mappings: [{ a: b }]
-        for item in flow_list(value):
+    value = value.strip()
+    if value.startswith('[') and value.endswith(']'):  # a list's mappings: [{ a: b }]
+        for item in flow_list(value, quoted=True):
             entries += inline_entries(number, path + ('-',), item)
     return entries
 
@@ -1384,12 +1398,14 @@ def yaml_entries(text):
     return entries
 
 
-def flow_list(value):
-    """The items of a one-line YAML list ([a, b]) or a single value."""
+def flow_list(value, quoted=False):
+    """The items of a one-line YAML list ([a, b]) or a single value;
+    `quoted` keeps each item's quotes."""
+    read = (lambda item: item.strip()) if quoted else unquote
     value = value.strip()
     if value.startswith('[') and value.endswith(']'):
-        return [unquote(item) for item in split_flow(value[1:-1])]
-    return [unquote(value)] if value else []
+        return [read(item) for item in split_flow(value[1:-1])]
+    return [read(value)] if value else []
 
 
 def split_flow(inner):
@@ -1413,9 +1429,9 @@ def split_flow(inner):
     return [item.strip() for item in items if item.strip()]
 
 
-def flow_mapping(value):
+def flow_mapping(value, quoted=False):
     """The (key, value) pairs of a one-line YAML mapping ({a: b}), or None
-    when the value is not one."""
+    when the value is not one; `quoted` keeps each value's quotes."""
     value = value.strip()
     if not (value.startswith('{') and value.endswith('}')):
         return None
@@ -1424,7 +1440,7 @@ def flow_mapping(value):
         key = re.match(r'''\s*("[^"]*"|'[^']*'|[^:]*)''', item).group(1)
         rest = item[len(item) - len(item.lstrip()) + len(key):].lstrip()
         rest = rest[1:] if rest.startswith(':') else ''
-        pairs.append((unquote(key), unquote(rest)))
+        pairs.append((unquote(key), rest.strip() if quoted else unquote(rest)))
     return pairs
 
 
@@ -1775,7 +1791,9 @@ def check_workflow(path, text):
             inside = 'permissions' in entry.path[:-1] or entry.key == 'permissions'
             if not inside:
                 continue
-            value = entry.value
+            # A block scalar (`permissions: >-` and `write-all` below) is
+            # its text.
+            value = entry.value or ' '.join(entry.block.split())
             if value.startswith('*'):
                 raise SetupError(f'{path}:{entry.line} gives permissions through the YAML alias '
                                  f'`{value}`, which this check cannot read: write them out.')

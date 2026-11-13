@@ -6168,7 +6168,15 @@ runs it in seconds. On 2026-11-13 `main` broke none of its rules.
   a `run` command, directly or through `env` values read as
   `${{ env.NAME }}`, however many pass it on; an action not published by
   GitHub or kept in the repository; a path filter on the workflow that
-  runs "Unit tests" and "UI tests".
+  runs "Unit tests" and "UI tests". It reads every `env` value a name is
+  given, in the workflow, its jobs and steps, as one: a name that holds
+  event text anywhere counts as holding it wherever it is read, even
+  where a job or step gives it fixed text. That errs toward a false
+  alarm, never a miss; name such a variable apart rather than weaken the
+  rule. (Resolving each step's own environment, as GitHub does, was a
+  review suggestion on the pull request that added the check, declined
+  for now: a large change to avoid a false alarm no workflow here
+  raises.)
 - **In the tests:** a known issue (`withKnownIssue`, `XCTExpectFailure`)
   that is not strict or whose comment does not cite its decision as
   `docs/DECISIONS.md, "<title>"`; a skip, a `.disabled` or an `.enabled`
@@ -6197,8 +6205,9 @@ runs it in seconds. On 2026-11-13 `main` broke none of its rules.
   Reviews still read every rule.
 - **Scope.** The framework rules hold the app's code only. The UI tests'
   row of the table does not name every file that uses UIKit today, so
-  holding the test targets to it waits for that row to be fixed
-  (docs/HANDOFF.md, *Known gaps*). `rollback()` is refused in the app
+  holding the test targets to it waits for the owner's decision on two
+  UI-test files, which are not accepted gaps (docs/HANDOFF.md, *Known
+  gaps*). `rollback()` is refused in the app
   only: a disabled unit test calls it on purpose, to record the crash.
 - **Not built.** The approval covered this check only: no Claude Code
   hook that runs it after each edit, and no line of AGENTS.md trimmed.

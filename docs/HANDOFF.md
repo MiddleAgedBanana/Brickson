@@ -1091,13 +1091,15 @@ release in docs/ROADMAP.md when no thread has it yet.
   after the first upload. *(owner)*
 - The check for code the app must never contain holds only the app's own
   code to the frameworks table (docs/DECISIONS.md, "Apple's current
-  frameworks first"). The UI tests' row, "UIKit types in UI tests", does
-  not name `TypingOnHomeTests`, which reads the device idiom for a failure
-  message, and `HomeRestBoardTests` imports UIKit and uses none of it.
-  The next pull request that touches the UI tests adds the file to the
-  row, drops the import and holds the test targets to the table too
+  frameworks first"). Holding the test targets to it waits on two things
+  found while building the check. They predate it and are **not**
+  accepted gaps: a review still flags both. The UI tests' row, "UIKit
+  types in UI tests", does not name `TypingOnHomeTests`, which reads the
+  device idiom for a failure message, and `HomeRestBoardTests` imports
+  UIKit and uses none of it. Adding a file to the row is an exception, so
+  the owner decides between that and changing the test
   ([record](log/2026-11-13-forbidden-code-check.md), *Follow-ups*).
-  *(the next UI-test thread)*
+  *(owner)*
 
 ## Next steps, in order
 

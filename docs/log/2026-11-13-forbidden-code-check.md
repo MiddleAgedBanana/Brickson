@@ -133,6 +133,19 @@ In this cloud thread, on Linux, with Python 3.9 (the Mac's version):
   a string; raw strings and regex literals; an enum case of Brickson's
   own named `rollback`; an observer on `OperationQueue.main`; and the
   tests the reviews showed could not fail.
+- Reviews on the pull request. Codex found one thing: two older
+  UI-test slips listed under *Known gaps* would read as accepted
+  exceptions, which only the owner grants; they are now recorded as the
+  owner's decision (*Follow-ups*). CodeRabbit found four. Three are fixed
+  with tests that failed on the first push: a quoted YAML value that
+  starts like a list (`'[0-9]+'`) in a one-line mapping sent the reader
+  into endless recursion; permissions written as a block scalar
+  (`permissions: >-` with `write-all` below) went unread; and a string
+  in a skip's condition (`XCTSkipIf(mode == "ci")`) counted as its
+  reason. The fourth, resolving each step's own `env` before deciding a
+  name holds event text, is declined and recorded in docs/DECISIONS.md:
+  today's reading can raise a false alarm, never miss one. Copilot could
+  not review for lack of quota.
 - `scripts/forbidden-code.py` over this checkout: "nothing AGENTS.md
   forbids was found". It reads 92 app Swift files, and every use of a
   legacy framework it finds is in a file the frameworks table names.
@@ -166,9 +179,13 @@ In this cloud thread, on Linux, with Python 3.9 (the Mac's version):
   *Known gaps*). `TypingOnHomeTests` reads `UIDevice`'s idiom for a
   failure message and is not in the row "UIKit types in UI tests";
   `HomeRestBoardTests` imports UIKit and uses none of it, against
-  *Imports say what a file uses*. Proposed fix, for the next pull request
-  that touches the UI tests: add `TypingOnHomeTests` to the row, drop the
-  unused import, then let the check hold the test targets to the table
-  too. Owner of the fix: the next UI-test thread.
+  *Imports say what a file uses*. Both predate this change and are not
+  accepted gaps. Adding a file to the row is an exception, which
+  AGENTS.md leaves to the owner, so the owner decides: add
+  `TypingOnHomeTests` to the row, or change the test so it needs no
+  UIKit. Dropping the unused import needs a Mac build. Once both are
+  settled, the check can hold the test targets to the table too.
+  (Codex's review of this pull request asked that this not be recorded
+  as an accepted gap.)
 - A Claude Code hook running the check after edits is the audit's second
   recommendation; it waits for the owner.

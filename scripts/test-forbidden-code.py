@@ -1086,6 +1086,8 @@ class TestRuleTests(unittest.TestCase):
                      '@Test(.disabled("Crashes on iOS 26.5 (issue #19)")) func a() {}',
                      '@Test(.enabled(if: f(V(major: 27)), "Exists from iOS 27")) func a() {}',
                      '@Suite(.serialized, .disabled("Needs a device")) struct S {}',
+                     'try XCTSkipIf(mode == "ci", "CI has no microphone")',
+                     '@Test(.disabled(if: mode == "ci", "Needs a Mac")) func a() {}',
                      'Button("Go") {}.disabled(isBusy)']:
             with self.subTest(line=good):
                 self.assertEqual(test_findings(good + '\n'), [])
@@ -1093,7 +1095,11 @@ class TestRuleTests(unittest.TestCase):
                     'try XCTSkipUnless(Self.isEnabled, reason)',
                     '@Test(.disabled()) func a() {}', '@Test(.disabled(if: isCI)) func a() {}',
                     '@Test(.enabled(if: f("not the reason"))) func a() {}',
-                    '@Suite(.serialized, .disabled) struct S {}']:
+                    '@Suite(.serialized, .disabled) struct S {}',
+                    # A string in the condition says nothing of why.
+                    'try XCTSkipIf(mode == "ci")', 'try XCTSkipUnless(name != "")',
+                    '@Test(.enabled(if: mode == "ci")) func a() {}',
+                    '@Test(.disabled(if: mode == "ci")) func a() {}']:
             with self.subTest(line=bad):
                 self.assertEqual(rules(test_findings(bad + '\n')), ['unexplained skip'])
 
@@ -1168,6 +1174,11 @@ class YamlReadingTests(unittest.TestCase):
         self.assertEqual([(entry.path, entry.value) for entry in entries], [
             (('a',), '[{ b: 1 }, c, { d: [{ e: f }] }]'), (('a', '-', 'b'), '1'),
             (('a', '-', 'd'), '[{ e: f }]'), (('a', '-', 'd', '-', 'e'), 'f')])
+        # A quoted value is a string, even one that starts like a collection.
+        entries = forbidden.yaml_entries("a: { b: '[0-9]+', c: \"{x}\" }\nd: ['[e]']\n")
+        self.assertEqual([(entry.path, entry.value) for entry in entries], [
+            (('a',), "{ b: '[0-9]+', c: \"{x}\" }"), (('a', 'b'), '[0-9]+'), (('a', 'c'), '{x}'),
+            (('d',), "['[e]']")])
         # Escaped quote marks before a # that is not a comment.
         entries = forbidden.yaml_entries('a: "x \\" #1"\nb: \'it\'\'s #2\'\nc: d\n')
         self.assertEqual([(entry.path, entry.value) for entry in entries], [
@@ -1476,6 +1487,12 @@ class WorkflowTests(unittest.TestCase):
         for text in [WORKFLOW.replace('permissions:\n  contents: read\n', ''),
                      WORKFLOW.replace('contents: read', 'contents: write'),
                      WORKFLOW.replace('permissions:\n  contents: read\n', 'permissions: write-all\n'),
+                     # Block scalars hold their value below the key.
+                     WORKFLOW.replace('permissions:\n  contents: read\n',
+                                      'permissions: >-\n  write-all\n'),
+                     WORKFLOW.replace('permissions:\n  contents: read\n',
+                                      'permissions: |\n  write-all\n'),
+                     WORKFLOW.replace('contents: read', 'contents: >-\n    write'),
                      WORKFLOW.replace('    runs-on:', '    permissions:\n      pull-requests: write\n'
                                       '    runs-on:')]:
             with self.subTest(text=text[:200]):
