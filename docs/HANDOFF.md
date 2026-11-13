@@ -1588,7 +1588,9 @@ settings, date) and summarise it here.
   commit, once Codex has exited 0 and the privacy check beside the bridge
   has passed that commit, made first as an object, with its files,
   message, author and committer, before the branch moves to it;
-  otherwise nothing is committed and the job says why
+  otherwise nothing is committed and the job says why; the bridge's own
+  git, its privacy check and its jobs run without git's
+  repository-location variables
   ([record](log/2026-11-12-bridge-commits-and-guard-code.md)).
   CodeRabbit's finding that #99's record should again list the Mac check
   under *Not verified* is declined: the check was made before #99 merged

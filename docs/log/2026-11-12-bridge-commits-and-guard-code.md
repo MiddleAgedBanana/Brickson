@@ -201,7 +201,55 @@ back under *Not verified*, on the grounds that the Mac check came after
 four minutes after that branch's last commit `117ab61` (05:54 UTC), and
 #99 merged at 08:06 UTC (merge `3f92a8b`). The line was untrue when it
 merged, a mistake in that record, which `docs/log/README.md` says to
-correct in place; the corrected bullet now says so.
+correct in place; the corrected bullet now says so. CodeRabbit then
+checked the times itself and withdrew the finding.
+
+**CodeRabbit's review of the third push.** One finding, real, and
+reproduced with the stand-in Codex: `plain_environment()`, the
+environment of the bridge's own git and of the privacy check it runs,
+took out only the GitHub tokens, so git's own repository variables passed
+through, and git obeys them before the `-C <checkout>` the bridge gives
+it. A write job started with `GIT_INDEX_FILE` naming the owner checkout's
+index ended `finished` with its commit made, but left the job's files
+staged in the owner checkout's index, and the job checkout's own index no
+longer matched its commit. `job_environment()` had the same gap for the
+agent's own git. `main`'s bridge already passed these variables on; a job
+cannot set them, since they have to be in the environment of whoever
+starts the bridge. Now both take out the fifteen variables git itself
+lists as belonging to one repository (`git rev-parse --local-env-vars`,
+written out in the bridge as `REPOSITORY_VARIABLES`). A job keeps the
+three configuration ones, `GIT_CONFIG`, `GIT_CONFIG_PARAMETERS` and
+`GIT_CONFIG_COUNT`, since its no-push settings are added after any
+`GIT_CONFIG_COUNT` entries it inherits, as before. Everything else stays,
+the author and committer variables among them. Test first:
+
+- `test_git_variables_the_bridge_inherits_never_point_its_git_elsewhere`
+  starts a Codex write job with `GIT_INDEX_FILE` naming the owner
+  checkout's index, and in a second case with `GIT_DIR` and
+  `GIT_WORK_TREE` naming the owner's checkout. In each, the job exits 0
+  with its commit on `codex/<topic>` holding the job's files; the owner
+  checkout's index is byte for byte what it was, its status is empty and
+  its `HEAD` and other branches have not moved; and the job checkout's
+  status is empty. On the third push's bridge (`b00d769`) the first case
+  failed (the owner's index changed) and the second could not start (the
+  bridge took the checkout it was started in for the owner's own, and
+  refused).
+- `test_a_job_gets_none_of_gits_repository_variables` starts a read-only
+  Codex job with the twelve variables that are not configuration set, and
+  an inherited `GIT_CONFIG_COUNT` entry. The stand-in agent now logs its
+  `GIT_*` variables: none of the twelve reaches it, the inherited entry is
+  still entry 0, and the no-push entries follow it. On the third push's
+  bridge the job was refused, as above; on a copy with only
+  `plain_environment()` fixed, the variables reached the agent; on a copy
+  whose jobs also drop the three configuration variables, the inherited
+  entry was lost.
+- `test_nothing_is_committed_when_the_commits_identity_holds_a_private_word`
+  passes unchanged: the identity variables still reach the commit.
+
+This went in as a fourth push. AGENTS.md leaves a real bug found after
+the final push to the owner; the owner gave permission on 2026-11-13 to
+finish the open threads, and both sides of this trial were allowed one
+extra push for late review findings.
 
 **#99's record, corrected.** Its first *Not verified* line, the hook file
 installed on the Mac, was checked on 2026-11-12, so it now sits under
@@ -228,7 +276,12 @@ marked done by that same check.
   before the branch moves
 - `8c63b3e` Note a stop after agy exits, so the put-backs and done still
   happen
-- and the commit that records CodeRabbit's review here.
+- `b2dc55e` Record CodeRabbit's review of the bridge's second push
+- `b00d769` Merge main into the bridge fixes branch again (main at
+  `8c90597`)
+- `15855e5` Keep git's repository variables out of the bridge's git and
+  its jobs
+- and the commit that records this here.
 
 ## Verified
 
@@ -236,10 +289,11 @@ In a cloud container (Linux, git 2.43), which cannot run Codex or agy,
 with Python 3.13 and with Python 3.9.25, the version of the Mac's
 `/usr/bin/python3`:
 
-- `scripts/test-agent-bridge.py`: 57 of 57 on both. Seventeen tests are
+- `scripts/test-agent-bridge.py`: 59 of 59 on both. Nineteen tests are
   new. The first twelve each failed on `main`'s bridge (19 failing cases
-  between them); the three from the independent review and the two from
-  CodeRabbit's each failed on this branch's bridge before its fix. Two
+  between them); the three from the independent review, the two from
+  CodeRabbit's review of the second push and the two from its review of
+  the third each failed on this branch's bridge before its fix. Two
   existing tests check the new write instructions: Codex's fails on
   `main`'s bridge, and agy's pins that agy's instructions do not change.
   The new tests:
@@ -302,6 +356,9 @@ with Python 3.13 and with Python 3.9.25, the version of the Mac's
   - `test_nothing_is_committed_when_the_commits_identity_holds_a_private_word`
     and `test_a_stop_after_agy_has_exited_still_puts_everything_back`
     (*CodeRabbit's review of the second push*).
+  - `test_git_variables_the_bridge_inherits_never_point_its_git_elsewhere`
+    and `test_a_job_gets_none_of_gits_repository_variables`
+    (*CodeRabbit's review of the third push*).
 - Broken copies of the new code each failed the tests named: git hooks
   left on in the bridge's git (the hooks test); staging without
   `--literal-pathspecs` (the commit test); skipping the privacy check's
@@ -349,6 +406,12 @@ with Python 3.13 and with Python 3.9.25, the version of the Mac's
   define for files a `.gitattributes` names (such as Git LFS); a job
   cannot add such a setting inside Codex's sandbox, and none is set for
   Brickson.
+- A private word in the committer's address: the identity test puts one
+  in the author's address only.
+- A cache planted in `.claude/hooks/__pycache__`: the bytecode-cache test
+  plants one in `scripts/__pycache__` only.
+- The repository-variables fix with the Mac's own git, whose list of
+  those variables may differ from git 2.43's.
 
 ## Follow-ups
 
@@ -363,3 +426,7 @@ with Python 3.13 and with Python 3.9.25, the version of the Mac's
   `run()` and `finish()` ends the bridge with no `done`. Nothing is
   staged or put back in those jobs, so only the `done` file is lost; a
   later bridge pull request notes stops there too.
+- A stop that lands in the instant between the bridge starting to note
+  stops and the agent starting is only noted, so the agent runs its whole
+  job and the job is reported as stopped after the agent ended. Nothing
+  is lost; the status is not exact.
