@@ -6530,6 +6530,28 @@ through its API on 2026-10-15:
 the owner objects
 ([`log/2026-11-03-agents-md-for-codex.md`](log/2026-11-03-agents-md-for-codex.md)).*
 
+**2026-11-12: AGENTS.md is one short file.** The owner asked for
+AGENTS.md to follow agents.md, OpenAI's Codex documentation, Anthropic's
+Claude Code documentation and reputable guides, rejecting both a rule
+file split across two documents and an 81,000-byte file that kept every
+rule word for word. So AGENTS.md is one file of commands, conventions and
+hard limits: no history, no measurements, nothing an agent can find in
+the code, the scripts, the hooks or CI, and no rule said twice. The
+reasons behind its rules stay here and in docs/LESSONS.md. The order
+below still holds, and `scripts/test-docs.py` now also fails when the
+whole file passes the 32 KiB Codex reads by default (31,985 bytes and
+556 lines on 2026-11-12).
+
+Its length is deliberate. Claude Code's guidance is under about 200 lines
+per file, but this project's safety, privacy, review and guard rules do
+not fit in that without dropping rules, and the ways Claude Code offers to
+load rules only when needed (path-scoped rules, nested files) do not load
+in a project's cloud threads, so they would hide rules there. A rule that
+can have no exceptions belongs in a hook or a check, and also as one short
+line here, because hooks do not run in cloud threads
+([`log/2026-11-12-agents-md-trim.md`](log/2026-11-12-agents-md-trim.md)).
+The entry below is as it was written on 2026-11-03.
+
 Codex reads `AGENTS.md` itself, but by default only the first 32 KiB of
 the AGENTS.md files on its path. OpenAI's documentation says Codex
 "stops adding files once the combined size reaches the limit defined by

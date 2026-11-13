@@ -59,9 +59,10 @@ On `claude/project-thread-vzhdbv`; the pull request lists them.
 
 ## Verified
 
-Made in a cloud session with no route to a Mac this time: nothing was
-built with Xcode. On Linux (Swift 6.4.2), the pure types and their Swift
-Testing tests in a throwaway package, with stand-ins for
+Made in a cloud session. The owner's Mac was reachable through Remote
+Control, but CI builds and tests the same code, so nothing was built
+with Xcode outside CI. On Linux (Swift 6.4.2), the pure types and their
+Swift Testing tests in a throwaway package, with stand-ins for
 `String(localized:)` and `HomeWordRoom` (as in
 `docs/log/2026-11-05-four-phrases.md`):
 
