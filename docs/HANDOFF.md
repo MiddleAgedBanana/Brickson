@@ -1540,7 +1540,8 @@ settings, date) and summarise it here.
   job changes the hook, the bridge puts it back and the job fails
   ([record](log/2026-11-12-bridge-safety-gaps.md)); the bridge now does
   the same for the guard's own code in agy's folder (`guard.py` and the
-  `privacy-check.py` it loads), however the job ended, and a write job
+  `privacy-check.py` it loads, with the bytecode caches beside them
+  removed), however the job ended, and a write job
   whose commits change that code leaves the folder unclean, so the next
   agy job is refused until a thread has dealt with them. Codex keeps a
   worktree's git folder read-only in its sandbox on purpose, so a Codex

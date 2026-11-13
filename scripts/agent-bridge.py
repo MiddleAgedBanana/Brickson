@@ -36,13 +36,17 @@ the commits and pushes. agy commits by itself. Codex cannot, because its
 sandbox keeps a worktree's git folder read-only, so it leaves its work
 uncommitted and the bridge, once Codex has exited 0, commits every changed
 file outside build/ in one commit, after the privacy check beside this
-script has passed what the commit would hold and its message
+script has passed what the commit would hold and its message; it commits
+nothing if the job left a repository, or a folder git lists as one entry,
+or if the bridge is told to stop first
 (docs/log/2026-11-12-bridge-commits-and-guard-code.md). A write job needs
 the agent's guard hook installed
 (docs/log/2026-11-08-codex-antigravity-setup.md). Every agy job needs
 agy's hook exactly as installed there; the bridge keeps the hook and the
 guard's own code in agy's folder before the job, puts back whatever the
-job changed, however the job ended, and says so. Never the owner's own
+job changed, however the job ended, and says so; before and after the job
+it also removes the bytecode caches beside that code, which Python's
+loader could run instead of it. Never the owner's own
 checkout, never a danger or skip-permissions mode.
 
 Standard library only; Python 3.9. Its tests are scripts/test-agent-bridge.py.
@@ -777,7 +781,9 @@ def commit_codex_work(checkout, out, branch, answer, run_result, privacy_kept):
     """After a Codex write job, commit what Codex left uncommitted: its
     sandbox keeps a worktree's git folder read-only, so it cannot. Only
     when Codex exited 0; every changed, new or deleted file outside build/,
-    staged by name and literally; through the bridge's own git, so no hook
+    staged by name and literally, and never a repository or a folder git
+    lists as one entry (staged, a repository's own settings would run);
+    nothing if the bridge is told to stop (STOPS) first; through the bridge's own git, so no hook
     or fsmonitor in the checkout runs outside the sandbox; after the
     privacy check beside this script passes what the commit would hold and
     its message; unsigned, as nobody can answer a signing prompt here.

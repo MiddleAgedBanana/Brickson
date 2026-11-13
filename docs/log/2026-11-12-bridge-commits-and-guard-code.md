@@ -1,6 +1,6 @@
 # The bridge commits a Codex write job's work, and puts back the guard's code after every agy job
 
-*2026-11-12. This pull request (`claude/project-thread-th5gpm`). A cloud
+*2026-11-12. Pull request #109 (`claude/project-thread-th5gpm`). A cloud
 thread, from a planner thread's brief, for the two follow-ups of
 [pull request #99's record](2026-11-12-bridge-safety-gaps.md), and one
 line of that record found to be out of date.*
@@ -27,15 +27,24 @@ and behaviour do not change: agy commits by itself.
   `bridge_commit` entry says why.
 - Every changed, new or deleted file outside `build/`, as the bridge's
   `changed_files()` reads them from `git status --porcelain -z`, goes into
-  one commit on `codex/<topic>`. Files are staged by name with
+  one commit on `codex/<topic>`, unless one of them is a repository the
+  job left inside its worktree, or a folder git lists as one entry (a
+  name ending in `/`, a folder that is not a link, or one holding a
+  `.git` entry). Then nothing is staged or committed, and the job ends
+  saying which (*Three fixes from an independent review*, below). Files
+  are staged by name with
   `--literal-pathspecs`, so a name such as `:x.txt` or `[ab].txt` is
   staged as itself and never read as a pattern; nothing under `build/` is
   committed. The commit is made before `summary.json` is written, so its
-  `commits` lists it, the status is `finished` and the folder is clean.
+  `commits` lists it, the status is `finished` and the folder holds no
+  change outside `build/`.
 - Every git call goes through the bridge's own `git()`, with git hooks and
-  `core.fsmonitor` off, so nothing an agent left in the checkout (a hook
-  in `.githooks/`, where Brickson's `core.hooksPath` points) runs outside
-  the sandbox.
+  `core.fsmonitor` off, so no hook an agent left in the checkout (in
+  `.githooks/`, where Brickson's `core.hooksPath` points) and no fsmonitor
+  command it set runs outside the sandbox. Those settings do not reach a
+  repository the job left inside its worktree, whose own settings git
+  obeys once it is staged; that is why such a repository is never
+  staged.
 - Before the commit, the bridge stages the files and runs the privacy
   check that sits beside it, `scripts/privacy-check.py` in the bridge's
   own checkout, never the copy in the job's checkout, which the agent
@@ -47,7 +56,8 @@ and behaviour do not change: agy commits by itself.
   nothing is committed and nothing is left staged; the job ends as
   `finished, but its work is not committed: ...` and exits 1, and the
   check's output, which gives places and kinds only, is kept in the job
-  folder as `privacy-check.txt`. So the bridge is no way round the
+  folder as `privacy-check.txt`. Its exit code 1 means a finding, or that
+  the check itself failed, and the status says both. So the bridge is no way round the
   guard's rule that a commit holds no personal detail.
 - The commit message is the first non-empty line of Codex's final
   message, with Markdown's markers taken off and cut to 72 characters, as
@@ -84,6 +94,11 @@ Now:
   back. The job then ends as `changed the guard's code (...); the bridge
   put it back` and exits 1; if it cannot be put back, it says so, and
   that agy may run a changed guard until it is restored from origin/main.
+  Before the agent starts and again in the same `finally`, the bridge
+  removes the bytecode caches beside the guard's code,
+  `scripts/__pycache__` and `.claude/hooks/__pycache__`, without following
+  a link (a link there is removed); `summary.json`'s `guard_cache` says
+  what it removed. If one cannot be removed, the job ends saying so.
   The hook and the guard's code are put back in a `finally`, so an error
   in the bridge's own reading of agy's output cannot skip either. A job
   the bridge was told to stop now keeps that in its status after
@@ -100,6 +115,38 @@ Now:
 folder with origin/main before a job. Code that was already changed
 before the bridge kept it is kept and put back as it was.
 
+**Three fixes from an independent review.** No outside reviewer could
+review this pull request (each was at its limit), so a separate Claude
+subagent reviewed it, against *Code Review Rules*, and showed three faults
+by running the bridge with stand-in agents. Each is fixed, test first:
+
+- *A repository left inside a Codex job's worktree.* git lists one as a
+  single entry (`sub/`), and the bridge staged it as a link to that
+  repository. git then obeyed that repository's own settings, which the
+  job wrote, in the bridge's later git calls and the privacy check's: a
+  clean filter it named ran outside Codex's sandbox, twice, and the job
+  still ended `finished`, with the link committed. The bridge's own
+  settings (hooks and fsmonitor off) do not reach it. Now such an entry
+  is never staged (above).
+- *A bytecode cache beside the guard's code.* guard.py loads
+  `scripts/privacy-check.py` through Python's loader, which uses a cache
+  in `scripts/__pycache__`, and one made as an unchecked hash-based
+  `.pyc` is never compared with its source. A job that left one there
+  ended with `guard_code: unchanged`, git ignores the folder, so the next
+  job ran, and loading the check as the guard does ran the job's code.
+  Putting the source back did not put back what the guard runs. Now the
+  bridge removes those caches before and after every agy job (above).
+- *A stop while the bridge commits.* Once Codex ended, the bridge's stop
+  handling was off, so a stop during the privacy check (up to 15
+  minutes) killed the bridge with every file staged and no `summary.json`
+  or `done`. Now, for a Codex write job, a stop after the agent ends is
+  noted until `done` is written: it ends the privacy check, nothing is
+  staged or committed, and the job ends `stopped: the bridge was told to
+  stop after Codex finished, before it committed; ...` and exits 1. git
+  itself is never cut off, so it leaves no lock; a stop that comes while
+  git is writing the commit lets that commit finish, and the status
+  still says the bridge was stopped.
+
 **#99's record, corrected.** Its first *Not verified* line, the hook file
 installed on the Mac, was checked on 2026-11-12, so it now sits under
 *Verified*, and its last follow-up, running `status` on the Mac, is
@@ -115,8 +162,10 @@ In a cloud container (Linux, git 2.43), which cannot run Codex or agy,
 with Python 3.13 and with Python 3.9.25, the version of the Mac's
 `/usr/bin/python3`:
 
-- `scripts/test-agent-bridge.py`: 52 of 52 on both. Twelve tests are new,
-  and each failed on `main`'s bridge (19 failing cases between them). Two
+- `scripts/test-agent-bridge.py`: 55 of 55 on both. Fifteen tests are new.
+  The first twelve each failed on `main`'s bridge (19 failing cases
+  between them); the three from the review each failed on this branch's
+  bridge before its fix. Two
   existing tests check the new write instructions: Codex's fails on
   `main`'s bridge, and agy's pins that agy's instructions do not change.
   The new tests:
@@ -157,6 +206,25 @@ with Python 3.13 and with Python 3.9.25, the version of the Mac's
   - `test_an_agy_write_job_whose_commits_change_the_guards_code`: the
     commit stays, the working tree has the earlier code, and the next agy
     job is refused.
+  - `test_a_repository_left_in_the_job_is_never_staged_or_committed`: the
+    stand-in Codex leaves `sub/`, a repository whose own settings name a
+    clean filter that writes outside, beside its other work. The filter
+    never runs, nothing is committed or staged, the job exits 1, and
+    `bridge_commit` and the status name `sub/`. Before the fix the job
+    exited 0 having committed the link.
+  - `test_a_stop_during_the_privacy_check_commits_nothing_and_still_ends_with_done`:
+    a copy of the bridge beside a check that only sleeps; the bridge is
+    sent SIGTERM while the check runs. It exits 1 within seconds, with
+    `summary.json` and `done` saying it was stopped before it committed,
+    no commit and nothing staged. Before the fix it was killed (exit -15),
+    leaving no `done` and every file staged.
+  - `test_a_bytecode_cache_left_beside_the_guards_code_is_removed`: the
+    stand-in agy leaves an unchecked hash-based `.pyc` of a weakened check
+    in `scripts/__pycache__`, and in a second case a link there to a
+    folder outside holding one. After the job, loading the check as
+    guard.py does gives the real source, the cache (or the link) is gone,
+    the outside folder is untouched, and the next job runs. The seed
+    repository's `.gitignore` has Brickson's `__pycache__/` line for it.
 - Broken copies of the new code each failed the tests named: git hooks
   left on in the bridge's git (the hooks test); staging without
   `--literal-pathspecs` (the commit test); skipping the privacy check's
@@ -167,7 +235,9 @@ with Python 3.13 and with Python 3.9.25, the version of the Mac's
   the guard's code back (the four put-back tests); writing it back
   through a link (the put-back test); putting it back outside a `finally`
   (the unreadable-output test); and a stop that hides why the job failed
-  (the stopped test). Dropping the bridge's own `build/` filter when it
+  (the stopped test). Removing the caches only before the job, not
+  after it, failed the bytecode-cache test (the check loaded the planted
+  code). Dropping the bridge's own `build/` filter when it
   stages changed no result, because `changed_files()` already leaves out
   everything under `build/`; the commit test pins that.
 - `scripts/test-docs.py`, `scripts/test-hooks.py`,
@@ -187,6 +257,11 @@ with Python 3.13 and with Python 3.9.25, the version of the Mac's
 - Whether committing with signing off behaves as expected on the Mac
   (with the Mac's git name and address, and no prompt).
 - A real agy job through the new put-back of the guard's code.
+- Whether Codex's sandbox lets a job write a `.git` folder inside a
+  nested repository at all (the stand-in Codex has no sandbox). The
+  bridge refuses such a repository either way.
+- Removing the caches before the job, on its own: no test plants a cache
+  before a job starts.
 - The bridge's git still applies filters that the Mac's own git settings
   define for files a `.gitattributes` names (such as Git LFS); a job
   cannot add such a setting inside Codex's sandbox, and none is set for
