@@ -798,6 +798,17 @@ release in docs/ROADMAP.md when no thread has it yet.
   fails again on that image, it is intermittent, and pull requests will
   meet it once every machine has the image. *(the next thread whose CI
   shows it)*
+- `SettingsTests.testAnIdleSettingsReturnsToItsFirstScreenAndStaysOpen`
+  has failed once each on 2026-10-22, 2026-11-08 and 2026-11-12, on
+  branches that did not touch it, and passed on each re-run: Family
+  Setup did not open, or its tap found no hit point. The 2026-11-12
+  recording stays on Settings' first screen throughout. A likely cause,
+  not proven: under `--short-timeouts` Settings' idle limit is 3
+  seconds, an untouched Settings resets every 3 seconds, and each reset
+  changes the navigation stack's identity (`.id(activity.resetCount)`)
+  even on its first screen, so a tap can land on a rebuild
+  ([`log/2026-11-12-ci-claims-narrowed.md`](log/2026-11-12-ci-claims-narrowed.md)).
+  *(a Settings thread, in its own pull request)*
 - Settings' Get Attention place is still empty, although AGENTS.md's
   design rules say "Settings opens on a large way back and a start-only
   Get Attention". Scored on 2026-10-24, Get Attention there would sound
@@ -1156,10 +1167,10 @@ docs/ROADMAP.md, *The quality bar*, Q24):
    request from a branch of this repository; one GitHub gives no
    secrets (from a fork, or Dependabot's) checks the built-in patterns
    only, and says so.
-8. Done on your Mac on 2026-11-04; for another Mac: let Codex read all
-   of `AGENTS.md`. By default
-   it reads only the first 32 KiB, and the file is about 69 KB
-   (docs/DECISIONS.md, "AGENTS.md puts first what Codex reads"). In
+8. Optional since 2026-11-12, when `AGENTS.md` was cut to fit within
+   the 32 KiB Codex reads by default (docs/DECISIONS.md, "AGENTS.md puts
+   first what Codex reads"); done on your Mac on 2026-11-04, and it only
+   adds room. For another Mac, in
    Terminal, run this one line; it adds the setting at the top of
    Codex's settings file, creating the file if needed, and changes
    nothing if a line of the file already sets it, however the name is
@@ -1168,7 +1179,7 @@ docs/ROADMAP.md, *The quality bar*, Q24):
    Success: `command grep -n project_doc_max_bytes ~/.codex/config.toml`
    prints a line reading `1:project_doc_max_bytes = 131072` (if your
    file already set it, it prints your own line instead; any number
-   larger than the file, about 69,000 bytes today, works). Codex reads
+   larger than the file, under 32,768 bytes today, works). Codex reads
    it when a new session starts.
 9. Settings for the reviewers and GitHub's machines, from 2026-11-07
    (docs/DECISIONS.md, *Code review* and *Dependencies*), once that
@@ -1429,17 +1440,29 @@ settings, date) and summarise it here.
   device families and took about 105; since 2026-11-03 each family has
   a job of its own with 90 minutes, and "UI tests" is a job that passes
   only when both passed (docs/DECISIONS.md, "Tests"). On 2026-11-12
-  the iPad job took 88 of its 90 minutes on pull request #103 and was
-  stopped at the limit on `main` and on pull request #106: in about one
-  iPad run in six, after typing ended on Home, XCTest's wait for UIKit's
-  animations stopped being answered and every later wait in that launch
-  ran out at 60 seconds. Since 2026-11-13 UI tests launch with UIKit's
-  animations off, which stopped the same message in other projects
-  (docs/DECISIONS.md, "Tests"). Count it fixed here only once about 20
-  iPad runs show no "App animations complete notification not received"
-  line in their result bundles (the record says how to read them). Runs
-  without it took 54 to 81 minutes that day, so the margin is still
-  thinner than it was.
+  the iPad job took 87 of its 90 minutes (pull request #103: about five
+  minutes of new check-in tests, and one Home typing test whose taps
+  each waited 120 seconds for the app to go idle), and the same day it
+  was stopped at the limit twice: on the first attempt of #103's run on
+  its final head, and on pull request #106's first run, a change to
+  documents only. There, with no test failed,
+  `TypingOnHomeTests.testEmergencyPhrasesAndSettingsLeaveTypingAndKeepTheMessage`
+  took 758 seconds against 42 on `main`'s run of the same app code:
+  from its tap on Emergency while typing, all twelve of its waits for
+  the app to settle ran out at 60 seconds, the app never reporting its
+  animations finished
+  ([`log/2026-11-12-check-in-card.md`](log/2026-11-12-check-in-card.md),
+  *Follow-ups*;
+  [`log/2026-11-12-ci-claims-narrowed.md`](log/2026-11-12-ci-claims-narrowed.md)).
+  The cause, found on 2026-11-13: in about one iPad run in six, after
+  typing ended on Home, XCTest's wait for UIKit's animations stopped being answered, and every later
+  wait in that launch ran out at 60 seconds. Since 2026-11-13 UI tests
+  launch with UIKit's animations off, which stopped the same message in
+  other projects (docs/DECISIONS.md, "Tests"). Count it fixed here only
+  once about 20 iPad runs show no "App animations complete notification
+  not received" line in their result bundles (the record says how to
+  read them). Runs without it took 54 to 81 minutes that day, so the
+  margin is still thinner than it was.
   Once, on #103, XCTest's wait for the simulator's home screen ran out
   instead, from a turn back to portrait to the end of the job; nothing
   in the app can fix that, and the record gives the owner's options
@@ -1589,13 +1612,12 @@ settings, date) and summarise it here.
   guard reads HTTPie's standalone `@file` body and refuses
   `gh pr create --fill`
   ([`log/2026-11-08-privacy-check-follow-ups.md`](log/2026-11-08-privacy-check-follow-ups.md)).
-  Next for agents, in a pull request of its own: trim AGENTS.md (81 KB)
-  without losing a rule, with a snapshot in `docs/archive/` first, moving
-  long reference material (much of *Gotchas*, the Mac route under
-  *Build and test*) into a document it points to, and bringing the
-  sections Codex must read (32 KB today, under the 32 KiB it reads) to
-  within the first 24,000 bytes, where Antigravity stops reading rule
-  files (the coordinator's target, 2026-11-08).
+  AGENTS.md was rewritten short on 2026-11-12 (owner's request, after
+  agents.md, the Codex and Claude Code documentation and well-known
+  guides): one file of 31,985 bytes, from 83,866, with commands,
+  conventions and hard limits and no history; the whole file fits inside
+  Codex's 32 KiB. Keep it that way: short, concrete rules, the reasons in
+  docs/DECISIONS.md. Record: [the change](log/2026-11-12-agents-md-trim.md).
   `scripts/test.sh` runs the guard's tests, the docs cross-reference
   check (`scripts/test-docs.py`) and the privacy check's tests
   (`scripts/test-privacy.py`) before the unit tests.
