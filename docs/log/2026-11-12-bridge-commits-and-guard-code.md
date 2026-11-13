@@ -281,7 +281,7 @@ marked done by that same check.
   `8c90597`)
 - `15855e5` Keep git's repository variables out of the bridge's git and
   its jobs
-- and the commit that records this here.
+- and the two commits that record this here.
 
 ## Verified
 

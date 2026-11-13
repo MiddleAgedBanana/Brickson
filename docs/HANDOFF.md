@@ -1593,8 +1593,9 @@ settings, date) and summarise it here.
   repository-location variables
   ([record](log/2026-11-12-bridge-commits-and-guard-code.md)).
   CodeRabbit's finding that #99's record should again list the Mac check
-  under *Not verified* is declined: the check was made before #99 merged
-  (same record, *CodeRabbit's review of the second push*). Neither
+  under *Not verified* was declined, and CodeRabbit then withdrew it: the
+  check was made before #99 merged (same record, *CodeRabbit's review of
+  the second push*). Neither
   has been run through a real Codex or agy job on the Mac yet (same
   record, *Not verified*).
   Jules, Google's cloud coding agent, is no longer one of Brickson's
