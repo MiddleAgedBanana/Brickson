@@ -28,7 +28,7 @@ here, which is how reviewers were twice sent to sections that did not exist.
 It also checks the start of AGENTS.md. Codex reads only its first 32 KiB by
 default, so the sections listed in CODEX_MUST_READ must open the file, in
 that order, after an introduction that names project_doc_max_bytes, and
-end within that limit.
+end within that limit; and the whole file must fit within it too.
 """
 from functools import cache
 from pathlib import Path
@@ -630,6 +630,19 @@ def codex_cut_problems(data, must_read=CODEX_MUST_READ, limit=CODEX_READ_LIMIT):
     return problems
 
 
+def whole_file_problems(data, limit=CODEX_READ_LIMIT):
+    """AGENTS.md, given as bytes, must fit whole within what Codex reads by
+    default, so no rule after the first sections is cut off. It is kept
+    short on purpose (docs/DECISIONS.md, "AGENTS.md puts first what Codex
+    reads")."""
+    if len(data) > limit:
+        return [f'AGENTS.md is {len(data)} bytes, past the {limit} Codex reads by default. '
+                f'Keep it short: merge or shorten rules without weakening one, and put the '
+                f'reasons in docs/DECISIONS.md (docs/DECISIONS.md, "AGENTS.md puts first what '
+                f'Codex reads")']
+    return []
+
+
 class CheckerTests(unittest.TestCase):
     """The checks themselves must catch what they claim to catch."""
 
@@ -1189,6 +1202,14 @@ class CodexCutTests(unittest.TestCase):
 
     def test_agents_md_puts_what_codex_must_read_within_its_default_limit(self):
         self.assertEqual(codex_cut_problems((ROOT / 'AGENTS.md').read_bytes()), [])
+
+    def test_a_whole_file_past_the_limit_fails(self):
+        text = 'Intro project_doc_max_bytes.\n\n## First\n\nA.\n\n## Second\n\nB.\n\n## Later\n' + 'x' * 200
+        self.assertTrue(whole_file_problems(text.encode('utf-8'), limit=64))
+        self.assertEqual(whole_file_problems(text.encode('utf-8'), limit=len(text)), [])
+
+    def test_agents_md_fits_whole_within_codexs_default_limit(self):
+        self.assertEqual(whole_file_problems((ROOT / 'AGENTS.md').read_bytes()), [])
 
 
 class DocumentTests(unittest.TestCase):
