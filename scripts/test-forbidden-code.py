@@ -1088,6 +1088,7 @@ class TestRuleTests(unittest.TestCase):
                      '@Suite(.serialized, .disabled("Needs a device")) struct S {}',
                      'try XCTSkipIf(mode == "ci", "CI has no microphone")',
                      '@Test(.disabled(if: mode == "ci", "Needs a Mac")) func a() {}',
+                     'try XCTSkipIf(mode == "ci", "No microphone", file: "T.swift", line: 3)',
                      'Button("Go") {}.disabled(isBusy)']:
             with self.subTest(line=good):
                 self.assertEqual(test_findings(good + '\n'), [])
@@ -1099,7 +1100,11 @@ class TestRuleTests(unittest.TestCase):
                     # A string in the condition says nothing of why.
                     'try XCTSkipIf(mode == "ci")', 'try XCTSkipUnless(name != "")',
                     '@Test(.enabled(if: mode == "ci")) func a() {}',
-                    '@Test(.disabled(if: mode == "ci")) func a() {}']:
+                    '@Test(.disabled(if: mode == "ci")) func a() {}',
+                    # Nor does a string in another labelled argument.
+                    'try XCTSkipIf(mode == "ci", nil, file: "Test.swift")',
+                    'throw XCTSkip(file: "Test.swift")',
+                    '@Test(.disabled(if: isCI, sourceLocation: at("Test.swift"))) func a() {}']:
             with self.subTest(line=bad):
                 self.assertEqual(rules(test_findings(bad + '\n')), ['unexplained skip'])
 

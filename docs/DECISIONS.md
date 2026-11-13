@@ -6180,7 +6180,8 @@ runs it in seconds. On 2026-11-13 `main` broke none of its rules.
 - **In the tests:** a known issue (`withKnownIssue`, `XCTExpectFailure`)
   that is not strict or whose comment does not cite its decision as
   `docs/DECISIONS.md, "<title>"`; a skip, a `.disabled` or an `.enabled`
-  with no reason.
+  with no reason, which is a string in its own unlabelled message or
+  comment, never one in its condition or in `file:`.
 - **`CLAUDE.md`** holds only `@AGENTS.md`.
 - **Changing what it allows.** Every finding names its rule and what to
   do. A file that needs a legacy API gets a row of the frameworks table,

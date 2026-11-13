@@ -1160,14 +1160,15 @@ NOT_STRICT = re.compile(
 
 def reasons(source, name, opening):
     """The strings that say why a skip happens: those in the call's
-    arguments, never in its condition (XCTSkipIf's and XCTSkipUnless's
-    first argument, a trait's `if:`), whose strings say nothing of why."""
+    unlabelled message or comment, never in its condition (XCTSkipIf's and
+    XCTSkipUnless's first argument, a trait's `if:`) or another labelled
+    argument (`file:`, `sourceLocation:`), whose strings say nothing of why."""
     found = []
     closing = source.closing(opening)
     # A lone string argument is blank in the code, so it splits to nothing.
     spans = argument_spans(source.code, opening, closing) or [(opening + 1, closing)]
     for index, (start, end) in enumerate(spans):
-        if label(source.code[start:end]) == 'if' or (
+        if label(source.code[start:end]) or (
                 index == 0 and name in ('XCTSkipIf', 'XCTSkipUnless')):
             continue
         found += source.top_level_strings(start - 1, end)

@@ -142,7 +142,8 @@ In this cloud thread, on Linux, with Python 3.9 (the Mac's version):
   into endless recursion; permissions written as a block scalar
   (`permissions: >-` with `write-all` below) went unread; and a string
   in a skip's condition (`XCTSkipIf(mode == "ci")`) counted as its
-  reason. The fourth, resolving each step's own `env` before deciding a
+  reason, and, as CodeRabbit's follow-up found, so did one in its
+  `file:` argument. The fourth, resolving each step's own `env` before deciding a
   name holds event text, is declined and recorded in docs/DECISIONS.md:
   today's reading can raise a false alarm, never miss one. Copilot could
   not review for lack of quota.
