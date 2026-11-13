@@ -505,8 +505,10 @@ Apple's skills again after each new Xcode release.
   or `xcodebuild` runs nothing and reports success.
 - One simulator per agent, chosen with `DESTINATION` (`scripts/test.sh`
   passes its own `-destination`).
-- UI tests launch through `launchedApp`; wait for a change after `tap()`
-  before checking it, and check that something did *not* change only after
+- UI tests launch through `launchedApp`, which turns UIKit's animations
+  off (a test that must see them sets `keepsUIKitAnimations`;
+  docs/DECISIONS.md, "Tests"); wait for a change after `tap()` before
+  checking it, and check that something did *not* change only after
   waiting for the change that did.
 - Outside `scripts/test.sh ui`, show the full software keyboard before a
   typing test: `xcrun simctl spawn <udid> defaults write

@@ -53,6 +53,12 @@ import SwiftData
 /// - `--check-in-due`: with test storage only, the setup record is made
 ///   due for a check-in at launch (`CheckInPolicy.makeDue`), so UI tests
 ///   reach Family Setup's check-in card without waiting three months.
+/// - `--uikit-animations=off`: with test storage only, UIKit's animations
+///   are turned off for the whole launch (`applyUIKitAnimations()`), the
+///   keyboard's and presentations' among them. XCTest waits after every
+///   action until each UIKit animation it saw start has finished, and on
+///   an iPad its count can lose one as the keyboard goes; every later wait
+///   in that launch then runs a full minute (docs/DECISIONS.md, "Tests").
 ///
 /// Text size still uses UIKit's `-UIPreferredContentSizeCategoryName`
 /// argument. Appearance needs an app-local option because command-line
@@ -99,6 +105,13 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
         case silent
     }
 
+    /// A launch that turns UIKit's animations off
+    /// (`applyUIKitAnimations()`).
+    nonisolated enum UIKitAnimations: String, Equatable, Sendable {
+        /// No UIKit animation runs: for UI tests.
+        case off
+    }
+
     nonisolated enum LayoutFixture: String, Equatable, Sendable {
         case topDivision = "top-division"
     }
@@ -132,6 +145,9 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
     var restoresSampleBackup = false
     /// Never applied to ordinary storage or in a release build.
     var checkInDue = false
+    /// Nil is the app's own: UIKit animates as it always does. Never
+    /// applied to ordinary storage or in a release build.
+    var uikitAnimations: UIKitAnimations?
     /// Arguments written like these options but not understood: a misspelt
     /// name, an unknown value. They are logged at launch, so a typo in a
     /// test shows up instead of quietly running with the defaults.
@@ -199,6 +215,8 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
                 options.restoresSampleBackup = true
             case ("check-in-due", nil):
                 options.checkInDue = true
+            case ("uikit-animations", let value?) where UIKitAnimations(rawValue: value) != nil:
+                options.uikitAnimations = UIKitAnimations(rawValue: value)
             default:
                 options.unrecognized.append(argument)
             }
@@ -237,6 +255,13 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
     var activeCheckInDue: Bool {
         guard Self.readsLaunchArguments, storage != .standard else { return false }
         return checkInDue
+    }
+
+    /// How a test asked UIKit to animate, only with test storage in a debug
+    /// build: never for a person's launch, which always animates.
+    var activeUIKitAnimations: UIKitAnimations? {
+        guard Self.readsLaunchArguments, storage != .standard else { return nil }
+        return uikitAnimations
     }
 
     /// The phrase the sample backup brings that the starter library does

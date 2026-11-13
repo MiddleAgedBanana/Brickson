@@ -39,6 +39,9 @@ struct BricksonApp: App {
         // First, before anything reads a setting or opens the library.
         let launch = LaunchOptions.current
         launch.prepareStorage()
+        // Before any view, for a UI test that asked: a person's launch
+        // always animates (`LaunchOptions.applyUIKitAnimations()`).
+        launch.applyUIKitAnimations()
         self.launch = launch
 
         let audio = AppAudio.makeForApp(
