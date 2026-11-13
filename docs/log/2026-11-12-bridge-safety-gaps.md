@@ -134,8 +134,10 @@ Python 3.9.25, the version of the Mac's `/usr/bin/python3`:
 - GitHub CI runs these tests on macOS with `/usr/bin/python3`, Apple's
   Python 3.9, through `scripts/test.sh`.
 - **The hook file installed on the Mac**, against the exact text the
-  bridge now requires (corrected after this pull request; the line was
-  first under *Not verified*). On 2026-11-12, in a throwaway worktree of
+  bridge now requires. This line was first under *Not verified*, which
+  was a mistake in this record: the check was made at 05:58 UTC on
+  2026-11-12, before this pull request merged at 08:06 UTC, and pull
+  request #109 corrected the line. On 2026-11-12, in a throwaway worktree of
   this branch at its last commit, `117ab61` (removed afterwards), a thread
   on the Mac ran `python3 scripts/agent-bridge.py status`, which printed
   `agy guard hook: installed` and `codex guard hook: installed`, with

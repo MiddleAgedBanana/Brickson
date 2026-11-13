@@ -45,34 +45,46 @@ and behaviour do not change: agy commits by itself.
   repository the job left inside its worktree, whose own settings git
   obeys once it is staged; that is why such a repository is never
   staged.
-- Before the commit, the bridge stages the files and runs the privacy
-  check that sits beside it, `scripts/privacy-check.py` in the bridge's
-  own checkout, never the copy in the job's checkout, which the agent
-  could have edited. It keeps that file's bytes when the job starts, and
-  if they changed during the job, it commits nothing. The check runs as
-  `--outgoing --text -` on the job's checkout, with the commit message on
+- Before the branch moves, the bridge stages the files, makes the commit
+  as an object (`git write-tree`, then `git commit-tree`, with the author
+  and committer git gives it from its settings or from `GIT_AUTHOR_*` and
+  `GIT_COMMITTER_*`), and runs the privacy check that sits beside it,
+  `scripts/privacy-check.py` in the bridge's own checkout, never the copy
+  in the job's checkout, which the agent could have edited. It keeps that
+  file's bytes when the job starts, and if they changed during the job,
+  it commits nothing. The check runs as `--outgoing --commits
+  <old>..<new> --text -` on the job's checkout, with the commit message on
   its stdin, in the bridge's environment without GitHub tokens (not the
-  job's). If it reports anything, cannot run or has no private list,
-  nothing is committed and nothing is left staged; the job ends as
-  `finished, but its work is not committed: ...` and exits 1, and the
-  check's output, which gives places and kinds only, is kept in the job
-  folder as `privacy-check.txt`. Its exit code 1 means a finding, or that
-  the check itself failed, and the status says both. So the bridge is no way round the
-  guard's rule that a commit holds no personal detail.
+  job's): so it reads the job's staged and changed files and its other
+  outgoing commits, and the new commit as git keeps it, with its files,
+  message, author and committer. Only if it passes does `git update-ref`
+  move `codex/<topic>` to that commit, and only from the commit it
+  started from; the index already holds the commit's tree, so nothing is
+  left to commit. If the check reports anything, cannot run or has no
+  private list, the branch does not move, nothing is left staged and the
+  work stays in the files; the job ends as `finished, but its work is not
+  committed: ...` and exits 1, and the check's output, which gives places
+  and kinds only, is kept in the job folder as `privacy-check.txt`. Its
+  exit code 1 means a finding, or that the check itself failed, and the
+  status says both. So the bridge is no way round the guard's rule that a
+  commit holds no personal detail.
 - The commit message is the first non-empty line of Codex's final
   message, with Markdown's markers taken off and cut to 72 characters, as
   the subject; the rest as the body; and a last line saying the bridge
   committed it for which job folder. An empty final message gives the
   subject `Work from Codex on codex/<topic>`.
+  `commit-tree` keeps the message exactly as checked; `git commit` would
+  also have taken trailing spaces off its lines.
 - If Codex did commit by itself (a later Codex may be allowed to), its
   commits stay and the bridge commits only what is left; with nothing
   left, it makes no empty commit (`bridge_commit: nothing to commit`).
 
 *Decision: the bridge commits with signing off*
-(`-c commit.gpgsign=false`). The bridge runs unattended on the Mac, where
-nobody can answer a signing prompt, and a prompt nobody answers would stop
-the job with the work uncommitted. The commit is made with the Mac's own
-git name and address, like a commit the thread would make. The thread
+(`git commit-tree --no-gpg-sign`). The bridge runs unattended on the Mac,
+where nobody can answer a signing prompt, and a prompt nobody answers would
+stop the job with the work uncommitted. The commit is made with the Mac's
+own git name and address, like a commit the thread would make, and the
+privacy check reads them before the branch moves. The thread
 reads the commit before it pushes, as it reads every agent's commits.
 
 **The guard's own code in agy's folder is put back after every agy job.**
@@ -100,9 +112,11 @@ Now:
   a link (a link there is removed); `summary.json`'s `guard_cache` says
   what it removed. If one cannot be removed, the job ends saying so.
   The hook and the guard's code are put back in a `finally`, so an error
-  in the bridge's own reading of agy's output cannot skip either. A job
-  the bridge was told to stop now keeps that in its status after
-  `stopped: ...`, where before the stop replaced it.
+  in the bridge's own reading of agy's output cannot skip either, and a
+  stop after agy has exited is noted, not fatal, until `done` is written
+  (*CodeRabbit's review of the second push*, below). A job the bridge was
+  told to stop now keeps that in its status after `stopped: ...`, where
+  before the stop replaced it.
 - A write job whose commits change the guard's code: the commits stay for
   the thread to read, the working tree gets the earlier code back, and the
   job ends saying its commits change the guard's code. agy's folder then
@@ -144,9 +158,50 @@ by running the bridge with stand-in agents. Each is fixed, test first:
   staged or committed, and the job ends `stopped: the bridge was told to
   stop after Codex finished, before it committed; ...` and exits 1. git
   itself is never cut off, so it leaves no lock; a stop that comes while
-  git is writing the commit lets that commit finish, and the job then
+  git is moving the branch to the checked commit lets that finish, and the job then
   ends `finished` with the commit made, as if the stop had come just
   after it.
+
+**CodeRabbit's review of the second push.** Two of its three findings
+were real, and each is fixed, test first:
+
+- *The commit's author and committer were never checked.* The check read
+  the staged files and the message, then `git commit` recorded whatever
+  author and committer git took from its settings or from the bridge's
+  environment, which no check read: with clean files and
+  `GIT_AUTHOR_NAME` set to a word on the private list, the commit was
+  made. Now the bridge makes the commit object first, the check reads
+  that very commit with `--commits`, and only then does the branch move
+  (above). `test_nothing_is_committed_when_the_commits_identity_holds_a_private_word`
+  puts a listed word in the author name, in the committer name and in an
+  address: in each case the job exits 1, the branch has not moved, the
+  files still hold the work, nothing is staged, and no file the bridge
+  wrote and nothing it printed holds the word. All three cases failed on
+  the bridge before the fix (exit 0, committed), and on a broken copy
+  that makes the commit object but leaves `--commits` off.
+- *A stop after agy had exited skipped the put-back.* `run()` puts back
+  the signal handlers it found, which in an agy job were the defaults, so
+  a SIGTERM or SIGHUP after agy had exited ended the bridge at once: the
+  hook and the guard's code were not put back, the caches were not
+  removed and no `done` was written. Now an agy job notes stops, as a
+  Codex write job does, from before `run()` until `finish()` has
+  returned, and a noted stop ends the job as `stopped: the bridge was
+  told to stop after agy ended; ...`.
+  `test_a_stop_after_agy_has_exited_still_puts_everything_back` starts
+  the bridge through a small driver that makes the bridge send itself
+  SIGTERM, and in a second case SIGHUP, as it begins putting the hook
+  back, after a stand-in agy changed the hook and the guard's code and
+  left a cache. Everything is put back, the cache is gone, and
+  `summary.json` and `done` say the job was stopped. On the bridge before
+  the fix the bridge was killed (exit -15) with nothing put back.
+
+**Declined:** its third finding, to move the correction in #99's record
+back under *Not verified*, on the grounds that the Mac check came after
+#99 merged. It did not: the check was made at 05:58 UTC on 2026-11-12,
+four minutes after that branch's last commit `117ab61` (05:54 UTC), and
+#99 merged at 08:06 UTC (merge `3f92a8b`). The line was untrue when it
+merged, a mistake in that record, which `docs/log/README.md` says to
+correct in place; the corrected bullet now says so.
 
 **#99's record, corrected.** Its first *Not verified* line, the hook file
 installed on the Mac, was checked on 2026-11-12, so it now sits under
@@ -155,7 +210,25 @@ marked done by that same check.
 
 ## Commits
 
-The commits of this pull request.
+- `9a01128` Commit a Codex write job's work from the bridge, after the
+  privacy check
+- `7878f12` Put the guard's own code back after every agy job
+- `62b34b3` Record the bridge's commits and guard put-back, and correct
+  #99's record
+- `d7a3b07` Remove the bytecode caches beside the guard's code around
+  every agy job
+- `b873c38` Never stage a repository a Codex job leaves inside its
+  worktree
+- `8cd250b` Keep a stop during the bridge's commit from leaving work
+  staged
+- `e408f2d` Record the review's three bridge fixes
+- `c693f3e` Say what a stop during the bridge's commit really ends as
+- `cb60a1b` Merge main into the bridge fixes branch
+- `0f7a955` Check the bridge's commit, author and committer included,
+  before the branch moves
+- `8c63b3e` Note a stop after agy exits, so the put-backs and done still
+  happen
+- and the commit that records CodeRabbit's review here.
 
 ## Verified
 
@@ -163,10 +236,10 @@ In a cloud container (Linux, git 2.43), which cannot run Codex or agy,
 with Python 3.13 and with Python 3.9.25, the version of the Mac's
 `/usr/bin/python3`:
 
-- `scripts/test-agent-bridge.py`: 55 of 55 on both. Fifteen tests are new.
-  The first twelve each failed on `main`'s bridge (19 failing cases
-  between them); the three from the review each failed on this branch's
-  bridge before its fix. Two
+- `scripts/test-agent-bridge.py`: 57 of 57 on both. Seventeen tests are
+  new. The first twelve each failed on `main`'s bridge (19 failing cases
+  between them); the three from the independent review and the two from
+  CodeRabbit's each failed on this branch's bridge before its fix. Two
   existing tests check the new write instructions: Codex's fails on
   `main`'s bridge, and agy's pins that agy's instructions do not change.
   The new tests:
@@ -226,6 +299,9 @@ with Python 3.13 and with Python 3.9.25, the version of the Mac's
     guard.py does gives the real source, the cache (or the link) is gone,
     the outside folder is untouched, and the next job runs. The seed
     repository's `.gitignore` has Brickson's `__pycache__/` line for it.
+  - `test_nothing_is_committed_when_the_commits_identity_holds_a_private_word`
+    and `test_a_stop_after_agy_has_exited_still_puts_everything_back`
+    (*CodeRabbit's review of the second push*).
 - Broken copies of the new code each failed the tests named: git hooks
   left on in the bridge's git (the hooks test); staging without
   `--literal-pathspecs` (the commit test); skipping the privacy check's
@@ -238,7 +314,9 @@ with Python 3.13 and with Python 3.9.25, the version of the Mac's
   (the unreadable-output test); and a stop that hides why the job failed
   (the stopped test). Removing the caches only before the job, not
   after it, failed the bytecode-cache test (the check loaded the planted
-  code). Dropping the bridge's own `build/` filter when it
+  code). Leaving `--commits` off the check, with the commit object still
+  made first, failed the identity test. Dropping the bridge's own
+  `build/` filter when it
   stages changed no result, because `changed_files()` already leaves out
   everything under `build/`; the commit test pins that.
 - `scripts/test-docs.py`, `scripts/test-hooks.py`,
@@ -256,7 +334,11 @@ with Python 3.13 and with Python 3.9.25, the version of the Mac's
 - The privacy check before the commit with the owner's real list on the
   Mac; the tests give it a made-up list.
 - Whether committing with signing off behaves as expected on the Mac
-  (with the Mac's git name and address, and no prompt).
+  (with the Mac's git name and address, and no prompt), and the check of
+  the author and committer with the Mac's real git identity and the
+  owner's real list. The tests give the identity through `GIT_AUTHOR_*`
+  and `GIT_COMMITTER_*`, not git's settings; git takes both the same way
+  for `commit-tree` as for `commit`.
 - A real agy job through the new put-back of the guard's code.
 - Whether Codex's sandbox lets a job write a `.git` folder inside a
   nested repository at all (the stand-in Codex has no sandbox). The
@@ -276,3 +358,8 @@ with Python 3.13 and with Python 3.9.25, the version of the Mac's
   output is not UTF-8 text (found while testing the put-back; the guard's
   code and hook are still put back). A later bridge pull request reads it
   with errors replaced.
+- A Codex read-only job and a `codex-review` job have the gap the agy fix
+  closed: they note no stops, so a SIGTERM or SIGHUP between the end of
+  `run()` and `finish()` ends the bridge with no `done`. Nothing is
+  staged or put back in those jobs, so only the `done` file is lost; a
+  later bridge pull request notes stops there too.
