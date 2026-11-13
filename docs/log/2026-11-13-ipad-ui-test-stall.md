@@ -177,10 +177,17 @@ under *Follow-ups*.
   (below)
 - `3fa40fb` Merge main into the UIKit animations pull request (#105)
 - `9aeed72` Merge main into the UIKit animations pull request (#100
-  and #106; docs/HANDOFF.md's CI paragraph keeps #106's account of the
-  two stopped runs and gives the cause in place of "not known")
-- The commit after it: AGENTS.md's `launchedApp` gotcha says it turns
-  UIKit's animations off, and this record gains the first CI run.
+  and #106; docs/HANDOFF.md's CI paragraph keeps #106's account and
+  gives the cause in place of "not known")
+- `a3b9115` AGENTS.md's `launchedApp` gotcha says it turns UIKit's
+  animations off, and this record gains the first CI run.
+- The commit after it: an independent check of `a3b9115` and the merge
+  corrected these records. docs/HANDOFF.md names all three runs stopped
+  at the limit on 2026-11-12 (the merge had kept #106's two, dropping
+  `main`'s at `2bf98d6`), and the first CI run's figures above were
+  re-derived and set right (3,675 and 3,467 seconds; 1,116 of 1,159
+  answers within a millisecond; the overlap with `main`'s run, and the
+  waiting the change removed).
 
 Before pushing, four independent reviews in this thread read the code,
 tried to refute the diagnosis, went through every UI test for what
@@ -222,16 +229,26 @@ for enough runs.
   "App animations complete notification not received" line. The app's
   output holds 1,173 "Received request to notify when animations are
   idle" lines and 1,175 replies; of the 1,159 pairs whose lines were
-  not interleaved with another thread's output, half were answered
+  not interleaved with another thread's output, 1,116 were answered
   within a millisecond, three took over a tenth of a second and the
-  longest 1.1 seconds, against 197 over a tenth of a second on `main`'s
-  run at `74b7f4f`.
+  longest 1.1 seconds.
   `TypingOnHomeTests.testEmergencyPhrasesAndSettingsLeaveTypingAndKeepTheMessage`
-  took 37 seconds. Against `main`'s run at `3bb2850`, which ran at the
-  same time, the iPad's tests took 3,676 seconds against 4,078 and the
-  iPhone's 3,945 against 3,466, with the same tests (the rest board's,
-  Home's reachability) slower on one family and faster on the other:
-  the machines differing, not the change.
+  took 37 seconds.
+- Compared with `main`'s run at `3bb2850` (Tests run 43339016171),
+  which partly overlapped it on other machines and had no stall either:
+  - The change removed the app's slow answers to XCTest's animation
+    question. On `main`, 211 of 1,153 such answers on the iPad and 220
+    of 1,216 on the iPhone took over a tenth of a second, about 90 and
+    88 seconds of waiting; here, 3 and 2, about 2 seconds and 1.
+  - The iPad's tests took 3,675 seconds against 4,078 and the iPhone's
+    3,945 against 3,467. Those swings are far larger than the waiting
+    removed and run both ways across most tests (52 of 78 faster on
+    the iPad, 55 of 74 slower on the iPhone, none slower on both by
+    more than 5 seconds), so they come mostly from the machines, not
+    the change. This pull request's iPad machine was the slower one
+    before the tests (its build took 10 minutes 47 seconds against 7
+    minutes 30), so a faster machine does not explain its faster tests
+    either.
 
 ## Not verified
 

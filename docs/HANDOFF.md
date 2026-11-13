@@ -1443,9 +1443,10 @@ settings, date) and summarise it here.
   the iPad job took 87 of its 90 minutes (pull request #103: about five
   minutes of new check-in tests, and one Home typing test whose taps
   each waited 120 seconds for the app to go idle), and the same day it
-  was stopped at the limit twice: on the first attempt of #103's run on
-  its final head, and on pull request #106's first run, a change to
-  documents only. There, with no test failed,
+  was stopped at the limit three times: on the first attempt of #103's
+  run on its final head (`0c53792`), on `main`'s run at `2bf98d6`, and
+  on pull request #106's first run, a change to documents only. There,
+  with no test failed,
   `TypingOnHomeTests.testEmergencyPhrasesAndSettingsLeaveTypingAndKeepTheMessage`
   took 758 seconds against 42 on `main`'s run of the same app code:
   from its tap on Emergency while typing, all twelve of its waits for
@@ -1455,17 +1456,19 @@ settings, date) and summarise it here.
   *Follow-ups*;
   [`log/2026-11-12-ci-claims-narrowed.md`](log/2026-11-12-ci-claims-narrowed.md)).
   The cause, found on 2026-11-13: in about one iPad run in six, after
-  typing ended on Home, XCTest's wait for UIKit's animations stopped being answered, and every later
-  wait in that launch ran out at 60 seconds. Since 2026-11-13 UI tests
+  typing ended on Home, XCTest's wait for UIKit's animations stopped
+  being answered, and every later wait in that launch ran out at 60
+  seconds. Since 2026-11-13 UI tests
   launch with UIKit's animations off, which stopped the same message in
   other projects (docs/DECISIONS.md, "Tests"). Count it fixed here only
   once about 20 iPad runs show no "App animations complete notification
-  not received" line in their result bundles (the record says how to
-  read them). Runs without it took 54 to 81 minutes that day, so the
-  margin is still thinner than it was.
-  Once, on #103, XCTest's wait for the simulator's home screen ran out
-  instead, from a turn back to portrait to the end of the job; nothing
-  in the app can fix that, and the record gives the owner's options
+  not received" line in their result bundles
+  ([`log/2026-11-13-ipad-ui-test-stall.md`](log/2026-11-13-ipad-ui-test-stall.md)
+  says how to read them). On 2026-11-12, iPad runs without it took 54
+  to 81 minutes, so the margin is still thinner than it was.
+  The stop on #103 was different: there XCTest's wait for the
+  simulator's home screen ran out, from a turn back to portrait to the
+  end of the job; nothing in the app can fix that, and the record gives the owner's options
   ([`log/2026-11-13-ipad-ui-test-stall.md`](log/2026-11-13-ipad-ui-test-stall.md)). Four iPad
   runs in a row stalled because iOS's lock-screen wallpaper prewarm
   starved the simulator; since then
