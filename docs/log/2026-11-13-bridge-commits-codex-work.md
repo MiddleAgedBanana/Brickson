@@ -1,8 +1,8 @@
 # The bridge commits a Codex write job's work, and puts agy's guard code back
 
-*2026-11-13. Branch `claude/project-thread-rgqoqf`. A cloud thread, from
-the coordinator's brief, for the two bridge follow-ups that pull request
-#99 left ([record](2026-11-12-bridge-safety-gaps.md), *Follow-ups*), and
+*2026-11-13. Pull request #108 (`claude/project-thread-rgqoqf`). A cloud
+thread, from the coordinator's brief, for the two bridge follow-ups that
+pull request #99 left ([record](2026-11-12-bridge-safety-gaps.md), *Follow-ups*), and
 one stale line in that record.*
 
 ## What changed and why
@@ -32,8 +32,10 @@ nothing:
   are read literally (`--literal-pathspecs`), so a file named like a
   pathspec, such as `:!AGENTS.md`, is committed itself and never leaves
   another file out. The bridge's own git still runs with git hooks and
-  `core.fsmonitor` off and without the thread's GitHub tokens, so nothing
-  the job set can run there. The commit is unsigned (`--no-gpg-sign`):
+  `core.fsmonitor` off and without the thread's GitHub tokens, and now
+  with every filter off too (below), so no hook, fsmonitor command or
+  filter the job set runs there; other git settings can still name
+  commands (*Not verified*). The commit is unsigned (`--no-gpg-sign`):
   nobody is there to answer a signing prompt, as for an agent's own
   commits on the Mac ([record](2026-11-07-workflow-lockfile.md)). Nothing
   is pushed; the thread checks the commit, runs the privacy check before
@@ -90,7 +92,12 @@ leave those variables out. They also leave out an inherited
 `GIT_CONFIG_PARAMETERS` (what `git -c` passes on to the commands it
 starts), which outranks every other git setting, the bridge's filter
 switches included, so one naming a filter command would still have run
-it (CodeRabbit's reply on the second push).
+it (CodeRabbit's reply on the second push). And they leave out an
+inherited `GIT_CONFIG`, which points `git config` alone at another file:
+the bridge reads the filters it turns off, and the push URL it refuses,
+with `git config`, so with one set it found neither in the file the rest
+of git reads, turned no filter off, and let a checkout with its own push
+URL have a job (CodeRabbit's review of the third push).
 
 **A job that did not finish still says so first.** When a job that
 failed or timed out also has a problem to report (its guard changed, or
@@ -109,17 +116,32 @@ that check says it was done.
 
 ## Commits
 
-The commits of this pull request.
+- `d736d13` Put agy's guard code back after every job, finished or not.
+- `16878d4` Commit a Codex write job's work outside its sandbox.
+- `a9da3e4` Record the bridge's two fixes, and correct #99's stale line.
+- `f80ae16` Run no git filter, and no repository named in the
+  environment, in the bridge's git.
+- `08a9023` Record the bridge's filter and environment fixes, and the
+  shared-settings gap.
+- `98078b4` Merge main, after pull requests #100 and #106 merged.
+- `1fdf558` Leave an inherited GIT_CONFIG_PARAMETERS out of the bridge's
+  git.
+- `a932f54` Record the GIT_CONFIG_PARAMETERS fix and its test.
+- `37efe21` Leave an inherited GIT_CONFIG out of the bridge's git.
+- The commit that adds this list, with the record of that fix, and a
+  merge of `main` after #107 merged, with no conflict.
 
 ## Verified
 
 In a cloud container (Linux, git 2.43), with Python 3.13 and with
 Python 3.9.25, the version of the Mac's `/usr/bin/python3`:
 
-- `scripts/test-agent-bridge.py`: 50 of 50 on both. Ten tests are new.
-  The first seven failed on `main`'s bridge, as did the one changed test;
-  the next two failed on this pull request's first push, and the last
-  on its second:
+- `scripts/test-agent-bridge.py`: 50 of 50 on both. Ten tests are new
+  and two older ones changed. The first seven new ones failed on `main`'s
+  bridge, as did the first changed one; the next two failed on this pull
+  request's first push, and the last on its second. The `GIT_CONFIG`
+  cases added to the last one and to the second changed one failed on
+  its third:
   - `test_the_bridge_commits_a_codex_write_jobs_work_outside_the_sandbox`:
     a stand-in Codex changes `AGENTS.md`, deletes a file and adds three
     (one with a space, one with letters outside ASCII, one named
@@ -157,7 +179,12 @@ Python 3.9.25, the version of the Mac's `/usr/bin/python3`:
     bridge runs with `GIT_CONFIG_PARAMETERS` naming a clean filter, then
     a process filter, that leaves a mark outside the checkout, and the
     job's `.gitattributes` names it; no mark, and the job is committed.
-    The process filter's mark appeared on the second push's bridge.
+    The process filter's mark appeared on the second push's bridge. A
+    third case sets `GIT_CONFIG` to an empty file while the shared
+    settings define the filter; its mark appeared on the third push's.
+  - `test_a_checkout_with_its_own_push_url_is_refused` now also runs the
+    bridge with `GIT_CONFIG` set to an empty file; the third push's
+    bridge started that job.
 - Eight broken copies of the new code each failed the tests named:
   staging without `--literal-pathspecs` and never committing (the commit
   test and the failed-commit test); committing a job that did not finish
@@ -166,7 +193,9 @@ Python 3.9.25, the version of the Mac's `/usr/bin/python3`:
   job committed (the write-job test); allowing a linked guard (that
   test); and a failed job's status showing only the problem (the put-back
   test). Two more failed the round-two tests: filters left on, and
-  `GIT_INDEX_FILE` kept.
+  `GIT_INDEX_FILE` kept. And the code of the second and third pushes,
+  `GIT_CONFIG_PARAMETERS` kept and then `GIT_CONFIG` kept, failed the
+  cases added after each.
 - `scripts/test-docs.py`, `scripts/test-runner.py`,
   `scripts/test-hooks.py` and `scripts/test-privacy.py` (results in the
   pull request), and `scripts/privacy-check.py --outgoing --no-list`: a
@@ -201,6 +230,11 @@ Python 3.9.25, the version of the Mac's `/usr/bin/python3`:
   git in a job's worktree still runs any filter the settings and the
   job's `.gitattributes` name. An agy job that changes git's shared
   settings is not reported (*Follow-ups*).
+- The Mac's own filter settings have not been read. CodeRabbit asked for
+  `git config --show-origin --get-regexp '^filter\..*\.(clean|process)$'`
+  there before the bridge's next commit. The bridge's own git turns
+  every filter off, so its commit does not depend on the answer; a
+  thread's or the owner's own git in that folder does.
 - One commit holds a Codex job's whole work. AGENTS.md asks for one task
   per commit; the thread can split it before pushing, and a brief can ask
   for one task per job.
