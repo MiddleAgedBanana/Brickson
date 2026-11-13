@@ -21,7 +21,7 @@ from pathlib import Path
 # An agent that runs the checks inside a bridge job inherits the job's
 # no-push settings; this file's throwaway origins need plain git.
 for key in [key for key in os.environ if key.startswith(('GIT_CONFIG_KEY_', 'GIT_CONFIG_VALUE_'))
-            or key in ('GIT_CONFIG_COUNT', 'GIT_CONFIG_PARAMETERS', 'GIT_DIR', 'GIT_WORK_TREE',
+            or key in ('GIT_CONFIG_COUNT', 'GIT_CONFIG_PARAMETERS', 'GIT_CONFIG', 'GIT_DIR', 'GIT_WORK_TREE',
                        'GIT_INDEX_FILE', 'GIT_OBJECT_DIRECTORY', 'GIT_COMMON_DIR',
                        'GIT_ALTERNATE_OBJECT_DIRECTORIES')]:
     del os.environ[key]
@@ -422,17 +422,26 @@ class BridgeTests(unittest.TestCase):
         # GIT_CONFIG_PARAMETERS (what `git -c` passes on) outranks every
         # other git setting, the bridge's own filter switches included, so a
         # thread that runs the bridge with one naming a filter command would
-        # have the bridge's commit run it (CodeRabbit, on #108).
+        # have the bridge's commit run it. GIT_CONFIG points `git config`
+        # alone at another file, so the bridge would look for filters there,
+        # find none and turn none off, while its `git add` still ran the one
+        # the shared settings define (CodeRabbit, on #108).
         self.install_codex_hook()
         outside = Path(self.temp.name) / 'outside'
         outside.mkdir()
-        for topic, key in (('cleans', 'clean'), ('processes', 'process')):
+        empty = Path(self.temp.name) / 'empty.gitconfig'
+        empty.write_text('')
+        for topic, key in (('cleans', 'clean'), ('processes', 'process'), ('hides', 'hidden')):
             with self.subTest(key):
                 mark = outside / f'ran-{key}'
+                if key == 'hidden':
+                    git(self.owner, 'config', 'filter.mark.clean', f"touch '{mark}'; cat")
+                    settings = {'GIT_CONFIG': str(empty)}
+                else:
+                    settings = {'GIT_CONFIG_PARAMETERS': f"'filter.mark.{key}=touch {mark}; cat'"}
                 result = self.bridge(
                     'codex', '--brief', str(self.brief), '--write', '--branch', topic,
-                    env={'STUB_MODE': 'edit filter',
-                         'GIT_CONFIG_PARAMETERS': f"'filter.mark.{key}=touch {mark}; cat'"})
+                    env={'STUB_MODE': 'edit filter', **settings})
                 self.assertEqual(result.returncode, 0, result.stderr)
                 self.assertFalse(mark.exists())
                 folder = self.home / 'code' / f'brickson-codex-{topic}'
@@ -971,12 +980,19 @@ class BridgeTests(unittest.TestCase):
     def test_a_checkout_with_its_own_push_url_is_refused(self):
         # git pushes to every push URL a remote has, and skips pushInsteadOf
         # for them, so the job's no-push URL would only be added beside it.
+        # GIT_CONFIG would point the bridge's `git config` alone at another
+        # file, where it would find no push URL (CodeRabbit, on #108).
         origin = subprocess.run(['git', '-C', str(self.worktree), 'remote', 'get-url', 'origin'],
                                 capture_output=True, text=True, check=True).stdout.strip()
         git(self.worktree, 'config', 'remote.origin.pushurl', origin)
-        result = self.bridge('codex', '--brief', str(self.brief), env={'STUB_MODE': 'push'})
-        self.assertEqual(result.returncode, 2, result.stderr)
-        self.assertIn('push URL', result.stderr)
+        empty = Path(self.temp.name) / 'empty.gitconfig'
+        empty.write_text('')
+        for settings in ({}, {'GIT_CONFIG': str(empty)}):
+            with self.subTest(**settings):
+                result = self.bridge('codex', '--brief', str(self.brief),
+                                     env={'STUB_MODE': 'push', **settings})
+                self.assertEqual(result.returncode, 2, result.stderr)
+                self.assertIn('push URL', result.stderr)
         self.assertEqual(self.calls(), [])
         self.assertFalse((self.worktree / 'build').exists())
         branches = subprocess.run(['git', '-C', str(self.owner), 'ls-remote', '--heads', 'origin'],

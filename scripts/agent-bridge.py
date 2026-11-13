@@ -85,19 +85,27 @@ ELSEWHERE = ('GIT_DIR', 'GIT_WORK_TREE', 'GIT_IMPLICIT_WORK_TREE', 'GIT_INDEX_FI
 # other git setting, the bridge's own included, so one inherited here could
 # turn back on a filter the bridge turns off.
 OUTRANKING = ('GIT_CONFIG_PARAMETERS',)
+# What points `git config` alone at another settings file. The bridge reads
+# git's settings with `git config` (the filters it turns off, a push URL it
+# refuses), so with this set it would read one file while `git add` and the
+# rest of git read another.
+CONFIG_ONLY = ('GIT_CONFIG',)
 
 
 def own_environment():
     """This environment, without the thread's GitHub tokens, without
     anything that points git at another repository or index, and without
-    settings that outrank the bridge's own. git uses GIT_INDEX_FILE, GIT_DIR
-    and the like over the folder it is given, so a thread that ran the bridge
-    with one set would have it read, stage and commit somewhere else; and
-    GIT_CONFIG_PARAMETERS outranks the settings the bridge adds, so one that
-    named a filter command would have the bridge's commit run it (CodeRabbit,
-    on #108)."""
+    settings that outrank the bridge's own or that git reads unevenly. git
+    uses GIT_INDEX_FILE, GIT_DIR and the like over the folder it is given, so
+    a thread that ran the bridge with one set would have it read, stage and
+    commit somewhere else; GIT_CONFIG_PARAMETERS outranks the settings the
+    bridge adds, so one that named a filter command would have the bridge's
+    commit run it; and GIT_CONFIG would have the bridge look for filters and
+    push URLs in a file the rest of git does not read, find none, and turn
+    no filter off and refuse no push URL (CodeRabbit, on #108)."""
     return {key: value for key, value in os.environ.items()
-            if key not in TOKENS and key not in ELSEWHERE and key not in OUTRANKING}
+            if key not in TOKENS and key not in ELSEWHERE and key not in OUTRANKING
+            and key not in CONFIG_ONLY}
 
 
 def add_settings(env, entries):
