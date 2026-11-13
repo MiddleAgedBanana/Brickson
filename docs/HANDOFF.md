@@ -1553,7 +1553,8 @@ settings, date) and summarise it here.
   *Code review*).
 - The [website](https://middleagedbanana.github.io/Brickson/), its
   [privacy policy](https://middleagedbanana.github.io/Brickson/privacy/)
-  (Effective October 24, 2026, since typing came to Home; the page since PR #40) and its
+  (Effective October 30, 2026, since it says Family Setup reads whether
+  VoiceOver and Switch Control are on; the page since PR #40) and its
   [accessibility page](https://middleagedbanana.github.io/Brickson/accessibility/)
   (since PR #40; the App Store's Accessibility URL, updated 2026-10-27 for
   current Home, Settings and simulator checks, with Largest Text layout fixes
@@ -1562,7 +1563,14 @@ settings, date) and summarise it here.
   merge; on 2026-10-15 the first two matched `site/` byte for byte. The
   support page's "in development" lines change at release, and the
   accessibility page changes with every device check and every row of
-  `docs/ACCESSIBILITY.md` that changes what it says.
+  `docs/ACCESSIBILITY.md` that changes what it says. Since the redesign
+  of 2026-11-13 (owner's request), the home page shows the real app:
+  screenshots and a silent recording from the iPad and iPhone
+  simulators at `8c90597`, retaken whenever Home changes how it looks
+  ([record](log/2026-11-13-website-redesign.md)). Every page's header
+  links only to other pages and Contact, which opens the mail app
+  (docs/DECISIONS.md, "The website's pages, contact links and pictures
+  of the app").
 - On the owner's Mac, Antigravity's only Brickson folder is
   `~/code/brickson-antigravity`, and since 2026-11-08 local, git-ignored
   hooks hold Antigravity and Codex to what the guard below refuses

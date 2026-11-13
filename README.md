@@ -226,11 +226,18 @@ analytics or external fonts. Preview it locally:
 python3 -m http.server 8765 --bind 127.0.0.1 --directory site
 ```
 
-Open [localhost:8765](http://127.0.0.1:8765/). Changes to `site/` deploy through
+Open [localhost:8765](http://127.0.0.1:8765/). Python's simple server
+does not answer range requests, so Safari may not play the home page's
+recording in this preview; check it in Chrome or Firefox here, or in
+Safari on the published site. Changes to `site/` deploy through
 GitHub Pages after merging into `main`. Keep the existing repository name
 and public page paths stable so support, privacy and accessibility links
 continue to work. Policy wording changes must include an updated effective
-date, and accessibility page changes an updated "Last updated" date.
+date, and a change to what the accessibility page says (its `<main>`) an
+updated "Last updated" date; a change to only its header, section list or
+footer does not. The pictures of the app on the home page are real
+captures, retaken whenever Home changes how it looks (docs/DECISIONS.md,
+"The website's pages, contact links and pictures of the app").
 
 ## Documentation
 

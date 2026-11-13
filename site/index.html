@@ -1,12 +1,23 @@
 <!doctype html>
-<!-- Keep this support URL and the published contact address stable. -->
+<!-- The App Store's support URL: keep this page's address, its contact
+     address and the #support section stable. Every screenshot and the
+     recording are of the real app, captured as docs/log records; never
+     replace one with a drawing or a mock-up. -->
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light dark">
-<title>Brickson · Your words. Still yours.</title>
-<meta name="description" content="An iPhone and iPad communication app being built for people living with ALS. Learn about Brickson, get support, and read our privacy policy.">
+<title>Brickson · An app that speaks for people living with ALS</title>
+<meta name="description" content="Brickson is an iPhone and iPad app being built for people living with ALS. Choose a phrase or type a message, and Brickson says it aloud.">
+<meta name="theme-color" content="#f7f5ee" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#101e2b" media="(prefers-color-scheme: dark)">
+<meta property="og:title" content="Brickson · Your words. Still yours.">
+<meta property="og:description" content="An iPhone and iPad app being built for people living with ALS. Choose a phrase or type a message, and Brickson says it aloud.">
+<meta property="og:image" content="https://middleagedbanana.github.io/Brickson/assets/social-preview.jpg">
+<meta property="og:image:alt" content="brickson. Your words. Still yours. Communication for people living with ALS. In development for iPhone and iPad. Beside the words, two speech bubbles, one navy and one ivory.">
+<meta property="og:url" content="https://middleagedbanana.github.io/Brickson/">
+<meta property="og:type" content="website">
 <link rel="stylesheet" href="style.css">
 <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
 </head>
@@ -14,63 +25,200 @@
 <a class="skip" href="#main">Skip to the content</a>
 <header class="site-header wrap">
   <a class="site-name" href="./" aria-label="Brickson home" aria-current="page">brickson</a>
-  <nav aria-label="Main navigation">
-    <a href="#approach">Our approach</a>
-    <a href="accessibility/">Accessibility</a>
-    <a href="#our-story">Why Brickson?</a>
-    <a href="#support">Support</a>
-    <a href="privacy/">Privacy</a>
-  </nav>
+  <nav class="site-nav" aria-label="Main"><a href="accessibility/">Accessibility</a><a href="privacy/">Privacy</a><a href="mailto:ajdedmon12@gmail.com?subject=Brickson">Contact</a></nav>
 </header>
 <main id="main" tabindex="-1">
   <section class="hero wrap" aria-labelledby="hero-title">
     <div class="hero-copy">
-      <h1 id="hero-title">Your words.<br>Still yours.</h1>
-      <p class="intro">An iPhone and iPad app being built for people living with ALS. A familiar place to speak, with your own Personal Voice when available.</p>
-      <div class="hero-actions">
-        <a class="button" href="#approach">Our approach</a>
-        <a class="text-link" href="#support">Get in touch <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 12h15m-6-6 6 6-6 6"/></svg></a>
+      <h1 id="hero-title">Your words. Still yours.</h1>
+      <p class="lead">Brickson is an app that speaks for people living with ALS. Choose a phrase or type a message, and Brickson says it aloud at once, in your own Personal Voice if you have made one and allow Brickson to use it.</p>
+      <p class="status">In development for iPhone and iPad. Not on the App Store yet.</p>
+      <div class="actions">
+        <a class="button" href="mailto:ajdedmon12@gmail.com?subject=Brickson">Email a question</a>
+        <a class="text-link" href="accessibility/">Accessibility in Brickson</a>
       </div>
-      <p class="status">In development for iPhone and iPad.</p>
     </div>
-    <div class="hero-art"><img src="assets/conversation.jpg" width="1254" height="1254" alt="" fetchpriority="high"></div>
-  </section>
-  <section class="approach wrap" id="approach" aria-labelledby="approach-title">
-    <h2 id="approach-title">Built around the person.<br class="mobile-break"> Not the technology.</h2>
-    <div class="principles">
-      <div><h3>A familiar place</h3><p>The goal is simple: as the way you communicate changes, the places you find your words stay familiar.</p></div>
-      <div><h3>Your voice, your choice</h3><p>Choose a phrase and hear it spoken aloud. With permission, Brickson can use your Apple Personal Voice.</p></div>
-      <div><h3>Private by design</h3><p>No accounts, ads, analytics or tracking. Brickson never sends us your phrases or anything you type.</p></div>
-    </div>
-  </section>
-  <section class="access wrap" id="accessibility" aria-labelledby="access-title">
-    <div class="access-heading"><p class="access-eyebrow">Accessibility</p><h2 id="access-title">Built on Apple's own accessibility features.</h2></div>
-    <div class="access-copy">
-      <p>Brickson is made only of Apple's standard controls, the kind VoiceOver, Voice Control, Switch Control and Eye Tracking are built to use. See what is in place today, and how each part has been checked.</p>
-      <a class="text-link" href="accessibility/">Accessibility in Brickson <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 12h15m-6-6 6 6-6 6"/></svg></a>
+    <div class="hero-devices">
+      <picture class="screen ipad">
+        <source srcset="assets/app/ipad-home.webp" type="image/webp">
+        <img src="assets/app/ipad-home.jpg" width="1032" height="1376" fetchpriority="high" alt="Brickson's Home on an iPad. At the top, the message reads “Give me a moment to answer.” Below it, in one row, are Emergency, Yes, No, Again and Get Attention; then the categories, with Conversation chosen, and Settings; then the Conversation phrases as large buttons.">
+      </picture>
+      <picture class="screen phone">
+        <source srcset="assets/app/iphone-home.webp" type="image/webp">
+        <img src="assets/app/iphone-home.jpg" width="603" height="1311" fetchpriority="high" alt="Home on an iPhone, where the message reads “I'm thirsty.” The same buttons are arranged for the narrower screen: Yes, No and Emergency, then Again and Get Attention, then the categories with Needs chosen, then the Needs phrases.">
+      </picture>
     </div>
   </section>
-  <section class="story wrap" id="our-story" aria-labelledby="story-title">
+
+  <section class="section band" aria-labelledby="watch-title">
+    <div class="watch wrap">
+      <div class="watch-copy">
+        <h2 id="watch-title">See it in use</h2>
+        <p>A recording of Brickson on an iPad, about 25 seconds long. It has no sound, so the steps it shows are written out here.</p>
+        <ol id="demo-steps" class="steps">
+          <li>Home opens on Basics, with a note for the family at the top: “Family: help with setting up is in Settings.”</li>
+          <li>Conversation is chosen, then “Give me a moment to answer.” Brickson says it, and the words take the note's place at the top.</li>
+          <li>Needs is chosen, then “I'm thirsty.” Brickson says it.</li>
+          <li>Type is chosen. An empty box for typing takes the message's place, and Apple's keyboard opens over the lower phrases. No button changes place, but Again becomes Speak, Conversation and Feelings become Clear and Put Back, and the phrases are dimmed.</li>
+          <li>“Could you open the window a little?” is typed, and Speak says it.</li>
+          <li>Phrases closes the keyboard and brings back the Needs phrases. The typed message stays at the top.</li>
+        </ol>
+      </div>
+      <figure class="screen-figure ipad">
+        <video class="screen" controls muted playsinline preload="metadata" width="864" height="1152" poster="assets/app/ipad-demo-poster.jpg" aria-label="Recording of Brickson on an iPad, about 25 seconds, no sound" aria-describedby="demo-steps">
+          <source src="assets/app/ipad-demo.mp4" type="video/mp4">
+          <p>This browser cannot play the recording here. The steps beside it show the same thing, or <a href="assets/app/ipad-demo.mp4">open the recording (MP4)</a>.</p>
+        </video>
+        <figcaption>No sound. Recorded in Apple's iPad simulator, where “Speaking” stayed under the message from the first phrase on.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="section wrap" aria-labelledby="how-title">
+    <div class="section-intro">
+      <h2 id="how-title">How Brickson works</h2>
+      <p>Home is Brickson's main screen: the message at the top, then Emergency, Yes, No, Again and Get Attention, then the categories and their phrases. Nothing on it moves on its own.</p>
+    </div>
+    <div class="feature">
+      <div class="feature-copy">
+        <h3>One choice speaks</h3>
+        <p>Choose a phrase and Brickson says it straight away. There is no confirm step. The words stay at the top of the screen, so the person listening can read them too, and Again says them once more.</p>
+        <p>Phrases are kept in categories, such as Basics, Needs and Conversation. The buttons are never reordered by how often or how recently they are used.</p>
+      </div>
+      <figure class="screen-figure ipad">
+        <picture class="screen">
+          <source srcset="assets/app/ipad-needs.webp" type="image/webp">
+          <img src="assets/app/ipad-needs.jpg" width="1032" height="1376" loading="lazy" decoding="async" alt="Home on an iPad with the Needs category chosen. The message at the top reads “I'm thirsty.” Below the row of Emergency, Yes, No, Again and Get Attention are the Needs phrases, such as I'm hungry, I'm too hot and Please move me.">
+        </picture>
+      </figure>
+    </div>
+    <div class="feature flip">
+      <div class="feature-copy">
+        <h3>Type anything else</h3>
+        <p>Choose Type to write a message with Apple's keyboard. Speak, or the keyboard's Return key, says the whole message, and it stays so it can be said again or added to.</p>
+        <p>When the keyboard opens, nothing else on the screen moves. Emergency, Yes, No and Get Attention stay above it.</p>
+      </div>
+      <figure class="screen-figure phone">
+        <picture class="screen">
+          <source srcset="assets/app/iphone-typing.webp" type="image/webp">
+          <img src="assets/app/iphone-typing.jpg" width="603" height="1311" loading="lazy" decoding="async" alt="Home on an iPhone while typing. The box at the top reads “Please open the window.” Yes, No, Emergency and Get Attention are in their usual places, Speak is where Again was, and Clear and Put Back stand where Needs and Feelings were, all above Apple's keyboard, which covers the lower phrases.">
+        </picture>
+      </figure>
+    </div>
+    <div class="feature">
+      <div class="feature-copy">
+        <h3>Emergency and Get Attention stay on Home</h3>
+        <p>Emergency shows the emergency phrases with one choice, even while typing, and each of them speaks at once. Get Attention plays a repeating tone to call someone into the room, and Stop, in a separate place, ends it.</p>
+        <p>Neither calls emergency services or sends anyone a message. The phrases and the tone play from the iPhone or iPad, or from headphones or a speaker connected to it. Nobody has heard the tone on a real device yet, so how far it carries has not been checked: <a href="accessibility/#get-attention">what has been checked about Get Attention</a>.</p>
+      </div>
+      <figure class="screen-figure ipad">
+        <picture class="screen">
+          <source srcset="assets/app/ipad-emergency.webp" type="image/webp">
+          <img src="assets/app/ipad-emergency.jpg" width="1032" height="1376" loading="lazy" decoding="async" alt="Home on an iPad with Emergency chosen. At the top is the note for the family, “Family: help with setting up is in Settings.” In place of the everyday phrases are the six emergency phrases, in red: I need help now. Please come here. I can't breathe. I'm choking. I'm in pain. Something is wrong.">
+        </picture>
+      </figure>
+    </div>
+  </section>
+
+  <section class="section band" aria-labelledby="sizes-title">
+    <div class="wrap">
+      <div class="section-intro">
+        <h2 id="sizes-title">The same layout, from touch to Eye Tracking</h2>
+        <p>In Settings, Family Setup asks every way the screen is reached: touch, Voice Control, Switch Control, Eye Tracking, Head Tracking, or someone else helping. For Switch Control, Head Tracking or Eye Tracking, Home makes its smaller buttons larger on an iPad, as far as the screen has room, and every button keeps its place among the others. There is nothing new to learn.</p>
+        <p>Until that question is answered, Home on an iPad starts at the largest sizes its screen has room for. The other pictures on this page show the sizes for touch.</p>
+      </div>
+      <div class="compare">
+        <figure class="screen-figure ipad">
+          <picture class="screen">
+            <source srcset="assets/app/ipad-home.webp" type="image/webp">
+            <img src="assets/app/ipad-home.jpg" width="1032" height="1376" loading="lazy" decoding="async" alt="Home on an iPad at the sizes for touch, with the Conversation phrases.">
+          </picture>
+          <figcaption>Sizes for touch</figcaption>
+        </figure>
+        <figure class="screen-figure ipad">
+          <picture class="screen">
+            <source srcset="assets/app/ipad-eye.webp" type="image/webp">
+            <img src="assets/app/ipad-eye.jpg" width="1032" height="1376" loading="lazy" decoding="async" alt="The same Home at the sizes for Eye Tracking. Emergency, Yes, No, Again, Get Attention, Phrases, Type and the categories are taller, and every button is in the same order, in the same place among the others.">
+          </picture>
+          <figcaption>Sizes for Eye Tracking</figcaption>
+        </figure>
+      </div>
+      <div class="note">
+        <p>Switch Control, Head Tracking and Eye Tracking are Apple's own features; Brickson has no eye, head or switch tracking of its own. The larger sizes have not yet been tried on a real iPad, and an iPhone keeps the sizes for touch. <a href="accessibility/">Accessibility in Brickson</a> says what has been checked so far.</p>
+      </div>
+    </div>
+  </section>
+
+  <div class="section pair wrap">
+      <section aria-labelledby="access-title">
+        <h2 id="access-title">Built on Apple's own accessibility features</h2>
+        <p>Brickson is made only of Apple's standard controls, the kind VoiceOver, Voice Control, Switch Control and Eye Tracking are built to use. See what is in place today, how each part has been checked, and what has not been checked yet.</p>
+        <a class="text-link" href="accessibility/">Accessibility in Brickson</a>
+      </section>
+      <section aria-labelledby="private-title">
+        <h2 id="private-title">Brickson never sends us your words</h2>
+        <p>No accounts, ads, analytics or tracking. What you add or type is kept on your iPhone or iPad, and copies leave it only in ways you choose, such as a backup.</p>
+        <a class="text-link" href="privacy/">Brickson's privacy policy</a>
+      </section>
+  </div>
+
+  <section class="section story-band band" id="our-story" aria-labelledby="story-title">
+    <div class="story wrap">
     <div class="story-heading"><p class="story-eyebrow">A note from the creator</p><h2 id="story-title">Why Brickson?</h2></div>
     <div class="story-copy">
       <p>Brickson is a name my brother made up as a teenager. More than twenty years later, it still makes our family smile.</p>
       <p>My brother died of ALS. I’m building Brickson in his memory, to help people living with ALS keep expressing themselves, in their own words.</p>
       <p class="story-signature">— Avery Dedmon, creator of Brickson</p>
     </div>
-  </section>
-  <div class="help-band">
-    <div class="help-grid wrap">
-      <section id="support" aria-labelledby="support-title">
-        <svg class="section-icon" aria-hidden="true" viewBox="0 0 64 64"><circle cx="25" cy="16" r="10"/><path d="M31 51H7c0-13 5-21 16-23m20 27s-15-10-15-19c0-9 11-11 15-4 4-7 15-5 15 4 0 9-15 19-15 19Z"/></svg>
-        <div><h2 id="support-title">A little help, when you need it.</h2><p>Questions, problems or ideas? Get in touch.</p><a class="text-link" href="mailto:ajdedmon12@gmail.com">ajdedmon12@gmail.com <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 12h15m-6-6 6 6-6 6"/></svg></a><p class="small">This address is not for emergencies.</p></div>
-      </section>
-      <section id="privacy" aria-labelledby="privacy-title">
-        <svg class="section-icon" aria-hidden="true" viewBox="0 0 64 64"><path d="m31 5-23 10v17c0 12 10 21 23 27m0-54 23 10v11"/><rect x="32" y="34" width="25" height="23" rx="4"/><path d="M38 34v-8a7 7 0 0 1 14 0v8"/></svg>
-        <div><h2 id="privacy-title">Your words belong to you.</h2><p>Learn what stays on your device, how Personal Voice works, and the choices you control.</p><a class="text-link" href="privacy/">Read the privacy policy <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 12h15m-6-6 6 6-6 6"/></svg></a></div>
-      </section>
     </div>
-  </div>
+  </section>
+
+  <section class="section wrap" aria-labelledby="questions-title">
+    <h2 id="questions-title">Questions and answers</h2>
+    <div class="questions">
+      <div>
+        <h3>Can I get Brickson yet?</h3>
+        <p>Not yet. Brickson is still being built and tested, and it is not on the App Store. This page will say when it is.</p>
+      </div>
+      <div>
+        <h3>What does it need?</h3>
+        <p>An iPhone or iPad with iOS 26 or iPadOS 26, or later. Brickson is in English for now.</p>
+      </div>
+      <div>
+        <h3>Does it need an account or the internet?</h3>
+        <p>No. There is no account to make, and the speech is made on your device by iOS, so Brickson needs no internet connection.</p>
+      </div>
+      <div>
+        <h3>Can it speak in my own voice?</h3>
+        <p>Yes, if you have made a Personal Voice and allow Brickson to use it. Personal Voice is an Apple feature that you create in the Settings app: <a href="https://support.apple.com/en-us/104993">Create a Personal Voice (Apple Support)</a>.</p>
+      </div>
+      <div>
+        <h3>Does Emergency call for help?</h3>
+        <p>No. Emergency shows phrases to speak, and Get Attention sounds a tone. Neither calls emergency services or sends a message.</p>
+      </div>
+      <div>
+        <h3>Can we change the phrases?</h3>
+        <p>Yes. Open Settings, then Family Setup, then Phrases and Categories. There you can add, change, move or delete phrases and categories, and save a backup. Choosing a phrase on Home only ever speaks it.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="contact" id="support" aria-labelledby="support-title">
+    <div class="contact-inner wrap">
+      <div>
+        <h2 id="support-title">Write to us</h2>
+        <p>Questions, problems and ideas are all welcome, and we will write back. There is no need to include medical details; if any would help, we will ask.</p>
+      </div>
+      <div class="actions">
+        <a class="button" href="mailto:ajdedmon12@gmail.com?subject=Brickson">Email ajdedmon12@gmail.com</a>
+        <p class="small">This address is not for emergencies. In an emergency, call your local emergency number.</p>
+      </div>
+    </div>
+  </section>
 </main>
-<footer class="site-footer wrap"><p>Brickson</p><p>Made by Avery Dedmon.</p></footer>
+<footer class="site-footer wrap">
+  <p><span class="footer-name">brickson</span> Made by Avery Dedmon.</p>
+  <nav class="footer-nav" aria-label="Footer"><a href="accessibility/">Accessibility</a><a href="privacy/">Privacy</a><a href="mailto:ajdedmon12@gmail.com?subject=Brickson">ajdedmon12@gmail.com</a></nav>
+</footer>
 </body>
 </html>
