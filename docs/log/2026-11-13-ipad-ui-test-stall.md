@@ -181,13 +181,16 @@ under *Follow-ups*.
   gives the cause in place of "not known")
 - `a3b9115` AGENTS.md's `launchedApp` gotcha says it turns UIKit's
   animations off, and this record gains the first CI run.
-- The commit after it: an independent check of `a3b9115` and the merge
-  corrected these records. docs/HANDOFF.md names all three runs stopped
+- `7378f5b` An independent check of `a3b9115` and the merge corrected
+  these records. docs/HANDOFF.md names all three runs stopped
   at the limit on 2026-11-12 (the merge had kept #106's two, dropping
   `main`'s at `2bf98d6`), and the first CI run's figures above were
   re-derived and set right (3,675 and 3,467 seconds; 1,116 of 1,159
   answers within a millisecond; the overlap with `main`'s run, and the
   waiting the change removed).
+- The commit after it: docs/DECISIONS.md records the owner's decision
+  to keep animations off in UI tests, cost included, which Codex's
+  review of `a3b9115` asked for.
 
 Before pushing, four independent reviews in this thread read the code,
 tried to refute the diagnosis, went through every UI test for what

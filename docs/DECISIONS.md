@@ -5512,7 +5512,7 @@ request merges only when they pass.
   even with the first ones paused, and each runs flat out until a
   reading finds it. Record:
   [`log/2026-11-04-watcher-without-ps.md`](log/2026-11-04-watcher-without-ps.md).
-- **2026-11-13, default, reversible:** UI tests launch the app with
+- **2026-11-13, owner, reversible:** UI tests launch the app with
   UIKit's animations off. `launchedApp` passes `--uikit-animations=off`
   unless a test sets `keepsUIKitAnimations`; the app reads it only in a
   debug build with test storage, and then calls
@@ -5538,7 +5538,11 @@ request merges only when they pass.
   (`LaunchOptionsTests`, `LaunchAnimationsTests`), so a person's launch
   animates as before. Revisit with each new Xcode, by running the typing
   tests about 20 times on a CI iPad with `keepsUIKitAnimations`: the
-  option can go if no wait runs out. Record:
+  option can go if no wait runs out. An agent chose this, and Codex's
+  review asked for the owner's decision, since the UI tests give up
+  seeing UIKit's animations; the owner chose to keep it, cost included,
+  over adding a weekly CI run with animations on, or leaving them on
+  and raising the iPad job's time limit (2026-11-13). Record:
   [`log/2026-11-13-ipad-ui-test-stall.md`](log/2026-11-13-ipad-ui-test-stall.md).
 
 ## Personal details stay out of the repository
