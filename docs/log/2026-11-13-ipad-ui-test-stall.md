@@ -173,7 +173,14 @@ under *Follow-ups*.
 
 - `10c80b1` Turn UIKit's animations off in UI-test launches
 - `fa3716a` Record why UI tests launch with UIKit's animations off
-- The commit after them: the reviewers' corrections (below).
+- `35b6dbf` Apply the independent reviews of the animations change
+  (below)
+- `3fa40fb` Merge main into the UIKit animations pull request (#105)
+- `9aeed72` Merge main into the UIKit animations pull request (#100
+  and #106; docs/HANDOFF.md's CI paragraph keeps #106's account of the
+  two stopped runs and gives the cause in place of "not known")
+- The commit after it: AGENTS.md's `launchedApp` gotcha says it turns
+  UIKit's animations off, and this record gains the first CI run.
 
 Before pushing, four independent reviews in this thread read the code,
 tried to refute the diagnosis, went through every UI test for what
@@ -206,12 +213,30 @@ for enough runs.
   - `LaunchArgumentsTests`: `launchedApp` dropping or misspelling an
     option it passes (the animations one above all), ignoring
     `keepsUIKitAnimations`, or two size names swapped.
-- The Swift has not been compiled here; GitHub CI is its first build.
+- The Swift was not compiled in this thread; GitHub CI was its first
+  build (next).
+- The pull request's first CI run, at `3fa40fb` (Tests run
+  43341979721), passed every job: unit tests, and 81 UI tests on each
+  family with none failed (3 skipped on the iPad, 7 on the iPhone, as
+  on `main`). The iPad job took 76 minutes. Its result bundle has no
+  "App animations complete notification not received" line. The app's
+  output holds 1,173 "Received request to notify when animations are
+  idle" lines and 1,175 replies; of the 1,159 pairs whose lines were
+  not interleaved with another thread's output, half were answered
+  within a millisecond, three took over a tenth of a second and the
+  longest 1.1 seconds, against 197 over a tenth of a second on `main`'s
+  run at `74b7f4f`.
+  `TypingOnHomeTests.testEmergencyPhrasesAndSettingsLeaveTypingAndKeepTheMessage`
+  took 37 seconds. Against `main`'s run at `3bb2850`, which ran at the
+  same time, the iPad's tests took 3,676 seconds against 4,078 and the
+  iPhone's 3,945 against 3,466, with the same tests (the rest board's,
+  Home's reachability) slower on one family and faster on the other:
+  the machines differing, not the change.
 
 ## Not verified
 
 - That the stall is gone. It came in about one iPad run in six, so one
-  green run proves little. Two things will show it. In each iPad result
+  green run (above) proves little. Two things will show it. In each iPad result
   bundle: no "App animations complete notification not received" line,
   and every "Received request to notify when animations are idle" in the
   app's output answered at once. (On `main`'s run at `74b7f4f`, the app
@@ -249,10 +274,6 @@ for enough runs.
      `.github/workflows/tests.yml` from 90 to 120. It stops nothing
      stalling; it only lets a slow run finish. Cloud agents cannot push
      workflows, so the owner, or an agent on the Mac, commits it.
-- AGENTS.md's *Gotchas* line on `launchedApp` could say it turns UIKit's
-  animations off. Left out here because pull request #100 rewrites
-  AGENTS.md to within a few hundred bytes of the 32 KiB Codex reads.
-  *(the next documents pull request after #100 merges)*
 - With each new Xcode, check whether Apple has fixed the wait: run the
   typing tests on a CI iPad with `keepsUIKitAnimations: true` about 20
   times (`-test-iterations 20`, `-only-testing:BricksonUITests/TypingOnHomeTests`).
