@@ -86,7 +86,11 @@ are, and not required, so none can fail), as it already turns off
 and the like over the folder it is given, so a thread that ran the
 bridge with one set would have had it stage and commit through another
 checkout's index. The bridge's git, and the agent's environment, now
-leave those variables out.
+leave those variables out. They also leave out an inherited
+`GIT_CONFIG_PARAMETERS` (what `git -c` passes on to the commands it
+starts), which outranks every other git setting, the bridge's filter
+switches included, so one naming a filter command would still have run
+it (CodeRabbit's reply on the second push).
 
 **A job that did not finish still says so first.** When a job that
 failed or timed out also has a problem to report (its guard changed, or
@@ -112,9 +116,10 @@ The commits of this pull request.
 In a cloud container (Linux, git 2.43), with Python 3.13 and with
 Python 3.9.25, the version of the Mac's `/usr/bin/python3`:
 
-- `scripts/test-agent-bridge.py`: 49 of 49 on both. Nine tests are new.
+- `scripts/test-agent-bridge.py`: 50 of 50 on both. Ten tests are new.
   The first seven failed on `main`'s bridge, as did the one changed test;
-  the last two failed on this pull request's first push:
+  the next two failed on this pull request's first push, and the last
+  on its second:
   - `test_the_bridge_commits_a_codex_write_jobs_work_outside_the_sandbox`:
     a stand-in Codex changes `AGENTS.md`, deletes a file and adds three
     (one with a space, one with letters outside ASCII, one named
@@ -148,6 +153,11 @@ Python 3.9.25, the version of the Mac's `/usr/bin/python3`:
   - `test_the_bridges_git_ignores_a_repository_named_in_its_environment`:
     the bridge runs with `GIT_INDEX_FILE` set to the owner's checkout's
     index; that index is unchanged and the commit is right.
+  - `test_the_bridges_commit_runs_no_filter_its_environment_names`: the
+    bridge runs with `GIT_CONFIG_PARAMETERS` naming a clean filter, then
+    a process filter, that leaves a mark outside the checkout, and the
+    job's `.gitattributes` names it; no mark, and the job is committed.
+    The process filter's mark appeared on the second push's bridge.
 - Eight broken copies of the new code each failed the tests named:
   staging without `--literal-pathspecs` and never committing (the commit
   test and the failed-commit test); committing a job that did not finish
