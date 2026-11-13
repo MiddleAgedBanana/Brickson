@@ -779,6 +779,9 @@ release in docs/ROADMAP.md when no thread has it yet.
   unchanged `main` and PR #82's branch both failed once and ran slow
   once; it has not failed on CI. Cause unknown
   ([`log/2026-11-05-phrases-named-like-controls.md`](log/2026-11-05-phrases-named-like-controls.md)).
+  It may be the fault UI tests now avoid by launching with UIKit's
+  animations off, as the keyboard goes there too (docs/DECISIONS.md,
+  "Tests", 2026-11-13); not checked.
   *(a Mac thread)*
 - GitHub's `xcode-27` machines do not all run one image while a new one
   rolls out, so one run's jobs can differ and a re-run can land on
@@ -1418,12 +1421,19 @@ settings, date) and summarise it here.
   device families and took about 105; since 2026-11-03 each family has
   a job of its own with 90 minutes, and "UI tests" is a job that passes
   only when both passed (docs/DECISIONS.md, "Tests"). On 2026-11-12
-  the iPad job took 87 of its 90 minutes (pull request #103: about five
-  minutes of new check-in tests, and one Home typing test whose taps
-  each waited 120 seconds for the app to go idle), so its margin is
-  thin; why that test waited is not known
-  ([`log/2026-11-12-check-in-card.md`](log/2026-11-12-check-in-card.md),
-  *Follow-ups*). Four iPad
+  the iPad job took 87 of its 90 minutes on pull request #103 and was
+  stopped at the limit on `main` and on pull request #106: in about one
+  iPad run in six, after typing ended on Home, XCTest's count of
+  UIKit's animations lost one and every later wait in that launch ran
+  out at 60 seconds. Since 2026-11-13 UI tests launch with UIKit's
+  animations off, which stopped the same fault in two other projects
+  (docs/DECISIONS.md, "Tests"); whether it stopped it here is read from
+  the iPad result bundles, as the record says. Runs without it took 54
+  to 81 minutes that day, so the margin is still thinner than it was.
+  Once, on #103, XCTest's wait for the simulator's home screen ran out
+  instead, from a turn back to portrait to the end of the job; nothing
+  in the app can fix that, and the record gives the owner's options
+  ([`log/2026-11-13-ipad-ui-test-stall.md`](log/2026-11-13-ipad-ui-test-stall.md)). Four iPad
   runs in a row stalled because iOS's lock-screen wallpaper prewarm
   starved the simulator; since then
   `scripts/test.sh` pauses those extensions on a simulator it started
