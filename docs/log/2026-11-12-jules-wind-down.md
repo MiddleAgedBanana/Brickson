@@ -25,8 +25,10 @@ Brickson's agents. Nothing in the app changes.
   Mac. *Guardrails for agents* said Codex, Jules and the owner are held
   to the guard's rules by review; it now says that on the owner's Mac
   git-ignored hooks hold Codex and Antigravity to what the guard refuses,
-  and that elsewhere Codex and the owner are held by review, as
-  docs/HANDOFF.md already said since 2026-11-08.
+  and that elsewhere Codex and the owner are held by review.
+  docs/HANDOFF.md said the same since 2026-11-08 except for its one
+  exception for Codex: input typed into a command already running,
+  which AGENTS.md did not have.
 - **docs/SDLC.md.** The agents it names are Claude Code, Codex and
   Antigravity. The cloud agents with no Xcode are Codex cloud and a
   Claude Code session with no route to the owner's Mac (AGENTS.md says
@@ -84,8 +86,7 @@ change has no Swift):
 
 ## Follow-ups
 
-- Pull request #94, opened by Jules on 2026-11-12 (UTC), is reviewed like
-  any other pull request; this change does not touch it.
+- Pull request #94 was closed without merging at 2026-11-12T05:03Z.
 - After December 31, 2026, the owner may remove the Jules GitHub app's
   access to the repository in GitHub's settings, since nothing will use
   it.
