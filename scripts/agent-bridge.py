@@ -81,16 +81,23 @@ TOKENS = ('GH_TOKEN', 'GITHUB_TOKEN', 'GH_ENTERPRISE_TOKEN', 'GITHUB_ENTERPRISE_
 ELSEWHERE = ('GIT_DIR', 'GIT_WORK_TREE', 'GIT_IMPLICIT_WORK_TREE', 'GIT_INDEX_FILE',
              'GIT_OBJECT_DIRECTORY', 'GIT_ALTERNATE_OBJECT_DIRECTORIES', 'GIT_COMMON_DIR',
              'GIT_GRAFT_FILE', 'GIT_SHALLOW_FILE', 'GIT_PREFIX', 'GIT_NAMESPACE')
+# What `git -c` passes on to the git commands it starts. It outranks every
+# other git setting, the bridge's own included, so one inherited here could
+# turn back on a filter the bridge turns off.
+OUTRANKING = ('GIT_CONFIG_PARAMETERS',)
 
 
 def own_environment():
-    """This environment, without the thread's GitHub tokens and without
-    anything that points git at another repository or index: git uses
-    GIT_INDEX_FILE, GIT_DIR and the like over the folder it is given, so a
-    thread that ran the bridge with one set would have it read, stage and
-    commit somewhere else (CodeRabbit, on #108)."""
+    """This environment, without the thread's GitHub tokens, without
+    anything that points git at another repository or index, and without
+    settings that outrank the bridge's own. git uses GIT_INDEX_FILE, GIT_DIR
+    and the like over the folder it is given, so a thread that ran the bridge
+    with one set would have it read, stage and commit somewhere else; and
+    GIT_CONFIG_PARAMETERS outranks the settings the bridge adds, so one that
+    named a filter command would have the bridge's commit run it (CodeRabbit,
+    on #108)."""
     return {key: value for key, value in os.environ.items()
-            if key not in TOKENS and key not in ELSEWHERE}
+            if key not in TOKENS and key not in ELSEWHERE and key not in OUTRANKING}
 
 
 def add_settings(env, entries):

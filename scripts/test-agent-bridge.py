@@ -418,6 +418,28 @@ class BridgeTests(unittest.TestCase):
                          'changed by the agent\n')
         self.assertEqual(git_out(folder, 'cat-file', 'blob', 'HEAD:notes/new note.md'), 'new\n')
 
+    def test_the_bridges_commit_runs_no_filter_its_environment_names(self):
+        # GIT_CONFIG_PARAMETERS (what `git -c` passes on) outranks every
+        # other git setting, the bridge's own filter switches included, so a
+        # thread that runs the bridge with one naming a filter command would
+        # have the bridge's commit run it (CodeRabbit, on #108).
+        self.install_codex_hook()
+        outside = Path(self.temp.name) / 'outside'
+        outside.mkdir()
+        for topic, key in (('cleans', 'clean'), ('processes', 'process')):
+            with self.subTest(key):
+                mark = outside / f'ran-{key}'
+                result = self.bridge(
+                    'codex', '--brief', str(self.brief), '--write', '--branch', topic,
+                    env={'STUB_MODE': 'edit filter',
+                         'GIT_CONFIG_PARAMETERS': f"'filter.mark.{key}=touch {mark}; cat'"})
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertFalse(mark.exists())
+                folder = self.home / 'code' / f'brickson-codex-{topic}'
+                self.assertEqual(git_out(folder, 'cat-file', 'blob', 'HEAD:AGENTS.md'),
+                                 'changed by the agent\n')
+                self.assertEqual(git_out(folder, 'status', '--porcelain', '--untracked-files=all'), '')
+
     def test_the_bridges_git_ignores_a_repository_named_in_its_environment(self):
         # git uses GIT_INDEX_FILE (and GIT_DIR and the like) over the folder
         # it is given, so a thread that runs the bridge with one set would
