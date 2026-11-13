@@ -18,7 +18,9 @@ import XCTest
 /// does not land where it was aimed (XCTest's rotated iPhone Duo surface)
 /// is reported as such and not sent. These are simulator touches that
 /// XCTest synthesises, never evidence of a real finger, dwell or a head
-/// pointer.
+/// pointer. It keeps UIKit's animations, which other UI tests turn off
+/// (docs/DECISIONS.md, "Tests"), because it records what a person's touch
+/// meets.
 final class PhraseDragProbeTests: XCTestCase {
     private static let isEnabled = ProcessInfo.processInfo.environment["BRICKSON_DRAG_PROBE"] == "1"
 
@@ -49,7 +51,7 @@ final class PhraseDragProbeTests: XCTestCase {
 
     @MainActor
     private func probe(_ start: Start, dx: CGFloat, dy: CGFloat) {
-        let app = launchedApp()
+        let app = launchedApp(keepsUIKitAnimations: true)
         defer { app.terminate() }
         let view = app.scrollViews["homeRegion.phrases"]
         guard view.waitForExistence(timeout: 10) else { return XCTFail("No phrase grid") }

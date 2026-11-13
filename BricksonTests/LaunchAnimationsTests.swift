@@ -3,9 +3,10 @@ import UIKit
 @testable import Brickson
 
 /// UI-test launches turn UIKit's animations off (`--uikit-animations=off`),
-/// because XCTest's count of them can lose track as the keyboard goes on an
-/// iPad, and then every later wait in that launch runs for a full minute
-/// (docs/DECISIONS.md, "Tests"). A person's launch never turns them off.
+/// because XCTest's wait for them stopped being answered as the keyboard
+/// went on GitHub's iPad simulators, and then every later wait in that
+/// launch ran for a full minute (docs/DECISIONS.md, "Tests"). A person's
+/// launch never turns them off.
 ///
 /// Each test turns animations back on before it ends, without suspending,
 /// so no other test runs while they are off.

@@ -2,9 +2,9 @@ import Testing
 @testable import Brickson
 
 /// What `launchedApp` passes the app (`UITestLaunch.arguments`), read with
-/// the app's own parser (`LaunchOptions.parse`), so a UI test's launch can
-/// never ask for something the app does not understand, which the app
-/// would only log and then ignore.
+/// the app's own parser (`LaunchOptions.parse`), so every option
+/// `launchedApp` itself passes is one the app understands; one it did not
+/// would only be logged and then ignored.
 struct LaunchArgumentsTests {
     private static func arguments(
         textSize: UITestTextSize = .large,
@@ -63,14 +63,19 @@ struct LaunchArgumentsTests {
         #expect(!asShipped.activeHomeFollowsAnswer)
     }
 
-    // Every size a UI test can ask for is one the app reads; a name that
-    // drifts from the app's fails this.
-    @Test func everyUITestSizeIsOneTheAppKnows() {
-        for sizes in [UITestSizes.touch, .switchControl, .headTracking, .eyeTracking] {
+    // Every size a UI test can ask for gives the app that profile's sizes;
+    // a name that drifts from the app's, or two names swapped, fails this.
+    @Test func everyUITestSizeGivesItsProfile() {
+        let expected: [(UITestSizes, HomeLayout.Profile)] = [
+            (.touch, .touch),
+            (.switchControl, .switchControl),
+            (.headTracking, .headTracking),
+            (.eyeTracking, .eyeTracking),
+        ]
+        for (sizes, profile) in expected {
             let options = LaunchOptions.parse(Self.arguments(sizes: sizes))
             #expect(options.unrecognized.isEmpty, "\(sizes.rawValue)")
-            #expect(options.activeHomeProfile == LaunchOptions.homeProfiles[sizes.rawValue], "\(sizes.rawValue)")
-            #expect(options.activeHomeProfile != nil, "\(sizes.rawValue)")
+            #expect(options.activeHomeProfile == profile, "\(sizes.rawValue)")
         }
     }
 

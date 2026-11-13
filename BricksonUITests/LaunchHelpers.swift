@@ -16,9 +16,9 @@ extension XCTestCase {
     /// mean the test storage did not open.
     ///
     /// UIKit's animations are off because XCTest waits after every action
-    /// until it has seen each UIKit animation it saw start also finish, and
-    /// on an iPad, as the keyboard goes, it can count one that never
-    /// finishes; every later wait in that launch then runs for a full
+    /// until each UIKit animation it saw start has finished, and on
+    /// GitHub's iPad simulators that wait stopped being answered as the
+    /// keyboard went; every later wait in that launch then ran for a full
     /// minute (docs/DECISIONS.md, "Tests").
     ///
     /// Orientation is simulator-wide and is restored to portrait. Appearance

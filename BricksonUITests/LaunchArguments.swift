@@ -1,10 +1,8 @@
-import Foundation
-
 // What `launchedApp` asks the app for, as plain values and one plain list
 // of launch arguments. Compiled into the unit tests too, where
 // `LaunchArgumentsTests` reads the list with the app's own parser
-// (`LaunchOptions.parse`), so a UI test never asks for an option the app
-// does not understand.
+// (`LaunchOptions.parse`), so every option `launchedApp` itself passes is
+// one the app understands.
 
 /// Dynamic Type sizes the UI tests launch at, by UIKit's names for them.
 nonisolated enum UITestTextSize: String, CaseIterable, Sendable {
@@ -64,10 +62,10 @@ nonisolated enum UITestLaunch {
     /// and language, then the test's own `extra` arguments.
     ///
     /// UIKit's animations are off unless `keepsUIKitAnimations` is true:
-    /// XCTest counts them to know when the app has finished animating, and
-    /// on an iPad that count can lose track as the keyboard goes, after
-    /// which every wait in the launch runs for a full minute
-    /// (docs/DECISIONS.md, "Tests").
+    /// after each action XCTest waits for the app's UIKit animations to
+    /// finish, and on GitHub's iPad simulators that wait stopped being
+    /// answered as the keyboard went, after which every wait in the launch
+    /// ran for a full minute (docs/DECISIONS.md, "Tests").
     static func arguments(
         textSize: UITestTextSize,
         appearance: UITestAppearance,
@@ -77,17 +75,20 @@ nonisolated enum UITestLaunch {
         keepsUIKitAnimations: Bool,
         extra: [String]
     ) -> [String] {
-        [storage == .fresh ? "--fresh-test-storage" : "--test-storage"]
-            + (shortTimeouts ? ["--short-timeouts"] : [])
-            + (sizes == .asShipped ? [] : ["--home-profile=\(sizes.rawValue)"])
-            + (keepsUIKitAnimations ? [] : ["--uikit-animations=off"])
-            + [
-                "--appearance=\(appearance.rawValue)",
-                "-UIPreferredContentSizeCategoryName", textSize.rawValue,
-                // Tests find controls by their English labels.
-                "-AppleLanguages", "(en)",
-                "-AppleLocale", "en_US",
-            ]
-            + extra
+        var arguments = [storage == .fresh ? "--fresh-test-storage" : "--test-storage"]
+        if shortTimeouts {
+            arguments.append("--short-timeouts")
+        }
+        if sizes != .asShipped {
+            arguments.append("--home-profile=\(sizes.rawValue)")
+        }
+        if !keepsUIKitAnimations {
+            arguments.append("--uikit-animations=off")
+        }
+        arguments.append("--appearance=\(appearance.rawValue)")
+        arguments += ["-UIPreferredContentSizeCategoryName", textSize.rawValue]
+        // Tests find controls by their English labels.
+        arguments += ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
+        return arguments + extra
     }
 }
