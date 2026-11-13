@@ -106,7 +106,7 @@ nonisolated enum ChainEngine {
     }
 }
 
-/// What activating a control does. The first four are hazards when a held
+/// What activating a control does. The first five are hazards when a held
 /// activation meets them unasked (docs/LESSONS.md, "Anything that moves
 /// things is a hazard"); the last two are not, and a chain goes on through
 /// them.
@@ -119,6 +119,10 @@ nonisolated enum ChainEffect: String, CaseIterable, Sendable {
     case changesData
     /// Moves controls: reordering, merging, a text size, entering edit mode.
     case movesThings
+    /// Leaves Brickson for another app, such as Voice Settings' Open
+    /// Personal Voice Settings does for the Settings app (docs/DECISIONS.md,
+    /// "Asking for Personal Voice from Voice Settings").
+    case leavesBrickson
     /// Only shows something else: another screen, or which phrases show.
     case navigates
     /// Nothing at all: a disabled control, or one already in the state it
@@ -127,7 +131,7 @@ nonisolated enum ChainEffect: String, CaseIterable, Sendable {
 
     var isHazard: Bool {
         switch self {
-        case .speaks, .alarms, .changesData, .movesThings: true
+        case .speaks, .alarms, .changesData, .movesThings, .leavesBrickson: true
         case .navigates, .nothing: false
         }
     }
@@ -229,8 +233,8 @@ nonisolated struct ChainStep: Equatable, Sendable {
 
 /// How a chain ended.
 nonisolated enum ChainEnd: Equatable, Sendable, CustomStringConvertible {
-    /// An unasked activation that speaks, alarms, changes data or moves
-    /// things.
+    /// An unasked activation that speaks, alarms, changes data, moves
+    /// things or leaves Brickson.
     case hazard
     /// The control met is the one just activated, unchanged, so activating
     /// it again does what it just did: after a choice, the person's own

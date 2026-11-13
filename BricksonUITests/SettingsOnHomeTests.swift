@@ -34,7 +34,15 @@ import XCTest
 ///   that button's place, and the one Set Up Step by Step opens once the
 ///   card is answered, with the answers clear of where the card's rows
 ///   were, and follows chains through the card's rows into both. Any
-///   hazard fails, a check-in answered unasked among them.
+///   hazard fails, a check-in answered unasked among them. Where Family
+///   Setup's Voice Settings row shows, it also reads Voice Settings, with
+///   Back to Family Setup in the row's place and the speeds and voices
+///   below it, and goes back with it to check that the row is back under
+///   it; no chain acts on the voice there (docs/DECISIONS.md, "Voice
+///   Settings, reached with a held look").
+/// - Voice Settings from a scrolled Family Setup, at the largest text size,
+///   where Family Setup scrolls on CI's iPhone and iPad: the way back takes
+///   the place the row showed in, and no chain acts on the voice.
 ///
 /// "Nearest" is scored two ways, because how Snap to Item picks a target is
 /// a device check (docs/HANDOFF.md, *Checks that need a real device*): by
@@ -51,6 +59,9 @@ final class SettingsOnHomeTests: XCTestCase {
         "Basics", "Needs", "Conversation", "Feelings",
     ]
     private static let everydayCategories = ["Basics", "Needs", "Conversation", "Feelings"]
+    /// The room between a Settings screen's scroll view and its content
+    /// (`SettingsMetrics.gutter`).
+    private static let gutter: CGFloat = 16
     private static let firstRunHint = "Family: help with setting up is in Settings."
 
     override func setUpWithError() throws {
@@ -80,6 +91,105 @@ final class SettingsOnHomeTests: XCTestCase {
     @MainActor
     func testOpeningSettingsWithACheckInDueAtTheLargestText() throws {
         try checkTheWayInAndOut(textSize: .ax5, orientation: .portrait, checkInDue: true)
+    }
+
+    /// Voice Settings opened from Family Setup scrolled, at the largest
+    /// text size, where Family Setup scrolls on CI's iPhone and iPad: first,
+    /// where the row starts below the first screenful (the iPhone), with
+    /// only its top part showing at the foot of the screen, then with the
+    /// row whole and higher than it lies in Family Setup's content. Fails
+    /// if Back to Family Setup is not where the row showed, as when its
+    /// place ignored the scroll (`SetupAnswersPlace.shown`), or reaches
+    /// past the foot of what shows, as when the screen's frames never
+    /// reached its placement (`LibraryQuestionPlace`); if going back does
+    /// not put the row under it again, as when Family Setup did not keep
+    /// its scroll; or if any chain from the row, from Family Setup's other
+    /// controls or from Voice Settings' meets a hazard. Settings' first
+    /// screen is left out: Family Setup always opens from it unscrolled,
+    /// which the other tests read.
+    @MainActor
+    func testVoiceSettingsFromAScrolledFamilySetup() throws {
+        let app = launchedApp(textSize: .ax5, shortTimeouts: false)
+        let window = app.windows.firstMatch.frame
+        let context = "AX5 text, portrait, \(UIDevice.current.userInterfaceIdiom == .pad ? "iPad" : "iPhone"), "
+            + "Family Setup scrolled, window \(window.size)"
+        assertReachable("Settings", in: app, context: context)
+        let home = try screenControls(in: app)
+        app.buttons["settings"].tap()
+        XCTAssertTrue(app.buttons["familySetup"].waitForExistence(timeout: 10), "Settings did not open from Home (\(context))")
+        open("familySetup", leaving: "familySetup", in: app, context: context)
+
+        let row = app.buttons[SettingsChains.voiceSettingsRow]
+        XCTAssertTrue(row.waitForExistence(timeout: 10), "Family Setup has no Voice Settings row (\(context))")
+        let unscrolled = row.frame
+        let top = app.navigationBars[SettingsChains.familySetup].frame.maxY
+        let list = app.scrollViews.containing(.button, identifier: SettingsChains.voiceSettingsRow).firstMatch
+        let bottom = list.frame.maxY
+        let foot = bottom - Self.gutter
+        // Held drags, which leave nothing to coast, aiming the row's top at
+        // `target`, until `placed` holds.
+        func drag(toTop target: CGFloat, until placed: () -> Bool) -> Int {
+            var drags = 0
+            while !placed(), drags < 10 {
+                let distance = max(-(foot - top) * 0.6, min((foot - top) * 0.6, row.frame.minY - target))
+                let start = app.coordinate(withNormalizedOffset: .zero).withOffset(
+                    CGVector(dx: window.midX, dy: distance > 0 ? foot - 8 : top + Self.gutter + 8)
+                )
+                start.press(
+                    forDuration: 0.05, thenDragTo: start.withOffset(CGVector(dx: 0, dy: -distance)), withVelocity: .slow,
+                    thenHoldForDuration: 0.3
+                )
+                drags += 1
+            }
+            return drags
+        }
+        // Rows hidden under the navigation bar or past the scroll view's
+        // foot cannot be met; the bar's own controls can.
+        let shows = { (control: ScreenControl) in
+            [SettingsChains.back, SettingsChains.backToTalking].contains(control.name)
+                || (control.frame.maxY > top && control.frame.minY < bottom)
+        }
+        // Reads Family Setup as it rests, then Voice Settings from its row,
+        // and scores the chains through both.
+        func readAndScore(_ place: String) throws {
+            let familySetup = try Self.onCover(screenControls(in: app)).filter(shows)
+            attachCapture(app, name: "family-setup-\(place)-\(context)".replacingOccurrences(of: ", ", with: "-"))
+            let shown = try XCTUnwrap(familySetup.first { $0.name == SettingsChains.voiceSettingsRow }?.frame, "\(context)")
+            let voiceSettings = try readVoiceSettings(from: shown, foot: foot, in: app, window: window, context: "\(context), \(place)")
+            checkChains(
+                home: home,
+                screens: SettingsChains.Screens(
+                    root: [],
+                    familySetup: Self.named(familySetup),
+                    firstStep: nil,
+                    voiceSettings: Self.named(Self.onScreen(voiceSettings, in: window))
+                ),
+                window: window, context: "\(context), \(place)"
+            )
+        }
+
+        // Only the row's top part showing, its middle above the foot so a
+        // tap meets it where it shows: possible only where the row starts
+        // below the first screenful.
+        if unscrolled.maxY > foot + 4 {
+            func inPart() -> Bool {
+                let frame = row.frame
+                return frame.maxY > foot + 4 && frame.midY < foot - 4
+            }
+            let drags = drag(toTop: foot - unscrolled.height * 0.75, until: inPart)
+            XCTAssertTrue(inPart(), "the Voice Settings row at \(row.frame) was not brought into view in part, in \(drags) drags (\(context))")
+            try readAndScore("row-in-part")
+        }
+
+        // The row whole, at least a third of its height higher than
+        // unscrolled.
+        func whole() -> Bool {
+            let frame = row.frame
+            return frame.minY >= top + Self.gutter && frame.maxY <= foot && frame.minY < unscrolled.minY - frame.height / 3
+        }
+        let drags = drag(toTop: top + Self.gutter + (foot - top - Self.gutter - unscrolled.height) / 2, until: whole)
+        XCTAssertTrue(whole(), "the Voice Settings row at \(row.frame) was not brought whole into view, scrolled, in \(drags) drags (\(context))")
+        try readAndScore("row-whole")
     }
 
     /// The iPhone keeps portrait (docs/DECISIONS.md, "Orientations"), so
@@ -164,6 +274,14 @@ final class SettingsOnHomeTests: XCTestCase {
         open("familySetup", leaving: "familySetup", in: app, context: context)
         let familySetup = try Self.onCover(screenControls(in: app))
         attachCapture(app, name: "family-setup-opened-\(context)".replacingOccurrences(of: ", ", with: "-"))
+        // Voice Settings where its row shows whole without scrolling, read
+        // and left with its way back, which returns to Family Setup as it
+        // was.
+        var voiceSettings: [ScreenControl]?
+        let foot = app.scrollViews.containing(.button, identifier: SettingsChains.voiceSettingsRow).firstMatch.frame.maxY - Self.gutter
+        if let row = familySetup.first(where: { $0.name == SettingsChains.voiceSettingsRow }), row.frame.maxY <= foot {
+            voiceSettings = try readVoiceSettings(from: row.frame, foot: foot, in: app, window: window, context: context)
+        }
         var firstStep: [ScreenControl]?
         var eachWay: [ScreenControl]?
         var secondStep: [ScreenControl]?
@@ -215,7 +333,8 @@ final class SettingsOnHomeTests: XCTestCase {
                 secondStep: secondStep.map { Self.named(Self.onScreen($0, in: window)) },
                 firstStepFromCheckIn: fromCheckIn.map { Self.named(Self.onScreen($0, in: window)) },
                 firstStepAfterCheckIn: afterCheckIn.map { Self.named(Self.onScreen($0, in: window)) },
-                secondStepAfterCheckIn: secondAfterCheckIn.map { Self.named(Self.onScreen($0, in: window)) }
+                secondStepAfterCheckIn: secondAfterCheckIn.map { Self.named(Self.onScreen($0, in: window)) },
+                voiceSettings: voiceSettings.map { Self.named(Self.onScreen($0, in: window)) }
             ),
             window: window, context: context
         )
@@ -254,9 +373,18 @@ final class SettingsOnHomeTests: XCTestCase {
     /// Opens a Settings screen with the control named `name`, and waits
     /// until `leaving`, a control of the screen it leaves, has gone, so the
     /// next screen is read where it rests rather than as it slides in.
+    /// `whereItShows` taps the middle of the control where it rests, for a
+    /// control that shows only in part: an element's own tap may first
+    /// scroll it whole into view, which a held look never does.
     @MainActor
-    private func open(_ name: String, leaving: String, in app: XCUIApplication, context: String) {
-        app.buttons[name].tap()
+    private func open(
+        _ name: String, leaving: String, whereItShows: Bool = false, in app: XCUIApplication, context: String
+    ) {
+        if whereItShows {
+            app.buttons[name].coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+        } else {
+            app.buttons[name].tap()
+        }
         let gone = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: app.buttons[leaving])
         XCTAssertEqual(XCTWaiter.wait(for: [gone], timeout: 10), .completed, "\(name) did not open its screen (\(context))")
     }
@@ -292,6 +420,61 @@ final class SettingsOnHomeTests: XCTestCase {
             app.buttons[SettingsChains.learnAboutEachWay].waitForExistence(timeout: 10), "Done did not return to the first step (\(context))"
         )
         return guide
+    }
+
+    /// Opens Voice Settings with Family Setup's Voice Settings row, which
+    /// showed at `row`, and reads it where it rests. Checks that Back to
+    /// Family Setup takes the row's place, as wide and at least as tall, kept
+    /// above `foot`, the foot of what shows of the content (only a row that
+    /// reaches past it moves up, so the way back's foot is there), with
+    /// nothing of the screen's own above it;
+    /// then goes back with it and checks that Family Setup kept its place,
+    /// so the row is back under the way back and a repeated activation only
+    /// goes back and forth (docs/DECISIONS.md, "Voice Settings, reached
+    /// with a held look"). Returns Voice Settings' controls.
+    @MainActor
+    private func readVoiceSettings(
+        from row: CGRect, foot: CGFloat, in app: XCUIApplication, window: CGRect, context: String
+    ) throws -> [ScreenControl] {
+        open(
+            SettingsChains.voiceSettingsRow, leaving: SettingsChains.voiceSettingsRow, whereItShows: row.maxY > foot,
+            in: app, context: context
+        )
+        let wayBack = app.buttons[SettingsChains.voiceWayBack]
+        XCTAssertTrue(wayBack.waitForExistence(timeout: 10), "Voice Settings opened without Back to Family Setup (\(context))")
+        let voice = try Self.onCover(screenControls(in: app))
+        attachCapture(app, name: "voice-settings-opened-\(context)".replacingOccurrences(of: ", ", with: "-"))
+        if let back = voice.first(where: { $0.name == SettingsChains.voiceWayBack })?.frame {
+            XCTAssertEqual(back.minX, row.minX, accuracy: 1, "Back to Family Setup's leading edge is not the row's (\(context))")
+            XCTAssertEqual(
+                back.minY, min(row.minY, foot - back.height), accuracy: 1,
+                "Back to Family Setup's top is not the row's, kept within what shows (\(context))"
+            )
+            XCTAssertLessThanOrEqual(back.maxY, foot + 1, "Back to Family Setup reaches past what shows (\(context))")
+            XCTAssertEqual(back.width, row.width, accuracy: 1, "Back to Family Setup is not the row's width (\(context))")
+            XCTAssertGreaterThanOrEqual(back.height, row.height - 1, "Back to Family Setup is shorter than the row (\(context))")
+            let above = voice.filter {
+                $0.frame.minY < back.minY && ![SettingsChains.back, SettingsChains.backToTalking].contains($0.name)
+            }
+            XCTAssertEqual(above.map(\.name), [], "Voice Settings shows controls above Back to Family Setup (\(context))")
+        } else {
+            XCTFail("Voice Settings has no Back to Family Setup (\(context)): \(voice)")
+        }
+
+        wayBack.tap()
+        let voiceRow = app.buttons[SettingsChains.voiceSettingsRow]
+        XCTAssertTrue(voiceRow.waitForExistence(timeout: 10), "Back to Family Setup did not return to Family Setup (\(context))")
+        let settled = NSPredicate { _, _ in
+            MainActor.assumeIsolated {
+                let frame = voiceRow.frame
+                return abs(frame.minX - row.minX) < 1 && abs(frame.minY - row.minY) < 1
+            }
+        }
+        XCTAssertEqual(
+            XCTWaiter.wait(for: [expectation(for: settled, evaluatedWith: nil)], timeout: 10), .completed,
+            "Family Setup's Voice Settings row at \(voiceRow.frame) is not back where it showed, at \(row) (\(context))"
+        )
+        return voice
     }
 
     /// From the second step, back to Family Setup with the check-in still
@@ -380,10 +563,10 @@ final class SettingsOnHomeTests: XCTestCase {
     }
 
     /// Follows every chain from Home's Settings and from each control of
-    /// Settings' first screens, the guide's cover and the second step
-    /// (`SettingsChains`), and attaches what it finds. Fails on any hazard, of the two kinds
-    /// the chains sort or any other, and on a control the chains do not
-    /// know.
+    /// Settings' first screens, the guide's cover, the second step and Voice
+    /// Settings (`SettingsChains`), and attaches what it finds. Fails on any
+    /// hazard, of the three kinds the chains sort or any other, and on a
+    /// control the chains do not know.
     @MainActor
     private func checkChains(
         home: [ScreenControl], screens: SettingsChains.Screens, window: CGRect, context: String
@@ -417,6 +600,7 @@ final class SettingsOnHomeTests: XCTestCase {
         XCTAssertEqual(findings(.unexpected), [], "a chain through Settings meets a new hazard (\(context))")
         XCTAssertEqual(findings(.closesUnderTheLook), [], "a held look closes Settings under the look (\(context))")
         XCTAssertEqual(findings(.savesAnAnswer), [], "a held look saves an answer in Set Up Step by Step (\(context))")
+        XCTAssertEqual(findings(.actsOnTheVoice), [], "a held look acts on the voice in Voice Settings (\(context))")
     }
 
     // MARK: Reading the screen

@@ -129,7 +129,7 @@ struct SettingsView: View {
         case .guidedSetup(let step, let entry):
             GuidedSetupView(step: step, entry: entry, path: $path)
         case .voice:
-            VoiceSettingsView()
+            VoiceSettingsView(path: $path)
         case .reachingTheScreen:
             ReachingTheScreenView()
         case .keepOpen:
@@ -295,8 +295,11 @@ struct SettingsAudioStatus: View {
 /// takes the place of whichever of the other two opened it, so a look still
 /// resting where a row was meets a control that only opens the next screen
 /// (AGENTS.md, invariant 10; docs/DECISIONS.md, "Settings' first row,
-/// placed from Home's frames", "The first step's own rows"). They are
-/// measured, because the style's insets are the system's, not ours.
+/// placed from Home's frames", "The first step's own rows"). Voice
+/// Settings' way back takes the place of Family Setup's Voice Settings row
+/// the same way (docs/DECISIONS.md, "Voice Settings, reached with a held
+/// look"). They are measured, because the style's insets are the system's,
+/// not ours.
 @Observable
 final class SettingsLanding {
     var rootRow: CGRect?
@@ -309,6 +312,10 @@ final class SettingsLanding {
     /// Again's top to Stop Asking's foot, while the card or the words that
     /// keep its place show.
     var checkInRows: CGRect?
+    /// Family Setup's Voice Settings row where it showed as it was chosen,
+    /// less what Family Setup had scrolled (`SetupAnswersPlace.shown`):
+    /// Voice Settings puts Back to Family Setup there.
+    var voiceRow: CGRect?
 
     /// Where the first step's Learn About Each Way goes when the steps were
     /// opened from `entry`; nil until that control has been drawn.

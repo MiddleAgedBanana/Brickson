@@ -322,8 +322,8 @@ struct SettingsScreen<Content: View>: View {
             .environment(\.settingsScreenFrames, frames)
             .environment(\.settingsScrollPosition, scroll)
         }
-        // Kept without redrawing the screen: only a row that opens a
-        // Library question reads it, when chosen.
+        // Kept without redrawing the screen: only a row whose next screen
+        // takes its place reads it, when chosen.
         .onScrollGeometryChange(for: CGFloat.self) { geometry in
             geometry.contentOffset.y + geometry.contentInsets.top
         } action: { _, offset in
@@ -354,9 +354,11 @@ nonisolated struct SettingsCover: Equatable, Sendable {
 }
 
 /// How far a Settings screen has scrolled down from its top, kept outside
-/// SwiftUI's view updates so scrolling redraws nothing. A row that opens a
-/// Library question reads it when chosen, to say where it was on screen
-/// (`LibraryModel.askedFrom`).
+/// SwiftUI's view updates so scrolling redraws nothing. A row whose next
+/// screen takes its place reads it when chosen, to say where it was on
+/// screen: a row that opens a Library question (`LibraryModel.askedFrom`),
+/// Go Through Setup Again (`SettingsLanding.goThroughRow`) and Family
+/// Setup's Voice Settings row (`SettingsLanding.voiceRow`).
 final class SettingsScrollPosition {
     var offset: CGFloat = 0
 }

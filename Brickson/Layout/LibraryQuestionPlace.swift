@@ -20,9 +20,18 @@ import Foundation
 /// still where a look resting anywhere on the way back, the words or the
 /// gap around the row would otherwise be nearer the first choice than the
 /// way back, by centre or by edge, with `SettingsRowPlace.margin` to spare
-/// (`SetupAnswersPlace`). Lower choices are farther still. Where they
-/// start below what shows, the family scrolls to them, which costs a dwell
-/// user several activations: here that cost protects the person.
+/// (`SetupAnswersPlace`). A row that reached past the foot of what shows is
+/// kept clear all the way down too: the way back stays within what shows,
+/// but a look on the row's top chose it, and the pointer Snap to Item drew
+/// to its centre can rest below the way back. Lower choices are farther
+/// still. Where they start below what shows, the family scrolls to them,
+/// which costs a dwell user several activations: here that cost protects
+/// the person.
+///
+/// Voice Settings is placed the same way from Family Setup's Voice Settings
+/// row, with no words, and the whole screen as its choices: Back to Family
+/// Setup is its way back (docs/DECISIONS.md, "Voice Settings, reached with
+/// a held look").
 ///
 /// A row that is the last control of its screen is nearest every point
 /// below it, so a look resting anywhere under it opens its question, and
@@ -74,6 +83,13 @@ nonisolated struct LibraryQuestionPlace: Equatable, Sendable {
 
         let under = CGRect(x: 0, y: back.maxY + spacing, width: width, height: wordsHeight(width))
         words = under
+        // Where a look or the pointer can be resting: the way back, and
+        // the rest of the row where it reached past the foot of what shows,
+        // since a look on its top chose it, and Snap to Item may have drawn
+        // the pointer to its centre.
+        let reach = CGRect(
+            x: back.minX, y: back.minY, width: back.width, height: max(back.maxY, row?.maxY ?? back.maxY) - back.minY
+        )
         // The first top at which every point of `arrivals` is nearer the
         // way back than the first choice.
         let below = { (arrivals: [CGRect]) -> CGFloat in
@@ -95,11 +111,11 @@ nonisolated struct LibraryQuestionPlace: Equatable, Sendable {
                 // for an unknown height, whose points could lie so far down
                 // that no top below them is ever found.
                 let foot = CGRect(x: 0, y: max(visibleHeight ?? 0, under.maxY) - 1, width: width, height: 1)
-                choicesTop = below([back, under, foot])
+                choicesTop = below([reach, under, foot])
             }
         } else {
             // A look in the gap around the row met the row too.
-            choicesTop = below([back.insetBy(dx: 0, dy: -spacing / 2), under])
+            choicesTop = below([reach.insetBy(dx: 0, dy: -spacing / 2), under])
         }
     }
 }
