@@ -4079,8 +4079,8 @@ Everything below was modelled in the unit tests on CI's frames of PR #56
 and on 630 swept windows, not drawn by the app, until CI's UI tests
 passed on this change: run 41005078813, on `380ef7d` (Xcode 27.1; the
 13-inch iPad and the iPhone 17 on iOS 27.0), passed the unit and UI
-tests with no expected failure, so on CI's windows no chain the UI
-tests score (from Home's Settings through Settings' first screen,
+tests with no UI test an expected failure, so on CI's windows no chain
+the UI tests score (from Home's Settings through Settings' first screen,
 Family Setup, and the first step with its guide, each as it first
 shows) saves an answer or closes Settings
 ([`log/2026-11-12-ci-has-run-it.md`](log/2026-11-12-ci-has-run-it.md)).

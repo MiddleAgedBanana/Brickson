@@ -795,6 +795,17 @@ release in docs/ROADMAP.md when no thread has it yet.
   fails again on that image, it is intermittent, and pull requests will
   meet it once every machine has the image. *(the next thread whose CI
   shows it)*
+- `SettingsTests.testAnIdleSettingsReturnsToItsFirstScreenAndStaysOpen`
+  has failed once each on 2026-10-22, 2026-11-08 and 2026-11-12, on
+  branches that did not touch it, and passed on each re-run: Family
+  Setup did not open, or its tap found no hit point. The 2026-11-12
+  recording stays on Settings' first screen throughout. A likely cause,
+  not proven: under `--short-timeouts` Settings' idle limit is 3
+  seconds, an untouched Settings resets every 3 seconds, and each reset
+  changes the navigation stack's identity (`.id(activity.resetCount)`)
+  even on its first screen, so a tap can land on a rebuild
+  ([`log/2026-11-12-ci-claims-narrowed.md`](log/2026-11-12-ci-claims-narrowed.md)).
+  *(a Settings thread, in its own pull request)*
 - Settings' Get Attention place is still empty, although AGENTS.md's
   design rules say "Settings opens on a large way back and a start-only
   Get Attention". Scored on 2026-10-24, Get Attention there would sound
@@ -1428,10 +1439,19 @@ settings, date) and summarise it here.
   only when both passed (docs/DECISIONS.md, "Tests"). On 2026-11-12
   the iPad job took 87 of its 90 minutes (pull request #103: about five
   minutes of new check-in tests, and one Home typing test whose taps
-  each waited 120 seconds for the app to go idle), so its margin is
-  thin; why that test waited is not known
+  each waited 120 seconds for the app to go idle), and the same day it
+  was stopped at the limit twice: on the first attempt of #103's run on
+  its final head, and on pull request #106's first run, a change to
+  documents only. There, with no test failed,
+  `TypingOnHomeTests.testEmergencyPhrasesAndSettingsLeaveTypingAndKeepTheMessage`
+  took 758 seconds against 42 on `main`'s run of the same app code:
+  from its tap on Emergency while typing, all twelve of its waits for
+  the app to settle ran out at 60 seconds, the app never reporting its
+  animations finished. Why these typing tests wait is not known, and
+  whether the limit or the tests' cost should change is open
   ([`log/2026-11-12-check-in-card.md`](log/2026-11-12-check-in-card.md),
-  *Follow-ups*). Four iPad
+  *Follow-ups*;
+  [`log/2026-11-12-ci-claims-narrowed.md`](log/2026-11-12-ci-claims-narrowed.md)). Four iPad
   runs in a row stalled because iOS's lock-screen wallpaper prewarm
   starved the simulator; since then
   `scripts/test.sh` pauses those extensions on a simulator it started
