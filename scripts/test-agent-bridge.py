@@ -1249,6 +1249,48 @@ class BridgeTests(unittest.TestCase):
         self.assertIn("changed the guard's code", done)
         self.assertEqual(self.guard_code(), installed)
 
+    def test_a_stop_after_agy_has_exited_still_puts_everything_back(self):
+        # The stop arrives during the put-back, after agy has exited: a
+        # driver wraps restore_agy_guard so the bridge first sends itself
+        # the signal, then puts the hook back.
+        import signal
+        self.point_agy_at(self.agy_folder)
+        driver = Path(self.temp.name) / 'driver.py'
+        driver.write_text(
+            'import importlib.util, os, signal, sys\n'
+            'spec = importlib.util.spec_from_file_location("bridge", sys.argv[1])\n'
+            'bridge = importlib.util.module_from_spec(spec)\n'
+            'spec.loader.exec_module(bridge)\n'
+            'original = bridge.restore_agy_guard\n'
+            'def stopped_first(*args):\n'
+            '    os.kill(os.getpid(), int(sys.argv[2]))\n'
+            '    return original(*args)\n'
+            'bridge.restore_agy_guard = stopped_first\n'
+            'sys.exit(bridge.main(sys.argv[3:]))\n')
+        for number, sig in enumerate((signal.SIGTERM, signal.SIGHUP)):
+            with self.subTest(sig.name):
+                self.install_agy_hook()
+                installed, hook = self.guard_code(), self.agy_guard_files()
+                outside = Path(self.temp.name) / f'outside-stop-{number}'
+                outside.mkdir()
+                result = subprocess.run(
+                    [sys.executable, str(driver), str(BRIDGE), str(int(sig)), 'agy', '--brief',
+                     str(self.brief)], capture_output=True, text=True, cwd=str(self.worktree),
+                    timeout=120, env={**os.environ, **self.env,
+                                      'STUB_MODE': 'guardcode plantpyc unhook',
+                                      'STUB_GUARD': 'edit', 'STUB_UNHOOK': 'matcher',
+                                      'STUB_PYC': 'file', 'STUB_OUTSIDE': str(outside),
+                                      'STUB_PYTHON': sys.executable})
+                self.assertEqual(result.returncode, 1, result.stderr)
+                self.assertEqual(self.guard_code(), installed)
+                self.assertEqual(self.agy_guard_files(), hook)
+                self.assertFalse(os.path.lexists(self.agy_folder / 'scripts' / '__pycache__'))
+                out = self.job_folder(result)
+                summary = json.loads((out / 'summary.json').read_text())
+                self.assertEqual((out / 'done').read_text(), summary['status'] + '\n')
+                self.assertTrue(summary['status'].startswith('stopped'), summary['status'])
+                self.assertIn("changed the guard's code", summary['status'])
+
     def test_the_guards_code_is_put_back_even_when_agys_output_cannot_be_read(self):
         self.point_agy_at(self.agy_folder)
         self.install_agy_hook()

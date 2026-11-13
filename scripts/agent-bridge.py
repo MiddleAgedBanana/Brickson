@@ -983,42 +983,52 @@ def agy_job(args):
         command += ['--model', args.model]
     write_command(out, [part if part != prompt else '<brief.md>' for part in command], checkout)
     before = git_state(checkout)
+    # A stop after agy has exited is noted (note_stop), never fatal, until
+    # done is written, so the put-backs below always run: run() puts this
+    # handler back when the agent ends.
+    previous = {sig: signal.signal(sig, note_stop) for sig in SIGNALS}
     try:
-        result = run(command, checkout, out, args.timeout + 1)
-        refusals, steps, response, ran_in, status = [], 0, '', None, None
-        for line in (out / 'output.txt').read_text().splitlines():
-            try:
-                event = json.loads(line)
-            except ValueError:
-                continue
-            if event.get('event') == 'init':
-                ran_in = (event.get('init') or {}).get('cwd')
-            update = event.get('step_update') or {}
-            info = update.get('tool_info') or {}
-            if update.get('step_type') == 'tool' and update.get('state') == 'DONE':
-                steps += 1
-                message = (info.get('error') or {}).get('message', '')
-                if 'denied' in message or 'hook' in message:
-                    refusals.append(f'{info.get("name")}: {message}')
-            if event.get('event') == 'result':
-                response = (event.get('result') or {}).get('response', '')
-                status = (event.get('result') or {}).get('status')
-        write_in(out, 'result.md', response)
-    finally:  # an error in reading agy's output never skips these
         try:
-            guard_hook, guard_problem = restore_agy_guard(checkout, guard)
-        finally:
+            result = run(command, checkout, out, args.timeout + 1)
+            refusals, steps, response, ran_in, status = [], 0, '', None, None
+            for line in (out / 'output.txt').read_text().splitlines():
+                try:
+                    event = json.loads(line)
+                except ValueError:
+                    continue
+                if event.get('event') == 'init':
+                    ran_in = (event.get('init') or {}).get('cwd')
+                update = event.get('step_update') or {}
+                info = update.get('tool_info') or {}
+                if update.get('step_type') == 'tool' and update.get('state') == 'DONE':
+                    steps += 1
+                    message = (info.get('error') or {}).get('message', '')
+                    if 'denied' in message or 'hook' in message:
+                        refusals.append(f'{info.get("name")}: {message}')
+                if event.get('event') == 'result':
+                    response = (event.get('result') or {}).get('response', '')
+                    status = (event.get('result') or {}).get('status')
+            write_in(out, 'result.md', response)
+        finally:  # an error in reading agy's output never skips these
             try:
-                guard_code, code_problem = restore_guard_code(checkout, code, before['head'])
+                guard_hook, guard_problem = restore_agy_guard(checkout, guard)
             finally:
-                guard_cache, cache_problem = clear_guard_caches(checkout)
-    extra = {'agent': 'agy', 'read_only': not args.write, 'refusals': refusals,
-             'tool_steps': steps, 'agy_status': status, 'ran_in': ran_in,
-             'guard_hook': guard_hook, 'guard_code': guard_code, 'guard_cache': guard_cache}
-    problems = [problem for problem in (guard_problem, code_problem, cache_problem) if problem]
-    if ran_in and Path(ran_in).resolve() != checkout:
-        problems.append(f'ran in the wrong folder ({ran_in})')
-    return out, finish(out, checkout, before, result, extra, '; '.join(problems) or None)
+                try:
+                    guard_code, code_problem = restore_guard_code(checkout, code, before['head'])
+                finally:
+                    guard_cache, cache_problem = clear_guard_caches(checkout)
+        extra = {'agent': 'agy', 'read_only': not args.write, 'refusals': refusals,
+                 'tool_steps': steps, 'agy_status': status, 'ran_in': ran_in,
+                 'guard_hook': guard_hook, 'guard_code': guard_code, 'guard_cache': guard_cache}
+        problems = [problem for problem in (guard_problem, code_problem, cache_problem) if problem]
+        if ran_in and Path(ran_in).resolve() != checkout:
+            problems.append(f'ran in the wrong folder ({ran_in})')
+        if STOPS and not result[2]:
+            problems.insert(0, 'stopped: the bridge was told to stop after agy ended')
+        return out, finish(out, checkout, before, result, extra, '; '.join(problems) or None)
+    finally:
+        for sig, handler in previous.items():
+            signal.signal(sig, handler)
 
 
 def status(_args):
