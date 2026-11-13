@@ -530,16 +530,19 @@ Mac, so the pull request that causes one fixes it before it merges.
   a fix people need now, and fixing the warning is not quick, that pull
   request may set `SWIFT_TREAT_WARNINGS_AS_ERRORS` to `NO` in the
   `settings` of the one target the warning is in (`project.yml`), and adds
-  a line here naming the warning, why it waits and who turns the setting
-  back on. Never more targets than the warning is in, and never longer
-  than the fix takes. The narrower route, keeping only the warning's
+  a line here naming the warning, the target in backticks (the check in
+  *A check for code the app must never contain* reads it), why it waits
+  and who turns the setting back on. Never more targets than the warning
+  is in, and never longer than the fix takes. The narrower route, keeping only the warning's
   diagnostic group a warning with `SWIFT_WARNINGS_AS_WARNINGS_GROUPS`
   ("Diagnostic Groups Remain Warnings"), does nothing while warnings are
   errors on Xcode 27.1: Xcode passes the group to the compiler before
   `-warnings-as-errors`, and the later flag wins. A deliberate unused
   value in a group named there still failed CI as an error
   ([`log/2026-10-23-warnings-as-errors.md`](log/2026-10-23-warnings-as-errors.md),
-  *Verified*). Use that route only after a CI run shows it working.
+  *Verified*). Use that route only after a CI run shows it working, and
+  only in the target named here, like the setting above (the check holds
+  `SWIFT_WARNINGS_AS_WARNINGS_GROUPS` and `-Wwarning` to the same rule).
 - **Release builds.** CI builds the Debug configuration only. Code under
   `#if DEBUG` (launch options, the keyboard probe) compiles differently
   in Release, so a warning only a Release build sees would first stop an
@@ -560,7 +563,9 @@ Reversible if the owner objects.*
 
 iOS and iPadOS 26.0 or later, on iPhone and iPad. Mac ("Designed for
 iPad"), Mac Catalyst and Vision Pro are switched off until someone decides
-to support them.
+to support them. Every deployment target in `project.yml` matches the
+first version written "or later" in this section (*A check for code the
+app must never contain*).
 
 The number follows from two rules. Check them again when Apple's next
 major release drops devices, and move the number only as they allow.
@@ -655,7 +660,10 @@ would bring it in; a file that uses none does not import it. SwiftUI's
 bridges to UIKit (`UIHostingController`, `UIViewControllerRepresentable`)
 and its modifiers typed with UIKit values (`keyboardType`) are SwiftUI's
 own API and need no UIKit import. The table below, not a search for
-imports, is the complete record.
+imports, is the complete record. `scripts/forbidden-code.py` reads it: an
+app file that uses one of these and is not named, in backticks, in the
+Where cell of a row for it fails the unit tests (*A check for code the
+app must never contain*).
 
 **Kept, and why.** Each row is a legacy framework or API that no current
 one replaces with no loss.
@@ -6068,6 +6076,134 @@ the variable again.
   the Mac and the `BRICKSON_PRIVATE_WORDS` secret) holds one entry, and
   the built-in patterns do the real work. Never ask Avery for more
   entries; propose a pattern instead when a kind of detail needs one.
+
+## A check for code the app must never contain
+
+*2026-11-13. Owner: the check, approved through the project's coordinator
+as the first recommendation of a read-only audit of which AGENTS.md rules
+a script could enforce. What it checks and how: default, reversible if
+the owner objects
+([`log/2026-11-13-forbidden-code-check.md`](log/2026-11-13-forbidden-code-check.md)).*
+
+AGENTS.md's rules are words. Agents and reviewers read them, but nothing
+stopped a slip before a reviewer happened to see it.
+`scripts/forbidden-code.py` checks the rules a script can decide with no
+judgment and fails when the code breaks one. Its tests,
+`scripts/test-forbidden-code.py`, run it over the checkout, and
+`scripts/test.sh unit` runs them before the build, beside the guard's and
+the privacy check's tests, so the required "Unit tests" check fails on a
+pull request that breaks one. It needs only Python, so a cloud session
+runs it in seconds. On 2026-11-13 `main` broke none of its rules.
+
+- **What it reads.** The Swift files of every `project.yml` target that
+  is not a test (the app, and any extension or framework it would ship),
+  with comments and the words inside strings left out, so a phrase or a
+  comment that names a forbidden thing is never a finding; the test
+  targets' Swift files, for the test rules; `project.yml` and every
+  `.entitlements`, `.plist` and `.xcconfig` file, whatever its name; the
+  workflows and every action kept in the repository (any `action.yml`);
+  `CLAUDE.md`. It reads what git tracks and new files git does not
+  ignore, changes nothing, and prints where and which rule, never a line
+  of the code. It reads YAML's one-line mappings and lists, anchors and
+  tags, and values carried over several lines as their block forms, and
+  a path in `project.yml` written in another letter case as the same
+  path, as the Mac does. A `project.yml` that includes other specs,
+  builds targets from templates, gives a target no type, compiles a
+  source outside the checkout or gives the app target sources that hold
+  no Swift file, or a workflow whose permissions it cannot read, stops it
+  with status 2 rather than passing.
+- **In the app** it refuses, each with the rule it backs: network code,
+  cloud sync, the Keychain, accounts, ads and tracking, and the
+  frameworks that exist for them (invariant 9; AGENTS.md, *The privacy
+  policy is a promise*); system sounds and setting the system volume
+  (invariant 4); a choice by device, screen or orientation (AGENTS.md,
+  *Layout on every device and window*); gestures, hover handlers and
+  tracking code of the app's own (invariants 1 and 9); a hidden Back
+  button, navigation bar (even one hidden only some of the time) or
+  blocked swipe (AGENTS.md, *Design rules for dwell, switch and pointer
+  input*); `ModelContext.rollback()` (invariant 5); `ViewThatFits`
+  (AGENTS.md, *Gotchas*); SwiftData opened without
+  `cloudKitDatabase: .none`, including through `.modelContainer(for:)`,
+  `Self(` in an extension, a container given no configurations or
+  `configurations: []`, or an `.init(` whose type only its context says
+  (a declaration, or a name declared with the type in a scope that holds
+  the use; a typed function, property or closure, written `SwiftData.`
+  or not, and a `return` anywhere in it; each branch of an `#if`; an if
+  or switch expression, a ternary or `??`; an array of configurations),
+  which take the default configuration; and a notification observer not
+  on the main queue inside `MainActor.assumeIsolated`, which one with a
+  selector never is (AGENTS.md, *Workflow rules*).
+- **Frameworks.** The app imports only the frameworks the script lists in
+  `APP_IMPORTS`. A new one fails until the pull request that needs it adds
+  it there, so a reviewer weighs it against the hard stops and the privacy
+  policy. UIKit, SafariServices, Dispatch, notification observers,
+  key-value observation, Combine (its publishers too, which SwiftUI brings
+  in without an import), Core Data, SiriKit and XCTest appear only in an
+  app file that the table in *Apple's current frameworks first* names, in
+  backticks, in the Where cell of a row for it. UIKit's own colours count
+  however they are written (`Color(.systemBackground)`, `.init(.label)`);
+  Foundation's typed notification messages (`addObserver(of:for:)`) are
+  the current way, not legacy observers; the values
+  SwiftUI's `keyboardType` and `textContentType` take do not, as *Apple's
+  current frameworks first* says. The table stays the record; the script
+  reads it.
+- **In `project.yml` and beside it:** any package, SDK, binary framework
+  or git submodule (*No outside packages*); an iCloud, push, Sign in with
+  Apple or network capability, a tracking, App Transport Security, local
+  network or Bonjour key (as an `INFOPLIST_KEY_` setting too), or a
+  background mode that fetches; warnings no longer errors, or silenced
+  (*Warnings are errors*), where keeping one group as warnings
+  (`-Wwarning`, `SWIFT_WARNINGS_AS_WARNINGS_GROUPS`) counts like turning
+  the setting off, and a setting for some builds only (`[config=Debug]`,
+  `[sdk=…]` after its name) counts like one for all, and `compilerFlags`
+  anywhere in `project.yml` count like the build settings; an iOS
+  deployment target, in `project.yml` or an `.xcconfig` file, other than
+  *Minimum iOS, iPhone and iPad*'s (a target for another platform keeps
+  its own).
+- **In the workflows** (AGENTS.md, *Code Review Rules*): a
+  `pull_request_target` or `workflow_run` trigger; a workflow that runs a
+  pull request's code (pull requests, their reviews and comments, the
+  merge queue) without read-only permissions set at its top; event text
+  (`github.event`, `github.head_ref`, the whole `github` context) inside
+  a `run` command, directly or through `env` values read as
+  `${{ env.NAME }}`, however many pass it on; an action not published by
+  GitHub or kept in the repository; a path filter on the workflow that
+  runs "Unit tests" and "UI tests".
+- **In the tests:** a known issue (`withKnownIssue`, `XCTExpectFailure`)
+  that is not strict or whose comment does not cite its decision as
+  `docs/DECISIONS.md, "<title>"`; a skip, a `.disabled` or an `.enabled`
+  with no reason.
+- **`CLAUDE.md`** holds only `@AGENTS.md`.
+- **Changing what it allows.** Every finding names its rule and what to
+  do. A file that needs a legacy API gets a row of the frameworks table,
+  or its name in one, with why; a new framework goes into `APP_IMPORTS`;
+  the safety fix that turns warnings back into warnings for one target
+  names that target, in backticks, in *Warnings are errors*. Each is a
+  change a reviewer sees. Widening or dropping a rule edits the script and
+  its tests together, and *Code Review Rules* flags it like a weakened
+  guard.
+- **What it cannot catch.** A forbidden API reached by a name built while
+  the app runs, a web address given to an API that loads one
+  (`Data(contentsOf:)`, `AVPlayer`), a value whose type Swift works out
+  from somewhere the check does not look (a parameter, a generic, a
+  typealias, a variable holding `.hidden`, a name declared with both of
+  SwiftData's types and used where neither declaration's scope reaches),
+  a Combine operator or a
+  UIKit-, SiriKit- or CloudKit-style name used in one app file when
+  another app file declares the same name (a declaration is the app's
+  own, file by file it cannot tell), YAML or Swift written in a form its
+  small readers have never seen, code written to get past it, and every
+  rule that needs judgment: placement, contrast, words, dwell chains.
+  Reviews still read every rule.
+- **Scope.** The framework rules hold the app's code only. The UI tests'
+  row of the table does not name every file that uses UIKit today, so
+  holding the test targets to it waits for that row to be fixed
+  (docs/HANDOFF.md, *Known gaps*). `rollback()` is refused in the app
+  only: a disabled unit test calls it on purpose, to record the crash.
+- **Not built.** The approval covered this check only: no Claude Code
+  hook that runs it after each edit, and no line of AGENTS.md trimmed.
+  Every rule keeps its line there; the script backs some of them and
+  replaces none.
 
 ## Reviews, updates and GitHub settings
 
