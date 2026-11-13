@@ -31,12 +31,13 @@ Without --write a job is read-only: Codex runs in its read-only sandbox,
 agy is told not to change anything, and any file it changes anyway is
 reported. With --write the job starts on a new branch from origin/main
 (codex/<topic> in a new worktree ~/code/brickson-codex-<topic>, or
-antigravity/<topic> in agy's folder), commits there and never pushes; the
-thread checks the commits and pushes. A write job needs the agent's guard
-hook installed (docs/log/2026-11-08-codex-antigravity-setup.md). Every agy
-job needs agy's hook exactly as installed there, and if a job changes it,
-the bridge puts it back and says so. Never the owner's own checkout, never
-a danger or skip-permissions mode.
+antigravity/<topic> in agy's folder) and never pushes; the thread checks
+the commits and pushes. Each agent commits there itself. A write job needs the agent's guard hook
+installed (docs/log/2026-11-08-codex-antigravity-setup.md). Every agy job
+needs agy's hook exactly as installed there; if a job changes the hook or
+the guard's own code in agy's folder, the bridge puts them back when the
+job ends, finished or not, and says so. Never the owner's own checkout,
+never a danger or skip-permissions mode.
 
 Standard library only; Python 3.9. Its tests are scripts/test-agent-bridge.py.
 """
@@ -60,6 +61,9 @@ from pathlib import Path
 ADAPTER = 'brickson_guard_adapter.py'
 # agy's guard hook, in agy's folder (git-ignored there): its settings, then the adapter it runs.
 AGY_GUARD = ('.agents/hooks.json', f'.agents/hooks/{ADAPTER}')
+# The guard's own code in agy's folder, which git tracks: the adapter runs
+# this guard, and the guard runs the privacy check.
+AGY_GUARD_CODE = ('.claude/hooks/guard.py', 'scripts/privacy-check.py')
 AGY_FOLDER = '~/code/brickson-antigravity'
 CODEX_FOLDER = '~/code/brickson-codex-{topic}'
 TOPIC = re.compile(r'^[a-z0-9][a-z0-9-]{0,48}$')
@@ -321,27 +325,69 @@ def agy_guard_snapshot(checkout):
     return files
 
 
-def restore_agy_guard(checkout, saved):
-    """After an agy job, put back any guard hook file the job changed:
-    the file is git-ignored, so git would not show it, and the next agy
-    session would run with whatever the job left. Returns what happened
-    for summary.json, and the job's status when the guard was changed."""
-    changed = [name for name in AGY_GUARD if read_plain(checkout, name) != saved[name]]
+def put_back(checkout, saved, what, remedy):
+    """After an agy job, put back any of the files in saved (name: the
+    (bytes, mode) read before the job) that the job changed, so the next
+    agy session never runs with whatever the job left. Returns what
+    happened for summary.json, and the job's status when one was changed."""
+    changed = [name for name in saved if read_plain(checkout, name) != saved[name]]
     if not changed:
         return 'unchanged', None
     names = ', '.join(changed)
     try:
         for name in changed:
             put_plain(checkout, name, *saved[name])
-        if read_agy_guard(checkout) != saved:
+        if any(read_plain(checkout, name) != saved[name] for name in saved):
             raise OSError('it still differs after being written')
     except Exception as error:  # whatever stops it, the job still ends with done
         return (f'changed by the job ({names}); not put back: {error}',
-                f'changed its own guard hook ({names}), and the bridge could not put it back '
-                f'({error}): agy may run unguarded in {checkout} until the hook is reinstalled '
-                'as docs/log/2026-11-08-codex-antigravity-setup.md shows')
+                f'changed {what} ({names}), and the bridge could not put it back '
+                f'({error}): agy may run unguarded in {checkout} until {remedy}')
     return (f'changed by the job ({names}) and put back',
-            f'changed its own guard hook ({names}); the bridge put it back')
+            f'changed {what} ({names}); the bridge put it back')
+
+
+def restore_agy_guard(checkout, saved):
+    """agy's guard hook files are git-ignored, so git would not show a
+    change to them."""
+    return put_back(checkout, saved, 'its own guard hook',
+                    'the hook is reinstalled as docs/log/2026-11-08-codex-antigravity-setup.md shows')
+
+
+def guard_code_snapshot(checkout):
+    """The guard's own code in agy's folder, kept before a job so the
+    bridge can put it back after it. A branch can hold it as a link, which
+    putting it back would replace, so a job starts only with plain files."""
+    files = {name: read_plain(checkout, name) for name in AGY_GUARD_CODE}
+    missing = [name for name, read in files.items() if read is None]
+    if missing:
+        raise Stop(f'{", ".join(missing)} in {checkout} is missing, or is a link or not a plain '
+                   'file; check out the guard from origin/main before handing agy a job')
+    return files
+
+
+def restore_guard_code(checkout, saved, head):
+    """After an agy job, put back the guard's own code as it was before the
+    job. A read-only job that changed it would otherwise leave the folder
+    refused until someone cleaned it, and a write job could commit a weaker
+    guard on its branch, which stays checked out here for the next job. The
+    bridge never rewrites the agent's commits: the folder keeps the guard as
+    it was, so it differs from such a commit, and the next job is refused
+    until someone has read that commit."""
+    entry, problem = put_back(checkout, saved, "the guard's own code",
+                              'the guard is checked out again from origin/main')
+    committed = git(checkout, 'diff', '--name-only', head, 'HEAD', '--', *AGY_GUARD_CODE,
+                    check=False) if head else ''
+    if committed:
+        names = ', '.join(committed.splitlines())
+        if entry == 'unchanged':
+            entry = 'unchanged in the folder'
+        entry += f'; committed on its branch ({names})'
+        problem = '; '.join(filter(None, [problem, (
+            f"committed a change to the guard's own code ({names}) on its branch; the folder "
+            'keeps the guard as it was before the job, so the next agy job is refused until '
+            'that commit is read and the folder is clean')]))
+    return entry, problem
 
 
 def agy_project_folders():
@@ -557,8 +603,8 @@ def finish(out, checkout, before, run_result, extra, problem=None):
     if extra.get('read_only') and (moved or after['changed'] != before['changed']
                                    or after['contents'] != before['contents']):
         summary['status'] = 'changed files in a read-only job'
-    if problem:
-        summary['status'] = problem
+    if problem:  # a job that did not finish still says so first
+        summary['status'] = problem if status == 'finished' else f'{status}; {problem}'
     if interrupted:
         summary['status'] = 'stopped: the bridge was told to stop, and stopped the agent'
     write_in(out, 'summary.json', json.dumps(summary, indent=2) + '\n')
@@ -574,6 +620,7 @@ def brief_text(args, folder, branch):
     job = Path(os.path.expanduser(args.brief)).read_text()
     mode = WRITE.format(branch=branch) if args.write else READ_ONLY
     return PREAMBLE.format(folder=folder, mode=mode) + job.strip() + '\n'
+
 
 
 def codex_review(args):
@@ -647,6 +694,7 @@ def agy_job(args):
     if args.write:
         branch = f'antigravity/{args.branch}'
         start_branch(checkout, branch)
+    code = guard_code_snapshot(checkout)
     out = job_folder(checkout, 'agy', 'write' if args.write else 'read')
     prompt = brief_text(args, checkout, branch)
     write_in(out, 'brief.md', prompt)
@@ -656,8 +704,11 @@ def agy_job(args):
         command += ['--model', args.model]
     write_command(out, [part if part != prompt else '<brief.md>' for part in command], checkout)
     before = git_state(checkout)
-    result = run(command, checkout, out, args.timeout + 1)
-    guard_hook, guard_problem = restore_agy_guard(checkout, guard)
+    try:
+        result = run(command, checkout, out, args.timeout + 1)
+    finally:  # put back what guards agy, however the job ended
+        guard_hook, guard_problem = restore_agy_guard(checkout, guard)
+        guard_code, code_problem = restore_guard_code(checkout, code, before['head'])
     refusals, steps, response, ran_in, status = [], 0, '', None, None
     for line in (out / 'output.txt').read_text().splitlines():
         try:
@@ -679,8 +730,8 @@ def agy_job(args):
     write_in(out, 'result.md', response)
     extra = {'agent': 'agy', 'read_only': not args.write, 'refusals': refusals,
              'tool_steps': steps, 'agy_status': status, 'ran_in': ran_in,
-             'guard_hook': guard_hook}
-    problems = [guard_problem] if guard_problem else []
+             'guard_hook': guard_hook, 'guard_code': guard_code}
+    problems = [problem for problem in (guard_problem, code_problem) if problem]
     if ran_in and Path(ran_in).resolve() != checkout:
         problems.append(f'ran in the wrong folder ({ran_in})')
     return out, finish(out, checkout, before, result, extra, '; '.join(problems) or None)

@@ -117,6 +117,28 @@ if 'unhook' in mode:
     elif how == 'folder':  # a folder where the file was, which cannot be put back
         os.remove(hooks)
         os.makedirs(os.path.join(hooks, 'inside'))
+if 'unguard' in mode:
+    # Weaken the guard's own code in agy's folder, which git tracks: the
+    # adapter runs this guard, and the guard runs the privacy check.
+    import shutil, subprocess
+    how, outside = os.environ['STUB_UNGUARD'], os.environ.get('STUB_OUTSIDE', '')
+    guard = os.path.join('.claude', 'hooks', 'guard.py')
+    check = os.path.join('scripts', 'privacy-check.py')
+    if how in ('rewrite', 'commit'):
+        for name in (guard, check):
+            with open(name, 'w') as file:
+                file.write('print("allow everything")\n')
+        if how == 'commit':  # a write job keeps it on its branch
+            subprocess.run(['git', 'add', guard, check], check=True, capture_output=True)
+            subprocess.run(['git', 'commit', '-q', '-m', 'Weaken'], check=True, capture_output=True)
+    elif how == 'link':  # a link to a file outside the folder
+        with open(os.path.join(outside, 'guard.py'), 'w') as file:
+            file.write('print("outside")\n')
+        os.remove(guard)
+        os.symlink(os.path.join(outside, 'guard.py'), guard)
+    elif how == 'remove':
+        shutil.rmtree('.claude')
+        os.remove(check)
 if entry['tool'] == 'codex':
     if args and args[0] == 'review':
         print('No P0 or P1 findings.')
@@ -141,12 +163,23 @@ for event in [{'event': 'init', 'init': {'cwd': cwd}},
                'tool call denied by pre-tool hook: Stage only your own changes'}}}},
               {'event': 'result', 'result': {'status': 'SUCCESS', 'response': 'agy final answer'}}]:
     print(json.dumps(event))
+if 'fail' in mode:
+    sys.exit(3)
 '''
 
 
 def git(folder, *args):
     subprocess.run(['git', '-C', str(folder), *args], check=True, capture_output=True,
                    stdin=subprocess.DEVNULL)
+
+
+def git_out(folder, *args):
+    return subprocess.run(['git', '-C', str(folder), *args], check=True, capture_output=True,
+                          text=True, stdin=subprocess.DEVNULL).stdout
+
+
+# The guard's own code in agy's folder, which git tracks (agent-bridge.py's AGY_GUARD_CODE).
+GUARD_CODE = ('.claude/hooks/guard.py', 'scripts/privacy-check.py')
 
 
 class BridgeTests(unittest.TestCase):
@@ -506,6 +539,81 @@ class BridgeTests(unittest.TestCase):
         refused = self.bridge('agy', '--brief', str(self.brief))
         self.assertEqual(refused.returncode, 2, refused.stderr)
         self.assertIn('guard hook', refused.stderr)
+
+    def test_an_agy_job_that_changes_the_guards_own_code_is_reported_and_put_back(self):
+        # The adapter runs the guard in agy's folder, which git tracks, and
+        # the guard runs the privacy check. A job that weakens either is
+        # put back when it ends, whether the job finished or failed.
+        self.point_agy_at(self.agy_folder)
+        self.install_agy_hook()
+        committed = {name: (self.agy_folder / name).read_bytes() for name in GUARD_CODE}
+        for how in ('rewrite', 'link', 'remove'):
+            for mode in ('unguard', 'unguard fail'):
+                with self.subTest(how=how, mode=mode):
+                    outside = Path(self.temp.name) / f'outside-{how}-{len(mode)}'
+                    outside.mkdir()
+                    result = self.bridge('agy', '--brief', str(self.brief),
+                                         env={'STUB_MODE': mode, 'STUB_UNGUARD': how,
+                                              'STUB_OUTSIDE': str(outside)})
+                    self.assertEqual(result.returncode, 1, result.stderr)
+                    out = self.job_folder(result)
+                    summary = json.loads((out / 'summary.json').read_text())
+                    self.assertIn("changed the guard's own code", summary['status'])
+                    self.assertIn('the bridge put it back', summary['status'])
+                    if 'fail' in mode:
+                        self.assertTrue(summary['status'].startswith('failed (exit 3); '),
+                                        summary['status'])
+                    self.assertIn('put back', summary['guard_code'])
+                    self.assertEqual((out / 'done').read_text(), summary['status'] + '\n')
+                    for name in GUARD_CODE:
+                        self.assertFalse((self.agy_folder / name).is_symlink(), name)
+                        self.assertEqual((self.agy_folder / name).read_bytes(), committed[name], name)
+                    if how == 'link':  # nothing written through the link
+                        self.assertEqual((outside / 'guard.py').read_text(), 'print("outside")\n')
+                    self.assertEqual(git_out(self.agy_folder, 'status', '--porcelain'), '')
+                    again = self.bridge('agy', '--brief', str(self.brief))
+                    self.assertEqual(again.returncode, 0, again.stderr)
+                    self.assertEqual(json.loads((self.job_folder(again) / 'summary.json')
+                                                .read_text())['guard_code'], 'unchanged')
+
+    def test_an_agy_write_job_that_commits_a_weaker_guard_is_reported_and_stops_the_next_job(self):
+        # The branch stays checked out in agy's folder for the next job, so
+        # the folder keeps the guard as it was before the job, and the next
+        # job is refused until someone has read the commit.
+        self.point_agy_at(self.agy_folder)
+        self.install_agy_hook()
+        main = {name: git_out(self.agy_folder, 'show', f'origin/main:{name}') for name in GUARD_CODE}
+        result = self.bridge('agy', '--brief', str(self.brief), '--write', '--branch', 'docs',
+                             env={'STUB_MODE': 'unguard', 'STUB_UNGUARD': 'commit'})
+        self.assertEqual(result.returncode, 1, result.stderr)
+        summary = json.loads((self.job_folder(result) / 'summary.json').read_text())
+        self.assertIn("committed a change to the guard's own code", summary['status'])
+        self.assertIn('committed on its branch', summary['guard_code'])
+        self.assertEqual(len(summary['commits']), 1)
+        for name in GUARD_CODE:
+            self.assertEqual((self.agy_folder / name).read_text(), main[name], name)
+        refused = self.bridge('agy', '--brief', str(self.brief))
+        self.assertEqual(refused.returncode, 2, refused.stderr)
+        self.assertIn('uncommitted changes', refused.stderr)
+        self.assertEqual(len(self.calls()), 1)  # agy never ran with the weaker guard
+
+    def test_agy_refuses_a_guard_that_is_not_a_plain_file(self):
+        # A branch can hold the guard as a link, which the bridge would
+        # follow to put it back; the job is refused before agy starts.
+        self.point_agy_at(self.agy_folder)
+        self.install_agy_hook()
+        guard = self.agy_folder / GUARD_CODE[0]
+        elsewhere = Path(self.temp.name) / 'elsewhere.py'
+        elsewhere.write_text('# a guard outside the folder\n')
+        guard.unlink()
+        guard.symlink_to(elsewhere)
+        for args in (['add', GUARD_CODE[0]], ['commit', '-q', '-m', 'Link the guard']):
+            subprocess.run(['git', '-C', str(self.agy_folder), *args], check=True,
+                           capture_output=True, env={**os.environ, **self.env})
+        refused = self.bridge('agy', '--brief', str(self.brief))
+        self.assertEqual(refused.returncode, 2, refused.stderr)
+        self.assertIn('guard.py', refused.stderr)
+        self.assertEqual(self.calls(), [])
 
     def test_agy_write_job_starts_its_branch_from_origin_main(self):
         self.point_agy_at(self.agy_folder)
