@@ -144,8 +144,9 @@ by running the bridge with stand-in agents. Each is fixed, test first:
   staged or committed, and the job ends `stopped: the bridge was told to
   stop after Codex finished, before it committed; ...` and exits 1. git
   itself is never cut off, so it leaves no lock; a stop that comes while
-  git is writing the commit lets that commit finish, and the status
-  still says the bridge was stopped.
+  git is writing the commit lets that commit finish, and the job then
+  ends `finished` with the commit made, as if the stop had come just
+  after it.
 
 **#99's record, corrected.** Its first *Not verified* line, the hook file
 installed on the Mac, was checked on 2026-11-12, so it now sits under
