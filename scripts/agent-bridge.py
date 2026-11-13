@@ -76,6 +76,33 @@ FOLDERS = {}  # each job folder's handle, opened before its agent starts
 # Where a job's pushes go: nowhere. Git refuses a URL with this scheme.
 NO_PUSH = 'no-push://agent-bridge-jobs-never-publish/'
 TOKENS = ('GH_TOKEN', 'GITHUB_TOKEN', 'GH_ENTERPRISE_TOKEN', 'GITHUB_ENTERPRISE_TOKEN')
+# Variables that make git use another repository, index or object store
+# than the folder it is given (git rev-parse --local-env-vars).
+ELSEWHERE = ('GIT_DIR', 'GIT_WORK_TREE', 'GIT_IMPLICIT_WORK_TREE', 'GIT_INDEX_FILE',
+             'GIT_OBJECT_DIRECTORY', 'GIT_ALTERNATE_OBJECT_DIRECTORIES', 'GIT_COMMON_DIR',
+             'GIT_GRAFT_FILE', 'GIT_SHALLOW_FILE', 'GIT_PREFIX', 'GIT_NAMESPACE')
+
+
+def own_environment():
+    """This environment, without the thread's GitHub tokens and without
+    anything that points git at another repository or index: git uses
+    GIT_INDEX_FILE, GIT_DIR and the like over the folder it is given, so a
+    thread that ran the bridge with one set would have it read, stage and
+    commit somewhere else (CodeRabbit, on #108)."""
+    return {key: value for key, value in os.environ.items()
+            if key not in TOKENS and key not in ELSEWHERE}
+
+
+def add_settings(env, entries):
+    """Add git settings to env, after any it already gives git."""
+    try:
+        start = int(env.get('GIT_CONFIG_COUNT') or 0)
+    except ValueError:
+        start = 0
+    for number, (key, value) in enumerate(entries, start):
+        env[f'GIT_CONFIG_KEY_{number}'] = key
+        env[f'GIT_CONFIG_VALUE_{number}'] = value
+    env['GIT_CONFIG_COUNT'] = str(start + len(entries))
 
 
 def job_environment(out):
@@ -87,18 +114,11 @@ def job_environment(out):
     sandbox: an agent that unsets these variables can still push, and an
     agent's GitHub tool with its own sign-in is not covered. Isolation
     outside the agent's process is not built."""
-    env = {key: value for key, value in os.environ.items() if key not in TOKENS}
+    env = own_environment()
     entries = [('remote.origin.pushurl', NO_PUSH)]
     entries += [(f'url.{NO_PUSH}.pushInsteadOf', prefix)
                 for prefix in ('https://', 'http://', 'ssh://', 'git@')]
-    try:
-        start = int(env.get('GIT_CONFIG_COUNT') or 0)
-    except ValueError:
-        start = 0
-    for number, (key, value) in enumerate(entries, start):
-        env[f'GIT_CONFIG_KEY_{number}'] = key
-        env[f'GIT_CONFIG_VALUE_{number}'] = value
-    env['GIT_CONFIG_COUNT'] = str(start + len(entries))
+    add_settings(env, entries)
     signed_out = out / 'gh-signed-out'
     signed_out.mkdir(exist_ok=True)
     env['GH_CONFIG_DIR'] = str(signed_out)
@@ -150,14 +170,37 @@ class Stop(Exception):
     """The job cannot run as asked; the message says why."""
 
 
+def without_filters(folder, env):
+    """Settings that turn off every filter git's settings define. A filter
+    runs its command on a file's contents (clean when git reads a file,
+    smudge when it writes one, process for both) wherever the attributes
+    name it. agy, which has no sandbox, can define one in the settings
+    every worktree shares, and a Codex job can name it in a .gitattributes
+    of its own, so the bridge's git, outside both, would run it
+    (CodeRabbit, on #108). An empty command makes git read and write the
+    contents as they are, and a filter no longer required cannot fail."""
+    names = subprocess.run(['git', '-C', str(folder), 'config', '-z', '--name-only',
+                            '--get-regexp', r'^filter\.'],
+                           capture_output=True, stdin=subprocess.DEVNULL, env=env).stdout
+    drivers = set()
+    for name in os.fsdecode(names).split('\0'):
+        rest = name[len('filter.'):]
+        if name.startswith('filter.') and '.' in rest:
+            drivers.add(rest.rsplit('.', 1)[0])
+    return [(f'filter.{driver}.{key}', value) for driver in sorted(drivers)
+            for key, value in (('clean', ''), ('smudge', ''), ('process', ''),
+                               ('required', 'false'))]
+
+
 def git(folder, *args, check=True, strip=True, raw=False, given=None):
-    """The bridge's own git, without the thread's GitHub tokens and with
-    core.fsmonitor and git hooks off: an agent can change the checkout's
-    git settings, and a command it names there must never run outside its
-    sandbox or with what the agent was not given. With raw, git's output
-    comes back as bytes, untouched (file names, which need not be text).
-    given is text for git's stdin, which is otherwise closed."""
-    env = {key: value for key, value in os.environ.items() if key not in TOKENS}
+    """The bridge's own git, in its own environment (own_environment), with
+    core.fsmonitor, git hooks and every filter off: an agent can change the
+    checkout's git settings, and a command it names there must never run
+    outside its sandbox or with what the agent was not given. With raw,
+    git's output comes back as bytes, untouched (file names, which need not
+    be text). given is text for git's stdin, which is otherwise closed."""
+    env = own_environment()
+    add_settings(env, without_filters(folder, env))
     stdin = {'input': given} if given is not None else {'stdin': subprocess.DEVNULL}
     result = subprocess.run(['git', '-c', 'core.fsmonitor=false', '-c', 'core.hooksPath=/dev/null',
                              '-C', str(folder), *args],

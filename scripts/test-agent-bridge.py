@@ -21,7 +21,9 @@ from pathlib import Path
 # An agent that runs the checks inside a bridge job inherits the job's
 # no-push settings; this file's throwaway origins need plain git.
 for key in [key for key in os.environ if key.startswith(('GIT_CONFIG_KEY_', 'GIT_CONFIG_VALUE_'))
-            or key in ('GIT_CONFIG_COUNT', 'GIT_CONFIG_PARAMETERS')]:
+            or key in ('GIT_CONFIG_COUNT', 'GIT_CONFIG_PARAMETERS', 'GIT_DIR', 'GIT_WORK_TREE',
+                       'GIT_INDEX_FILE', 'GIT_OBJECT_DIRECTORY', 'GIT_COMMON_DIR',
+                       'GIT_ALTERNATE_OBJECT_DIRECTORIES')]:
     del os.environ[key]
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -128,6 +130,15 @@ if 'edit' in mode:
     for name in (os.path.join('notes', 'new note.md'), 'r\u00e9sum\u00e9.md', ':!AGENTS.md'):
         with open(name, 'w') as new:
             new.write('new\n')
+    os.symlink('AGENTS.md', os.path.join('notes', 'link'))
+    with open(os.path.join('notes', 'run.sh'), 'w') as script:
+        script.write('#!/bin/sh\n')
+    os.chmod(os.path.join('notes', 'run.sh'), 0o755)
+if 'filter' in mode:
+    # Name a clean filter for the new files, which the shared git settings
+    # define (an unsandboxed agent could have set it there).
+    with open('.gitattributes', 'w') as attributes:
+        attributes.write('* filter=mark\n')
 if 'unguard' in mode:
     # Weaken the guard's own code in agy's folder, which git tracks: the
     # adapter runs this guard, and the guard runs the privacy check.
@@ -378,7 +389,50 @@ class BridgeTests(unittest.TestCase):
                          'HEAD').split('\0')
         changes = dict(zip(fields[1::2], fields[0::2]))
         self.assertEqual(changes, {'AGENTS.md': 'M', 'docs/old.md': 'D', 'notes/new note.md': 'A',
-                                   'r\u00e9sum\u00e9.md': 'A', ':!AGENTS.md': 'A'})
+                                   'r\u00e9sum\u00e9.md': 'A', ':!AGENTS.md': 'A', 'notes/link': 'A',
+                                   'notes/run.sh': 'A'})
+        modes = {line.split('\t')[1]: line.split()[0] for line in
+                 git_out(folder, 'ls-tree', '-r', 'HEAD', 'notes').splitlines()}
+        self.assertEqual(modes, {'notes/link': '120000', 'notes/new note.md': '100644',
+                                 'notes/run.sh': '100755'})
+        self.assertEqual(git_out(folder, 'cat-file', 'blob', 'HEAD:notes/link'), 'AGENTS.md')
+
+    def test_the_bridges_commit_runs_no_filter_the_job_names(self):
+        # A clean filter runs whatever command the git settings give it. An
+        # unsandboxed agent can define one in the git settings every
+        # worktree shares, and a Codex job can select it for its files, so
+        # the bridge's commit, outside the sandbox, must not run it
+        # (CodeRabbit, on #108).
+        self.install_codex_hook()
+        outside = Path(self.temp.name) / 'outside'
+        outside.mkdir()
+        git(self.owner, 'config', 'filter.mark.clean', f"touch '{outside}/ran'; cat")
+        result = self.bridge('codex', '--brief', str(self.brief), '--write', '--branch', 'tests',
+                             env={'STUB_MODE': 'edit filter'})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertFalse((outside / 'ran').exists())
+        summary = json.loads((self.job_folder(result) / 'summary.json').read_text())
+        self.assertEqual(summary['changed_files'], [])
+        folder = self.home / 'code' / 'brickson-codex-tests'
+        self.assertEqual(git_out(folder, 'cat-file', 'blob', 'HEAD:AGENTS.md'),
+                         'changed by the agent\n')
+        self.assertEqual(git_out(folder, 'cat-file', 'blob', 'HEAD:notes/new note.md'), 'new\n')
+
+    def test_the_bridges_git_ignores_a_repository_named_in_its_environment(self):
+        # git uses GIT_INDEX_FILE (and GIT_DIR and the like) over the folder
+        # it is given, so a thread that runs the bridge with one set would
+        # have it stage and commit through another checkout's index
+        # (CodeRabbit, on #108).
+        self.install_codex_hook()
+        index = Path(git_out(self.owner, 'rev-parse', '--absolute-git-dir').strip()) / 'index'
+        before = index.read_bytes()
+        result = self.bridge('codex', '--brief', str(self.brief), '--write', '--branch', 'tests',
+                             env={'STUB_MODE': 'edit', 'GIT_INDEX_FILE': str(index)})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(index.read_bytes(), before)
+        folder = self.home / 'code' / 'brickson-codex-tests'
+        self.assertEqual(git_out(folder, 'status', '--porcelain', '--untracked-files=all'), '')
+        self.assertIn('notes/new note.md', git_out(folder, 'ls-tree', '-r', '--name-only', 'HEAD'))
 
     def test_a_codex_write_job_that_does_not_finish_is_left_uncommitted(self):
         self.install_codex_hook()
