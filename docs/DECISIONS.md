@@ -1493,6 +1493,10 @@ was, so each question is placed from it (`LibraryQuestionPlace`,
   the way back than the first choice, by centre and by edge, with 8
   points to spare (`SetupAnswersPlace`). Where that is below what shows,
   the family scrolls, which costs a dwell user several activations.
+  *2026-11-12:* where only the row's top showed, above the foot of what
+  shows, they start clear of the whole row, since a look or a pointer
+  can rest where the rest of it was (*Voice Settings, reached with a
+  held look*, *A row that showed only in part*).
 - **A screen's last row** is nearest every point under it, so a look
   resting anywhere below it opens its question, and a choice under the
   way back would be nearer some of those points. Its question puts the
@@ -3158,6 +3162,16 @@ engine, not five scripts".
     Step's frame on the first step, so the look meets a
     control that only opens the guide (*The first step's own rows*).
     `SettingsOnHomeTests` fails on any closing.
+  - **Removed: a held look acts on the voice.** *2026-11-12:* Voice
+    Settings is a screen of the surface, read where Family Setup's
+    Voice Settings row shows and from a scrolled Family Setup, with a
+    third kind of hazard (`actsOnTheVoice`) and an effect for leaving
+    Brickson (`leavesBrickson`). On main's CI frames a look held on the
+    row met a speed; its way back now takes the row's place (*Voice
+    Settings, reached with a held look*). `SettingsOnHomeTests` fails on
+    any, and found none on CI's iPad and iPhone in pull request #105's
+    run 43307160244, on `4729b20`; the arrival from a row that showed
+    only in part was added after that run (`192f8db`).
 
 - **What it costs.** *2026-10-30:* the unit tests run the engine
   millions of times in a build that is not optimised, and its sweeps
@@ -5104,6 +5118,92 @@ the device's own permission, for device check D1, and
 `--personal-voice=stand-in-refuses` with a stand-in that refuses, so the
 UI tests reach the button (`LaunchOptions`, `StandInPersonalVoice`). A
 release build reads no launch arguments.
+
+## Voice Settings, reached with a held look
+
+*Default, adopted 2026-11-12 by the thread that built it: reversible if
+the owner objects. It follows "The Library's question screens".*
+
+Family Setup's Voice Settings row opens Voice Settings, whose controls
+act on how Brickson speaks: a speed sets the speed from then on and
+plays a sample, Hear plays a voice, Use changes it, and where the
+Personal Voice card offers Open Personal Voice Settings, it leaves
+Brickson for the Settings app. Under AssistiveTouch Dwell, head
+tracking, Eye Tracking or Switch Control's auto-select the look is
+still where the row was. On the frames CI drew on `main` (run
+43180245909, at `3f92a8b`), a look held anywhere on the row met "70% of
+normal speed" on the iPhone 17 at the default text size, by nearest
+centre and by nearest edge, and on the 13-inch iPad in portrait by
+nearest edge (`VoiceSettingsChainsTests.theScreenAsOnMainMeetsASpeed`),
+so a stray dwell in Settings changed the person's voice speed (AGENTS.md,
+invariant 10). So the screen is placed from the row:
+
+- **Back to Family Setup** takes the row's frame as it showed when
+  chosen: its frame in Family Setup's content less what Family Setup
+  had scrolled (`SettingsLanding.voiceRow`, `SetupAnswersPlace.shown`),
+  kept within what shows, as wide as the row and at least as tall. It
+  only goes back, as the standard Back button does, and Family Setup
+  keeps its scroll, so the look meets the Voice Settings row again and a
+  repeated activation goes back and forth between two controls that
+  only open screens.
+- **Everything else follows as one block**, unchanged inside (the
+  "Speaking with …" line, the Personal Voice card, Speed, the seven
+  speeds, Voice and the voices), placed as a Library question's choices
+  are, with no words between it and the way back (`LibraryQuestionPlace`,
+  `LibraryQuestionLayout`): it starts where every point of the way back
+  and the gap around the row is nearer the way back than a row at the
+  block's top, by centre and by edge, with 8 points to spare. Above the
+  way back the screen is empty, and nothing moves while it is open. The
+  screen's words stay with the controls they explain.
+- **The place follows the scroll**, as Go Through Setup Again's and the
+  Library's questions' do (and as Set Up Step by Step's does not yet:
+  *The first step's own rows*, *Where Go Through Setup Again showed,
+  scrolled or not*). Placed from the content instead, with the row
+  scrolled up to the top of what shows on the phone, the look would rest
+  over Family Setup's navigation bar on Voice Settings, and a chain from
+  the row meets Back to Talking, which closes Settings under the look
+  (`VoiceSettingsChainsTests.placedFromTheContentAScrolledRowMeetsBackToTalking`).
+- **A row that showed only in part.** Where only the row's top showed,
+  above the foot of what shows, the way back is kept within what shows,
+  but a look or a pointer can rest lower, where the rest of the row was
+  (Snap to Item can pick the row's hidden centre). The modelled sweep
+  found it on the phone at the largest text size, Family Setup scrolled
+  so that the row's top just showed: the pointer at the row's centre was
+  nearer the first speed than the way back. So the block starts clear of
+  the whole row, not only of the way back, and the Library's questions
+  take the same rule (`LibraryQuestionPlaceTests.aRowPastTheFootKeepsTheChoicesClearOfAllOfIt`).
+  Keeping the way back within what shows needs the screen's frames,
+  which `SettingsScreen` gives only to what it holds, so the screen's
+  content reads them from inside it, as a Library question does; read
+  outside it, as first written, they were always missing and the way
+  back reached past the foot (found in review on pull request #105).
+- **What it costs.** One more button on the screen for touch,
+  VoiceOver, Voice Control and Full Keyboard Access. On a phone the
+  speeds and voices start lower, at the largest text size below the
+  first screenful, so a family scrolls further to reach them.
+- **Scored by the one chain engine** (`SettingsChains`): Voice Settings
+  is a screen of the Settings surface, with a kind of hazard of its own,
+  a held look that acts on the voice (`actsOnTheVoice`), and an effect
+  for leaving Brickson, which is a hazard (`leavesBrickson`). Modelled on
+  CI's five windows at every scroll of Family Setup that shows the row,
+  with and without the card's Ask button and with a stand-in for
+  whatever control comes first (`VoiceSettingsChainsTests`), and on the
+  frames the app draws on CI: where the row shows whole on Family
+  Setup's first screenful, and from a scrolled Family Setup at the
+  largest text size, with the row whole and, on the phone, with only
+  its top showing (`SettingsOnHomeTests`). CI's run 43307160244, on
+  `4729b20`, passed it on the iPad and the iPhone where the row showed
+  whole; the arrival from a row that showed only in part was added
+  after that run (`192f8db`).
+- **Not scored:** iOS's Personal Voice question, which shows only under
+  `PersonalVoiceAskPolicy.fromSettings` ("Personal Voice permission is
+  asked at launch, for now") and only on a device that supports Personal
+  Voice, so where a look rests after answering it is part of device
+  check D1 (docs/DEVICE-CHECKS.md); a look resting on the screen's own
+  words (Speed and its sentence, Voice), just above controls that change
+  the speed or the voice, as before; and step 3 of Set Up Step by Step,
+  which shows the same content and which the chains do not follow yet
+  (docs/HANDOFF.md, *Known gaps*).
 
 ## Personal Voice is never written to a file
 

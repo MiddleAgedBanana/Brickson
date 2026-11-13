@@ -11,15 +11,74 @@ import SwiftUI
 /// choices, so a repeated activation never walks the speed (`SpeedChoice`).
 /// Choosing a voice or a speed changes words on the screen, but never the
 /// size of anything, so no control moves under the one just chosen.
+///
+/// Family Setup's Voice Settings row opens it. Under AssistiveTouch Dwell,
+/// head tracking, Eye Tracking or Switch Control's auto-select, a look held
+/// after choosing the row rests where the row showed, so Back to Family
+/// Setup takes that place, at least as tall, and everything else follows
+/// below it as one block, where no point of the way back or the gap around
+/// the row is nearer a control than the way back
+/// (`SettingsLanding.voiceRow`, `LibraryQuestionPlace`). A repeated
+/// activation goes back to Family Setup, which keeps its scroll, so the
+/// look meets the Voice Settings row again and only goes back and forth
+/// between two screens (AGENTS.md, invariant 10; docs/DECISIONS.md, "Voice
+/// Settings, reached with a held look").
 struct VoiceSettingsView: View {
+    @Binding var path: [SettingsRoute]
+
     var body: some View {
         SettingsScreen(title: "Voice Settings") {
-            VoiceContent()
+            VoiceSettingsPlaced(path: $path)
         }
     }
 }
 
-/// The screen's content, shared with step 2 of Set Up Step by Step.
+/// Voice Settings' content, placed from Family Setup's row. It sits inside
+/// `SettingsScreen`, which gives the screen's frames only to what it holds,
+/// so the way back is kept within what shows where the row showed only in
+/// part (`LibraryQuestionPlace`).
+private struct VoiceSettingsPlaced: View {
+    @Binding var path: [SettingsRoute]
+
+    @Environment(SettingsLanding.self) private var landing: SettingsLanding?
+    @Environment(SettingsActivity.self) private var activity: SettingsActivity?
+    @Environment(\.settingsScreenFrames) private var frames
+
+    var body: some View {
+        LibraryQuestionLayout(
+            row: landing?.voiceRow,
+            rowIsLast: false,
+            // Nil until the screen knows where it sits (`LibraryQuestionPlace`).
+            visibleHeight: frames?.content.height,
+            spacing: SettingsMetrics.rowSpacing,
+            rowHeight: SettingsMetrics.rowHeight
+        ) {
+            // No words of its own between the way back and the rest:
+            // the screen's words stay with the controls they explain.
+            Color.clear
+                .frame(height: 0)
+                .accessibilityHidden(true)
+            Button {
+                activity?.recordActivity()
+                if path.last == .voice {
+                    path.removeLast()
+                }
+            } label: {
+                // As tall as the place it is given.
+                SettingsRowLabel(title: "Back to Family Setup", systemImage: "arrow.uturn.backward")
+                    .frame(maxHeight: .infinity)
+            }
+            .settingsRowStyle()
+            .accessibilityIdentifier("voiceSettingsWayBack")
+            VStack(alignment: .leading, spacing: SettingsMetrics.rowSpacing) {
+                VoiceContent()
+            }
+        }
+    }
+}
+
+/// The screen's content, shared with step 3 of Set Up Step by Step, which
+/// shows it as it is, under its heading.
 ///
 /// The voices can change while it is open: a voice downloaded or deleted,
 /// or Personal Voice turned on or off in the Settings app while Brickson

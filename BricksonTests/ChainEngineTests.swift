@@ -669,8 +669,8 @@ struct SettingsChainsTests {
         #expect(root[SettingsChains.familySetupRow]?.leadsTo == SettingsChains.familySetup)
         #expect(familySetup[SettingsChains.back]?.leadsTo == SettingsChains.root)
         #expect(familySetup[SettingsChains.guidedSetupRow]?.leadsTo == SettingsChains.firstStep)
-        #expect(familySetup["voiceSettings"]?.leadsTo == "voiceSettings")
-        #expect(familySetup["voiceSettings"]?.effect == .navigates)
+        #expect(familySetup[SettingsChains.voiceSettingsRow]?.leadsTo == SettingsChains.voiceSettings)
+        #expect(familySetup[SettingsChains.voiceSettingsRow]?.effect == .navigates)
         #expect(firstStep[SettingsChains.back]?.leadsTo == SettingsChains.familySetup)
         #expect(firstStep[SettingsChains.learnAboutEachWay]?.leadsTo == SettingsChains.eachWay)
         #expect(firstStep[SettingsChains.learnAboutEachWay]?.effect == .navigates)
@@ -701,7 +701,7 @@ struct SettingsChainsTests {
         #expect(answered.count == 4)
         #expect(answered[SettingsChains.guidedSetupRow]?.leadsTo == SettingsChains.firstStepAfterCheckIn)
         #expect(answered[SettingsChains.back]?.leadsTo == SettingsChains.root)
-        #expect(answered["voiceSettings"]?.leadsTo == "voiceSettings")
+        #expect(answered[SettingsChains.voiceSettingsRow]?.leadsTo == SettingsChains.voiceSettingsAfterCheckIn)
         for (step, guide, second) in [
             (SettingsChains.firstStepFromCheckIn, SettingsChains.eachWayFromCheckIn, SettingsChains.secondStepFromCheckIn),
             (SettingsChains.firstStepAfterCheckIn, SettingsChains.eachWayAfterCheckIn, SettingsChains.secondStepAfterCheckIn),
@@ -755,12 +755,18 @@ struct SettingsChainsTests {
             states: [Self.home: [yes, settings], "Elsewhere": [yes, settings]],
             resting: [Self.home: [("the message", CGRect(x: 16, y: 60, width: 370, height: 100))]]
         )
-        let map = home.merging(SettingsChains.map(Self.screens, closingOnto: Self.home).map)
+        // With Voice Settings read, so every screen of Settings has starts.
+        var read = Self.screens
+        read.voiceSettings = [
+            (SettingsChains.backToTalking, Self.backToTalking), (SettingsChains.back, Self.back),
+            (SettingsChains.voiceWayBack, Self.row(832)), ("60% of normal speed", Self.row(1004)),
+        ]
+        let map = home.merging(SettingsChains.map(read, closingOnto: Self.home).map)
         let screens: Set = [
             SettingsChains.root, SettingsChains.familySetup, SettingsChains.firstStep, SettingsChains.eachWay, SettingsChains.secondStep,
             SettingsChains.familySetupAfterCheckIn, SettingsChains.firstStepFromCheckIn, SettingsChains.eachWayFromCheckIn,
             SettingsChains.secondStepFromCheckIn, SettingsChains.firstStepAfterCheckIn, SettingsChains.eachWayAfterCheckIn,
-            SettingsChains.secondStepAfterCheckIn,
+            SettingsChains.secondStepAfterCheckIn, SettingsChains.voiceSettings, SettingsChains.voiceSettingsAfterCheckIn,
         ]
         #expect(SettingsChains.screens == screens)
         let starts = SettingsChains.starts(in: map, home: Self.home)

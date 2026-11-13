@@ -466,6 +466,12 @@ first screen scrolled. Then two steps it does not have:
 2. Open Family Setup and rest the look on empty space until Settings
    resets itself (after 90 seconds without an activation), then keep
    looking for ten seconds more.
+3. In Family Setup, dwell on Voice Settings and keep looking at the
+   same spot for ten seconds; then scroll Family Setup until the Voice
+   Settings row shows higher, and do it again. *Passes* when the look
+   meets Back to Family Setup, then the Voice Settings row again, and
+   nothing speaks, plays a sample or changes the speed or the voice
+   (docs/DECISIONS.md, "Voice Settings, reached with a held look").
 
 *Passes* when no step lands on anything that speaks, alarms, saves an
 answer or closes Settings unasked. The known hazards (a held chain can
@@ -816,6 +822,18 @@ Settings").*
    Personal Voice at once, only after the voice list refreshes, only
    after leaving and reopening Voice Settings, or only after Brickson is
    opened again. That answer is what the row decides.
+4. **Owner:** on the same device, delete Brickson again (only if it
+   still holds nothing but the starter library), turn on Dwell or Head
+   Tracking (*Turn on each input method*), open Voice Settings from
+   Family Setup and choose Ask to Use Personal Voice by dwelling. Answer
+   iOS's question by dwelling too, then keep looking at the same spot
+   for ten seconds. Note where iOS put Allow and Don't Allow, and what
+   Voice Settings shows under that spot once the question is gone.
+   *Passes* when nothing speaks, plays a sample, changes the speed or
+   the voice, or leaves Brickson. This is the chain through iOS's
+   question that the chain tests cannot follow, because iOS places its
+   buttons (docs/DECISIONS.md, "Voice Settings, reached with a held
+   look", *Not scored*).
 
 ### P2. D4, access turned off while Brickson waits
 

@@ -103,6 +103,26 @@ struct LibraryQuestionPlaceTests {
         #expect(nearer)
     }
 
+    /// A row chosen where only its top showed, the rest past the foot of
+    /// what shows, as Family Setup's rows can be at the largest text
+    /// sizes: the way back is kept within what shows, but a look on the
+    /// row, or the pointer Snap to Item drew to the row's centre, can rest
+    /// past the way back's foot. Fails if any point of the row is nearer
+    /// the first choice than the way back, by centre or by edge, with the
+    /// margin, as when only the way back and the gap around it were kept
+    /// clear of the choices.
+    @Test(arguments: [0, 80] as [CGFloat])
+    func aRowPastTheFootKeepsTheChoicesClearOfAllOfIt(wordsHeight: CGFloat) {
+        let row = CGRect(x: 0, y: 590, width: 358, height: 145)
+        let place = Self.place(row: row, wordsHeight: wordsHeight)
+        #expect(place.back == CGRect(x: 0, y: 455, width: 358, height: 145))
+        let choice = CGRect(x: 0, y: place.choicesTop, width: 358, height: Self.rowHeight)
+        let nearer = SettingsRowPlace.points(across: row, every: 4).allSatisfy {
+            SettingsRowPlace.isNearer($0, toOneOf: [place.back], thanAny: [choice], margin: SettingsRowPlace.margin)
+        }
+        #expect(nearer)
+    }
+
     /// A screen's last row is nearest every point under it. Fails if its
     /// question puts a choice under the way back, if the choices are not a
     /// row and a gap clear above it, or if the words are not under it.

@@ -811,8 +811,8 @@ release in docs/ROADMAP.md when no thread has it yet.
   neither comes with Get Attention's, if it comes. *(the owner, then a
   new thread)*
 - Chains of activations through Settings' screens are scored on its
-  first screens and on Set Up Step by Step's first two steps
-  (`SettingsOnHomeTests` with the chain engine, on CI's iPad and
+  first screens, on Set Up Step by Step's first two steps and on Voice
+  Settings (`SettingsOnHomeTests` with the chain engine, on CI's iPad and
   iPhone; docs/DECISIONS.md, "One chain engine for dwell safety"). The
   steps after the second (the voice, turning on what was chosen,
   keeping Brickson open, the summary) are not followed: a look held on
@@ -873,16 +873,24 @@ release in docs/ROADMAP.md when no thread has it yet.
   Setup. Physical held-look checks remain unverified; the
   [record includes screenshots and a mounted-device procedure](log/2026-10-26-settings-simulator-checks.md).
   *(a device check, then the next Settings thread)*
+  Since 2026-11-12 Voice Settings is scored too: on main's CI frames a
+  look held after Family Setup's Voice Settings row met a speed, which
+  sets the voice's speed and plays a sample, and now Back to Family
+  Setup takes the place the row showed in, scrolled or not, with the
+  speeds and voices below it (docs/DECISIONS.md, "Voice Settings,
+  reached with a held look"; read in the app on CI's iPad and iPhone,
+  where the row showed whole, by pull request #105's run 43307160244).
   Not scored yet: the chain through iOS's Personal Voice question once
   the Ask button shows (after answering, the look rests where the
-  question's button was, over whatever Voice Settings has there); Voice
-  Settings itself, where a look held after Family Setup's Voice Settings
-  row can rest over choices that play a sample and set a voice or a
-  speed; resting over the check-in card's own words; Family Setup
-  scrolled before a row other than Go Through Setup Again is chosen,
-  the card's other rows on the phone at the largest text size included,
-  where the card lies below the first screenful; the first step's guide
-  scrolled; and Settings' other screens.
+  question's button was, over whatever Voice Settings has there), which
+  needs a device that supports Personal Voice and is part of device
+  check D1; resting over Voice Settings' own words (Speed and its
+  sentence, Voice), just above controls that change the speed or the
+  voice; resting over the check-in card's own words; Family Setup
+  scrolled before a row other than Go Through Setup Again or Voice
+  Settings is chosen, the card's other rows on the phone at the largest
+  text size included, where the card lies below the first screenful;
+  the first step's guide scrolled; and Settings' other screens.
   Since 2026-10-30, answers change Home's sizes as Settings closes;
   Settings' first screens over a larger Home are scored
   (`ProfileChoiceTests`), and `HomeSizesTests` audits them over the
@@ -1357,12 +1365,12 @@ settings, date) and summarise it here.
 | Speech plays with the silent switch on, and after a phone call | Audio session handling (invariant 4) |
 | A phrase cut off by a call shows "Stopped, Again" | The cut-off rule (code audit M1) |
 | D1: with no question at launch, a Personal Voice allowed after a phrase has been spoken speaks in the next phrase, after a voice-list refresh, a rebuilt synthesizer or only a relaunch (docs/recon/2026-10-15/directions/onboarding-and-settings.md, 2.5). Run from Xcode with `--personal-voice=ask-from-settings` added to the scheme's arguments (Product > Scheme > Edit Scheme > Run > Arguments), and ask with Voice Settings' Ask to Use Personal Voice | Whether the app may switch to `PersonalVoiceAskPolicy.fromSettings` (docs/DECISIONS.md, "Personal Voice permission is asked at launch, for now") |
-| In the same run: iOS's question appears over Voice Settings, which is still there after a wait of over 90 seconds; after Allow or Don't Allow the card shows the answer, "Answered. …" sits where the button was, nothing below the card moved, and Open Personal Voice Settings appears only after leaving and reopening Voice Settings | "Asking for Personal Voice from Voice Settings" |
+| In the same run: iOS's question appears over Voice Settings, which is still there after a wait of over 90 seconds; after Allow or Don't Allow the card shows the answer, "Answered. …" sits where the button was, nothing below the card moved, and Open Personal Voice Settings appears only after leaving and reopening Voice Settings; and, under Dwell or Head Tracking, a look kept where iOS's answer button was meets nothing that speaks, changes the voice or leaves Brickson | "Asking for Personal Voice from Voice Settings", "Voice Settings, reached with a held look" |
 | D4: Personal Voice access turned off in the Settings app while Brickson waits in the background; on return a phrase speaks in another voice, and turning access back on brings the Personal Voice back | "A Personal Voice is used only while it is allowed" |
 | Restart the device, then open Brickson at once: Home appears without waiting; a phrase chosen straight away speaks at once (in the system's voice if the voice list has not arrived); how long the list takes; the first phrase after it is in the chosen voice or Personal Voice; whether that first phrase itself waits | "The voice list never holds up launch" |
 | D5: with two Personal Voices, the order the system lists them in, and whether each keeps its identifier across a relaunch, a restore and Share Across Devices | "Automatic keeps the person's Personal Voice" |
 | Personal Voice appears and is chosen once permission is given, and keeps speaking after the screen locks | Voice choice and when to ask |
-| Opening Settings by a stray dwell, and leaving it by Back to Talking, lands on nothing that speaks or alarms (`SettingsOnHomeTests` scores it on the simulator's frames); the idle reset under real dwell. Physical iPad and iPhone checks remain unverified; use the [2026-10-26 mounted-device procedure](log/2026-10-26-settings-simulator-checks.md#environment-and-settings-for-the-physical-run), including the phone at AX5. | Settings' safety bar and root (docs/DECISIONS.md, "Settings is a cover with a fixed safety bar") |
+| Opening Settings by a stray dwell, and leaving it by Back to Talking, lands on nothing that speaks or alarms (`SettingsOnHomeTests` scores it on the simulator's frames); Voice Settings opened by a stray dwell, from Family Setup scrolled or not, lands on Back to Family Setup and changes nothing; the idle reset under real dwell. Physical iPad and iPhone checks remain unverified; use the [2026-10-26 mounted-device procedure](log/2026-10-26-settings-simulator-checks.md#environment-and-settings-for-the-physical-run), including the phone at AX5. | Settings' safety bar and root (docs/DECISIONS.md, "Settings is a cover with a fixed safety bar") |
 | Each Family Setup guide's steps match the device, on iOS 26 and iOS 27, iPhone, iPad and (Live Speech) Apple Watch, and Brickson works inside Guided Access and Assistive Access | Family Setup's guides ([`log/2026-10-23-apples-doors-in-family-setup.md`](log/2026-10-23-apples-doors-in-family-setup.md)) |
 | Open Personal Voice Settings and Open Dwell Control Settings open the right page | `AccessibilitySettings.openSettings(for:)` |
 | Each input method reaches every control: touch, Voice Control, Switch Control, Full Keyboard Access, AssistiveTouch Dwell, head tracking, Eye Tracking | That standard buttons are the whole integration (invariant 1) |
