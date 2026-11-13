@@ -81,6 +81,12 @@ GUARD_CODE = ('.claude/hooks/guard.py', 'scripts/privacy-check.py')
 # The privacy check the bridge runs before it commits: the one beside this
 # script, never the copy in a job's checkout, which the agent could edit.
 PRIVACY_CHECK = Path(__file__).resolve().parent / 'privacy-check.py'
+# Python's bytecode caches beside the guard's code. The guard loads
+# privacy-check.py through Python's loader, which uses a cache found here,
+# and one made as an unchecked hash-based .pyc without ever comparing it
+# with the source; so putting the source back is not enough. git ignores
+# them, and Python makes them again.
+GUARD_CACHES = ('scripts/__pycache__', '.claude/hooks/__pycache__')
 
 
 def job_environment(out):
@@ -422,6 +428,61 @@ def restore_guard_code(checkout, saved, start):
                             f'earlier code back in the working tree, so {checkout} is not clean '
                             'and the next agy job is refused until a thread has dealt with them')
     return '; '.join(notes) or 'unchanged', '; '.join(problems) or None
+
+
+def remove_entry(folder, name):
+    """Remove name in the folder handle folder, and everything under it,
+    without following a link: a link is removed, never followed."""
+    if not stat.S_ISDIR(os.stat(name, dir_fd=folder, follow_symlinks=False).st_mode):
+        os.unlink(name, dir_fd=folder)
+        return
+    inner = os.open(name, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW, dir_fd=folder)
+    try:
+        for entry in os.listdir(inner):
+            remove_entry(inner, entry)
+    finally:
+        os.close(inner)
+    os.rmdir(name, dir_fd=folder)
+
+
+def clear_guard_caches(checkout):
+    """Remove the bytecode caches beside the guard's code (GUARD_CACHES)
+    in agy's folder, before an agy job and after it, however it ended.
+    Returns summary.json's guard_cache, and a problem when one could not be
+    removed."""
+    removed, problems = [], []
+    for name in GUARD_CACHES:
+        *parts, last = name.split('/')
+        try:
+            folder = open_folder(checkout, parts)
+        except FileNotFoundError:
+            continue
+        except OSError as error:
+            problems.append(f'{name}: {error}')
+            continue
+        try:
+            os.stat(last, dir_fd=folder, follow_symlinks=False)
+        except FileNotFoundError:
+            os.close(folder)
+            continue
+        except OSError as error:
+            os.close(folder)
+            problems.append(f'{name}: {error}')
+            continue
+        try:
+            remove_entry(folder, last)
+            removed.append(name)
+        except OSError as error:
+            problems.append(f'{name}: {error}')
+        finally:
+            os.close(folder)
+    note = f'removed {", ".join(removed)}' if removed else 'none'
+    if problems:
+        names = '; '.join(problems)
+        return (f'{note}; not removed: {names}',
+                f'the bridge could not remove the guard\'s bytecode cache ({names}): the guard in '
+                f'{checkout} may run code the bridge did not put back until it is removed')
+    return note, None
 
 
 def agy_project_folders():
@@ -817,6 +878,9 @@ def agy_job(args):
         branch = f'antigravity/{args.branch}'
         start_branch(checkout, branch)
     code = keep_guard_code(checkout)
+    _cache, cache_problem = clear_guard_caches(checkout)
+    if cache_problem:
+        raise Stop(cache_problem)
     out = job_folder(checkout, 'agy', 'write' if args.write else 'read')
     prompt = brief_text(args, checkout, branch)
     write_in(out, 'brief.md', prompt)
@@ -851,11 +915,14 @@ def agy_job(args):
         try:
             guard_hook, guard_problem = restore_agy_guard(checkout, guard)
         finally:
-            guard_code, code_problem = restore_guard_code(checkout, code, before['head'])
+            try:
+                guard_code, code_problem = restore_guard_code(checkout, code, before['head'])
+            finally:
+                guard_cache, cache_problem = clear_guard_caches(checkout)
     extra = {'agent': 'agy', 'read_only': not args.write, 'refusals': refusals,
              'tool_steps': steps, 'agy_status': status, 'ran_in': ran_in,
-             'guard_hook': guard_hook, 'guard_code': guard_code}
-    problems = [problem for problem in (guard_problem, code_problem) if problem]
+             'guard_hook': guard_hook, 'guard_code': guard_code, 'guard_cache': guard_cache}
+    problems = [problem for problem in (guard_problem, code_problem, cache_problem) if problem]
     if ran_in and Path(ran_in).resolve() != checkout:
         problems.append(f'ran in the wrong folder ({ran_in})')
     return out, finish(out, checkout, before, result, extra, '; '.join(problems) or None)

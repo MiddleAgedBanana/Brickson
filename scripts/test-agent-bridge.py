@@ -174,6 +174,26 @@ if 'unhook' in mode:
     elif how == 'folder':  # a folder where the file was, which cannot be put back
         os.remove(hooks)
         os.makedirs(os.path.join(hooks, 'inside'))
+if 'plantpyc' in mode:
+    # A cache of a weakened privacy check, which Python loads without
+    # comparing it with the source (an unchecked hash-based .pyc).
+    import subprocess
+    planted = os.path.join(os.environ['STUB_OUTSIDE'], 'planted.py')
+    with open(planted, 'w') as code:
+        code.write("WHO = 'planted'\n")
+    source = os.path.abspath(os.path.join('scripts', 'privacy-check.py'))
+    target = os.path.join(os.environ['STUB_OUTSIDE'], 'cache')
+    if os.environ['STUB_PYC'] == 'file':
+        target = os.path.join('scripts', '__pycache__')
+    os.makedirs(target, exist_ok=True)
+    if os.environ['STUB_PYC'] == 'link':
+        os.symlink(target, os.path.join('scripts', '__pycache__'))
+    subprocess.run([os.environ['STUB_PYTHON'], '-I', '-c',
+                    'import importlib.util, os, py_compile, sys; '
+                    'name = os.path.basename(importlib.util.cache_from_source(sys.argv[2])); '
+                    'py_compile.compile(sys.argv[1], cfile=os.path.join(sys.argv[3], name), '
+                    'invalidation_mode=py_compile.PycInvalidationMode.UNCHECKED_HASH)',
+                    planted, source, target], check=True)
 if entry['tool'] == 'codex':
     if args and args[0] == 'review':
         print('No P0 or P1 findings.')
@@ -237,7 +257,7 @@ class BridgeTests(unittest.TestCase):
                      'docs/old.md'):
             (seed / part).parent.mkdir(parents=True, exist_ok=True)
             (seed / part).write_text('# stand-in\n')
-        (seed / '.gitignore').write_text('build/\n.agents/\n')
+        (seed / '.gitignore').write_text('build/\n.agents/\n__pycache__/\n')  # as Brickson's
         env = {**os.environ, **self.env}
         for args in (['add', '.claude', 'scripts', 'AGENTS.md', 'docs', '.gitignore'],
                      ['commit', '-q', '-m', 'start'], ['remote', 'add', 'origin', str(origin)],
@@ -1039,6 +1059,37 @@ class BridgeTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
         self.assertEqual(len(summary['commits']), 1, summary)
         self.assertEqual(summary['bridge_commit'], 'nothing to commit')
+
+    def test_a_bytecode_cache_left_beside_the_guards_code_is_removed(self):
+        # guard.py loads scripts/privacy-check.py through Python's loader,
+        # which uses a cache in scripts/__pycache__ and, for an unchecked
+        # hash-based one, never compares it with the source.
+        self.point_agy_at(self.agy_folder)
+        self.install_agy_hook()
+        load = ('import importlib.util, sys; '
+                'spec = importlib.util.spec_from_file_location("privacy_check", sys.argv[1]); '
+                'module = importlib.util.module_from_spec(spec); sys.dont_write_bytecode = True; '
+                'spec.loader.exec_module(module); print(getattr(module, "WHO", "source"))')
+        for number, how in enumerate(('file', 'link')):
+            with self.subTest(how):
+                outside = Path(self.temp.name) / f'outside-pyc-{number}'
+                outside.mkdir()
+                result = self.bridge('agy', '--brief', str(self.brief),
+                                     env={'STUB_MODE': 'plantpyc', 'STUB_PYC': how,
+                                          'STUB_OUTSIDE': str(outside),
+                                          'STUB_PYTHON': sys.executable})
+                self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+                summary = json.loads((self.job_folder(result) / 'summary.json').read_text())
+                self.assertIn('scripts/__pycache__', summary['guard_cache'])
+                loaded = subprocess.run([sys.executable, '-I', '-c', load,
+                                         str(self.agy_folder / 'scripts' / 'privacy-check.py')],
+                                        capture_output=True, text=True, check=True)
+                self.assertEqual(loaded.stdout.strip(), 'source')
+                self.assertFalse(os.path.lexists(self.agy_folder / 'scripts' / '__pycache__'))
+                if how == 'link':  # removed, never followed
+                    self.assertTrue(any((outside / 'cache').iterdir()))
+                again = self.bridge('agy', '--brief', str(self.brief))
+                self.assertEqual(again.returncode, 0, again.stderr)
 
     # The guard's own code in agy's folder is put back ----------------------------
 
