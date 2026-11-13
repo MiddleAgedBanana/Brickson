@@ -171,6 +171,29 @@ struct LaunchOptionsTests {
         #expect(options.unrecognized == typos)
     }
 
+    // UIKit's animations are turned off only for a UI test: reaching a
+    // person's launch, or one without test storage, fails this, and so does
+    // a misspelt or other value being taken for it (docs/DECISIONS.md,
+    // "Tests").
+    @Test func uikitAnimationsAreTurnedOffOnlyWithDebugAndTestStorage() {
+        #expect(LaunchOptions.standard.uikitAnimations == nil)
+        #expect(LaunchOptions.standard.activeUIKitAnimations == nil)
+        let ordinary = LaunchOptions.parse(["--uikit-animations=off"])
+        #expect(ordinary.uikitAnimations == .off)
+        #expect(ordinary.activeUIKitAnimations == nil)
+        #expect(ordinary.unrecognized.isEmpty)
+        for storage in ["--test-storage", "--fresh-test-storage"] {
+            let options = LaunchOptions.parse([storage, "--uikit-animations=off"])
+            #expect(options.activeUIKitAnimations == (LaunchOptions.readsLaunchArguments ? LaunchOptions.UIKitAnimations.off : nil))
+            #expect(options.unrecognized.isEmpty)
+        }
+        let typos = ["--uikit-animations", "--uikit-animations=", "--uikit-animations=on", "--uikit-animations=Off", "--animations=off"]
+        let options = LaunchOptions.parse(["--test-storage"] + typos)
+        #expect(options.uikitAnimations == nil)
+        #expect(options.activeUIKitAnimations == nil)
+        #expect(options.unrecognized == typos)
+    }
+
     // The UI tests restore it to see one phrase arrive and nothing go. Fails
     // if it changes anything but adding that phrase, or if Add would bring
     // more than it or Replace would remove the person's words on a fresh
