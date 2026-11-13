@@ -1431,10 +1431,19 @@ settings, date) and summarise it here.
   only when both passed (docs/DECISIONS.md, "Tests"). On 2026-11-12
   the iPad job took 87 of its 90 minutes (pull request #103: about five
   minutes of new check-in tests, and one Home typing test whose taps
-  each waited 120 seconds for the app to go idle), so its margin is
-  thin; why that test waited is not known
+  each waited 120 seconds for the app to go idle), and the same day it
+  was stopped at the limit twice: on the first attempt of #103's run on
+  its final head, and on pull request #106's first run, a change to
+  documents only. There, with no test failed,
+  `TypingOnHomeTests.testEmergencyPhrasesAndSettingsLeaveTypingAndKeepTheMessage`
+  took 758 seconds against 42 on `main`'s run of the same app code:
+  from its tap on Emergency while typing, all twelve of its waits for
+  the app to settle ran out at 60 seconds, the app never reporting its
+  animations finished. Why these typing tests wait is not known, and
+  whether the limit or the tests' cost should change is open
   ([`log/2026-11-12-check-in-card.md`](log/2026-11-12-check-in-card.md),
-  *Follow-ups*). Four iPad
+  *Follow-ups*;
+  [`log/2026-11-12-ci-claims-narrowed.md`](log/2026-11-12-ci-claims-narrowed.md)). Four iPad
   runs in a row stalled because iOS's lock-screen wallpaper prewarm
   starved the simulator; since then
   `scripts/test.sh` pauses those extensions on a simulator it started

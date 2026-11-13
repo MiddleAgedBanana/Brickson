@@ -40,12 +40,21 @@ records the correction. docs/HANDOFF.md, *Known gaps*, also gains the
 idle-Settings UI failure (below), seen three times now on branches that
 did not touch it. Nothing in the app changed.
 
+This pull request's own first CI run was stopped: its iPad UI job
+reached its 90-minute limit with no test failed, because one Home
+typing test this change does not touch stalled (*Verified*). That job's
+margin was already recorded as thin, from pull request #103, so
+docs/HANDOFF.md, *Repository, CI and website*, now says what this run
+showed, and the push that records it runs CI again.
+
 ## Commits
 
 - The two corrections (made before #104 merged, pushed after).
 - A merge of `main`, after #104 merged.
 - The correction notes in #104's record, the idle-Settings gap in
   docs/HANDOFF.md, and this record.
+- The iPad UI job's stop on this pull request's first run, in
+  docs/HANDOFF.md and here.
 
 ## Verified
 
@@ -65,6 +74,27 @@ Read from GitHub on 2026-11-12, from the job logs the verifier saved:
   expected failures".
 - **#104's final head, `0b29a66`** (run 43302240769): every check
   passed on its first attempt, and it merged on it.
+- **This pull request, run 43317295493, on `8ac952b`** (read on
+  2026-11-13): "Unit tests" and "UI tests on iPhone" passed; "UI tests on iPad" was cancelled at
+  its 90-minute limit, so "UI tests" failed. Read from the job's log and
+  from the result bundle it kept (artifact `ui-test-results-ipad`, whose
+  bundle was left unfinished, so the test runner's own output in its
+  diagnostics folder was read): 77 of the 80 tests had finished, 74
+  passed, 3 skipped and none failed, and the 78th,
+  `TypingOnHomeTests.testSpeakAndReturnSayTheMessageAndKeepIt`, was
+  running when the job stopped. The 76 tests before the 77th took 60.2
+  minutes, against 62.7 on `main`'s run of the same app code (run
+  43316820231, on `74b7f4f`, whose iPad job passed in 81 minutes). The
+  77th,
+  `TypingOnHomeTests.testEmergencyPhrasesAndSettingsLeaveTypingAndKeepTheMessage`,
+  took 758 seconds against 42 on `main`'s run. It waited for the app to
+  be idle 19 times: the 7 waits before its tap on Emergency (made after
+  typing "Hello") each ended within about 3 seconds, and all 12 from
+  that tap on ran out at 60 seconds, the runner writing "App animations
+  complete notification not received, will attempt to continue" each
+  time. The simulator took about 9 minutes 25 seconds to start, against
+  about 3 minutes 25 on `main`'s run, but building was quicker, and the
+  tests began about 16 minutes into the job, against about 15.
 - `scripts/test-docs.py` passes, and
   `scripts/privacy-check.py --outgoing --no-list` finds nothing (the
   private list was not checked: this cloud session has none).
@@ -74,6 +104,10 @@ Read from GitHub on 2026-11-12, from the job logs the verifier saved:
 - Whether the idle-Settings failure and the `HomeAccessibilityOrderTests`
   failure have a cause tied to 27.2: neither has been reproduced on
   purpose.
+- Why the typing test's app never reported its animations finished
+  after the tap on Emergency: the app's own output around it was only
+  skimmed (it is mostly the test framework's accessibility queries), and
+  the stall was not reproduced.
 - Everything #104's record lists under *Not verified* still stands.
 
 ## Follow-ups
@@ -86,3 +120,10 @@ Read from GitHub on 2026-11-12, from the job logs the verifier saved:
   the same happens every 90 seconds on Settings' first screen, where it
   costs at most a lost activation. The fix touches Settings or its
   test. *(A Settings thread, in its own pull request.)*
+- **The iPad UI job's limit.** It has now been reached twice in a day:
+  here, by a typing test that waited for the app's animations (above),
+  and on the first attempt of pull request #103's run on its final
+  head. Finding why `TypingOnHomeTests` waits, or the owner raising the
+  limit in `.github/workflows/tests.yml` (which a cloud agent cannot
+  push), is open; #103's record names the same follow-up. *(The next thread that
+  reads iPad UI times, and the owner for the limit.)*
