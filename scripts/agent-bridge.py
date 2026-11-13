@@ -40,9 +40,10 @@ script has passed what the commit would hold and its message
 (docs/log/2026-11-12-bridge-commits-and-guard-code.md). A write job needs
 the agent's guard hook installed
 (docs/log/2026-11-08-codex-antigravity-setup.md). Every agy job needs
-agy's hook exactly as installed there, and if a job changes it, the
-bridge puts it back and says so. Never the owner's own checkout, never a
-danger or skip-permissions mode.
+agy's hook exactly as installed there; the bridge keeps the hook and the
+guard's own code in agy's folder before the job, puts back whatever the
+job changed, however the job ended, and says so. Never the owner's own
+checkout, never a danger or skip-permissions mode.
 
 Standard library only; Python 3.9. Its tests are scripts/test-agent-bridge.py.
 """
@@ -74,6 +75,9 @@ FOLDERS = {}  # each job folder's handle, opened before its agent starts
 # Where a job's pushes go: nowhere. Git refuses a URL with this scheme.
 NO_PUSH = 'no-push://agent-bridge-jobs-never-publish/'
 TOKENS = ('GH_TOKEN', 'GITHUB_TOKEN', 'GH_ENTERPRISE_TOKEN', 'GITHUB_ENTERPRISE_TOKEN')
+# The guard's own code, tracked in every checkout: agy's hook runs the
+# adapter, which runs this guard.py, which loads this privacy-check.py.
+GUARD_CODE = ('.claude/hooks/guard.py', 'scripts/privacy-check.py')
 # The privacy check the bridge runs before it commits: the one beside this
 # script, never the copy in a job's checkout, which the agent could edit.
 PRIVACY_CHECK = Path(__file__).resolve().parent / 'privacy-check.py'
@@ -370,6 +374,56 @@ def restore_agy_guard(checkout, saved):
             f'changed its own guard hook ({names}); the bridge put it back')
 
 
+def keep_guard_code(checkout):
+    """The guard's own code in agy's folder (GUARD_CODE), each as (bytes,
+    mode), read without following a link, before an agy job."""
+    kept = {name: read_plain(checkout, name) for name in GUARD_CODE}
+    missing = [name for name, files in kept.items() if files is None]
+    if missing:
+        raise Stop(f'{", ".join(missing)} in {checkout} is not a plain file; the bridge keeps '
+                   'the guard\'s code before an agy job, to put it back after')
+    return kept
+
+
+def restore_guard_code(checkout, saved, start):
+    """After an agy job, however it ended, put back any of the guard's own
+    code the job changed in the working tree, without following a link,
+    and say whether the job's commits (since start) change it. The commits
+    stay for the thread to read; the folder then shows the earlier code as
+    an uncommitted change, so the next agy job is refused until a thread
+    has dealt with them. Returns summary.json's guard_code, and the job's
+    status when the guard's code was changed."""
+    notes, problems = [], []
+    changed = [name for name in GUARD_CODE if read_plain(checkout, name) != saved[name]]
+    if changed:
+        names = ', '.join(changed)
+        try:
+            for name in changed:
+                put_plain(checkout, name, *saved[name])
+            if any(read_plain(checkout, name) != saved[name] for name in GUARD_CODE):
+                raise OSError('it still differs after being written')
+            notes.append(f'changed by the job ({names}) and put back')
+            problems.append(f'changed the guard\'s code ({names}); the bridge put it back')
+        except Exception as error:  # whatever stops it, the job still ends with done
+            notes.append(f'changed by the job ({names}); not put back: {error}')
+            problems.append(f'changed the guard\'s code ({names}), and the bridge could not put '
+                            f'it back ({error}): agy may run a changed guard in {checkout} until '
+                            'it is restored from origin/main')
+    head = git(checkout, 'rev-parse', 'HEAD', check=False)
+    if start and head and head != start:
+        listed = git(checkout, '--literal-pathspecs', 'diff', '--name-only', '-z', start, head,
+                     '--', *GUARD_CODE, check=False, raw=True)
+        committed = sorted(os.fsdecode(name) for name in listed.split(b'\0') if name)
+        if committed:
+            names = ', '.join(committed)
+            notes.append(f'the job\'s commits change it ({names}); the working tree has the '
+                         'earlier code')
+            problems.append(f'its commits change the guard\'s code ({names}); the bridge put the '
+                            f'earlier code back in the working tree, so {checkout} is not clean '
+                            'and the next agy job is refused until a thread has dealt with them')
+    return '; '.join(notes) or 'unchanged', '; '.join(problems) or None
+
+
 def agy_project_folders():
     """The folders of agy's default project, where its commands run."""
     path = Path(os.path.expanduser('~/.gemini/config/projects/default-cli-project.json'))
@@ -587,7 +641,8 @@ def finish(out, checkout, before, run_result, extra, problem=None):
     if problem:
         summary['status'] = problem
     if interrupted:
-        summary['status'] = 'stopped: the bridge was told to stop, and stopped the agent'
+        summary['status'] = ('stopped: the bridge was told to stop, and stopped the agent'
+                             + (f'; {problem}' if problem else ''))
     write_in(out, 'summary.json', json.dumps(summary, indent=2) + '\n')
     write_in(out, 'done', summary['status'] + '\n')
     return summary
@@ -761,6 +816,7 @@ def agy_job(args):
     if args.write:
         branch = f'antigravity/{args.branch}'
         start_branch(checkout, branch)
+    code = keep_guard_code(checkout)
     out = job_folder(checkout, 'agy', 'write' if args.write else 'read')
     prompt = brief_text(args, checkout, branch)
     write_in(out, 'brief.md', prompt)
@@ -770,31 +826,36 @@ def agy_job(args):
         command += ['--model', args.model]
     write_command(out, [part if part != prompt else '<brief.md>' for part in command], checkout)
     before = git_state(checkout)
-    result = run(command, checkout, out, args.timeout + 1)
-    guard_hook, guard_problem = restore_agy_guard(checkout, guard)
-    refusals, steps, response, ran_in, status = [], 0, '', None, None
-    for line in (out / 'output.txt').read_text().splitlines():
+    try:
+        result = run(command, checkout, out, args.timeout + 1)
+        refusals, steps, response, ran_in, status = [], 0, '', None, None
+        for line in (out / 'output.txt').read_text().splitlines():
+            try:
+                event = json.loads(line)
+            except ValueError:
+                continue
+            if event.get('event') == 'init':
+                ran_in = (event.get('init') or {}).get('cwd')
+            update = event.get('step_update') or {}
+            info = update.get('tool_info') or {}
+            if update.get('step_type') == 'tool' and update.get('state') == 'DONE':
+                steps += 1
+                message = (info.get('error') or {}).get('message', '')
+                if 'denied' in message or 'hook' in message:
+                    refusals.append(f'{info.get("name")}: {message}')
+            if event.get('event') == 'result':
+                response = (event.get('result') or {}).get('response', '')
+                status = (event.get('result') or {}).get('status')
+        write_in(out, 'result.md', response)
+    finally:  # an error in reading agy's output never skips these
         try:
-            event = json.loads(line)
-        except ValueError:
-            continue
-        if event.get('event') == 'init':
-            ran_in = (event.get('init') or {}).get('cwd')
-        update = event.get('step_update') or {}
-        info = update.get('tool_info') or {}
-        if update.get('step_type') == 'tool' and update.get('state') == 'DONE':
-            steps += 1
-            message = (info.get('error') or {}).get('message', '')
-            if 'denied' in message or 'hook' in message:
-                refusals.append(f'{info.get("name")}: {message}')
-        if event.get('event') == 'result':
-            response = (event.get('result') or {}).get('response', '')
-            status = (event.get('result') or {}).get('status')
-    write_in(out, 'result.md', response)
+            guard_hook, guard_problem = restore_agy_guard(checkout, guard)
+        finally:
+            guard_code, code_problem = restore_guard_code(checkout, code, before['head'])
     extra = {'agent': 'agy', 'read_only': not args.write, 'refusals': refusals,
              'tool_steps': steps, 'agy_status': status, 'ran_in': ran_in,
-             'guard_hook': guard_hook}
-    problems = [guard_problem] if guard_problem else []
+             'guard_hook': guard_hook, 'guard_code': guard_code}
+    problems = [problem for problem in (guard_problem, code_problem) if problem]
     if ran_in and Path(ran_in).resolve() != checkout:
         problems.append(f'ran in the wrong folder ({ran_in})')
     return out, finish(out, checkout, before, result, extra, '; '.join(problems) or None)

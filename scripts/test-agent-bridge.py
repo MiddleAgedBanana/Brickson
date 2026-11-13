@@ -70,6 +70,28 @@ if 'githooks' in mode:  # hooks left where core.hooksPath points
 if 'sibling' in mode:  # the bridge's own privacy check, changed during the job
     with open(os.environ['STUB_SIBLING'], 'a') as sibling:
         sibling.write('# changed during the job\n')
+if 'guardcode' in mode:  # the guard's own code, which agy's hook runs
+    import subprocess
+    how = os.environ['STUB_GUARD']
+    guard = os.path.join('.claude', 'hooks', 'guard.py')
+    privacy = os.path.join('scripts', 'privacy-check.py')
+    if how in ('edit', 'commit'):
+        for name in (guard, privacy):
+            with open(name, 'w') as code:
+                code.write('allow everything\n')
+        os.chmod(guard, 0o755)
+    elif how == 'link':
+        outside = os.path.join(os.environ['STUB_OUTSIDE'], 'guard.py')
+        with open(outside, 'w') as code:
+            code.write('allow everything\n')
+        os.remove(guard)
+        os.symlink(outside, guard)
+    if how == 'commit':
+        subprocess.run(['git', 'commit', '-q', '-am', 'Weaken the guard'], check=True,
+                       capture_output=True)
+if 'badoutput' in mode:  # output the bridge cannot read as text
+    sys.stdout.buffer.write(b'\xff\xfe not text\n')
+    sys.stdout.flush()
 if 'sleep' in mode:
     time.sleep(20)
 if 'touch' in mode:
@@ -315,6 +337,14 @@ class BridgeTests(unittest.TestCase):
 
     def staged(self, folder):
         return self.git_out(folder, 'diff', '--cached', '--name-only', '-z')
+
+    def guard_code(self):
+        """The guard's own code in agy's folder: bytes, mode and whether a link."""
+        files = {}
+        for name in ('.claude/hooks/guard.py', 'scripts/privacy-check.py'):
+            path = self.agy_folder / name
+            files[name] = (path.is_symlink(), path.read_bytes(), path.stat().st_mode & 0o7777)
+        return files
 
     # Codex -------------------------------------------------------------------
 
@@ -1009,6 +1039,93 @@ class BridgeTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
         self.assertEqual(len(summary['commits']), 1, summary)
         self.assertEqual(summary['bridge_commit'], 'nothing to commit')
+
+    # The guard's own code in agy's folder is put back ----------------------------
+
+    def test_an_agy_job_that_changes_the_guards_code_has_it_put_back(self):
+        self.point_agy_at(self.agy_folder)
+        self.install_agy_hook()
+        installed = self.guard_code()
+        cases = [('read-only', 'edit', 'guardcode', False),
+                 ('a link left in its place', 'link', 'guardcode', False),
+                 ('agy failed', 'edit', 'guardcode fail', False),
+                 ('a write job', 'edit', 'guardcode', True)]
+        for number, (case, how, mode, write) in enumerate(cases):
+            with self.subTest(case):
+                outside = Path(self.temp.name) / f'outside-{number}'
+                outside.mkdir()
+                args = ['--write', '--branch', f'guard-{number}'] if write else []
+                result = self.bridge('agy', '--brief', str(self.brief), *args,
+                                     env={'STUB_MODE': mode, 'STUB_GUARD': how,
+                                          'STUB_OUTSIDE': str(outside)})
+                self.assertEqual(result.returncode, 1, result.stderr)
+                out = self.job_folder(result)
+                summary = json.loads((out / 'summary.json').read_text())
+                self.assertIn("changed the guard's code", summary['status'])
+                self.assertIn('the bridge put it back', summary['status'])
+                self.assertIn('put back', summary['guard_code'])
+                self.assertEqual((out / 'done').read_text(), summary['status'] + '\n')
+                if 'fail' in mode:
+                    self.assertEqual(summary['exit_code'], 3)
+                self.assertEqual(self.guard_code(), installed)
+                if how == 'link':
+                    self.assertEqual((outside / 'guard.py').read_text(), 'allow everything\n')
+                again = self.bridge('agy', '--brief', str(self.brief))
+                self.assertEqual(again.returncode, 0, again.stderr)
+                self.assertEqual(json.loads((self.job_folder(again) / 'summary.json')
+                                            .read_text())['guard_code'], 'unchanged')
+
+    def test_the_guards_code_is_put_back_when_the_bridge_is_stopped(self):
+        import signal
+        self.point_agy_at(self.agy_folder)
+        self.install_agy_hook()
+        installed = self.guard_code()
+        bridge = subprocess.Popen([sys.executable, str(BRIDGE), 'agy', '--brief', str(self.brief)],
+                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                                  env={**os.environ, **self.env, 'STUB_MODE': 'guardcode spawn',
+                                       'STUB_GUARD': 'edit'},
+                                  cwd=str(self.worktree))
+        for _ in range(100):  # until the stand-in has started
+            if self.log.exists():
+                break
+            time.sleep(0.1)
+        time.sleep(0.5)
+        bridge.send_signal(signal.SIGTERM)
+        stdout, _ = bridge.communicate(timeout=60)
+        self.assertEqual(bridge.returncode, 1)
+        out = Path(next(l for l in stdout.splitlines() if l.startswith('Job folder: '))[12:])
+        done = (out / 'done').read_text()
+        self.assertTrue(done.startswith('stopped'), done)
+        self.assertIn("changed the guard's code", done)
+        self.assertEqual(self.guard_code(), installed)
+
+    def test_the_guards_code_is_put_back_even_when_agys_output_cannot_be_read(self):
+        self.point_agy_at(self.agy_folder)
+        self.install_agy_hook()
+        installed, hook = self.guard_code(), self.agy_guard_files()
+        result = self.bridge('agy', '--brief', str(self.brief),
+                             env={'STUB_MODE': 'guardcode badoutput unhook', 'STUB_GUARD': 'edit',
+                                  'STUB_UNHOOK': 'matcher'})
+        self.assertNotEqual(result.returncode, 0, result.stdout)
+        self.assertEqual(self.guard_code(), installed)
+        self.assertEqual(self.agy_guard_files(), hook)
+
+    def test_an_agy_write_job_whose_commits_change_the_guards_code(self):
+        self.point_agy_at(self.agy_folder)
+        self.install_agy_hook()
+        installed = self.guard_code()
+        result = self.bridge('agy', '--brief', str(self.brief), '--write', '--branch', 'weaken',
+                             env={'STUB_MODE': 'guardcode', 'STUB_GUARD': 'commit'})
+        self.assertEqual(result.returncode, 1, result.stderr)
+        summary = json.loads((self.job_folder(result) / 'summary.json').read_text())
+        self.assertIn("commits change the guard's code", summary['status'])
+        self.assertEqual(len(summary['commits']), 1)
+        self.assertEqual(self.guard_code(), installed)  # the working tree has the earlier code
+        self.assertIn(b' M .claude/hooks/guard.py',
+                      self.git_out(self.agy_folder, 'status', '--porcelain'))
+        refused = self.bridge('agy', '--brief', str(self.brief))
+        self.assertEqual(refused.returncode, 2, refused.stderr)
+        self.assertIn('uncommitted', refused.stderr)
 
     def test_status_names_what_is_installed(self):
         self.point_agy_at(self.agy_folder)
