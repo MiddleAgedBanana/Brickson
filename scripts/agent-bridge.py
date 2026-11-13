@@ -32,7 +32,11 @@ agy is told not to change anything, and any file it changes anyway is
 reported. With --write the job starts on a new branch from origin/main
 (codex/<topic> in a new worktree ~/code/brickson-codex-<topic>, or
 antigravity/<topic> in agy's folder) and never pushes; the thread checks
-the commits and pushes. Each agent commits there itself. A write job needs the agent's guard hook
+the commits and pushes. agy commits there itself. Codex cannot: its
+sandbox keeps a worktree's git folder read-only on purpose, so it leaves
+its work uncommitted, and once it has finished the bridge, outside the
+sandbox, commits every file it changed or added, by name, with its final
+message as the commit message. A write job needs the agent's guard hook
 installed (docs/log/2026-11-08-codex-antigravity-setup.md). Every agy job
 needs agy's hook exactly as installed there; if a job changes the hook or
 the guard's own code in agy's folder, the bridge puts them back when the
@@ -130,22 +134,34 @@ WRITE = """- You are on branch {branch}, made from the latest origin/main. Commi
   thread checks your commits, then pushes them. Write a failing test first
   where the change has behaviour, and add one docs/log/ record as
   docs/log/README.md describes."""
+CODEX_WRITE = """- You are on branch {branch}, made from the latest origin/main.
+  Leave your work uncommitted: your sandbox keeps git's own folder
+  read-only, so `git add` and `git commit` fail here. Once you have
+  finished, the bridge commits every file you changed or added, as one
+  commit, with your final message as its message, so begin that message
+  with one line under 72 characters that says what the change does, then a
+  blank line. Do not push or open a pull request: the Claude thread checks
+  the commit, then pushes it. Write a failing test first where the change
+  has behaviour, and add one docs/log/ record as docs/log/README.md
+  describes."""
 
 
 class Stop(Exception):
     """The job cannot run as asked; the message says why."""
 
 
-def git(folder, *args, check=True, strip=True, raw=False):
+def git(folder, *args, check=True, strip=True, raw=False, given=None):
     """The bridge's own git, without the thread's GitHub tokens and with
     core.fsmonitor and git hooks off: an agent can change the checkout's
     git settings, and a command it names there must never run outside its
     sandbox or with what the agent was not given. With raw, git's output
-    comes back as bytes, untouched (file names, which need not be text)."""
+    comes back as bytes, untouched (file names, which need not be text).
+    given is text for git's stdin, which is otherwise closed."""
     env = {key: value for key, value in os.environ.items() if key not in TOKENS}
+    stdin = {'input': given} if given is not None else {'stdin': subprocess.DEVNULL}
     result = subprocess.run(['git', '-c', 'core.fsmonitor=false', '-c', 'core.hooksPath=/dev/null',
                              '-C', str(folder), *args],
-                            capture_output=True, text=not raw, stdin=subprocess.DEVNULL, env=env)
+                            capture_output=True, text=not raw, env=env, **stdin)
     if check and result.returncode != 0:
         error = result.stderr.decode('utf-8', 'replace') if raw else result.stderr
         raise Stop(f'git {" ".join(args)} failed in {folder}: {error.strip()}')
@@ -616,11 +632,39 @@ def write_command(out, command, cwd):
     write_in(out, 'command.json', json.dumps({'command': command, 'cwd': str(cwd)}, indent=2) + '\n')
 
 
-def brief_text(args, folder, branch):
+def brief_text(args, folder, branch, write=WRITE):
     job = Path(os.path.expanduser(args.brief)).read_text()
-    mode = WRITE.format(branch=branch) if args.write else READ_ONLY
+    mode = write.format(branch=branch) if args.write else READ_ONLY
     return PREAMBLE.format(folder=folder, mode=mode) + job.strip() + '\n'
 
+
+def commit_codex_work(checkout, out, branch, run_result, answer):
+    """Commit a Codex write job's work, outside Codex's sandbox, which keeps
+    a worktree's git folder read-only (docs/log/2026-11-12-bridge-safety-gaps.md,
+    *Follow-ups*). Only a job that finished: one that failed, timed out or
+    was stopped leaves its changes uncommitted for the thread to read. The
+    checkout was clean when the job began, so every changed or new file
+    outside build/ is the job's; each is staged by name, read literally,
+    never as a pattern. The commit is unsigned, as nobody is there to
+    answer a signing prompt, and nothing is pushed. Returns what happened
+    for summary.json, and the job's status if the commit failed."""
+    code, _seconds, interrupted = run_result
+    if code != 0 or interrupted:
+        return 'not made: the job did not finish, so its changes are left uncommitted', None
+    paths = [path for _line, path in changed_files(checkout)]
+    if not paths:
+        return 'nothing to commit', None
+    message = (answer.strip() or f'Codex\'s work on {branch}') + (
+        f'\n\nCommitted by scripts/agent-bridge.py, outside Codex\'s sandbox, for job '
+        f'{out.name}.\n')
+    try:
+        git(checkout, '--literal-pathspecs', 'add', '--', *paths)
+        git(checkout, 'commit', '-q', '--no-gpg-sign', '-F', '-', given=message)
+    except Stop as error:
+        return (f'not made: {error}',
+                f'finished, but the bridge could not commit its work ({error}); its changes are '
+                'left staged, not committed')
+    return f'made {git(checkout, "rev-parse", "--short", "HEAD")}', None
 
 
 def codex_review(args):
@@ -657,7 +701,7 @@ def codex_job(args):
         checkout = brickson_checkout(args.worktree or os.getcwd())
         hold_checkout(checkout)
     out = job_folder(checkout, 'codex', 'write' if args.write else 'read')
-    prompt = brief_text(args, checkout, branch)
+    prompt = brief_text(args, checkout, branch, CODEX_WRITE)
     write_in(out, 'brief.md', prompt)
     # Codex writes its final message itself, through whatever is at the
     # path it is given, so the path is a fresh folder in the checkout's
@@ -672,13 +716,17 @@ def codex_job(args):
         write_command(out, command[:-1] + ['<brief.md>'], checkout)
         before = git_state(checkout)
         result = run(command, checkout, out, args.timeout)
-        write_in(out, 'result.md', read_answer(answer / 'result.md'))
+        final = read_answer(answer / 'result.md')
+        write_in(out, 'result.md', final)
     finally:
         shutil.rmtree(answer, ignore_errors=True)
     refusals = [line.strip() for line in (out / 'stderr.txt').read_text().splitlines()
                 if 'blocked by PreToolUse hook' in line]
-    return out, finish(out, checkout, before, result,
-                       {'agent': 'codex', 'read_only': not args.write, 'refusals': refusals})
+    extra = {'agent': 'codex', 'read_only': not args.write, 'refusals': refusals}
+    problem = None
+    if args.write:
+        extra['bridge_commit'], problem = commit_codex_work(checkout, out, branch, result, final)
+    return out, finish(out, checkout, before, result, extra, problem)
 
 
 def agy_job(args):

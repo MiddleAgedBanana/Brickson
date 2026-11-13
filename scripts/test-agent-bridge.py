@@ -117,6 +117,17 @@ if 'unhook' in mode:
     elif how == 'folder':  # a folder where the file was, which cannot be put back
         os.remove(hooks)
         os.makedirs(os.path.join(hooks, 'inside'))
+if 'edit' in mode:
+    # A write job's work, left uncommitted as Codex's sandbox leaves it: a
+    # changed file, a deleted one and new ones, one of them named like a
+    # pathspec that would leave AGENTS.md out ("magic" after a colon).
+    with open('AGENTS.md', 'w') as tracked:
+        tracked.write('changed by the agent\n')
+    os.remove(os.path.join('docs', 'old.md'))
+    os.makedirs('notes', exist_ok=True)
+    for name in (os.path.join('notes', 'new note.md'), 'r\u00e9sum\u00e9.md', ':!AGENTS.md'):
+        with open(name, 'w') as new:
+            new.write('new\n')
 if 'unguard' in mode:
     # Weaken the guard's own code in agy's folder, which git tracks: the
     # adapter runs this guard, and the guard runs the privacy check.
@@ -145,12 +156,14 @@ if entry['tool'] == 'codex':
         sys.exit(0)
     if '-o' in args:
         with open(args[args.index('-o') + 1], 'w') as out:
-            out.write('codex final answer\n')
+            out.write(os.environ.get('STUB_ANSWER', 'codex final answer\n'))
     print(json.dumps({'type': 'thread.started'}))
     if 'blocked' in mode:
         print('ERROR codex_core::tools::router: error=Command blocked by PreToolUse hook: '
               'Stage only your own changes', file=sys.stderr)
-    sys.exit(0)
+    if 'hang' in mode:
+        time.sleep(20)
+    sys.exit(3 if 'fail' in mode else 0)
 if args and args[0] == '--version':
     print('stub 1.0')
     sys.exit(0)
@@ -207,12 +220,12 @@ class BridgeTests(unittest.TestCase):
         origin, seed = base / 'origin.git', base / 'seed'
         subprocess.run(['git', 'init', '-q', '--bare', '-b', 'main', str(origin)], check=True)
         subprocess.run(['git', 'init', '-q', '-b', 'main', str(seed)], check=True)
-        for part in ('.claude/hooks/guard.py', 'scripts/privacy-check.py', 'AGENTS.md'):
+        for part in ('.claude/hooks/guard.py', 'scripts/privacy-check.py', 'AGENTS.md', 'docs/old.md'):
             (seed / part).parent.mkdir(parents=True, exist_ok=True)
             (seed / part).write_text('# stand-in\n')
         (seed / '.gitignore').write_text('build/\n.agents/\n')
         env = {**os.environ, **self.env}
-        for args in (['add', '.claude', 'scripts', 'AGENTS.md', '.gitignore'],
+        for args in (['add', '.claude', 'scripts', 'AGENTS.md', 'docs', '.gitignore'],
                      ['commit', '-q', '-m', 'start'], ['remote', 'add', 'origin', str(origin)],
                      ['push', '-q', 'origin', 'main']):
             subprocess.run(['git', '-C', str(seed), *args], check=True, env=env, capture_output=True)
@@ -331,9 +344,79 @@ class BridgeTests(unittest.TestCase):
         self.assertEqual(Path(call['cwd']).resolve(), folder)
         self.assertIn('branch codex/tests', call['argv'][-1])
         self.assertIn('Do not push', call['argv'][-1])
+        # Codex's sandbox keeps git's folder read-only, so it is not asked to commit.
+        self.assertIn('Leave your work uncommitted', call['argv'][-1])
+        self.assertNotIn('Commit your', call['argv'][-1])
         branch = subprocess.run(['git', '-C', str(folder), 'branch', '--show-current'],
                                 capture_output=True, text=True).stdout.strip()
         self.assertEqual(branch, 'codex/tests')
+
+    def test_the_bridge_commits_a_codex_write_jobs_work_outside_the_sandbox(self):
+        # Codex's workspace-write sandbox keeps a worktree's git folder
+        # read-only, so a Codex write job could not commit (found on the Mac
+        # on 2026-11-12, docs/log/2026-11-12-bridge-safety-gaps.md). The
+        # bridge commits what the finished job changed, by name, with the
+        # agent's final message as the commit message.
+        self.install_codex_hook()
+        result = self.bridge('codex', '--brief', str(self.brief), '--write', '--branch', 'tests',
+                             env={'STUB_MODE': 'edit',
+                                  'STUB_ANSWER': 'Add two notes\n\nWhat I did and checked.\n'})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        folder = self.home / 'code' / 'brickson-codex-tests'
+        summary = json.loads((self.job_folder(result) / 'summary.json').read_text())
+        self.assertEqual(summary['status'], 'finished')
+        self.assertEqual(summary['changed_files'], [])
+        self.assertEqual(len(summary['commits']), 1, summary['commits'])
+        self.assertTrue(summary['bridge_commit'].startswith('made '), summary['bridge_commit'])
+        self.assertEqual(git_out(folder, 'status', '--porcelain', '--untracked-files=all'), '')
+        self.assertEqual(git_out(folder, 'rev-parse', 'HEAD~1'), git_out(folder, 'rev-parse', 'origin/main'))
+        self.assertEqual(git_out(folder, 'branch', '--show-current').strip(), 'codex/tests')
+        message = git_out(folder, 'log', '-1', '--format=%B')
+        self.assertTrue(message.startswith('Add two notes\n\nWhat I did and checked.\n'), message)
+        self.assertIn('agent-bridge.py', message)
+        fields = git_out(folder, 'diff-tree', '-r', '-z', '--no-commit-id', '--name-status',
+                         'HEAD').split('\0')
+        changes = dict(zip(fields[1::2], fields[0::2]))
+        self.assertEqual(changes, {'AGENTS.md': 'M', 'docs/old.md': 'D', 'notes/new note.md': 'A',
+                                   'r\u00e9sum\u00e9.md': 'A', ':!AGENTS.md': 'A'})
+
+    def test_a_codex_write_job_that_does_not_finish_is_left_uncommitted(self):
+        self.install_codex_hook()
+        for topic, mode, extra, status in (('fails', 'edit fail', [], 'failed (exit 3)'),
+                                           ('stops', 'edit hang', ['--timeout', '0.02'], 'timed out')):
+            with self.subTest(mode):
+                result = self.bridge('codex', '--brief', str(self.brief), '--write', '--branch', topic,
+                                     *extra, env={'STUB_MODE': mode})
+                self.assertEqual(result.returncode, 1, result.stderr)
+                summary = json.loads((self.job_folder(result) / 'summary.json').read_text())
+                self.assertEqual(summary['status'], status)
+                self.assertEqual(summary['commits'], [])
+                self.assertTrue(summary['bridge_commit'].startswith('not made'), summary['bridge_commit'])
+                self.assertIn(' M AGENTS.md', summary['changed_files'])
+
+    def test_a_codex_write_job_that_changes_nothing_makes_no_commit(self):
+        self.install_codex_hook()
+        result = self.bridge('codex', '--brief', str(self.brief), '--write', '--branch', 'tests')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        summary = json.loads((self.job_folder(result) / 'summary.json').read_text())
+        self.assertEqual(summary['status'], 'finished')
+        self.assertEqual(summary['commits'], [])
+        self.assertEqual(summary['bridge_commit'], 'nothing to commit')
+
+    def test_a_commit_the_bridge_cannot_make_is_reported(self):
+        # git refuses an empty author name, so the commit fails after the job.
+        self.install_codex_hook()
+        result = self.bridge('codex', '--brief', str(self.brief), '--write', '--branch', 'tests',
+                             env={'STUB_MODE': 'edit', 'GIT_AUTHOR_NAME': ''})
+        self.assertEqual(result.returncode, 1, result.stderr)
+        out = self.job_folder(result)
+        summary = json.loads((out / 'summary.json').read_text())
+        self.assertTrue(summary['status'].startswith('finished, but the bridge could not commit'),
+                        summary['status'])
+        self.assertIn('left staged, not committed', summary['status'])
+        self.assertEqual(summary['commits'], [])
+        self.assertIn('M  AGENTS.md', summary['changed_files'])
+        self.assertEqual((out / 'done').read_text(), summary['status'] + '\n')
 
     def test_write_needs_a_branch_and_a_branch_needs_write(self):
         self.assertEqual(self.bridge('codex', '--brief', str(self.brief), '--write').returncode, 2)
