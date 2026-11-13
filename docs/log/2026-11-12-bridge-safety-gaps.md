@@ -133,14 +133,16 @@ Python 3.9.25, the version of the Mac's `/usr/bin/python3`:
   needs no new stand-in.
 - GitHub CI runs these tests on macOS with `/usr/bin/python3`, Apple's
   Python 3.9, through `scripts/test.sh`.
+- **The hook file installed on the Mac** matches the exact text the
+  bridge now requires. On 2026-11-12, before the merge, a thread on the
+  Mac ran `python3 scripts/agent-bridge.py status` in a throwaway
+  worktree of this pull request's last commit, `117ab61`, and it printed
+  `agy guard hook: installed` and `codex guard hook: installed`. (This
+  record first listed the check under *Not verified*; corrected on
+  2026-11-13.)
 
 ## Not verified
 
-- **The hook file installed on the Mac**, against the exact text the
-  bridge now requires. The set-up record gives that text; if the Mac's
-  file differs in any way, agy jobs are refused until it is reinstalled,
-  and `status` says what differs. A thread on the Mac can check with
-  `python3 scripts/agent-bridge.py status` in a worktree of this branch.
 - A real agy job through the new code; the stand-ins answer as agy did on
   2026-11-08.
 - Whether agy reads its hook file again during a job. If it does, the
@@ -184,4 +186,5 @@ Python 3.9.25, the version of the Mac's `/usr/bin/python3`:
   agy's folder keeps checked out for the next read-only job. Found while
   making this change; outside the two findings this pull request was for.
 - Once this merges, a thread on the Mac runs `status` and expects
-  `agy guard hook: installed`.
+  `agy guard hook: installed`. Done before the merge, on this pull
+  request's last commit (*Verified*).
