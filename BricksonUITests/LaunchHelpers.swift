@@ -1,67 +1,25 @@
 import UIKit
 import XCTest
 
-/// Dynamic Type sizes the UI tests launch at, by UIKit's names for them.
-enum UITestTextSize: String, CaseIterable {
-    /// The system's default size.
-    case large = "UICTContentSizeCategoryL"
-    /// The largest size without Larger Accessibility Sizes turned on.
-    case xxxLarge = "UICTContentSizeCategoryXXXL"
-    case ax1 = "UICTContentSizeCategoryAccessibilityM"
-    case ax3 = "UICTContentSizeCategoryAccessibilityXL"
-    /// The largest size of all.
-    case ax5 = "UICTContentSizeCategoryAccessibilityXXXL"
-
-    /// How failure messages and capture names say it.
-    var name: String {
-        switch self {
-        case .large: "default text"
-        case .xxxLarge: "xxxLarge text"
-        case .ax1: "AX1 text"
-        case .ax3: "AX3 text"
-        case .ax5: "AX5 text"
-        }
-    }
-}
-
-/// A debug launch preference, independently checked against rendered pixels.
-enum UITestAppearance: String {
-    case light
-    case dark
-}
-
-/// Home's sizes (`ProfileChoice` in the app). Tests written for touch's
-/// sizes ask for them; `fromTheAnswer` has Family Setup's answer decide,
-/// the largest until anyone answers, even where the owner's switch holds
-/// the sizes; `asShipped` asks for nothing, as a person's launch does.
-enum UITestSizes: String {
-    case touch
-    case switchControl = "switch-control"
-    case headTracking = "head-tracking"
-    case eyeTracking = "eye-tracking"
-    case fromTheAnswer = "from-answer"
-    case asShipped
-}
-
-/// Where the launched app keeps what it saves (`LaunchOptions` in the app).
-enum UITestStorage {
-    /// Test-only storage, erased first: the starter phrases, no saved
-    /// settings, no draft. Never the person's own data.
-    case fresh
-    /// The same test-only storage, keeping what an earlier launch in this
-    /// test saved, to check that something survives a relaunch.
-    case kept
-}
+// The text sizes, appearances, sizes and storage a test asks for, and the
+// arguments they become, are in LaunchArguments.swift.
 
 extension XCTestCase {
     /// Launches Brickson the way every UI test should: on test-only storage,
     /// with short idle limits (unless `shortTimeouts` is false, for a test
-    /// slower than they are), in English, at the given text size,
-    /// appearance and orientation, with Home at touch's sizes unless
-    /// `sizes` asks for others. It waits for Home (unless
-    /// `waitsForHome` is false, for a test that starts on another screen)
-    /// and fails if Home says changes won't be kept, which would mean the
-    /// test storage did not open.
+    /// slower than they are), with UIKit's animations off (unless
+    /// `keepsUIKitAnimations` is true, for a test about one), in English,
+    /// at the given text size, appearance and orientation, with Home at
+    /// touch's sizes unless `sizes` asks for others. It waits for Home
+    /// (unless `waitsForHome` is false, for a test that starts on another
+    /// screen) and fails if Home says changes won't be kept, which would
+    /// mean the test storage did not open.
+    ///
+    /// UIKit's animations are off because XCTest waits after every action
+    /// until it has seen each UIKit animation it saw start also finish, and
+    /// on an iPad, as the keyboard goes, it can count one that never
+    /// finishes; every later wait in that launch then runs for a full
+    /// minute (docs/DECISIONS.md, "Tests").
     ///
     /// Orientation is simulator-wide and is restored to portrait. Appearance
     /// is a debug launch preference because XCUIDevice.appearance can report
@@ -76,6 +34,7 @@ extension XCTestCase {
         sizes: UITestSizes = .touch,
         arguments: [String] = [],
         shortTimeouts: Bool = true,
+        keepsUIKitAnimations: Bool = false,
         waitsForHome: Bool = true,
         file: StaticString = #filePath,
         line: UInt = #line
@@ -89,16 +48,15 @@ extension XCTestCase {
         device.orientation = orientation
 
         let app = XCUIApplication()
-        app.launchArguments = [
-            storage == .fresh ? "--fresh-test-storage" : "--test-storage",
-        ] + (shortTimeouts ? ["--short-timeouts"] : [])
-            + (sizes == .asShipped ? [] : ["--home-profile=\(sizes.rawValue)"]) + [
-            "--appearance=\(appearance.rawValue)",
-            "-UIPreferredContentSizeCategoryName", textSize.rawValue,
-            // Tests find controls by their English labels.
-            "-AppleLanguages", "(en)",
-            "-AppleLocale", "en_US",
-        ] + arguments
+        app.launchArguments = UITestLaunch.arguments(
+            textSize: textSize,
+            appearance: appearance,
+            storage: storage,
+            sizes: sizes,
+            shortTimeouts: shortTimeouts,
+            keepsUIKitAnimations: keepsUIKitAnimations,
+            extra: arguments
+        )
         let clock = ContinuousClock()
         let start = clock.now
         app.launch()

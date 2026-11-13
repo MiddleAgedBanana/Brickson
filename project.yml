@@ -128,6 +128,9 @@ targets:
       - path: BricksonUITests/HomeChains.swift
       - path: BricksonUITests/SettingsChains.swift
       - path: BricksonUITests/LibraryChains.swift
+      # What launchedApp passes the app, read here with the app's own
+      # parser (LaunchArgumentsTests).
+      - path: BricksonUITests/LaunchArguments.swift
     dependencies:
       - target: Brickson
     settings:
