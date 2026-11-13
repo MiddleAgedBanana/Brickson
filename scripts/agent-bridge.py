@@ -193,12 +193,18 @@ def without_filters(folder, env):
     every worktree shares, and a Codex job can name it in a .gitattributes
     of its own, so the bridge's git, outside both, would run it
     (CodeRabbit, on #108). An empty command makes git read and write the
-    contents as they are, and a filter no longer required cannot fail."""
-    names = subprocess.run(['git', '-C', str(folder), 'config', '-z', '--name-only',
+    contents as they are, and a filter no longer required cannot fail.
+    git config ends 1 when no filter is set; any other failure (a
+    GIT_CONFIG_COUNT that is not a number, say) stops the job, since an
+    empty answer would turn no filter off (CodeRabbit, on #108)."""
+    found = subprocess.run(['git', '-C', str(folder), 'config', '-z', '--name-only',
                             '--get-regexp', r'^filter\.'],
-                           capture_output=True, stdin=subprocess.DEVNULL, env=env).stdout
+                           capture_output=True, stdin=subprocess.DEVNULL, env=env)
+    if found.returncode not in (0, 1):
+        error = found.stderr.decode('utf-8', 'replace').strip()
+        raise Stop(f'could not read which git filters to turn off in {folder}: {error}')
     drivers = set()
-    for name in os.fsdecode(names).split('\0'):
+    for name in os.fsdecode(found.stdout).split('\0'):
         rest = name[len('filter.'):]
         if name.startswith('filter.') and '.' in rest:
             drivers.add(rest.rsplit('.', 1)[0])
@@ -746,7 +752,14 @@ def codex_job(args):
         if not folder.exists():
             source = brickson_checkout(os.getcwd())
             git(source, 'fetch', '-q', 'origin', 'main')
-            git(source, 'worktree', 'add', '-q', '-b', branch, '--no-track', str(folder), 'origin/main')
+            # Made empty, then filled by the bridge's own git there: settings
+            # can switch a filter on for the new branch or worktree alone
+            # (includeIf), which the bridge sees only from inside it, and
+            # `worktree add` would fill it with that filter on (CodeRabbit,
+            # on #108).
+            git(source, 'worktree', 'add', '-q', '--no-checkout', '-b', branch, '--no-track',
+                str(folder), 'origin/main')
+            git(folder, 'reset', '-q', '--hard')
             checkout = brickson_checkout(folder)
             hold_checkout(checkout)
         else:

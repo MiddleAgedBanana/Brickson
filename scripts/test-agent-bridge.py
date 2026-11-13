@@ -449,6 +449,50 @@ class BridgeTests(unittest.TestCase):
                                  'changed by the agent\n')
                 self.assertEqual(git_out(folder, 'status', '--porcelain', '--untracked-files=all'), '')
 
+    def test_a_filter_set_for_the_jobs_branch_never_runs_while_its_worktree_is_made(self):
+        # The shared git settings can define a filter for codex/ branches
+        # only (includeIf "onbranch:"). Where the bridge starts it is off,
+        # so the bridge's settings did not name it, but `git worktree add`
+        # filled the new worktree on its codex/ branch, where it is on, and
+        # ran its smudge command outside any sandbox (CodeRabbit, on #108).
+        self.install_codex_hook()
+        outside = Path(self.temp.name) / 'outside'
+        outside.mkdir()
+        mark = outside / 'ran'
+        included = Path(self.temp.name) / 'codex-branches.gitconfig'
+        included.write_text(f"[filter \"mark\"]\n\tsmudge = touch '{mark}'; cat\n"
+                            f"\tclean = touch '{mark}'; cat\n")
+        git(self.owner, 'config', 'includeIf.onbranch:codex/.path', str(included))
+        (self.owner / '.git' / 'info').mkdir(exist_ok=True)
+        (self.owner / '.git' / 'info' / 'attributes').write_text('* filter=mark\n')
+        result = self.bridge('codex', '--brief', str(self.brief), '--write', '--branch', 'tests',
+                             env={'STUB_MODE': 'edit'})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        # Checked before any git of these tests runs there, since that git
+        # would run the filter itself.
+        self.assertFalse(mark.exists())
+        folder = self.home / 'code' / 'brickson-codex-tests'
+        self.assertEqual(git_out(folder, 'cat-file', 'blob', 'HEAD:AGENTS.md'),
+                         'changed by the agent\n')
+        self.assertEqual(git_out(folder, 'cat-file', 'blob', 'HEAD:.gitignore'), 'build/\n.agents/\n')
+
+    def test_the_bridge_stops_when_it_cannot_read_which_filters_to_turn_off(self):
+        # With a GIT_CONFIG_COUNT that is not a number, `git config` fails
+        # and prints nothing; the bridge read that as no filters, then put
+        # a good count in its place, so its git ran the filter the shared
+        # settings define (CodeRabbit, on #108).
+        self.install_codex_hook()
+        outside = Path(self.temp.name) / 'outside'
+        outside.mkdir()
+        mark = outside / 'ran'
+        git(self.owner, 'config', 'filter.mark.clean', f"touch '{mark}'; cat")
+        result = self.bridge('codex', '--brief', str(self.brief), '--write', '--branch', 'tests',
+                             env={'STUB_MODE': 'edit filter', 'GIT_CONFIG_COUNT': 'many'})
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn('filters', result.stderr)
+        self.assertFalse(mark.exists())
+        self.assertEqual(self.calls(), [])
+
     def test_the_bridges_git_ignores_a_repository_named_in_its_environment(self):
         # git uses GIT_INDEX_FILE (and GIT_DIR and the like) over the folder
         # it is given, so a thread that runs the bridge with one set would
