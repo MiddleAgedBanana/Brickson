@@ -1095,6 +1095,43 @@ class BridgeTests(unittest.TestCase):
             self.assertIn('sub/', text)
         self.assertIn('?? docs/new.md', summary['changed_files'])
 
+    def test_a_stop_during_the_privacy_check_commits_nothing_and_still_ends_with_done(self):
+        import signal
+        copy = Path(self.temp.name) / 'copy' / 'scripts'
+        copy.mkdir(parents=True)
+        (copy / 'agent-bridge.py').write_bytes(BRIDGE.read_bytes())
+        started = Path(self.temp.name) / 'check-started'
+        (copy / 'privacy-check.py').write_text(
+            'import os, time\nopen(os.environ["CHECK_STARTED"], "w").close()\ntime.sleep(60)\n')
+        self.install_codex_hook()
+        began = time.monotonic()
+        bridge = subprocess.Popen([sys.executable, str(copy / 'agent-bridge.py'), 'codex',
+                                   '--brief', str(self.brief), '--write', '--branch', 'stop'],
+                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                                  env={**os.environ, **self.env, 'STUB_MODE': 'work',
+                                       'CHECK_STARTED': str(started)},
+                                  cwd=str(self.worktree))
+        for _ in range(300):  # until the privacy check is running
+            if started.exists():
+                break
+            time.sleep(0.1)
+        self.assertTrue(started.exists())
+        bridge.send_signal(signal.SIGTERM)
+        stdout, stderr = bridge.communicate(timeout=60)
+        self.assertLess(time.monotonic() - began, 40)
+        self.assertEqual(bridge.returncode, 1, stderr)
+        out = Path(next(l for l in stdout.splitlines() if l.startswith('Job folder: '))[12:])
+        summary = json.loads((out / 'summary.json').read_text())
+        done = (out / 'done').read_text()
+        self.assertEqual(done, summary['status'] + '\n')
+        self.assertTrue(done.startswith('stopped'), done)
+        self.assertIn('before it committed', done)
+        self.assertIn('not committed', summary['bridge_commit'])
+        folder = self.home / 'code' / 'brickson-codex-stop'
+        self.assertEqual(summary['commits'], [])
+        self.assertEqual(self.staged(folder), b'')
+        self.assertIn('?? docs/new.md', summary['changed_files'])
+
     def test_a_bytecode_cache_left_beside_the_guards_code_is_removed(self):
         # guard.py loads scripts/privacy-check.py through Python's loader,
         # which uses a cache in scripts/__pycache__ and, for an unchecked

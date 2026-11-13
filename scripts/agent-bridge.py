@@ -645,6 +645,16 @@ def interrupt(signum, _frame):
     raise Interrupted(signum)
 
 
+STOPS = []  # stops the bridge was given after a Codex write job's agent ended
+
+
+def note_stop(signum, _frame):
+    """While the bridge commits a Codex job's work, a stop is noted, not
+    raised, so git is never cut off half way (a lock left behind) and the
+    job still ends with done; commit_codex_work reads it and commits nothing."""
+    STOPS.append(signum)
+
+
 def run(command, cwd, out, timeout_minutes):
     """Run command with stdin closed, in a process group of its own,
     writing stdout and stderr to files. If the bridge is told to stop
@@ -736,6 +746,33 @@ def commit_message(answer, branch, job):
     return '\n\n'.join(part for part in parts if part) + '\n'
 
 
+def privacy_check(checkout, message):
+    """Run the privacy check beside the bridge on what checkout has staged
+    and on message, for at most 15 minutes, ending it at once if the
+    bridge is told to stop (STOPS). Returns its output and exit code (None
+    if it could not run, did not finish or was stopped)."""
+    try:
+        process = subprocess.Popen([sys.executable, '-I', str(PRIVACY_CHECK), '--outgoing',
+                                    '--text', '-', str(checkout)],
+                                   stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                   stderr=subprocess.STDOUT, text=True, cwd=str(checkout),
+                                   env=plain_environment())
+    except OSError as error:
+        return f'the privacy check could not run: {type(error).__name__}\n', None
+    deadline, pending = time.monotonic() + 900, message
+    while True:
+        try:
+            report, _ = process.communicate(pending, timeout=0.2)
+            return report, process.returncode
+        except subprocess.TimeoutExpired:
+            pending = None  # sent once; communicate keeps sending it
+            if STOPS or time.monotonic() > deadline:
+                process.kill()
+                process.communicate()
+                return ('the privacy check was stopped\n' if STOPS
+                        else 'the privacy check did not finish in 15 minutes\n'), None
+
+
 def commit_codex_work(checkout, out, branch, answer, run_result, privacy_kept):
     """After a Codex write job, commit what Codex left uncommitted: its
     sandbox keeps a worktree's git folder read-only, so it cannot. Only
@@ -761,6 +798,14 @@ def commit_codex_work(checkout, out, branch, answer, run_result, privacy_kept):
         git(checkout, 'reset', '-q', check=False)  # nothing is left staged
         return f'not committed: {reason}', f'finished, but its work is not committed: {reason}'
 
+    def stopped():
+        git(checkout, 'reset', '-q', check=False)  # nothing is left staged
+        return ('not committed: the bridge was told to stop before it committed',
+                'stopped: the bridge was told to stop after Codex finished, before it committed; '
+                'its work is left uncommitted')
+
+    if STOPS:
+        return stopped()
     # git lists a repository inside the checkout, or a folder it cannot look
     # into, as one entry ("sub/"). Staged, a repository becomes a link to it,
     # and git then runs what its own settings name (a filter, say) outside
@@ -784,22 +829,21 @@ def commit_codex_work(checkout, out, branch, answer, run_result, privacy_kept):
         staged = git(checkout, 'diff', '--cached', '--name-only', '-z', raw=True).split(b'\0')
         if any(os.fsdecode(name).startswith('build/') for name in staged):
             return refused('something under build/ was staged, which is never committed')
-        try:
-            check = subprocess.run([sys.executable, '-I', str(PRIVACY_CHECK), '--outgoing',
-                                    '--text', '-', str(checkout)],
-                                   input=message, capture_output=True, text=True,
-                                   cwd=str(checkout), env=plain_environment(), timeout=900)
-            report, returncode = check.stdout + check.stderr, check.returncode
-        except (OSError, subprocess.SubprocessError) as error:
-            report, returncode = f'the privacy check could not run: {type(error).__name__}\n', None
+        if STOPS:
+            return stopped()
+        report, returncode = privacy_check(checkout, message)
+        if STOPS:
+            return stopped()
         # Places and kinds only: the check never prints the words it finds.
         write_in(out, 'privacy-check.txt', report)
         if returncode == 1:
-            return refused('the privacy check found personal details in it or its message '
-                           '(privacy-check.txt says where and what kind)')
+            return refused('the privacy check found personal details in it or its message, '
+                           'or failed (privacy-check.txt says which)')
         if returncode != 0:
             return refused('the privacy check could not run, or has no private list '
                            '(privacy-check.txt says why)')
+        if STOPS:
+            return stopped()
         git(checkout, '-c', 'commit.gpgsign=false', 'commit', '-q', '--no-verify', '-F', '-',
             input=message)
     except Stop as error:
@@ -853,25 +897,35 @@ def codex_job(args):
     # the bridge copies the message into the job folder.
     answer = Path(tempfile.mkdtemp(prefix='agent-bridge-answer-',
                                    dir=git(checkout, 'rev-parse', '--absolute-git-dir')))
+    previous = {}
     try:
-        command = ['codex', 'exec', '--sandbox', 'workspace-write' if args.write else 'read-only',
-                   '-c', 'approval_policy="never"', '-C', str(checkout), '--json',
-                   '-o', str(answer / 'result.md'), prompt]
-        write_command(out, command[:-1] + ['<brief.md>'], checkout)
-        before = git_state(checkout)
-        result = run(command, checkout, out, args.timeout)
-        final = read_answer(answer / 'result.md')
-        write_in(out, 'result.md', final)
+        try:
+            command = ['codex', 'exec', '--sandbox', 'workspace-write' if args.write else 'read-only',
+                       '-c', 'approval_policy="never"', '-C', str(checkout), '--json',
+                       '-o', str(answer / 'result.md'), prompt]
+            write_command(out, command[:-1] + ['<brief.md>'], checkout)
+            before = git_state(checkout)
+            # For a write job, a stop after the agent ends is noted
+            # (note_stop) until done is written: run() puts this back when
+            # the agent ends.
+            if args.write:
+                previous = {sig: signal.signal(sig, note_stop) for sig in SIGNALS}
+            result = run(command, checkout, out, args.timeout)
+            final = read_answer(answer / 'result.md')
+            write_in(out, 'result.md', final)
+        finally:
+            shutil.rmtree(answer, ignore_errors=True)
+        refusals = [line.strip() for line in (out / 'stderr.txt').read_text().splitlines()
+                    if 'blocked by PreToolUse hook' in line]
+        extra = {'agent': 'codex', 'read_only': not args.write, 'refusals': refusals}
+        problem = None
+        if args.write:  # before finish(), so the summary reads the commit
+            extra['bridge_commit'], problem = commit_codex_work(checkout, out, branch, final,
+                                                                result, privacy_kept)
+        return out, finish(out, checkout, before, result, extra, problem)
     finally:
-        shutil.rmtree(answer, ignore_errors=True)
-    refusals = [line.strip() for line in (out / 'stderr.txt').read_text().splitlines()
-                if 'blocked by PreToolUse hook' in line]
-    extra = {'agent': 'codex', 'read_only': not args.write, 'refusals': refusals}
-    problem = None
-    if args.write:  # before finish(), so the summary reads the commit
-        extra['bridge_commit'], problem = commit_codex_work(checkout, out, branch, final, result,
-                                                            privacy_kept)
-    return out, finish(out, checkout, before, result, extra, problem)
+        for sig, handler in previous.items():
+            signal.signal(sig, handler)
 
 
 def agy_job(args):
