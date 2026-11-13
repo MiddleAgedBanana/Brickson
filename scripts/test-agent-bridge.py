@@ -34,7 +34,8 @@ BRIDGE = ROOT / 'scripts' / 'agent-bridge.py'
 STUB = r'''#!/usr/bin/env python3
 import json, os, stat, sys, time
 entry = {'tool': os.path.basename(sys.argv[0]), 'argv': sys.argv[1:], 'cwd': os.getcwd(),
-         'stdin_closed': stat.S_ISCHR(os.fstat(0).st_mode)}
+         'stdin_closed': stat.S_ISCHR(os.fstat(0).st_mode),
+         'git_env': {key: value for key, value in os.environ.items() if key.startswith('GIT_')}}
 with open(os.environ['STUB_LOG'], 'a') as log:
     log.write(json.dumps(entry) + '\n')
 mode = os.environ.get('STUB_MODE', '')
@@ -1053,6 +1054,63 @@ class BridgeTests(unittest.TestCase):
                              result.stdout, result.stderr):
                     for word in ('Zorblatt', 'zorblatt', 'Quennick', 'Vashti'):
                         self.assertNotIn(word, text)
+
+    def test_git_variables_the_bridge_inherits_never_point_its_git_elsewhere(self):
+        # git obeys these before -C: started with them, the bridge's git
+        # would stage and commit in the owner's checkout or index instead.
+        index = self.owner / '.git' / 'index'
+        cases = [('index', {'GIT_INDEX_FILE': str(index)}),
+                 ('repository', {'GIT_DIR': str(self.owner / '.git'),
+                                 'GIT_WORK_TREE': str(self.owner)})]
+
+        def owner_state(topic):
+            # Branches are shared with the worktrees: all but the job's own.
+            return (index.read_bytes(), self.git_out(self.owner, 'rev-parse', 'HEAD'),
+                    [line for line in self.git_out(self.owner, 'for-each-ref', 'refs/heads')
+                     .splitlines() if not line.endswith(f'refs/heads/codex/{topic}'.encode())])
+
+        for case, env in cases:
+            with self.subTest(case):
+                self.git_out(self.owner, 'status', '--porcelain')  # any refresh happens now
+                topic = f'inherited-{case}'
+                before = owner_state(topic)
+                result, folder, out, summary = self.codex_write(topic, **env)
+                self.assertEqual(owner_state(topic), before)
+                self.assertEqual(self.git_out(self.owner, 'status', '--porcelain'), b'')
+                self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+                self.assertEqual(summary['status'], 'finished')
+                self.assertTrue(summary['bridge_commit'].startswith('committed '), summary)
+                self.assertEqual(self.git_out(folder, 'rev-parse', f'codex/{topic}'),
+                                 self.git_out(folder, 'rev-parse', 'HEAD'))
+                self.assertEqual(self.head_files(folder), sorted(
+                    ['.claude/hooks/guard.py', '.gitignore', 'AGENTS.md',
+                     'scripts/privacy-check.py', *self.WORK]))
+                self.assertEqual(self.git_out(folder, 'status', '--porcelain'), b'')
+
+    def test_a_job_gets_none_of_gits_repository_variables(self):
+        # The agent's own git must work on its job's checkout; an inherited
+        # GIT_CONFIG_COUNT entry is kept, with the no-push entries after it.
+        elsewhere = str(self.owner / '.git')
+        local = {'GIT_ALTERNATE_OBJECT_DIRECTORIES': elsewhere + '/objects',
+                 'GIT_OBJECT_DIRECTORY': elsewhere + '/objects', 'GIT_DIR': elsewhere,
+                 'GIT_WORK_TREE': str(self.owner), 'GIT_IMPLICIT_WORK_TREE': '1',
+                 'GIT_GRAFT_FILE': elsewhere + '/grafts', 'GIT_INDEX_FILE': elsewhere + '/index',
+                 'GIT_NO_REPLACE_OBJECTS': '1', 'GIT_REPLACE_REF_BASE': 'refs/elsewhere/',
+                 'GIT_PREFIX': 'docs/', 'GIT_SHALLOW_FILE': elsewhere + '/shallow',
+                 'GIT_COMMON_DIR': elsewhere}
+        result = self.bridge('codex', '--brief', str(self.brief),
+                             env={**local, 'GIT_CONFIG_COUNT': '1',
+                                  'GIT_CONFIG_KEY_0': 'brickson.inherited',
+                                  'GIT_CONFIG_VALUE_0': 'kept'})
+        self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+        [call] = self.calls()
+        git_env = call['git_env']
+        for name in local:
+            self.assertNotIn(name, git_env)
+        self.assertEqual(git_env['GIT_CONFIG_KEY_0'], 'brickson.inherited')
+        self.assertEqual(git_env['GIT_CONFIG_VALUE_0'], 'kept')
+        self.assertEqual(git_env['GIT_CONFIG_KEY_1'], 'remote.origin.pushurl')
+        self.assertEqual(git_env['GIT_CONFIG_COUNT'], '6')
 
     def test_nothing_is_committed_without_a_private_list(self):
         (self.home / '.config' / 'brickson' / 'private-words.txt').unlink()

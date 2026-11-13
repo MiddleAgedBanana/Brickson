@@ -80,6 +80,18 @@ FOLDERS = {}  # each job folder's handle, opened before its agent starts
 # Where a job's pushes go: nowhere. Git refuses a URL with this scheme.
 NO_PUSH = 'no-push://agent-bridge-jobs-never-publish/'
 TOKENS = ('GH_TOKEN', 'GITHUB_TOKEN', 'GH_ENTERPRISE_TOKEN', 'GITHUB_ENTERPRISE_TOKEN')
+# git's own list of the variables that belong to one repository and must
+# not reach git working on another (`git rev-parse --local-env-vars`, git
+# 2.43). git obeys them before -C, so one inherited from whoever starts the
+# bridge would point its git, and a job's, at another checkout or index.
+REPOSITORY_VARIABLES = (
+    'GIT_ALTERNATE_OBJECT_DIRECTORIES', 'GIT_CONFIG', 'GIT_CONFIG_PARAMETERS',
+    'GIT_CONFIG_COUNT', 'GIT_OBJECT_DIRECTORY', 'GIT_DIR', 'GIT_WORK_TREE',
+    'GIT_IMPLICIT_WORK_TREE', 'GIT_GRAFT_FILE', 'GIT_INDEX_FILE', 'GIT_NO_REPLACE_OBJECTS',
+    'GIT_REPLACE_REF_BASE', 'GIT_PREFIX', 'GIT_SHALLOW_FILE', 'GIT_COMMON_DIR')
+# The configuration ones a job keeps: job_environment() adds its no-push
+# settings after whatever GIT_CONFIG_COUNT entries it inherits.
+JOB_KEEPS = ('GIT_CONFIG', 'GIT_CONFIG_PARAMETERS', 'GIT_CONFIG_COUNT')
 # The guard's own code, tracked in every checkout: agy's hook runs the
 # adapter, which runs this guard.py, which loads this privacy-check.py.
 GUARD_CODE = ('.claude/hooks/guard.py', 'scripts/privacy-check.py')
@@ -102,8 +114,10 @@ def job_environment(out):
     checks the commits and publishes them. A guard against mistakes, not a
     sandbox: an agent that unsets these variables can still push, and an
     agent's GitHub tool with its own sign-in is not covered. Isolation
-    outside the agent's process is not built."""
-    env = {key: value for key, value in os.environ.items() if key not in TOKENS}
+    outside the agent's process is not built. Without git's repository
+    variables, so the agent's git works on the job's checkout."""
+    dropped = TOKENS + tuple(name for name in REPOSITORY_VARIABLES if name not in JOB_KEEPS)
+    env = {key: value for key, value in os.environ.items() if key not in dropped}
     entries = [('remote.origin.pushurl', NO_PUSH)]
     entries += [(f'url.{NO_PUSH}.pushInsteadOf', prefix)
                 for prefix in ('https://', 'http://', 'ssh://', 'git@')]
@@ -167,9 +181,11 @@ class Stop(Exception):
 
 
 def plain_environment():
-    """This environment without the thread's GitHub tokens: what the
-    bridge's own git and privacy check run with, never a job's."""
-    return {key: value for key, value in os.environ.items() if key not in TOKENS}
+    """This environment without the thread's GitHub tokens or git's
+    repository variables: what the bridge's own git and privacy check run
+    with, never a job's."""
+    dropped = TOKENS + REPOSITORY_VARIABLES
+    return {key: value for key, value in os.environ.items() if key not in dropped}
 
 
 def git(folder, *args, check=True, strip=True, raw=False, input=None):
