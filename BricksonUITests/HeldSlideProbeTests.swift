@@ -21,6 +21,10 @@ import XCTest
 /// finger on a device is the device check in docs/HANDOFF.md. Rerun it
 /// after each new major Xcode, in case SwiftUI's viewer changes.
 ///
+/// It keeps UIKit's animations, which other UI tests turn off
+/// (docs/DECISIONS.md, "Tests"), because it records what a person's touch
+/// meets, and its earlier records were taken with them.
+///
 /// The viewer follows the app's own text size, which `launchedApp` sets;
 /// the probe also prints whether the system reports the viewer on
 /// (`UILargeContentViewerInteraction.isEnabled`, read in the test runner,
@@ -45,25 +49,25 @@ final class HeldSlideProbeTests: XCTestCase {
     @MainActor
     func testHome() throws {
         do {
-            let app = launchedApp(textSize: .ax5)
+            let app = launchedApp(textSize: .ax5, keepsUIKitAnimations: true)
             app.buttons["Yes"].tap()
             report("tap Yes", in: app, from: "Yes.", to: "Yes.")
         }
         // How long a press can last and still speak: a slow tap, as a weak
         // or unsteady hand makes one.
         for duration in [0.1, 0.2, 0.25, 0.5, 0.75, 1.0, Self.hold] {
-            let app = launchedApp(textSize: .ax5)
+            let app = launchedApp(textSize: .ax5, keepsUIKitAnimations: true)
             centre(of: app.buttons["Yes"]).press(forDuration: duration)
             report("press Yes for \(duration) s, lift in place", in: app, from: "Yes.", to: "Yes.")
         }
         // A slow tap on No and on a phrase tile, lifted in place.
         do {
-            let app = launchedApp(textSize: .ax5)
+            let app = launchedApp(textSize: .ax5, keepsUIKitAnimations: true)
             centre(of: app.buttons["No"]).press(forDuration: 0.5)
             report("press No for 0.5 s, lift in place", in: app, from: "No.", to: "No.")
         }
         do {
-            let app = launchedApp(textSize: .ax5)
+            let app = launchedApp(textSize: .ax5, keepsUIKitAnimations: true)
             if let tile = phraseTiles(in: app).first {
                 let words = tile.label
                 centre(of: tile).press(forDuration: 0.5)
@@ -72,12 +76,12 @@ final class HeldSlideProbeTests: XCTestCase {
         }
         // The same slow tap at the default text size.
         do {
-            let app = launchedApp(textSize: .large)
+            let app = launchedApp(textSize: .large, keepsUIKitAnimations: true)
             centre(of: app.buttons["Yes"]).press(forDuration: 0.5)
             report("press Yes for 0.5 s at the default text size, lift in place", in: app, from: "Yes.", to: "Yes.")
         }
         for (gesture, duration) in [("hold Yes, slide onto No, lift", Self.hold), ("touch Yes, slide onto No at once, lift", 0.1)] {
-            let app = launchedApp(textSize: .ax5)
+            let app = launchedApp(textSize: .ax5, keepsUIKitAnimations: true)
             centre(of: app.buttons["Yes"]).press(
                 forDuration: duration,
                 thenDragTo: centre(of: app.buttons["No"]),
@@ -93,7 +97,7 @@ final class HeldSlideProbeTests: XCTestCase {
             ("the one below", { first, other in abs(other.midX - first.midX) < 1 && other.minY > first.maxY }),
         ]
         for (name, isNeighbour) in neighbours {
-            let app = launchedApp(textSize: .ax5)
+            let app = launchedApp(textSize: .ax5, keepsUIKitAnimations: true)
             let tiles = phraseTiles(in: app)
             guard let first = tiles.first, let next = tiles.first(where: { isNeighbour(first.frame, $0.frame) }) else {
                 // Not a failure: on a short window only one row may show.
@@ -117,7 +121,7 @@ final class HeldSlideProbeTests: XCTestCase {
     @MainActor
     func testSettingsGearAlone() throws {
         do {
-            let app = launchedApp(textSize: .ax5)
+            let app = launchedApp(textSize: .ax5, keepsUIKitAnimations: true)
             let narrowest = UIAccessibility.isBoldTextEnabled ? 86.0 : 80.0
             let width = app.buttons["settings"].frame.width
             try XCTSkipUnless(width < narrowest, "Settings shows its word here (\(width)pt wide): no window to probe the gear alone")
@@ -126,7 +130,7 @@ final class HeldSlideProbeTests: XCTestCase {
             reportGear("tap the gear", in: app, before: before, endedOn: "Settings", width: width)
         }
         do {
-            let app = launchedApp(textSize: .ax5)
+            let app = launchedApp(textSize: .ax5, keepsUIKitAnimations: true)
             let gear = app.buttons["settings"]
             let width = gear.frame.width
             let before = homeState(of: app)
@@ -139,7 +143,7 @@ final class HeldSlideProbeTests: XCTestCase {
             ("below", { gear, other in other.minX <= gear.midX && other.maxX >= gear.midX && other.minY >= gear.maxY }),
         ]
         for (name, isNeighbour) in neighbours {
-            let app = launchedApp(textSize: .ax5)
+            let app = launchedApp(textSize: .ax5, keepsUIKitAnimations: true)
             let gear = app.buttons["settings"]
             let gearFrame = gear.frame
             let width = gearFrame.width

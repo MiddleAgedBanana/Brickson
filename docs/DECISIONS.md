@@ -664,6 +664,7 @@ one replaces with no loss.
 |---|---|---|---|
 | XCTest and XCUIAutomation | UI tests | Swift Testing cannot launch or drive an app. Apple: "UI automation and performance testing APIs are only available in XCTest" (WWDC26, "Migrate to Swift Testing"), and the XCTest page says to "continue to use XCTest for user interface tests". | Swift Testing can drive an app |
 | UIKit types in UI tests: `UIDevice` (its idiom and system version), `UIDeviceOrientation`, a screenshot's `UIImage`; in the opt-in slide probe, `UIAccessibility.isBoldTextEnabled` and `UILargeContentViewerInteraction.isEnabled` | `GetAttentionOnHomeTests`, `HeldSlideProbeTests`, `HomeAccessibilityOrderTests`, `HomeLayoutTests`, `HomeReachabilityTests`, `HomeSizesTests`, `KeyboardProbeTests`, `LaunchHelpers`, `LaunchTests`, `LibraryTests`, `SettingsOnHomeTests` | XCUIAutomation's own API uses these types (`XCUIDevice.orientation`, `XCUIScreenshot.image`) and reports no device idiom. Nor does it report whether Bold Text or the large content viewer is on, which the probe records beside each result. | With the row above |
+| `UIView.setAnimationsEnabled(_:)`, and `UIView.areAnimationsEnabled` in its tests | `LaunchAnimations`, `LaunchAnimationsTests` | Only for a UI test's launch (*Tests*, 2026-11-13): XCTest waits for UIKit's animations, the keyboard's and presentations' among them, and on iPad that wait stopped being answered. SwiftUI's `Transaction.disablesAnimations` would have to wrap every change the app makes, and does not reach the keyboard's animation. Apple documents this method for turning UIKit's animations off (not deprecated, read 2026-11-13). | XCTest's wait is fixed, or XCTest gains a switch of its own |
 | `UIApplication.isIdleTimerDisabled` | `BricksonApp` | Invariant 12. SwiftUI has no way to keep the screen awake; Apple documents this property for it. | SwiftUI gains one |
 | A `UIApplicationDelegate` answering `application(_:shouldAllowExtensionPointIdentifier:)`, given to SwiftUI with `UIApplicationDelegateAdaptor`; `UIApplication` in its tests | `BricksonAppDelegate`, `BricksonApp`, `BricksonAppDelegateTests` | Refusing other apps' keyboards (*Third-party keyboards refused in 1.0*). SwiftUI has no way to refuse an app extension; Apple documents this delegate method for it (not deprecated, iOS 8 and later, read 2026-10-23), and the adaptor as how a SwiftUI app handles app-delegate callbacks. | SwiftUI gains a way |
 | `UIFont` (text-style sizes, weights, line heights), `NSString.size(withAttributes:)`, `UIImage.SymbolConfiguration` | `LabelFont` | `WordFit` measures words before layout, as a plain tested type. SwiftUI measures text only inside a view hierarchy (`Text.Layout`; `ViewThatFits` failed Apple's accessibility audit). iOS 26's `Font.resolve(in:)` gives a point size and a Core Text font, but measuring a word still needs UIKit or Core Text, and resolving a font outside a view is undocumented. | Under *Planned moves* |
@@ -5511,6 +5512,38 @@ request merges only when they pass.
   even with the first ones paused, and each runs flat out until a
   reading finds it. Record:
   [`log/2026-11-04-watcher-without-ps.md`](log/2026-11-04-watcher-without-ps.md).
+- **2026-11-13, owner, reversible:** UI tests launch the app with
+  UIKit's animations off. `launchedApp` passes `--uikit-animations=off`
+  unless a test sets `keepsUIKitAnimations`; the app reads it only in a
+  debug build with test storage, and then calls
+  `UIView.setAnimationsEnabled(false)` before any view
+  (`LaunchOptions.applyUIKitAnimations()`). After every action XCTest
+  waits until each UIKit animation it saw start has finished. On
+  GitHub's iPad simulators that wait stopped being answered after
+  typing ended on Home, as the keyboard went, and every later wait in
+  that launch ran out at 60 seconds: in 10 of 65 iPad runs from
+  2026-11-05 to 11-12 that reached the typing tests, costing about 3 to
+  13 minutes each and twice stopping the job at its limit; in none of
+  68 on the iPhone. Other projects that met the same message stopped it
+  the same way (FRUS-Explorer on iOS 27, plusplus). With animations off,
+  a change UIKit would animate happens at once, leaving nothing for
+  XCTest to wait for. The cost: UI tests no longer see UIKit's own
+  animations (the keyboard's, a cover's presentation), so a UIKit
+  animation that never ends could no longer show up in them; every
+  frame they compare is read at rest, and Brickson has no animations of
+  its own. The opt-in probes of what a person's touch meets
+  (`HeldSlideProbeTests`, `PhraseDragProbeTests`) keep them. Release
+  builds read no launch arguments (`LaunchOptions.readsLaunchArguments`),
+  and in a debug build the option needs test storage
+  (`LaunchOptionsTests`, `LaunchAnimationsTests`), so a person's launch
+  animates as before. Revisit with each new Xcode, by running the typing
+  tests about 20 times on a CI iPad with `keepsUIKitAnimations`: the
+  option can go if no wait runs out. An agent chose this, and Codex's
+  review asked for the owner's decision, since the UI tests give up
+  seeing UIKit's animations; the owner chose to keep it, cost included,
+  over adding a weekly CI run with animations on, or leaving them on
+  and raising the iPad job's time limit (2026-11-13). Record:
+  [`log/2026-11-13-ipad-ui-test-stall.md`](log/2026-11-13-ipad-ui-test-stall.md).
 
 ## Personal details stay out of the repository
 
