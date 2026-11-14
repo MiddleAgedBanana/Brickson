@@ -237,8 +237,10 @@ struct OffMainThreadCallbackTests {
     /// The probe app's speech delegate (docs/EXPERIMENTS.md, Speech
     /// station) gets the same reports from any thread. Fails if
     /// `ProbeSpeechEvents` becomes main-actor isolated, which traps there,
-    /// or if its stream drops or reorders a report.
-    @Test func probeSpeechReportsCanArriveOnABackgroundThreadInOrder() async {
+    /// or if its stream drops or reorders a report. The time limit ends
+    /// the wait if a report never arrives.
+    @Test(.timeLimit(.minutes(1)))
+    func probeSpeechReportsCanArriveOnABackgroundThreadInOrder() async {
         let events = ProbeSpeechEvents()
         let synthesizer = Unchecked(AVSpeechSynthesizer())
         let utterance = Unchecked(AVSpeechUtterance(string: "Test one two three"))

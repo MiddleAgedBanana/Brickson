@@ -29,11 +29,7 @@ struct RingsStation: View {
                 ProbeButton(
                     name: "Centre", station: station,
                     width: options.ringTarget.side, height: options.ringTarget.side)
-                    .buttonStyle(.plain)
-                    .background {
-                        RoundedRectangle(cornerRadius: 8)
-                            .strokeBorder(Color.accentColor, lineWidth: 2)
-                    }
+                    .probeExactButton()
                     .onGeometryChange(for: CGSize.self) { $0.size } action: { size in
                         log.record(
                             "Centre laid out at \(Int(size.width.rounded())) by \(Int(size.height.rounded())) points",
@@ -97,32 +93,45 @@ struct RulerStation: View {
 /// A-8: where a press lands. "Wide" moves its activation point over
 /// "Landing": a press delivered as a touch at the activation point counts
 /// on Landing, one delivered as an activation or at the pointer counts on
-/// Wide. A-28 and D-18: does the Eye Tracking or Head Tracking pointer
-/// show Apple's hover effects?
+/// Wide. Both are exact-size buttons, so the activation point lands on
+/// Landing's centre. A-28 and D-18: does the Eye Tracking or Head
+/// Tracking pointer show Apple's hover effects? Every row fits a phone's
+/// width.
 struct LandingStation: View {
     private let station = ProbeStation.landing
-    private let wideWidth: CGFloat = 200
+    private let wideWidth: CGFloat = 160
     private let gap: CGFloat = 32
-    private let landingSide: CGFloat = 120
+    private let landingSide: CGFloat = 100
 
     var body: some View {
         ProbeStationScreen(station: station) {
             VStack(spacing: 64) {
                 HStack(spacing: gap) {
                     ProbeButton(name: "Wide", station: station, width: wideWidth, height: landingSide)
+                        .probeExactButton()
                         .accessibilityActivationPoint(
                             CGPoint(x: wideWidth + gap + landingSide / 2, y: landingSide / 2))
                     ProbeButton(name: "Landing", station: station, width: landingSide, height: landingSide)
+                        .probeExactButton()
                 }
-                HStack(spacing: 48) {
-                    ProbeButton(name: "No hover", station: station, width: 110)
-                    ProbeButton(name: "Highlight", station: station, width: 110)
+                HStack(spacing: 24) {
+                    hoverTarget("No hover")
+                    hoverTarget("Highlight")
                         .hoverEffect(.highlight)
-                    ProbeButton(name: "Lift", station: station, width: 110)
+                    hoverTarget("Lift")
                         .hoverEffect(.lift)
                 }
+                .buttonStyle(.bordered)
+                .padding(.horizontal, 16)
             }
-            .buttonStyle(.bordered)
         }
+    }
+
+    /// Apple's bordered button, up to 110 points wide, narrower where the
+    /// window is.
+    private func hoverTarget(_ name: String) -> some View {
+        ProbeButton(name: name, station: station, fills: true)
+            .frame(maxWidth: 110)
+            .frame(height: 80)
     }
 }

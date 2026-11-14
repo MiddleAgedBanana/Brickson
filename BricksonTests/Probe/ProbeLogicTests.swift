@@ -77,6 +77,39 @@ struct ProbeLogTests {
         #expect(lines.dropFirst().allSatisfy { $0.split(separator: "\t").count == 4 })
     }
 
+    /// A report that arrives late (a speech report held up while Busy held
+    /// the main thread) goes in at the time it happened, after lines at
+    /// the same time. Fails if the log appends in arrival order.
+    @Test func aLateReportGoesInAtItsOwnTime() {
+        let start = ContinuousClock.now
+        let log = ProbeLog(start: start)
+        log.record("Busy until now", station: "Busy", at: start.advanced(by: .milliseconds(3_500)))
+        log.record("Word at 5", station: "Speech", at: start.advanced(by: .seconds(1)))
+        log.record("Same time, recorded first", station: "Snap", at: start.advanced(by: .seconds(2)))
+        log.record("Same time, recorded second", station: "Snap", at: start.advanced(by: .seconds(2)))
+
+        #expect(log.entries.map(\.event) == [
+            "Word at 5", "Same time, recorded first", "Same time, recorded second", "Busy until now",
+        ])
+        #expect(log.latest(on: "Busy")?.event == "Busy until now")
+    }
+
+    /// A full log drops the line that happened first, even when it arrived
+    /// last. Fails if it drops by arrival order.
+    @Test func aFullLogDropsTheEarliestLine() {
+        let start = ContinuousClock.now
+        let log = ProbeLog(start: start)
+        for number in 1...ProbeLog.capacity {
+            log.record("Line \(number)", station: "Snap", at: start.advanced(by: .seconds(number)))
+        }
+        log.record("Late report", station: "Speech", at: start.advanced(by: .milliseconds(500)))
+
+        #expect(log.entries.count == ProbeLog.capacity)
+        #expect(log.entries.first?.event == "Line 1")
+        #expect(!log.entries.contains { $0.event == "Late report" })
+        #expect(log.dropped == 1)
+    }
+
     @Test func clearingEmptiesTheLog() {
         let log = ProbeLog()
         log.record("Line", station: "Snap")

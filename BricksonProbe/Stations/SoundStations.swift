@@ -16,7 +16,7 @@ struct SpeechStation: View {
                     .font(.system(size: 56))
                     .frame(height: 80)
                     .accessibilityHidden(true)
-                Grid(horizontalSpacing: 24, verticalSpacing: 24) {
+                Grid(horizontalSpacing: 16, verticalSpacing: 24) {
                     GridRow {
                         speak("Speak sentence", [ProbeSpeechScripts.sentence])
                             .accessibilityAddTraits(speakTraits)
@@ -44,14 +44,15 @@ struct SpeechStation: View {
                         speak("Say a Siri test", [ProbeSpeechScripts.siriTest])
                     }
                 }
+                .padding(.horizontal, 16)
                 Spacer(minLength: 0)
                 HStack {
-                    ProbeButton(name: ProbeSpeechScripts.counterLabel, station: station, width: 140, height: 70)
+                    ProbeButton(name: ProbeSpeechScripts.counterLabel, station: station, width: 120, height: 70)
                     Spacer()
                     Button {
                         speaker.stop()
                     } label: {
-                        Text(verbatim: "Stop speaking").frame(width: 160, height: 70)
+                        Text(verbatim: "Stop speaking").frame(width: 140, height: 70)
                     }
                 }
                 .padding(.horizontal, 24)
@@ -89,11 +90,14 @@ struct SpeechStation: View {
         }
     }
 
+    /// Up to 170 points wide, narrower where the window is, so two
+    /// columns fit a phone.
     private func label(_ title: String) -> some View {
         Text(verbatim: title)
             .font(.headline)
             .multilineTextAlignment(.center)
-            .frame(width: 170, height: 70)
+            .frame(maxWidth: 170)
+            .frame(height: 70)
     }
 }
 

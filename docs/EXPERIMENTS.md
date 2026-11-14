@@ -21,7 +21,8 @@ The questions come from three studies kept outside this repository: the
 accessibility study (stage 1: questions A-1 to A-45 and B-1 to B-4, and
 its detailed experiments numbered like A1-U3), the design-language study
 (stage 2: D-01 to D-26) and the communication-app field study (stage 3:
-G-01 to G-41). This file carries each question's meaning, so it can be
+23 questions between G-01 and G-41, numbered by the study's sections, so
+the numbers have gaps). This file carries each question's meaning, so it can be
 run without them. Every ID keeps its own name; *Every ID, and where it
 runs*, at the end, finds any of them.
 
@@ -81,10 +82,18 @@ updates this file's step with what was found.
   uses the camera or the microphone: Eye Tracking, Head Tracking and
   Voice Control stop working (docs/DEVICE-CHECKS.md, *Mount the
   device*).
+- **If the probe stops speaking,** close it from the App Switcher and
+  open it again, and write down the time. Unlike Brickson,
+  it does not recover its speech after a call, an alarm or a reset of
+  the system's audio (docs/DECISIONS.md, "A probe app for the
+  experiments, kept out of Brickson").
 - **Film the screen.** Start Control Center's Screen Recording; if the
   pointer does not show in the recording, film the screen with a second
   phone. The probe's log gives every activation's time, so the film and
-  the log can be matched.
+  the log can be matched. **Stop every recording, the screen's and the
+  second phone's, before anything speaks in a Personal Voice** (DEV-10,
+  step 6): Screen Recording keeps the app's sound, and a second phone
+  hears the room. Start them again afterwards.
 
 ## The probe app
 
@@ -97,8 +106,8 @@ so no option control sits on a station's own screen.
 | Station | What it holds | Answers |
 |---|---|---|
 | Snap | An enabled button (Counter), a dimmed button (Dimmed), plain words, words marked interactive, a hidden button, an empty place, a button with two custom actions, a toggle styled as a button, a segmented picker (Phrases or Type), a button with a round accessibility shape, a button that says it does not respond, and words with only the button trait | A-1, A-1a, A-3, A-7, A-9, A-11, A-21, A-30, D-03, D-04 |
-| Rings | One button (44, 88 or 120 points, an option) in the middle of rings drawn 25, 50, 100, 150, 200 and 300 points from its centre | A-2, A-3, B-4, G-21 |
-| Landing | Wide, whose activation point is moved over its neighbour Landing; three buttons with no hover effect, Apple's Highlight and Apple's Lift | A-8, A-28, D-18 |
+| Rings | One outlined button, exactly 44, 88 or 120 points square (an option; the log records the size it was laid out at), in the middle of rings drawn 25, 50, 100, 150, 200 and 300 points from its centre | A-2, A-3, B-4, G-21 |
+| Landing | Wide (160 by 100 points), whose activation point is moved to the centre of its neighbour Landing (100 points square), both outlined at their exact size; three of Apple's bordered buttons with no hover effect, Apple's Highlight and Apple's Lift | A-8, A-28, D-18 |
 | Changes | After a five-second countdown, at once: a button becomes available, one appears, one changes its words, one moves to an empty place, one disappears | A-6, A-42, A-44, G-01 |
 | Groups | Two regions of three buttons; options contain each region or not, and put the right region first | A-10, A-45 |
 | Look | Twelve tiles; options set same or varied sizes, rounded or capsule ends, Apple's hover effects, and a moving dot beside the grid | D-10, D-11, D-18, D-19, G-21 |
@@ -498,9 +507,9 @@ people Brickson serves.
 - **Record.** The farthest ring that still snaps, for each button size
   and direction; for step 4, which button the log says fired each time.
 - **What it means.**
-  - **The reach grows with the button's size by about the size's
-    change:** Snap measures to the edge; **it stays the same:** to the
-    centre. The chain engine then scores only that rule, and only to the
+  - **The farthest ring grows by about half the button's size change**
+    (38 points from 44 to 120, since the rings count from the centre):
+    Snap measures to the edge; **it stays the same:** to the centre. The chain engine then scores only that rule, and only to the
     measured reach (today it scores both rules at three ranges).
   - **A dwell on Wide fires Landing:** the press is delivered as a touch
     at the activation point, so an activation point must never sit over
@@ -758,7 +767,8 @@ people Brickson serves.
      app's speech gets quieter.
   5. VoiceOver off, Switch Control (then Voice Control, then Eye
      Tracking) on: Announce in 3 seconds; listen.
-  6. On the list, choose **Ask for Personal Voice**, allow it, then
+  6. Stop Screen Recording and any second phone's recording first.
+     On the list, choose **Ask for Personal Voice**, allow it, then
      **List voices** and choose the Personal Voice. Speak sentence, Speak
      in three parts and Speak with SSML pauses, three times each. Repeat
      with the default voice. Share the log.
@@ -1097,7 +1107,10 @@ on App Shortcuts (docs/ROADMAP.md, R2), then DEV-12. G-20: ASK-7, OWN-1.
 G-21: DEV-5, DEV-4. G-22: HW-2. G-23: DEV-12. G-24: DEV-7 (screen
 switch), HW-1. G-25: DEV-11. G-26: DEV-11. G-30: SIM-14, DEV-10. G-31
 (do shaped pauses sound natural to listeners): the owner and a listener,
-after DEV-10. G-32: DEV-10, ASK-6. G-40: SIM-14. G-41: HW-3.
+after DEV-10. G-32: DEV-10, ASK-6. G-40: SIM-14. G-41: HW-3. These are
+all 23 questions the field study asks; it numbers them by its sections,
+so G-04, G-06 to G-09, G-17 to G-19, G-27 to G-29 and G-33 to G-39 are
+not used.
 
 **Device checks already written** (docs/DEVICE-CHECKS.md). F1: DEV-12
 (with A-2, A-4, A-5, A-7); run DEV-1 and DEV-2 first, which answer the

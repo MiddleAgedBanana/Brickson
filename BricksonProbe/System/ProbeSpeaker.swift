@@ -70,9 +70,19 @@ final class ProbeSpeaker {
             "\(label): queued with \(voice?.name ?? "the default voice")", station: station)
     }
 
+    /// Stops at once. The synthesizer reports a cancel only for the
+    /// utterance it is speaking; the ones still queued leave without a
+    /// report, so they are dropped here, and the paused technology resumes
+    /// as soon as nothing is left.
     func stop() {
         synthesizer.stopSpeaking(at: .immediate)
         log.record("Stop speaking chosen", station: station)
+        let unstarted = spoken.filter { $0.value.tally == nil }.map(\.key)
+        for id in unstarted {
+            log.record("\(label(id)): removed from the queue unspoken", station: station)
+            spoken[id] = nil
+        }
+        finishIfIdle()
     }
 
     /// Asks for Personal Voice permission, so a Personal Voice can be
@@ -154,6 +164,12 @@ final class ProbeSpeaker {
         let summary = spoken[id]?.tally?.summary(endedAt: instant, how: how) ?? how
         log.record("\(label(id)): \(summary)", station: station, at: instant)
         spoken[id] = nil
+        finishIfIdle()
+    }
+
+    /// Once nothing is queued: not speaking, and the paused technology
+    /// asked to resume.
+    private func finishIfIdle() {
         guard spoken.isEmpty else { return }
         isSpeaking = false
         if paused != .nothing {

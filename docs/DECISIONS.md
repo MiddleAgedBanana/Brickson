@@ -6261,6 +6261,9 @@ station answers.
     `UISupportsAssistiveAccess` (D-13); Brickson never does
     (*Accessibility API coverage*; `AppBundleTests`);
   - it holds its main thread busy for three seconds when asked (A-43);
+  - its speech does not recover from an interruption or a reset of the
+    system's media services (invariant 4): it only measures speech, and
+    the run sheet says to close and reopen it if speech stops;
   - it says a Voice Control command and a Siri test sentence aloud, and
     posts announcements (A-16, A-18, A-31, A-40);
   - its words are English only, written with `Text(verbatim:)`, with no

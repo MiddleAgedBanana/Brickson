@@ -14,7 +14,7 @@ struct ChangesStation: View {
     var body: some View {
         ProbeStationScreen(station: station) {
             VStack(spacing: 32) {
-                Grid(horizontalSpacing: 32, verticalSpacing: 32) {
+                Grid(horizontalSpacing: 24, verticalSpacing: 32) {
                     GridRow {
                         slot { becomesAvailable }
                         slot { appears }
@@ -26,6 +26,7 @@ struct ChangesStation: View {
                         slot { disappears }
                     }
                 }
+                .padding(.horizontal, 16)
                 Spacer(minLength: 0)
                 TimelineView(.periodic(from: .now, by: 0.25)) { _ in
                     Text(verbatim: countdownWords)
@@ -36,14 +37,14 @@ struct ChangesStation: View {
                     Button {
                         start()
                     } label: {
-                        Text(verbatim: "Start countdown").frame(width: 170, height: 60)
+                        Text(verbatim: "Start countdown").frame(width: 150, height: 60)
                     }
                     .disabled(countdown != nil)
                     Spacer()
                     Button {
                         reset()
                     } label: {
-                        Text(verbatim: "Reset").frame(width: 120, height: 60)
+                        Text(verbatim: "Reset").frame(width: 100, height: 60)
                     }
                 }
                 .padding(.horizontal, 24)
@@ -71,8 +72,12 @@ struct ChangesStation: View {
         return "Changes in \(countdown.secondsLeft(now: .now)) s"
     }
 
+    /// Up to 150 points wide, narrower where the window is: three slots
+    /// and their gaps fit a phone's width, every slot the same size.
     private func slot<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
-        content().frame(width: 150, height: 80)
+        content()
+            .frame(maxWidth: 150)
+            .frame(height: 80)
     }
 
     private func start() {
@@ -87,25 +92,25 @@ struct ChangesStation: View {
     }
 
     @ViewBuilder private var becomesAvailable: some View {
-        ProbeButton(name: "Becomes available", station: station)
+        ProbeButton(name: "Becomes available", station: station, fills: true)
             .disabled(!changed)
     }
 
     @ViewBuilder private var appears: some View {
         if changed {
-            ProbeButton(name: "Appears", station: station)
+            ProbeButton(name: "Appears", station: station, fills: true)
         } else {
             ProbeEmptyPlace(word: "Appears here")
         }
     }
 
     @ViewBuilder private var wordsChange: some View {
-        ProbeButton(name: changed ? "Second words" : "First words", station: station)
+        ProbeButton(name: changed ? "Second words" : "First words", station: station, fills: true)
     }
 
     @ViewBuilder private var movesHere: some View {
         if changed {
-            ProbeButton(name: "Mover", station: station)
+            ProbeButton(name: "Mover", station: station, fills: true)
         } else {
             ProbeEmptyPlace(word: "Mover comes here")
         }
@@ -115,7 +120,7 @@ struct ChangesStation: View {
         if changed {
             ProbeEmptyPlace(word: "Mover left")
         } else {
-            ProbeButton(name: "Mover", station: station)
+            ProbeButton(name: "Mover", station: station, fills: true)
         }
     }
 
@@ -123,7 +128,7 @@ struct ChangesStation: View {
         if changed {
             ProbeEmptyPlace(word: "Gone")
         } else {
-            ProbeButton(name: "Disappears", station: station)
+            ProbeButton(name: "Disappears", station: station, fills: true)
         }
     }
 }

@@ -81,8 +81,34 @@ structure and documentation lists).
 
 ## Commits
 
-One commit for the probe, its tests, the run sheet and these records;
-see the pull request's commit list.
+- `958287a` The probe, its tests, the run sheet and these records.
+- The first review round (Codex and CodeRabbit on `958287a`), in one
+  push:
+  - each station's readout keeps two lines' height from the start, so a
+    longer log line never moves the controls being measured;
+  - the Rings button and Landing's two buttons are exact-size, outlined
+    plain buttons (Apple's bordered style had added padding around the
+    size the run sheet quotes), and Rings logs the size it was laid out
+    at; Wide and Landing are now 160 by 100 and 100 points, so the row
+    fits a phone, and Wide's activation point lands on Landing's centre;
+  - the Changes, Landing and Speech rows narrow to fit a phone's width
+    instead of running off it;
+  - the log keeps lines in the order things happened, so a speech report
+    held up while Busy held the main thread goes in at its own time, and
+    a full log drops the earliest line (`aLateReportGoesInAtItsOwnTime`,
+    `aFullLogDropsTheEarliestLine`: fail if the log appends in arrival
+    order or drops by arrival order);
+  - Stop speaking drops the utterances still queued, which leave the
+    synthesizer without a report, so the probe stops showing that it is
+    speaking and asks VoiceOver or Switch Control to resume (before, a
+    Stop during the first of three parts left them paused);
+  - the speech-report test has a one-minute time limit, so a missing
+    report fails it instead of hanging;
+  - the run sheet: an edge-measured reach grows the farthest ring by half
+    the button's size change, not all of it; every recording stops before
+    a Personal Voice speaks; the 18 G numbers the field study does not
+    use are named; and it says to reopen the probe if its speech stops,
+    which docs/DECISIONS.md lists with the probe's other exceptions.
 
 ## Verified
 

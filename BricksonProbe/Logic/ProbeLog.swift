@@ -12,9 +12,11 @@ nonisolated struct ProbeLogEntry: Equatable, Identifiable, Sendable {
     let event: String
 }
 
-/// Everything the probe saw, oldest first. Each station records every
-/// activation and change here with its time, so a filmed session can be
-/// matched to the log afterwards.
+/// Everything the probe saw, oldest first by the time each thing
+/// happened. Each station records every activation and change here with
+/// its time, so a filmed session can be matched to the log afterwards. A
+/// report that arrives late (a speech report held up while the main thread
+/// was busy) still goes in at the time it happened.
 @Observable
 final class ProbeLog {
     /// The most lines kept. A longer session drops its oldest lines and
@@ -38,9 +40,13 @@ final class ProbeLog {
         at instant: ContinuousClock.Instant = .now,
         clockTime: Date = .now
     ) {
-        entries.append(ProbeLogEntry(
+        let entry = ProbeLogEntry(
             id: nextID, elapsed: instant - start, clockTime: clockTime,
-            station: station, event: event))
+            station: station, event: event)
+        // After every line at the same time or earlier, so lines at the
+        // same time keep the order they were recorded in.
+        let index = entries.lastIndex(where: { $0.elapsed <= entry.elapsed }).map { $0 + 1 } ?? 0
+        entries.insert(entry, at: index)
         nextID += 1
         if entries.count > Self.capacity {
             let excess = entries.count - Self.capacity

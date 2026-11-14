@@ -32,6 +32,19 @@ struct ProbeButton: View {
     }
 }
 
+extension View {
+    /// A plain button with an outline for its edge. The plain style adds
+    /// no padding, so the button's frame is exactly the size it was given:
+    /// the Rings and Landing stations measure it.
+    func probeExactButton() -> some View {
+        buttonStyle(.plain)
+            .background {
+                RoundedRectangle(cornerRadius: 8)
+                    .strokeBorder(Color.accentColor, lineWidth: 2)
+            }
+    }
+}
+
 /// The station's newest log line, large, at the top. Hidden from
 /// accessibility, so it is never an item a pointer or scan can stop on.
 /// It keeps two lines' height from the start, so a longer line never
