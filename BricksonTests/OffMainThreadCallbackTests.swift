@@ -233,6 +233,37 @@ struct OffMainThreadCallbackTests {
 
         #expect(arrived)
     }
+
+    /// The probe app's speech delegate (docs/EXPERIMENTS.md, Speech
+    /// station) gets the same reports from any thread. Fails if
+    /// `ProbeSpeechEvents` becomes main-actor isolated, which traps there,
+    /// or if its stream drops or reorders a report.
+    @Test func probeSpeechReportsCanArriveOnABackgroundThreadInOrder() async {
+        let events = ProbeSpeechEvents()
+        let synthesizer = Unchecked(AVSpeechSynthesizer())
+        let utterance = Unchecked(AVSpeechUtterance(string: "Test one two three"))
+
+        await Task.detached {
+            events.speechSynthesizer(synthesizer.value, didStart: utterance.value)
+            events.speechSynthesizer(
+                synthesizer.value, willSpeakRangeOfSpeechString: NSRange(location: 5, length: 3),
+                utterance: utterance.value)
+            events.speechSynthesizer(synthesizer.value, didFinish: utterance.value)
+            events.speechSynthesizer(synthesizer.value, didCancel: utterance.value)
+        }.value
+        var reports: [String] = []
+        for await event in events.stream {
+            switch event {
+            case .started: reports.append("started")
+            case let .word(_, location, length, _): reports.append("word \(location) \(length)")
+            case .finished: reports.append("finished")
+            case .cancelled: reports.append("cancelled")
+            }
+            if reports.count == 4 { break }
+        }
+
+        #expect(reports == ["started", "word 5 3", "finished", "cancelled"])
+    }
 }
 
 /// Carries a framework object to a background thread for a test that calls

@@ -1926,13 +1926,18 @@ class RepositoryTests(unittest.TestCase):
     def test_the_check_reads_the_real_app_table_and_workflows(self):
         entries = forbidden.yaml_entries((ROOT / 'project.yml').read_text(encoding='utf-8'))
         kinds, sources = forbidden.targets(entries)
-        apps = [name for name, kind in kinds.items() if kind == 'application']
-        self.assertEqual(len(apps), 1)
-        app_files = [path for path in forbidden.listed_files(ROOT)
-                     if path.endswith('.swift') and forbidden.under(path, sources[apps[0]])]
-        self.assertGreater(len(app_files), 50)
+        apps = sorted(name for name, kind in kinds.items() if kind == 'application')
+        # Brickson, and the experiments' probe app (docs/DECISIONS.md, "A
+        # probe app for the experiments, kept out of Brickson"), which the
+        # check holds to the same rules.
+        self.assertEqual(apps, ['Brickson', 'BricksonProbe'])
+        listed = forbidden.listed_files(ROOT)
+        for app, least in [('Brickson', 50), ('BricksonProbe', 10)]:
+            app_files = [path for path in listed
+                         if path.endswith('.swift') and forbidden.under(path, sources[app])]
+            self.assertGreater(len(app_files), least, app)
         allowed = forbidden.allowed_files((ROOT / forbidden.DECISIONS).read_text(encoding='utf-8'))
-        for family, name in [('UIKit', 'BricksonApp'), ('UIKit', 'Palette'),
+        for family, name in [('UIKit', 'BricksonApp'), ('UIKit', 'Palette'), ('UIKit', 'ProbeSystem'),
                              ('SafariServices', 'PrivacyPolicyView'),
                              ('Dispatch', 'SpeechSynthesizing'),
                              ('NotificationCenter observers', 'AudioSessionEvents'),
