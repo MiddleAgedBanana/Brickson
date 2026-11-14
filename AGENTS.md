@@ -278,10 +278,11 @@ path from a real input to the failure.
   widens *Not findings*, in `AGENTS.md`, docs/DECISIONS.md,
   `.github/skills/` or any other file reviewers read; and any new file of
   that kind. Compare with the base branch; the owner decides.
-- A change to `.claude/settings.json`, `.claude/hooks/`, `.githooks/` or
-  `scripts/privacy-check.py` that unhooks the guard or the privacy check,
-  drops a deny rule or lets through what its tests refuse, or a weakened
-  `scripts/test-hooks.py`, `scripts/test-privacy.py` or
+- A change to `.claude/settings.json`, `.claude/hooks/`, `.githooks/`,
+  `scripts/privacy-check.py` or `scripts/forbidden-code.py` that unhooks
+  the guard or a check, drops a deny rule or a rule, or lets through what
+  its tests refuse, or a weakened `scripts/test-hooks.py`,
+  `scripts/test-privacy.py`, `scripts/test-forbidden-code.py` or
   `scripts/test-docs.py`.
 
 ### Not findings
@@ -365,6 +366,7 @@ like.
 ```sh
 # Any machine, cloud threads too (CI runs them all):
 python3 scripts/test-docs.py && python3 scripts/test-hooks.py && python3 scripts/test-privacy.py
+python3 scripts/test-forbidden-code.py  # what AGENTS.md forbids, in the code (docs/DECISIONS.md)
 python3 scripts/test-runner.py && python3 scripts/test-agent-bridge.py && python3 scripts/test-site.py && python3 scripts/test-select-xcode.py
 # On a Mac:
 scripts/test.sh          # generate the project, build, run the unit tests

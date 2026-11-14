@@ -1089,6 +1089,17 @@ release in docs/ROADMAP.md when no thread has it yet.
   and Shortcuts)*
 - The bundle identifier contains the owner's first name and is permanent
   after the first upload. *(owner)*
+- The check for code the app must never contain holds only the app's own
+  code to the frameworks table (docs/DECISIONS.md, "Apple's current
+  frameworks first"). Holding the test targets to it waits on two things
+  found while building the check. They predate it and are **not**
+  accepted gaps: a review still flags both. The UI tests' row, "UIKit
+  types in UI tests", does not name `TypingOnHomeTests`, which reads the
+  device idiom for a failure message, and `HomeRestBoardTests` imports
+  UIKit and uses none of it. Adding a file to the row is an exception, so
+  the owner decides between that and changing the test
+  ([record](log/2026-11-13-forbidden-code-check.md), *Follow-ups*).
+  *(owner)*
 
 ## Next steps, in order
 
@@ -1621,9 +1632,15 @@ settings, date) and summarise it here.
   conventions and hard limits and no history; the whole file fits inside
   Codex's 32 KiB. Keep it that way: short, concrete rules, the reasons in
   docs/DECISIONS.md. Record: [the change](log/2026-11-12-agents-md-trim.md).
-  `scripts/test.sh` runs the guard's tests, the docs cross-reference
-  check (`scripts/test-docs.py`) and the privacy check's tests
-  (`scripts/test-privacy.py`) before the unit tests.
+  `scripts/test.sh` runs the docs cross-reference check
+  (`scripts/test-docs.py`), the guard's tests, the privacy check's tests
+  (`scripts/test-privacy.py`), the agent bridge's tests and the check for
+  code the app must never contain (`scripts/test-forbidden-code.py`)
+  before the unit tests. That check fails the "Unit tests" job when the
+  code breaks a rule of AGENTS.md a script can decide: network code, a
+  device check, a package, a workflow given a write token and the rest in
+  docs/DECISIONS.md, "A check for code the app must never contain"
+  ([record](log/2026-11-13-forbidden-code-check.md)).
   New issues start from the "Something went wrong" form; blank issues are
   off. Record: [`docs/log/2026-10-21-agent-guardrails.md`](log/2026-10-21-agent-guardrails.md).
   The review fixes cover configured and wildcard pushes, alternate Git

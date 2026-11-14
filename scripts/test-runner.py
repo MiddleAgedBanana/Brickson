@@ -153,7 +153,7 @@ def run_script(build_body, mode="ui", destination="id=fixture-simulator",
                coverage=COVERAGE, strings=True, synced_catalog=None,
                sync_status=0, on_ci=True, boot_status=0,
                bootstatus_status=0, shutdown_status=0, docs_status=0, hooks_status=0,
-               privacy_status=0, bridge_status=0):
+               privacy_status=0, bridge_status=0, forbidden_status=0):
     with tempfile.TemporaryDirectory() as directory:
         # Exercise the exact checked-in runner and selector in an isolated
         # checkout. Preflights are dependencies, like the mocked Apple tools:
@@ -165,7 +165,8 @@ def run_script(build_body, mode="ui", destination="id=fixture-simulator",
             (fixture_scripts / name).write_bytes((SCRIPT.parent / name).read_bytes())
         (fixture_scripts / "simulator-load.py").write_text(FAKE_SIMULATOR_LOAD)
         for name, status in (("docs", docs_status), ("hooks", hooks_status),
-                             ("privacy", privacy_status), ("agent-bridge", bridge_status)):
+                             ("privacy", privacy_status), ("agent-bridge", bridge_status),
+                             ("forbidden-code", forbidden_status)):
             (fixture_scripts / f"test-{name}.py").write_text(
                 "import os, sys\nfrom pathlib import Path\n"
                 'with Path(os.environ["RUNNER_EVENTS"]).open("a") as log:\n'
@@ -224,7 +225,8 @@ def run_script(build_body, mode="ui", destination="id=fixture-simulator",
                                 env=environment, capture_output=True, text=True)
         result.events = lines(Path(directory, "events"))
         result.preflights = [event for event in result.events
-                             if event in ("docs", "hooks", "privacy", "agent-bridge")]
+                             if event in ("docs", "hooks", "privacy", "agent-bridge",
+                                          "forbidden-code")]
         result.calls = lines(Path(directory, "invocations"))
         result.invocations = len(result.calls)
         result.simctl = lines(Path(directory, "simctl"))
@@ -269,22 +271,28 @@ class PreflightTests(unittest.TestCase):
         result = run_script("exit 0", mode="unit")
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.events, ["docs", "hooks", "privacy", "agent-bridge",
-                                         "build-for-testing", "test-without-building"])
+                                         "forbidden-code", "build-for-testing",
+                                         "test-without-building"])
         self.assertEqual([name for name, _ in actions(result)],
                          ["build-for-testing", "test-without-building"])
 
     def test_each_preflight_failure_stops_before_the_build(self):
-        for docs_status, hooks_status, privacy_status, bridge_status, expected in [
-                (37, 0, 0, 0, ["docs"]), (0, 42, 0, 0, ["docs", "hooks"]),
-                (0, 0, 43, 0, ["docs", "hooks", "privacy"]),
-                (0, 0, 0, 44, ["docs", "hooks", "privacy", "agent-bridge"])]:
+        for (docs_status, hooks_status, privacy_status, bridge_status, forbidden_status,
+             expected) in [
+                (37, 0, 0, 0, 0, ["docs"]), (0, 42, 0, 0, 0, ["docs", "hooks"]),
+                (0, 0, 43, 0, 0, ["docs", "hooks", "privacy"]),
+                (0, 0, 0, 44, 0, ["docs", "hooks", "privacy", "agent-bridge"]),
+                (0, 0, 0, 0, 45, ["docs", "hooks", "privacy", "agent-bridge",
+                                  "forbidden-code"])]:
             with self.subTest(docs=docs_status, hooks=hooks_status, privacy=privacy_status,
-                              bridge=bridge_status):
+                              bridge=bridge_status, forbidden=forbidden_status):
                 result = run_script("exit 0", mode="unit", docs_status=docs_status,
                                     hooks_status=hooks_status, privacy_status=privacy_status,
-                                    bridge_status=bridge_status)
+                                    bridge_status=bridge_status,
+                                    forbidden_status=forbidden_status)
                 self.assertEqual(result.returncode,
-                                 docs_status or hooks_status or privacy_status or bridge_status)
+                                 docs_status or hooks_status or privacy_status or bridge_status
+                                 or forbidden_status)
                 self.assertEqual(result.events, expected)
                 self.assertEqual(result.calls, [])
                 self.assertNotIn("All unit tests passed.", result.stdout)
