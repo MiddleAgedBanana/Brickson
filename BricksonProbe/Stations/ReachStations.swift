@@ -3,8 +3,11 @@ import SwiftUI
 /// A-2 and A-3: one button in the middle of rings drawn 25 to 300 points
 /// from its centre. A look resting on a ring shows whether Snap to Item
 /// jumps that far, and changing the button's size (Options) shows whether
-/// the reach counts from its centre or its edge.
+/// the reach counts from its centre or its edge. The button is exactly
+/// the size chosen: a plain style adds no padding around it, an outline
+/// shows its edge, and the log records the size it was laid out at.
 struct RingsStation: View {
+    @Environment(ProbeLog.self) private var log
     @Environment(ProbeOptions.self) private var options
     private let station = ProbeStation.rings
 
@@ -26,8 +29,17 @@ struct RingsStation: View {
                 ProbeButton(
                     name: "Centre", station: station,
                     width: options.ringTarget.side, height: options.ringTarget.side)
+                    .buttonStyle(.plain)
+                    .background {
+                        RoundedRectangle(cornerRadius: 8)
+                            .strokeBorder(Color.accentColor, lineWidth: 2)
+                    }
+                    .onGeometryChange(for: CGSize.self) { $0.size } action: { size in
+                        log.record(
+                            "Centre laid out at \(Int(size.width.rounded())) by \(Int(size.height.rounded())) points",
+                            station: station.title)
+                    }
             }
-            .buttonStyle(.bordered)
         }
     }
 }

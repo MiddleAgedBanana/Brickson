@@ -485,6 +485,8 @@ people Brickson serves.
 - **How.**
   1. Eye Tracking and Snap to Item as in DEV-1, Dwell Control off.
   2. Probe > Rings, middle button 44 points (an option on the list).
+     The log's line "Centre laid out at 44 by 44 points" confirms the
+     button's real size; write down the size it gives if it differs.
      Rest your look on each ring, nearest first, for five seconds each,
      on its right, left, top and bottom. Note the farthest ring where
      the pointer still jumps to the button, and the nearest where it

@@ -23,6 +23,9 @@ struct ProbeButton: View {
             Text(verbatim: name)
                 .font(.title3.weight(.semibold))
                 .multilineTextAlignment(.center)
+                // Only where a fixed size cannot hold the words (the
+                // Rings station's 44-point button).
+                .minimumScaleFactor(0.5)
                 .frame(width: fills ? nil : width, height: fills ? nil : height)
                 .frame(maxWidth: fills ? .infinity : nil, maxHeight: fills ? .infinity : nil)
         }
@@ -31,6 +34,8 @@ struct ProbeButton: View {
 
 /// The station's newest log line, large, at the top. Hidden from
 /// accessibility, so it is never an item a pointer or scan can stop on.
+/// It keeps two lines' height from the start, so a longer line never
+/// moves the controls below it.
 struct ProbeReadout: View {
     let station: ProbeStation
 
@@ -40,7 +45,7 @@ struct ProbeReadout: View {
         let entry = log.latest(on: station.title)
         Text(verbatim: entry.map { "\(ProbeLogFormat.seconds($0.elapsed)) s  \($0.event)" } ?? "Nothing yet")
             .font(.headline.monospacedDigit())
-            .lineLimit(2)
+            .lineLimit(2, reservesSpace: true)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 16)
             .padding(.vertical, 8)
