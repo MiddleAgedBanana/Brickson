@@ -23,6 +23,10 @@ from pathlib import Path
 for key in [key for key in os.environ if key.startswith(('GIT_CONFIG_KEY_', 'GIT_CONFIG_VALUE_'))
             or key in ('GIT_CONFIG_COUNT', 'GIT_CONFIG_PARAMETERS')]:
     del os.environ[key]
+# The bridge's privacy check reads a private list from these; each test
+# gives its own made-up list in its made-up home, or none.
+for key in ('BRICKSON_PRIVATE_WORDS', 'XDG_CONFIG_HOME'):
+    os.environ.pop(key, None)
 
 ROOT = Path(__file__).resolve().parents[1]
 BRIDGE = ROOT / 'scripts' / 'agent-bridge.py'
@@ -30,11 +34,65 @@ BRIDGE = ROOT / 'scripts' / 'agent-bridge.py'
 STUB = r'''#!/usr/bin/env python3
 import json, os, stat, sys, time
 entry = {'tool': os.path.basename(sys.argv[0]), 'argv': sys.argv[1:], 'cwd': os.getcwd(),
-         'stdin_closed': stat.S_ISCHR(os.fstat(0).st_mode)}
+         'stdin_closed': stat.S_ISCHR(os.fstat(0).st_mode),
+         'git_env': {key: value for key, value in os.environ.items() if key.startswith('GIT_')}}
 with open(os.environ['STUB_LOG'], 'a') as log:
     log.write(json.dumps(entry) + '\n')
 mode = os.environ.get('STUB_MODE', '')
 args = sys.argv[1:]
+if 'work' in mode:
+    # A Codex write job's work, left uncommitted: a changed, a deleted and
+    # new files, names git escapes or would read as a pathspec, and
+    # evidence under build/.
+    with open('AGENTS.md', 'a') as changed:
+        changed.write('a change from the agent\n')
+    os.remove(os.path.join('docs', 'old.md'))
+    for name in (':x.txt', '[ab].txt', 'r\u00e9sum\u00e9.md', 'tab\there.txt',
+                 os.path.join('docs', 'new.md')):
+        with open(name, 'w') as new:
+            new.write('new from the agent: ' + os.environ.get('STUB_WORDS', 'plain words') + '\n')
+    os.makedirs('build', exist_ok=True)
+    with open(os.path.join('build', 'evidence.txt'), 'w') as evidence:
+        evidence.write('evidence\n')
+if 'selfcommit' in mode:  # a later Codex that may commit by itself
+    import subprocess
+    with open('self.md', 'w') as own:
+        own.write('committed by the agent\n')
+    subprocess.run(['git', 'add', 'self.md'], check=True, capture_output=True)
+    subprocess.run(['git', 'commit', '-q', '-m', 'Commit made by the agent'], check=True,
+                   capture_output=True)
+if 'githooks' in mode:  # hooks left where core.hooksPath points
+    os.makedirs('.githooks', exist_ok=True)
+    for name in ('pre-commit', 'commit-msg', 'post-commit'):
+        hook = os.path.join('.githooks', name)
+        with open(hook, 'w') as script:
+            script.write('#!/bin/sh\necho %s >> "%s/ran"\n' % (name, os.environ['STUB_OUTSIDE']))
+        os.chmod(hook, 0o755)
+if 'sibling' in mode:  # the bridge's own privacy check, changed during the job
+    with open(os.environ['STUB_SIBLING'], 'a') as sibling:
+        sibling.write('# changed during the job\n')
+if 'guardcode' in mode:  # the guard's own code, which agy's hook runs
+    import subprocess
+    how = os.environ['STUB_GUARD']
+    guard = os.path.join('.claude', 'hooks', 'guard.py')
+    privacy = os.path.join('scripts', 'privacy-check.py')
+    if how in ('edit', 'commit'):
+        for name in (guard, privacy):
+            with open(name, 'w') as code:
+                code.write('allow everything\n')
+        os.chmod(guard, 0o755)
+    elif how == 'link':
+        outside = os.path.join(os.environ['STUB_OUTSIDE'], 'guard.py')
+        with open(outside, 'w') as code:
+            code.write('allow everything\n')
+        os.remove(guard)
+        os.symlink(outside, guard)
+    if how == 'commit':
+        subprocess.run(['git', 'commit', '-q', '-am', 'Weaken the guard'], check=True,
+                       capture_output=True)
+if 'badoutput' in mode:  # output the bridge cannot read as text
+    sys.stdout.buffer.write(b'\xff\xfe not text\n')
+    sys.stdout.flush()
 if 'sleep' in mode:
     time.sleep(20)
 if 'touch' in mode:
@@ -117,18 +175,56 @@ if 'unhook' in mode:
     elif how == 'folder':  # a folder where the file was, which cannot be put back
         os.remove(hooks)
         os.makedirs(os.path.join(hooks, 'inside'))
+if 'nested' in mode:  # a repository inside the job's, whose own settings run a command
+    import subprocess
+    os.makedirs('sub')
+    def inner(*args):
+        subprocess.run(['git', '-C', 'sub', *args], check=True, capture_output=True)
+    inner('init', '-q')
+    with open(os.path.join('sub', 'f'), 'w') as tracked:
+        tracked.write('hi\n')
+    inner('add', 'f')
+    inner('-c', 'user.name=x', '-c', 'user.email=x@example.com', 'commit', '-q', '-m', 'inner')
+    with open(os.path.join('sub', '.gitattributes'), 'w') as attributes:
+        attributes.write('* filter=x\n')
+    inner('config', 'filter.x.clean',
+          "sh -c 'echo ran >> \"%s/ran\"; cat'" % os.environ['STUB_OUTSIDE'])
+    with open(os.path.join('sub', 'f'), 'w') as tracked:  # same size, new time: git reads it
+        tracked.write('ho\n')
+    os.utime(os.path.join('sub', 'f'), (1900000000, 1900000000))
+if 'plantpyc' in mode:
+    # A cache of a weakened privacy check, which Python loads without
+    # comparing it with the source (an unchecked hash-based .pyc).
+    import subprocess
+    planted = os.path.join(os.environ['STUB_OUTSIDE'], 'planted.py')
+    with open(planted, 'w') as code:
+        code.write("WHO = 'planted'\n")
+    source = os.path.abspath(os.path.join('scripts', 'privacy-check.py'))
+    target = os.path.join(os.environ['STUB_OUTSIDE'], 'cache')
+    if os.environ['STUB_PYC'] == 'file':
+        target = os.path.join('scripts', '__pycache__')
+    os.makedirs(target, exist_ok=True)
+    if os.environ['STUB_PYC'] == 'link':
+        os.symlink(target, os.path.join('scripts', '__pycache__'))
+    subprocess.run([os.environ['STUB_PYTHON'], '-I', '-c',
+                    'import importlib.util, os, py_compile, sys; '
+                    'name = os.path.basename(importlib.util.cache_from_source(sys.argv[2])); '
+                    'py_compile.compile(sys.argv[1], cfile=os.path.join(sys.argv[3], name), '
+                    'invalidation_mode=py_compile.PycInvalidationMode.UNCHECKED_HASH)',
+                    planted, source, target], check=True)
 if entry['tool'] == 'codex':
     if args and args[0] == 'review':
         print('No P0 or P1 findings.')
         sys.exit(0)
     if '-o' in args:
         with open(args[args.index('-o') + 1], 'w') as out:
-            out.write('codex final answer\n')
+            out.write(os.environ['STUB_ANSWER'] if 'STUB_ANSWER' in os.environ
+                      else 'codex final answer\n')
     print(json.dumps({'type': 'thread.started'}))
     if 'blocked' in mode:
         print('ERROR codex_core::tools::router: error=Command blocked by PreToolUse hook: '
               'Stage only your own changes', file=sys.stderr)
-    sys.exit(0)
+    sys.exit(3 if 'fail' in mode else 0)
 if args and args[0] == '--version':
     print('stub 1.0')
     sys.exit(0)
@@ -141,6 +237,7 @@ for event in [{'event': 'init', 'init': {'cwd': cwd}},
                'tool call denied by pre-tool hook: Stage only your own changes'}}}},
               {'event': 'result', 'result': {'status': 'SUCCESS', 'response': 'agy final answer'}}]:
     print(json.dumps(event))
+sys.exit(3 if 'fail' in mode else 0)
 '''
 
 
@@ -174,12 +271,13 @@ class BridgeTests(unittest.TestCase):
         origin, seed = base / 'origin.git', base / 'seed'
         subprocess.run(['git', 'init', '-q', '--bare', '-b', 'main', str(origin)], check=True)
         subprocess.run(['git', 'init', '-q', '-b', 'main', str(seed)], check=True)
-        for part in ('.claude/hooks/guard.py', 'scripts/privacy-check.py', 'AGENTS.md'):
+        for part in ('.claude/hooks/guard.py', 'scripts/privacy-check.py', 'AGENTS.md',
+                     'docs/old.md'):
             (seed / part).parent.mkdir(parents=True, exist_ok=True)
             (seed / part).write_text('# stand-in\n')
-        (seed / '.gitignore').write_text('build/\n.agents/\n')
+        (seed / '.gitignore').write_text('build/\n.agents/\n__pycache__/\n')  # as Brickson's
         env = {**os.environ, **self.env}
-        for args in (['add', '.claude', 'scripts', 'AGENTS.md', '.gitignore'],
+        for args in (['add', '.claude', 'scripts', 'AGENTS.md', 'docs', '.gitignore'],
                      ['commit', '-q', '-m', 'start'], ['remote', 'add', 'origin', str(origin)],
                      ['push', '-q', 'origin', 'main']):
             subprocess.run(['git', '-C', str(seed), *args], check=True, env=env, capture_output=True)
@@ -192,12 +290,13 @@ class BridgeTests(unittest.TestCase):
                             str(folder), 'origin/main'], check=True, env=env, capture_output=True)
         self.brief = base / 'brief.md'
         self.brief.write_text('List the files in docs/log/.\n')
+        self.give_list()
 
     def tearDown(self):
         self.temp.cleanup()
 
-    def bridge(self, *args, env=None, cwd=None):
-        return subprocess.run([sys.executable, str(BRIDGE), *args], capture_output=True, text=True,
+    def bridge(self, *args, env=None, cwd=None, script=BRIDGE):
+        return subprocess.run([sys.executable, str(script), *args], capture_output=True, text=True,
                               env={**os.environ, **self.env, **(env or {})},
                               cwd=str(cwd or self.worktree), timeout=120)
 
@@ -249,6 +348,42 @@ class BridgeTests(unittest.TestCase):
         return {name: (folder / name).read_bytes()
                 for name in ('hooks.json', 'hooks/brickson_guard_adapter.py')}
 
+    def give_list(self, text='Zorblatt\nQuennick Vashti\n'):
+        """A made-up private list in the made-up home, where the privacy
+        check looks for one (~/.config/brickson/private-words.txt)."""
+        config = self.home / '.config' / 'brickson'
+        config.mkdir(parents=True, exist_ok=True)
+        (config / 'private-words.txt').write_text(text)
+        (config / 'private-words.txt').chmod(0o600)
+
+    def codex_write(self, topic, *extra, mode='work', script=BRIDGE, **env):
+        self.install_codex_hook()
+        result = self.bridge('codex', '--brief', str(self.brief), '--write', '--branch', topic,
+                             *extra, env={'STUB_MODE': mode, **env}, script=script)
+        out = self.job_folder(result)
+        return (result, self.home / 'code' / f'brickson-codex-{topic}', out,
+                json.loads((out / 'summary.json').read_text()))
+
+    def git_out(self, folder, *args):
+        return subprocess.run(['git', '-C', str(folder), *args], capture_output=True,
+                              check=True).stdout
+
+    def head_files(self, folder):
+        return sorted(os.fsdecode(name) for name in
+                      self.git_out(folder, 'ls-tree', '-r', '-z', '--name-only', 'HEAD').split(b'\0')
+                      if name)
+
+    def staged(self, folder):
+        return self.git_out(folder, 'diff', '--cached', '--name-only', '-z')
+
+    def guard_code(self):
+        """The guard's own code in agy's folder: bytes, mode and whether a link."""
+        files = {}
+        for name in ('.claude/hooks/guard.py', 'scripts/privacy-check.py'):
+            path = self.agy_folder / name
+            files[name] = (path.is_symlink(), path.read_bytes(), path.stat().st_mode & 0o7777)
+        return files
+
     # Codex -------------------------------------------------------------------
 
     def test_a_codex_job_is_read_only_with_stdin_closed_and_the_brief_wrapped(self):
@@ -298,6 +433,11 @@ class BridgeTests(unittest.TestCase):
         self.assertEqual(Path(call['cwd']).resolve(), folder)
         self.assertIn('branch codex/tests', call['argv'][-1])
         self.assertIn('Do not push', call['argv'][-1])
+        # Codex's sandbox keeps git's folder read-only: the bridge commits.
+        self.assertIn('Do not stage or commit', call['argv'][-1])
+        self.assertIn('the bridge commits every changed file outside build/', call['argv'][-1])
+        self.assertIn('at most 72 characters', call['argv'][-1])
+        self.assertNotIn('Commit your', call['argv'][-1])
         branch = subprocess.run(['git', '-C', str(folder), 'branch', '--show-current'],
                                 capture_output=True, text=True).stdout.strip()
         self.assertEqual(branch, 'codex/tests')
@@ -516,6 +656,8 @@ class BridgeTests(unittest.TestCase):
                                 capture_output=True, text=True).stdout.strip()
         self.assertEqual(branch, 'antigravity/docs')
         self.assertIn('branch antigravity/docs', self.calls()[0]['argv'][1])
+        self.assertIn('Commit your', self.calls()[0]['argv'][1])  # agy commits by itself
+        self.assertNotIn('Do not stage or commit', self.calls()[0]['argv'][1])
 
     # Both ----------------------------------------------------------------------
 
@@ -803,6 +945,437 @@ class BridgeTests(unittest.TestCase):
         self.assertTrue((out / 'done').read_text().startswith('stopped'))
         time.sleep(4)
         self.assertFalse((self.worktree / 'late.txt').exists())
+
+    # The bridge commits a Codex write job's work -------------------------------
+
+    WORK = [':x.txt', '[ab].txt', 'r\u00e9sum\u00e9.md', 'tab\there.txt', 'docs/new.md']
+
+    def test_a_codex_write_jobs_work_is_committed_by_the_bridge(self):
+        result, folder, out, summary = self.codex_write('work')
+        self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+        self.assertEqual(summary['status'], 'finished')
+        self.assertEqual(len(summary['commits']), 1, summary)
+        self.assertTrue(summary['bridge_commit'].startswith('committed '), summary['bridge_commit'])
+        self.assertIn(summary['commits'][0].split()[0], summary['bridge_commit'])
+        self.assertEqual(summary['changed_files'], [])
+        # Every changed, new and deleted file, each staged as itself (a name
+        # that reads as a pathspec, or that git escapes), and nothing under build/.
+        self.assertEqual(self.head_files(folder), sorted(
+            ['.claude/hooks/guard.py', '.gitignore', 'AGENTS.md', 'scripts/privacy-check.py',
+             *self.WORK]))
+        self.assertIn(b'a change from the agent', self.git_out(folder, 'show', 'HEAD:AGENTS.md'))
+        self.assertTrue((folder / 'build' / 'evidence.txt').is_file())
+        self.assertEqual(self.git_out(folder, 'status', '--porcelain'), b'')
+        self.assertEqual(self.git_out(folder, 'rev-parse', 'HEAD~1'),
+                         self.git_out(folder, 'rev-parse', 'origin/main'))
+        message = self.git_out(folder, 'log', '-1', '--format=%B').decode().strip().splitlines()
+        self.assertEqual(message[0], 'codex final answer')
+        self.assertIn(out.name, message[-1])
+        self.assertTrue((out / 'privacy-check.txt').read_text())
+
+    def test_the_commit_message_comes_from_codexs_final_message(self):
+        long = 'Make ' + 'the words fit ' * 10
+        cases = [('a heading', '## **Add the thing**\n\nWhy it matters.\nAnd more.\n',
+                  'Add the thing', 'Why it matters.\nAnd more.'),
+                 ('a long line', long + '\n', long[:72].rstrip(), None),
+                 ('nothing', '', None, None)]
+        for number, (case, answer, subject, body) in enumerate(cases):
+            with self.subTest(case):
+                result, folder, out, summary = self.codex_write(f'message-{number}',
+                                                                STUB_ANSWER=answer)
+                self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+                message = self.git_out(folder, 'log', '-1', '--format=%B').decode().strip()
+                lines = message.splitlines()
+                self.assertLessEqual(len(lines[0]), 72)
+                if subject:
+                    self.assertEqual(lines[0], subject)
+                else:
+                    self.assertIn(f'codex/message-{number}', lines[0])
+                if body:
+                    self.assertIn(body, message)
+                self.assertIn(out.name, lines[-1])
+
+    def test_hooks_left_in_the_checkout_never_run_when_the_bridge_commits(self):
+        # Brickson's checkouts point core.hooksPath at .githooks, in the
+        # checkout, where the agent can write.
+        outside = Path(self.temp.name) / 'outside'
+        outside.mkdir()
+        git(self.owner, 'config', 'core.hooksPath', '.githooks')
+        result, folder, out, summary = self.codex_write('hooks', mode='githooks work',
+                                                        STUB_OUTSIDE=str(outside))
+        self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+        self.assertTrue(summary['bridge_commit'].startswith('committed '), summary)
+        self.assertIn('.githooks/pre-commit', self.head_files(folder))
+        self.assertEqual(list(outside.iterdir()), [])
+
+    def test_nothing_is_committed_when_the_privacy_check_finds_a_private_word(self):
+        cases = [('in a file', {'STUB_WORDS': 'Zorblatt'}),
+                 ('in the message', {'STUB_ANSWER': 'Fix the list for Quennick Vashti\n'})]
+        for number, (case, env) in enumerate(cases):
+            with self.subTest(case):
+                result, folder, out, summary = self.codex_write(f'private-{number}', **env)
+                self.assertEqual(result.returncode, 1, result.stderr + result.stdout)
+                self.assertIn('not committed', summary['status'])
+                self.assertIn('privacy check', summary['status'])
+                self.assertTrue(summary['bridge_commit'].startswith('not committed'), summary)
+                self.assertEqual(summary['commits'], [])
+                self.assertEqual(self.staged(folder), b'')
+                self.assertIn('?? docs/new.md', summary['changed_files'])
+                report = (out / 'privacy-check.txt').read_text()
+                self.assertIn('Found', report)
+                for text in (report, (out / 'summary.json').read_text(), (out / 'done').read_text(),
+                             result.stdout, result.stderr):
+                    for word in ('Zorblatt', 'Quennick', 'Vashti'):
+                        self.assertNotIn(word, text)
+
+    def test_nothing_is_committed_when_the_commits_identity_holds_a_private_word(self):
+        # The author and committer the commit would record are read before
+        # the branch moves, whether they come from git's settings or, as
+        # here, from the bridge's environment.
+        cases = [('author name', {'GIT_AUTHOR_NAME': 'Zorblatt'}),
+                 ('committer name', {'GIT_COMMITTER_NAME': 'Quennick Vashti'}),
+                 ('address', {'GIT_AUTHOR_EMAIL': 'zorblatt@example.com'})]
+        for number, (case, env) in enumerate(cases):
+            with self.subTest(case):
+                topic = f'identity-{number}'
+                result, folder, out, summary = self.codex_write(topic, **env)
+                self.assertEqual(result.returncode, 1, result.stderr + result.stdout)
+                self.assertIn('not committed', summary['status'])
+                self.assertTrue(summary['bridge_commit'].startswith('not committed'), summary)
+                self.assertEqual(summary['commits'], [])
+                self.assertEqual(self.git_out(folder, 'rev-parse', f'codex/{topic}'),
+                                 self.git_out(folder, 'rev-parse', 'origin/main'))
+                self.assertEqual(self.staged(folder), b'')
+                self.assertTrue((folder / 'docs' / 'new.md').is_file())
+                self.assertIn(b'a change from the agent', (folder / 'AGENTS.md').read_bytes())
+                self.assertIn('Found', (out / 'privacy-check.txt').read_text())
+                for text in ((out / 'privacy-check.txt').read_text(),
+                             (out / 'summary.json').read_text(), (out / 'done').read_text(),
+                             result.stdout, result.stderr):
+                    for word in ('Zorblatt', 'zorblatt', 'Quennick', 'Vashti'):
+                        self.assertNotIn(word, text)
+
+    def test_git_variables_the_bridge_inherits_never_point_its_git_elsewhere(self):
+        # git obeys these before -C: started with them, the bridge's git
+        # would stage and commit in the owner's checkout or index instead.
+        index = self.owner / '.git' / 'index'
+        cases = [('index', {'GIT_INDEX_FILE': str(index)}),
+                 ('repository', {'GIT_DIR': str(self.owner / '.git'),
+                                 'GIT_WORK_TREE': str(self.owner)})]
+
+        def owner_state(topic):
+            # Branches are shared with the worktrees: all but the job's own.
+            return (index.read_bytes(), self.git_out(self.owner, 'rev-parse', 'HEAD'),
+                    [line for line in self.git_out(self.owner, 'for-each-ref', 'refs/heads')
+                     .splitlines() if not line.endswith(f'refs/heads/codex/{topic}'.encode())])
+
+        for case, env in cases:
+            with self.subTest(case):
+                self.git_out(self.owner, 'status', '--porcelain')  # any refresh happens now
+                topic = f'inherited-{case}'
+                before = owner_state(topic)
+                result, folder, out, summary = self.codex_write(topic, **env)
+                self.assertEqual(owner_state(topic), before)
+                self.assertEqual(self.git_out(self.owner, 'status', '--porcelain'), b'')
+                self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+                self.assertEqual(summary['status'], 'finished')
+                self.assertTrue(summary['bridge_commit'].startswith('committed '), summary)
+                self.assertEqual(self.git_out(folder, 'rev-parse', f'codex/{topic}'),
+                                 self.git_out(folder, 'rev-parse', 'HEAD'))
+                self.assertEqual(self.head_files(folder), sorted(
+                    ['.claude/hooks/guard.py', '.gitignore', 'AGENTS.md',
+                     'scripts/privacy-check.py', *self.WORK]))
+                self.assertEqual(self.git_out(folder, 'status', '--porcelain'), b'')
+
+    def test_a_job_gets_none_of_gits_repository_variables(self):
+        # The agent's own git must work on its job's checkout; an inherited
+        # GIT_CONFIG_COUNT entry is kept, with the no-push entries after it.
+        elsewhere = str(self.owner / '.git')
+        local = {'GIT_ALTERNATE_OBJECT_DIRECTORIES': elsewhere + '/objects',
+                 'GIT_OBJECT_DIRECTORY': elsewhere + '/objects', 'GIT_DIR': elsewhere,
+                 'GIT_WORK_TREE': str(self.owner), 'GIT_IMPLICIT_WORK_TREE': '1',
+                 'GIT_GRAFT_FILE': elsewhere + '/grafts', 'GIT_INDEX_FILE': elsewhere + '/index',
+                 'GIT_NO_REPLACE_OBJECTS': '1', 'GIT_REPLACE_REF_BASE': 'refs/elsewhere/',
+                 'GIT_PREFIX': 'docs/', 'GIT_SHALLOW_FILE': elsewhere + '/shallow',
+                 'GIT_COMMON_DIR': elsewhere}
+        result = self.bridge('codex', '--brief', str(self.brief),
+                             env={**local, 'GIT_CONFIG_COUNT': '1',
+                                  'GIT_CONFIG_KEY_0': 'brickson.inherited',
+                                  'GIT_CONFIG_VALUE_0': 'kept'})
+        self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+        [call] = self.calls()
+        git_env = call['git_env']
+        for name in local:
+            self.assertNotIn(name, git_env)
+        self.assertEqual(git_env['GIT_CONFIG_KEY_0'], 'brickson.inherited')
+        self.assertEqual(git_env['GIT_CONFIG_VALUE_0'], 'kept')
+        self.assertEqual(git_env['GIT_CONFIG_KEY_1'], 'remote.origin.pushurl')
+        self.assertEqual(git_env['GIT_CONFIG_COUNT'], '6')
+
+    def test_nothing_is_committed_without_a_private_list(self):
+        (self.home / '.config' / 'brickson' / 'private-words.txt').unlink()
+        result, folder, out, summary = self.codex_write('no-list')
+        self.assertEqual(result.returncode, 1, result.stderr + result.stdout)
+        self.assertIn('not committed', summary['status'])
+        self.assertEqual(summary['commits'], [])
+        self.assertEqual(self.staged(folder), b'')
+        self.assertIn('private list', (out / 'privacy-check.txt').read_text())
+
+    def test_nothing_is_committed_when_the_bridges_own_privacy_check_changed(self):
+        # The bridge runs the privacy check beside it, never the job's copy,
+        # and refuses to commit if that one changed while the job ran.
+        copy = Path(self.temp.name) / 'copy' / 'scripts'
+        copy.mkdir(parents=True)
+        for name in ('agent-bridge.py', 'privacy-check.py'):
+            (copy / name).write_bytes((ROOT / 'scripts' / name).read_bytes())
+        result, folder, out, summary = self.codex_write(
+            'sibling', mode='work sibling', script=copy / 'agent-bridge.py',
+            STUB_SIBLING=str(copy / 'privacy-check.py'))
+        self.assertEqual(result.returncode, 1, result.stderr + result.stdout)
+        self.assertIn('changed during the job', summary['bridge_commit'])
+        self.assertIn('not committed', summary['status'])
+        self.assertEqual(summary['commits'], [])
+        self.assertEqual(self.staged(folder), b'')
+
+    def test_nothing_is_committed_when_codex_does_not_finish(self):
+        cases = [('failed', 'work fail', [], 'failed (exit 3)'),
+                 ('timed out', 'work sleep', ['--timeout', '0.02'], 'timed out')]
+        for number, (case, mode, extra, status) in enumerate(cases):
+            with self.subTest(case):
+                result, folder, out, summary = self.codex_write(f'unfinished-{number}', *extra,
+                                                                mode=mode)
+                self.assertEqual(result.returncode, 1, result.stderr + result.stdout)
+                self.assertTrue(summary['status'].startswith(status), summary['status'])
+                self.assertTrue(summary['bridge_commit'].startswith('not committed'), summary)
+                self.assertEqual(summary['commits'], [])
+                self.assertEqual(self.staged(folder), b'')
+                self.assertIn('?? docs/new.md', summary['changed_files'])
+
+    def test_codexs_own_commits_stay_and_the_bridge_commits_only_the_rest(self):
+        result, folder, out, summary = self.codex_write('own', mode='selfcommit work')
+        self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+        self.assertEqual(len(summary['commits']), 2, summary)
+        self.assertTrue(summary['commits'][1].endswith('Commit made by the agent'))
+        self.assertTrue(summary['bridge_commit'].startswith('committed '), summary)
+        result, folder, out, summary = self.codex_write('own-only', mode='selfcommit')
+        self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+        self.assertEqual(len(summary['commits']), 1, summary)
+        self.assertEqual(summary['bridge_commit'], 'nothing to commit')
+
+    def test_a_repository_left_in_the_job_is_never_staged_or_committed(self):
+        # git lists a repository inside the job's as one entry; staged, it
+        # becomes a link to that repository, and git then runs what that
+        # repository's own settings name (here a filter), outside the sandbox.
+        outside = Path(self.temp.name) / 'outside'
+        outside.mkdir()
+        result, folder, out, summary = self.codex_write('nested', mode='nested work',
+                                                        STUB_OUTSIDE=str(outside))
+        self.assertEqual(result.returncode, 1, result.stderr + result.stdout)
+        self.assertEqual(list(outside.iterdir()), [])
+        self.assertEqual(summary['commits'], [])
+        self.assertEqual(self.staged(folder), b'')
+        for text in (summary['bridge_commit'], summary['status']):
+            self.assertIn('not committed', text)
+            self.assertIn('repository or a whole folder', text)
+            self.assertIn('sub/', text)
+        self.assertIn('?? docs/new.md', summary['changed_files'])
+
+    def test_a_stop_during_the_privacy_check_commits_nothing_and_still_ends_with_done(self):
+        import signal
+        copy = Path(self.temp.name) / 'copy' / 'scripts'
+        copy.mkdir(parents=True)
+        (copy / 'agent-bridge.py').write_bytes(BRIDGE.read_bytes())
+        started = Path(self.temp.name) / 'check-started'
+        (copy / 'privacy-check.py').write_text(
+            'import os, time\nopen(os.environ["CHECK_STARTED"], "w").close()\ntime.sleep(60)\n')
+        self.install_codex_hook()
+        began = time.monotonic()
+        bridge = subprocess.Popen([sys.executable, str(copy / 'agent-bridge.py'), 'codex',
+                                   '--brief', str(self.brief), '--write', '--branch', 'stop'],
+                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                                  env={**os.environ, **self.env, 'STUB_MODE': 'work',
+                                       'CHECK_STARTED': str(started)},
+                                  cwd=str(self.worktree))
+        for _ in range(300):  # until the privacy check is running
+            if started.exists():
+                break
+            time.sleep(0.1)
+        self.assertTrue(started.exists())
+        bridge.send_signal(signal.SIGTERM)
+        stdout, stderr = bridge.communicate(timeout=60)
+        self.assertLess(time.monotonic() - began, 40)
+        self.assertEqual(bridge.returncode, 1, stderr)
+        out = Path(next(l for l in stdout.splitlines() if l.startswith('Job folder: '))[12:])
+        summary = json.loads((out / 'summary.json').read_text())
+        done = (out / 'done').read_text()
+        self.assertEqual(done, summary['status'] + '\n')
+        self.assertTrue(done.startswith('stopped'), done)
+        self.assertIn('before it committed', done)
+        self.assertIn('not committed', summary['bridge_commit'])
+        folder = self.home / 'code' / 'brickson-codex-stop'
+        self.assertEqual(summary['commits'], [])
+        self.assertEqual(self.staged(folder), b'')
+        self.assertIn('?? docs/new.md', summary['changed_files'])
+
+    def test_a_bytecode_cache_left_beside_the_guards_code_is_removed(self):
+        # guard.py loads scripts/privacy-check.py through Python's loader,
+        # which uses a cache in scripts/__pycache__ and, for an unchecked
+        # hash-based one, never compares it with the source.
+        self.point_agy_at(self.agy_folder)
+        self.install_agy_hook()
+        load = ('import importlib.util, sys; '
+                'spec = importlib.util.spec_from_file_location("privacy_check", sys.argv[1]); '
+                'module = importlib.util.module_from_spec(spec); sys.dont_write_bytecode = True; '
+                'spec.loader.exec_module(module); print(getattr(module, "WHO", "source"))')
+        for number, how in enumerate(('file', 'link')):
+            with self.subTest(how):
+                outside = Path(self.temp.name) / f'outside-pyc-{number}'
+                outside.mkdir()
+                result = self.bridge('agy', '--brief', str(self.brief),
+                                     env={'STUB_MODE': 'plantpyc', 'STUB_PYC': how,
+                                          'STUB_OUTSIDE': str(outside),
+                                          'STUB_PYTHON': sys.executable})
+                self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+                summary = json.loads((self.job_folder(result) / 'summary.json').read_text())
+                self.assertIn('scripts/__pycache__', summary['guard_cache'])
+                loaded = subprocess.run([sys.executable, '-I', '-c', load,
+                                         str(self.agy_folder / 'scripts' / 'privacy-check.py')],
+                                        capture_output=True, text=True, check=True)
+                self.assertEqual(loaded.stdout.strip(), 'source')
+                self.assertFalse(os.path.lexists(self.agy_folder / 'scripts' / '__pycache__'))
+                if how == 'link':  # removed, never followed
+                    self.assertTrue(any((outside / 'cache').iterdir()))
+                again = self.bridge('agy', '--brief', str(self.brief))
+                self.assertEqual(again.returncode, 0, again.stderr)
+
+    # The guard's own code in agy's folder is put back ----------------------------
+
+    def test_an_agy_job_that_changes_the_guards_code_has_it_put_back(self):
+        self.point_agy_at(self.agy_folder)
+        self.install_agy_hook()
+        installed = self.guard_code()
+        cases = [('read-only', 'edit', 'guardcode', False),
+                 ('a link left in its place', 'link', 'guardcode', False),
+                 ('agy failed', 'edit', 'guardcode fail', False),
+                 ('a write job', 'edit', 'guardcode', True)]
+        for number, (case, how, mode, write) in enumerate(cases):
+            with self.subTest(case):
+                outside = Path(self.temp.name) / f'outside-{number}'
+                outside.mkdir()
+                args = ['--write', '--branch', f'guard-{number}'] if write else []
+                result = self.bridge('agy', '--brief', str(self.brief), *args,
+                                     env={'STUB_MODE': mode, 'STUB_GUARD': how,
+                                          'STUB_OUTSIDE': str(outside)})
+                self.assertEqual(result.returncode, 1, result.stderr)
+                out = self.job_folder(result)
+                summary = json.loads((out / 'summary.json').read_text())
+                self.assertIn("changed the guard's code", summary['status'])
+                self.assertIn('the bridge put it back', summary['status'])
+                self.assertIn('put back', summary['guard_code'])
+                self.assertEqual((out / 'done').read_text(), summary['status'] + '\n')
+                if 'fail' in mode:
+                    self.assertEqual(summary['exit_code'], 3)
+                self.assertEqual(self.guard_code(), installed)
+                if how == 'link':
+                    self.assertEqual((outside / 'guard.py').read_text(), 'allow everything\n')
+                again = self.bridge('agy', '--brief', str(self.brief))
+                self.assertEqual(again.returncode, 0, again.stderr)
+                self.assertEqual(json.loads((self.job_folder(again) / 'summary.json')
+                                            .read_text())['guard_code'], 'unchanged')
+
+    def test_the_guards_code_is_put_back_when_the_bridge_is_stopped(self):
+        import signal
+        self.point_agy_at(self.agy_folder)
+        self.install_agy_hook()
+        installed = self.guard_code()
+        bridge = subprocess.Popen([sys.executable, str(BRIDGE), 'agy', '--brief', str(self.brief)],
+                                  stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                                  env={**os.environ, **self.env, 'STUB_MODE': 'guardcode spawn',
+                                       'STUB_GUARD': 'edit'},
+                                  cwd=str(self.worktree))
+        for _ in range(100):  # until the stand-in has started
+            if self.log.exists():
+                break
+            time.sleep(0.1)
+        time.sleep(0.5)
+        bridge.send_signal(signal.SIGTERM)
+        stdout, _ = bridge.communicate(timeout=60)
+        self.assertEqual(bridge.returncode, 1)
+        out = Path(next(l for l in stdout.splitlines() if l.startswith('Job folder: '))[12:])
+        done = (out / 'done').read_text()
+        self.assertTrue(done.startswith('stopped'), done)
+        self.assertIn("changed the guard's code", done)
+        self.assertEqual(self.guard_code(), installed)
+
+    def test_a_stop_after_agy_has_exited_still_puts_everything_back(self):
+        # The stop arrives during the put-back, after agy has exited: a
+        # driver wraps restore_agy_guard so the bridge first sends itself
+        # the signal, then puts the hook back.
+        import signal
+        self.point_agy_at(self.agy_folder)
+        driver = Path(self.temp.name) / 'driver.py'
+        driver.write_text(
+            'import importlib.util, os, signal, sys\n'
+            'spec = importlib.util.spec_from_file_location("bridge", sys.argv[1])\n'
+            'bridge = importlib.util.module_from_spec(spec)\n'
+            'spec.loader.exec_module(bridge)\n'
+            'original = bridge.restore_agy_guard\n'
+            'def stopped_first(*args):\n'
+            '    os.kill(os.getpid(), int(sys.argv[2]))\n'
+            '    return original(*args)\n'
+            'bridge.restore_agy_guard = stopped_first\n'
+            'sys.exit(bridge.main(sys.argv[3:]))\n')
+        for number, sig in enumerate((signal.SIGTERM, signal.SIGHUP)):
+            with self.subTest(sig.name):
+                self.install_agy_hook()
+                installed, hook = self.guard_code(), self.agy_guard_files()
+                outside = Path(self.temp.name) / f'outside-stop-{number}'
+                outside.mkdir()
+                result = subprocess.run(
+                    [sys.executable, str(driver), str(BRIDGE), str(int(sig)), 'agy', '--brief',
+                     str(self.brief)], capture_output=True, text=True, cwd=str(self.worktree),
+                    timeout=120, env={**os.environ, **self.env,
+                                      'STUB_MODE': 'guardcode plantpyc unhook',
+                                      'STUB_GUARD': 'edit', 'STUB_UNHOOK': 'matcher',
+                                      'STUB_PYC': 'file', 'STUB_OUTSIDE': str(outside),
+                                      'STUB_PYTHON': sys.executable})
+                self.assertEqual(result.returncode, 1, result.stderr)
+                self.assertEqual(self.guard_code(), installed)
+                self.assertEqual(self.agy_guard_files(), hook)
+                self.assertFalse(os.path.lexists(self.agy_folder / 'scripts' / '__pycache__'))
+                out = self.job_folder(result)
+                summary = json.loads((out / 'summary.json').read_text())
+                self.assertEqual((out / 'done').read_text(), summary['status'] + '\n')
+                self.assertTrue(summary['status'].startswith('stopped'), summary['status'])
+                self.assertIn("changed the guard's code", summary['status'])
+
+    def test_the_guards_code_is_put_back_even_when_agys_output_cannot_be_read(self):
+        self.point_agy_at(self.agy_folder)
+        self.install_agy_hook()
+        installed, hook = self.guard_code(), self.agy_guard_files()
+        result = self.bridge('agy', '--brief', str(self.brief),
+                             env={'STUB_MODE': 'guardcode badoutput unhook', 'STUB_GUARD': 'edit',
+                                  'STUB_UNHOOK': 'matcher'})
+        self.assertNotEqual(result.returncode, 0, result.stdout)
+        self.assertEqual(self.guard_code(), installed)
+        self.assertEqual(self.agy_guard_files(), hook)
+
+    def test_an_agy_write_job_whose_commits_change_the_guards_code(self):
+        self.point_agy_at(self.agy_folder)
+        self.install_agy_hook()
+        installed = self.guard_code()
+        result = self.bridge('agy', '--brief', str(self.brief), '--write', '--branch', 'weaken',
+                             env={'STUB_MODE': 'guardcode', 'STUB_GUARD': 'commit'})
+        self.assertEqual(result.returncode, 1, result.stderr)
+        summary = json.loads((self.job_folder(result) / 'summary.json').read_text())
+        self.assertIn("commits change the guard's code", summary['status'])
+        self.assertEqual(len(summary['commits']), 1)
+        self.assertEqual(self.guard_code(), installed)  # the working tree has the earlier code
+        self.assertIn(b' M .claude/hooks/guard.py',
+                      self.git_out(self.agy_folder, 'status', '--porcelain'))
+        refused = self.bridge('agy', '--brief', str(self.brief))
+        self.assertEqual(refused.returncode, 2, refused.stderr)
+        self.assertIn('uncommitted', refused.stderr)
 
     def test_status_names_what_is_installed(self):
         self.point_agy_at(self.agy_folder)

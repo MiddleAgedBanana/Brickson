@@ -1586,13 +1586,29 @@ settings, date) and summarise it here.
   isolation outside the agent is not built
   ([record](log/2026-11-08-agent-bridge.md), *Known limits*). Since #99,
   an agy job runs only with agy's hook exactly as installed, and if the
-  job changes the hook, the bridge puts it back and the job fails; the
-  guard's own code in agy's folder is not put back
-  ([record](log/2026-11-12-bridge-safety-gaps.md)). A Codex write job
-  cannot commit yet: Codex keeps a worktree's git folder read-only in its
-  sandbox on purpose, and `--add-dir` does not change that (found on the
-  Mac on 2026-11-12); the next bridge pull request settles how its work
-  gets committed (same record, *Follow-ups*).
+  job changes the hook, the bridge puts it back and the job fails
+  ([record](log/2026-11-12-bridge-safety-gaps.md)); the bridge now does
+  the same for the guard's own code in agy's folder (`guard.py` and the
+  `privacy-check.py` it loads, with the bytecode caches beside them
+  removed), however the job ended, even after a stop once agy has
+  exited, and a write job
+  whose commits change that code leaves the folder unclean, so the next
+  agy job is refused until a thread has dealt with them. Codex keeps a
+  worktree's git folder read-only in its sandbox on purpose, so a Codex
+  write job leaves its work uncommitted and the bridge commits it, in one
+  commit, once Codex has exited 0 and the privacy check beside the bridge
+  has passed that commit, made first as an object, with its files,
+  message, author and committer, before the branch moves to it;
+  otherwise nothing is committed and the job says why; the bridge's own
+  git, its privacy check and its jobs run without git's
+  repository-location variables
+  ([record](log/2026-11-12-bridge-commits-and-guard-code.md)).
+  CodeRabbit's finding that #99's record should again list the Mac check
+  under *Not verified* was declined, and CodeRabbit then withdrew it: the
+  check was made before #99 merged (same record, *CodeRabbit's review of
+  the second push*). Neither
+  has been run through a real Codex or agy job on the Mac yet (same
+  record, *Not verified*).
   Jules, Google's cloud coding agent, is no longer one of Brickson's
   agents: Google made it read-only after 2026-11-11 and shuts it down on
   2026-12-31, so the documents no longer name it, and no other agent
