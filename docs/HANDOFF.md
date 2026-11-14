@@ -1586,13 +1586,20 @@ settings, date) and summarise it here.
   isolation outside the agent is not built
   ([record](log/2026-11-08-agent-bridge.md), *Known limits*). Since #99,
   an agy job runs only with agy's hook exactly as installed, and if the
-  job changes the hook, the bridge puts it back and the job fails; the
-  guard's own code in agy's folder is not put back
-  ([record](log/2026-11-12-bridge-safety-gaps.md)). A Codex write job
-  cannot commit yet: Codex keeps a worktree's git folder read-only in its
-  sandbox on purpose, and `--add-dir` does not change that (found on the
-  Mac on 2026-11-12); the next bridge pull request settles how its work
-  gets committed (same record, *Follow-ups*).
+  job changes the hook, the bridge puts it back and the job fails
+  ([record](log/2026-11-12-bridge-safety-gaps.md)). Since the bridge pull
+  request of 2026-11-13, the bridge does the same for the guard's own
+  code in agy's folder (`.claude/hooks/guard.py` and
+  `scripts/privacy-check.py`), however the job ends, and an agy write job
+  that commits a change to it is reported and the next agy job refused
+  until someone reads that commit. Codex keeps a worktree's git folder
+  read-only in its sandbox on purpose (found on the Mac on 2026-11-12), so
+  a Codex write job now leaves its work uncommitted, and once it has
+  finished the bridge commits it, outside the sandbox, as one commit
+  ([record](log/2026-11-13-bridge-commits-codex-work.md)). Neither has
+  run on the Mac yet. The bridge's own git runs no git filter, hook or
+  fsmonitor command, but agy can still change the git settings every
+  worktree shares, unreported (same record, *Follow-ups*).
   Jules, Google's cloud coding agent, is no longer one of Brickson's
   agents: Google made it read-only after 2026-11-11 and shuts it down on
   2026-12-31, so the documents no longer name it, and no other agent

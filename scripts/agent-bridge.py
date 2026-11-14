@@ -31,12 +31,17 @@ Without --write a job is read-only: Codex runs in its read-only sandbox,
 agy is told not to change anything, and any file it changes anyway is
 reported. With --write the job starts on a new branch from origin/main
 (codex/<topic> in a new worktree ~/code/brickson-codex-<topic>, or
-antigravity/<topic> in agy's folder), commits there and never pushes; the
-thread checks the commits and pushes. A write job needs the agent's guard
-hook installed (docs/log/2026-11-08-codex-antigravity-setup.md). Every agy
-job needs agy's hook exactly as installed there, and if a job changes it,
-the bridge puts it back and says so. Never the owner's own checkout, never
-a danger or skip-permissions mode.
+antigravity/<topic> in agy's folder) and never pushes; the thread checks
+the commits and pushes. agy commits there itself. Codex cannot: its
+sandbox keeps a worktree's git folder read-only on purpose, so it leaves
+its work uncommitted, and once it has finished the bridge, outside the
+sandbox, commits every file it changed or added, by name, with its final
+message as the commit message. A write job needs the agent's guard hook
+installed (docs/log/2026-11-08-codex-antigravity-setup.md). Every agy job
+needs agy's hook exactly as installed there; if a job changes the hook or
+the guard's own code in agy's folder, the bridge puts them back when the
+job ends, finished or not, and says so. Never the owner's own checkout,
+never a danger or skip-permissions mode.
 
 Standard library only; Python 3.9. Its tests are scripts/test-agent-bridge.py.
 """
@@ -60,6 +65,9 @@ from pathlib import Path
 ADAPTER = 'brickson_guard_adapter.py'
 # agy's guard hook, in agy's folder (git-ignored there): its settings, then the adapter it runs.
 AGY_GUARD = ('.agents/hooks.json', f'.agents/hooks/{ADAPTER}')
+# The guard's own code in agy's folder, which git tracks: the adapter runs
+# this guard, and the guard runs the privacy check.
+AGY_GUARD_CODE = ('.claude/hooks/guard.py', 'scripts/privacy-check.py')
 AGY_FOLDER = '~/code/brickson-antigravity'
 CODEX_FOLDER = '~/code/brickson-codex-{topic}'
 TOPIC = re.compile(r'^[a-z0-9][a-z0-9-]{0,48}$')
@@ -68,6 +76,48 @@ FOLDERS = {}  # each job folder's handle, opened before its agent starts
 # Where a job's pushes go: nowhere. Git refuses a URL with this scheme.
 NO_PUSH = 'no-push://agent-bridge-jobs-never-publish/'
 TOKENS = ('GH_TOKEN', 'GITHUB_TOKEN', 'GH_ENTERPRISE_TOKEN', 'GITHUB_ENTERPRISE_TOKEN')
+# Variables that make git use another repository, index or object store
+# than the folder it is given (git rev-parse --local-env-vars).
+ELSEWHERE = ('GIT_DIR', 'GIT_WORK_TREE', 'GIT_IMPLICIT_WORK_TREE', 'GIT_INDEX_FILE',
+             'GIT_OBJECT_DIRECTORY', 'GIT_ALTERNATE_OBJECT_DIRECTORIES', 'GIT_COMMON_DIR',
+             'GIT_GRAFT_FILE', 'GIT_SHALLOW_FILE', 'GIT_PREFIX', 'GIT_NAMESPACE')
+# What `git -c` passes on to the git commands it starts. It outranks every
+# other git setting, the bridge's own included, so one inherited here could
+# turn back on a filter the bridge turns off.
+OUTRANKING = ('GIT_CONFIG_PARAMETERS',)
+# What points `git config` alone at another settings file. The bridge reads
+# git's settings with `git config` (the filters it turns off, a push URL it
+# refuses), so with this set it would read one file while `git add` and the
+# rest of git read another.
+CONFIG_ONLY = ('GIT_CONFIG',)
+
+
+def own_environment():
+    """This environment, without the thread's GitHub tokens, without
+    anything that points git at another repository or index, and without
+    settings that outrank the bridge's own or that git reads unevenly. git
+    uses GIT_INDEX_FILE, GIT_DIR and the like over the folder it is given, so
+    a thread that ran the bridge with one set would have it read, stage and
+    commit somewhere else; GIT_CONFIG_PARAMETERS outranks the settings the
+    bridge adds, so one that named a filter command would have the bridge's
+    commit run it; and GIT_CONFIG would have the bridge look for filters and
+    push URLs in a file the rest of git does not read, find none, and turn
+    no filter off and refuse no push URL (CodeRabbit, on #108)."""
+    return {key: value for key, value in os.environ.items()
+            if key not in TOKENS and key not in ELSEWHERE and key not in OUTRANKING
+            and key not in CONFIG_ONLY}
+
+
+def add_settings(env, entries):
+    """Add git settings to env, after any it already gives git."""
+    try:
+        start = int(env.get('GIT_CONFIG_COUNT') or 0)
+    except ValueError:
+        start = 0
+    for number, (key, value) in enumerate(entries, start):
+        env[f'GIT_CONFIG_KEY_{number}'] = key
+        env[f'GIT_CONFIG_VALUE_{number}'] = value
+    env['GIT_CONFIG_COUNT'] = str(start + len(entries))
 
 
 def job_environment(out):
@@ -79,18 +129,11 @@ def job_environment(out):
     sandbox: an agent that unsets these variables can still push, and an
     agent's GitHub tool with its own sign-in is not covered. Isolation
     outside the agent's process is not built."""
-    env = {key: value for key, value in os.environ.items() if key not in TOKENS}
+    env = own_environment()
     entries = [('remote.origin.pushurl', NO_PUSH)]
     entries += [(f'url.{NO_PUSH}.pushInsteadOf', prefix)
                 for prefix in ('https://', 'http://', 'ssh://', 'git@')]
-    try:
-        start = int(env.get('GIT_CONFIG_COUNT') or 0)
-    except ValueError:
-        start = 0
-    for number, (key, value) in enumerate(entries, start):
-        env[f'GIT_CONFIG_KEY_{number}'] = key
-        env[f'GIT_CONFIG_VALUE_{number}'] = value
-    env['GIT_CONFIG_COUNT'] = str(start + len(entries))
+    add_settings(env, entries)
     signed_out = out / 'gh-signed-out'
     signed_out.mkdir(exist_ok=True)
     env['GH_CONFIG_DIR'] = str(signed_out)
@@ -126,22 +169,63 @@ WRITE = """- You are on branch {branch}, made from the latest origin/main. Commi
   thread checks your commits, then pushes them. Write a failing test first
   where the change has behaviour, and add one docs/log/ record as
   docs/log/README.md describes."""
+CODEX_WRITE = """- You are on branch {branch}, made from the latest origin/main.
+  Leave your work uncommitted: your sandbox keeps git's own folder
+  read-only, so `git add` and `git commit` fail here. Once you have
+  finished, the bridge commits every file you changed or added, as one
+  commit, with your final message as its message, so begin that message
+  with one line under 72 characters that says what the change does, then a
+  blank line. Do not push or open a pull request: the Claude thread checks
+  the commit, then pushes it. Write a failing test first where the change
+  has behaviour, and add one docs/log/ record as docs/log/README.md
+  describes."""
 
 
 class Stop(Exception):
     """The job cannot run as asked; the message says why."""
 
 
-def git(folder, *args, check=True, strip=True, raw=False):
-    """The bridge's own git, without the thread's GitHub tokens and with
-    core.fsmonitor and git hooks off: an agent can change the checkout's
-    git settings, and a command it names there must never run outside its
-    sandbox or with what the agent was not given. With raw, git's output
-    comes back as bytes, untouched (file names, which need not be text)."""
-    env = {key: value for key, value in os.environ.items() if key not in TOKENS}
+def without_filters(folder, env):
+    """Settings that turn off every filter git's settings define. A filter
+    runs its command on a file's contents (clean when git reads a file,
+    smudge when it writes one, process for both) wherever the attributes
+    name it. agy, which has no sandbox, can define one in the settings
+    every worktree shares, and a Codex job can name it in a .gitattributes
+    of its own, so the bridge's git, outside both, would run it
+    (CodeRabbit, on #108). An empty command makes git read and write the
+    contents as they are, and a filter no longer required cannot fail.
+    git config ends 1 when no filter is set; any other failure (a
+    GIT_CONFIG_COUNT that is not a number, say) stops the job, since an
+    empty answer would turn no filter off (CodeRabbit, on #108)."""
+    found = subprocess.run(['git', '-C', str(folder), 'config', '-z', '--name-only',
+                            '--get-regexp', r'^filter\.'],
+                           capture_output=True, stdin=subprocess.DEVNULL, env=env)
+    if found.returncode not in (0, 1):
+        error = found.stderr.decode('utf-8', 'replace').strip()
+        raise Stop(f'could not read which git filters to turn off in {folder}: {error}')
+    drivers = set()
+    for name in os.fsdecode(found.stdout).split('\0'):
+        rest = name[len('filter.'):]
+        if name.startswith('filter.') and '.' in rest:
+            drivers.add(rest.rsplit('.', 1)[0])
+    return [(f'filter.{driver}.{key}', value) for driver in sorted(drivers)
+            for key, value in (('clean', ''), ('smudge', ''), ('process', ''),
+                               ('required', 'false'))]
+
+
+def git(folder, *args, check=True, strip=True, raw=False, given=None):
+    """The bridge's own git, in its own environment (own_environment), with
+    core.fsmonitor, git hooks and every filter off: an agent can change the
+    checkout's git settings, and a command it names there must never run
+    outside its sandbox or with what the agent was not given. With raw,
+    git's output comes back as bytes, untouched (file names, which need not
+    be text). given is text for git's stdin, which is otherwise closed."""
+    env = own_environment()
+    add_settings(env, without_filters(folder, env))
+    stdin = {'input': given} if given is not None else {'stdin': subprocess.DEVNULL}
     result = subprocess.run(['git', '-c', 'core.fsmonitor=false', '-c', 'core.hooksPath=/dev/null',
                              '-C', str(folder), *args],
-                            capture_output=True, text=not raw, stdin=subprocess.DEVNULL, env=env)
+                            capture_output=True, text=not raw, env=env, **stdin)
     if check and result.returncode != 0:
         error = result.stderr.decode('utf-8', 'replace') if raw else result.stderr
         raise Stop(f'git {" ".join(args)} failed in {folder}: {error.strip()}')
@@ -321,27 +405,78 @@ def agy_guard_snapshot(checkout):
     return files
 
 
-def restore_agy_guard(checkout, saved):
-    """After an agy job, put back any guard hook file the job changed:
-    the file is git-ignored, so git would not show it, and the next agy
-    session would run with whatever the job left. Returns what happened
-    for summary.json, and the job's status when the guard was changed."""
-    changed = [name for name in AGY_GUARD if read_plain(checkout, name) != saved[name]]
+def put_back(checkout, saved, what, remedy):
+    """After an agy job, put back any of the files in saved (name: the
+    (bytes, mode) read before the job) that the job changed, so the next
+    agy session never runs with whatever the job left. Returns what
+    happened for summary.json, and the job's status when one was changed."""
+    changed = [name for name in saved if read_plain(checkout, name) != saved[name]]
     if not changed:
         return 'unchanged', None
     names = ', '.join(changed)
     try:
         for name in changed:
             put_plain(checkout, name, *saved[name])
-        if read_agy_guard(checkout) != saved:
+        if any(read_plain(checkout, name) != saved[name] for name in saved):
             raise OSError('it still differs after being written')
     except Exception as error:  # whatever stops it, the job still ends with done
         return (f'changed by the job ({names}); not put back: {error}',
-                f'changed its own guard hook ({names}), and the bridge could not put it back '
-                f'({error}): agy may run unguarded in {checkout} until the hook is reinstalled '
-                'as docs/log/2026-11-08-codex-antigravity-setup.md shows')
+                f'changed {what} ({names}), and the bridge could not put it back '
+                f'({error}): agy may run unguarded in {checkout} until {remedy}')
     return (f'changed by the job ({names}) and put back',
-            f'changed its own guard hook ({names}); the bridge put it back')
+            f'changed {what} ({names}); the bridge put it back')
+
+
+def restore_agy_guard(checkout, saved):
+    """agy's guard hook files are git-ignored, so git would not show a
+    change to them."""
+    return put_back(checkout, saved, 'its own guard hook',
+                    'the hook is reinstalled as docs/log/2026-11-08-codex-antigravity-setup.md shows')
+
+
+def guard_code_snapshot(checkout):
+    """The guard's own code in agy's folder, kept before a job so the
+    bridge can put it back after it. A branch can hold it as a link, which
+    putting it back would replace, so a job starts only with plain files."""
+    files = {name: read_plain(checkout, name) for name in AGY_GUARD_CODE}
+    missing = [name for name, read in files.items() if read is None]
+    if missing:
+        raise Stop(f'{", ".join(missing)} in {checkout} is missing, or is a link or not a plain '
+                   'file; check out the guard from origin/main before handing agy a job')
+    return files
+
+
+def restore_guard_code(checkout, saved, head):
+    """After an agy job, put back the guard's own code as it was before the
+    job. A read-only job that changed it would otherwise leave the folder
+    refused until someone cleaned it, and a write job could commit a weaker
+    guard on its branch, which stays checked out here for the next job. The
+    bridge never rewrites the agent's commits: the folder keeps the guard as
+    it was, so it differs from such a commit, and the next job is refused
+    until someone has read that commit."""
+    entry, problem = put_back(checkout, saved, "the guard's own code",
+                              'the guard is checked out again from origin/main')
+    try:
+        committed = git(checkout, 'diff', '--name-only', head, 'HEAD', '--', *AGY_GUARD_CODE,
+                        check=False) if head else ''
+    except Stop as error:  # a job that broke git's settings still ends with done
+        if entry == 'unchanged':
+            entry = 'unchanged in the folder'
+        entry += f'; what the job committed could not be read ({error})'
+        problem = '; '.join(filter(None, [problem, (
+            "the bridge could not check whether the job committed a change to the guard's own "
+            f'code ({error}); read its commits before the next agy job')]))
+        return entry, problem
+    if committed:
+        names = ', '.join(committed.splitlines())
+        if entry == 'unchanged':
+            entry = 'unchanged in the folder'
+        entry += f'; committed on its branch ({names})'
+        problem = '; '.join(filter(None, [problem, (
+            f"committed a change to the guard's own code ({names}) on its branch; the folder "
+            'keeps the guard as it was before the job, so the next agy job is refused until '
+            'that commit is read and the folder is clean')]))
+    return entry, problem
 
 
 def agy_project_folders():
@@ -540,13 +675,23 @@ def run(command, cwd, out, timeout_minutes):
 
 def finish(out, checkout, before, run_result, extra, problem=None):
     """Write summary.json, then `done` last, with the final verdict, so a
-    reader that waits for `done` never sees a verdict that later changes."""
+    reader that waits for `done` never sees a verdict that later changes.
+    A job can leave git unable to read its own settings (agy, with no
+    sandbox, can break the settings every worktree shares), and the
+    bridge's git then stops rather than run with a filter on; the job
+    still ends with done, saying what could not be read, and what it could
+    not read is null (CodeRabbit, on #108)."""
     code, seconds, interrupted = run_result
-    after = git_state(checkout)
-    commits = []
-    if before['head'] and after['head'] and before['head'] != after['head']:
-        commits = git(checkout, 'log', '--format=%h %s', f'{before["head"]}..{after["head"]}',
-                      check=False).splitlines()
+    unread = None
+    try:
+        after = git_state(checkout)
+        commits = []
+        if before['head'] and after['head'] and before['head'] != after['head']:
+            commits = git(checkout, 'log', '--format=%h %s', f'{before["head"]}..{after["head"]}',
+                          check=False).splitlines()
+    except Stop as error:
+        after, commits = {'branch': None, 'head': None, 'changed': None, 'contents': None}, None
+        unread = f'the bridge could not read the checkout after the job ({error})'
     status = 'finished' if code == 0 else ('timed out' if code is None else f'failed (exit {code})')
     summary = {'status': status, 'exit_code': code, 'seconds': seconds,
                'branch': after['branch'], 'commits': commits,
@@ -554,11 +699,12 @@ def finish(out, checkout, before, run_result, extra, problem=None):
     # A checkout moved to another commit or branch changes files without
     # leaving a changed file or a new commit behind.
     moved = before['head'] != after['head'] or before['branch'] != after['branch']
-    if extra.get('read_only') and (moved or after['changed'] != before['changed']
-                                   or after['contents'] != before['contents']):
+    if extra.get('read_only') and not unread and (moved or after['changed'] != before['changed']
+                                                  or after['contents'] != before['contents']):
         summary['status'] = 'changed files in a read-only job'
-    if problem:
-        summary['status'] = problem
+    problem = '; '.join(filter(None, [problem, unread]))
+    if problem:  # a job that did not finish still says so first
+        summary['status'] = problem if status == 'finished' else f'{status}; {problem}'
     if interrupted:
         summary['status'] = 'stopped: the bridge was told to stop, and stopped the agent'
     write_in(out, 'summary.json', json.dumps(summary, indent=2) + '\n')
@@ -570,10 +716,47 @@ def write_command(out, command, cwd):
     write_in(out, 'command.json', json.dumps({'command': command, 'cwd': str(cwd)}, indent=2) + '\n')
 
 
-def brief_text(args, folder, branch):
+def brief_text(args, folder, branch, write=WRITE):
     job = Path(os.path.expanduser(args.brief)).read_text()
-    mode = WRITE.format(branch=branch) if args.write else READ_ONLY
+    mode = write.format(branch=branch) if args.write else READ_ONLY
     return PREAMBLE.format(folder=folder, mode=mode) + job.strip() + '\n'
+
+
+def commit_codex_work(checkout, out, branch, run_result, answer):
+    """Commit a Codex write job's work, outside Codex's sandbox, which keeps
+    a worktree's git folder read-only (docs/log/2026-11-12-bridge-safety-gaps.md,
+    *Follow-ups*). Only a job that finished: one that failed, timed out or
+    was stopped leaves its changes uncommitted for the thread to read. The
+    checkout was clean when the job began, so every changed or new file
+    outside build/ is the job's; each is staged by name, read literally,
+    never as a pattern. The commit is unsigned, as nobody is there to
+    answer a signing prompt, and nothing is pushed. Returns what happened
+    for summary.json, and the job's status if the commit failed."""
+    code, _seconds, interrupted = run_result
+    if code != 0 or interrupted:
+        return 'not made: the job did not finish, so its changes are left uncommitted', None
+    try:
+        paths = [path for _line, path in changed_files(checkout)]
+    except Stop as error:  # the job still ends with done (finish)
+        return (f'not made: {error}',
+                f'finished, but the bridge could not read its changes ({error}); they are left '
+                'uncommitted')
+    if not paths:
+        return 'nothing to commit', None
+    message = (answer.strip() or f'Codex\'s work on {branch}') + (
+        f'\n\nCommitted by scripts/agent-bridge.py, outside Codex\'s sandbox, for job '
+        f'{out.name}.\n')
+    try:
+        git(checkout, '--literal-pathspecs', 'add', '--', *paths)
+        git(checkout, 'commit', '-q', '--no-gpg-sign', '-F', '-', given=message)
+    except Stop as error:
+        return (f'not made: {error}',
+                f'finished, but the bridge could not commit its work ({error}); its changes are '
+                'left staged, not committed')
+    try:
+        return f'made {git(checkout, "rev-parse", "--short", "HEAD")}', None
+    except Stop as error:
+        return f'made, but its name could not be read ({error})', None
 
 
 def codex_review(args):
@@ -597,7 +780,14 @@ def codex_job(args):
         if not folder.exists():
             source = brickson_checkout(os.getcwd())
             git(source, 'fetch', '-q', 'origin', 'main')
-            git(source, 'worktree', 'add', '-q', '-b', branch, '--no-track', str(folder), 'origin/main')
+            # Made empty, then filled by the bridge's own git there: settings
+            # can switch a filter on for the new branch or worktree alone
+            # (includeIf), which the bridge sees only from inside it, and
+            # `worktree add` would fill it with that filter on (CodeRabbit,
+            # on #108).
+            git(source, 'worktree', 'add', '-q', '--no-checkout', '-b', branch, '--no-track',
+                str(folder), 'origin/main')
+            git(folder, 'reset', '-q', '--hard')
             checkout = brickson_checkout(folder)
             hold_checkout(checkout)
         else:
@@ -610,7 +800,7 @@ def codex_job(args):
         checkout = brickson_checkout(args.worktree or os.getcwd())
         hold_checkout(checkout)
     out = job_folder(checkout, 'codex', 'write' if args.write else 'read')
-    prompt = brief_text(args, checkout, branch)
+    prompt = brief_text(args, checkout, branch, CODEX_WRITE)
     write_in(out, 'brief.md', prompt)
     # Codex writes its final message itself, through whatever is at the
     # path it is given, so the path is a fresh folder in the checkout's
@@ -625,13 +815,17 @@ def codex_job(args):
         write_command(out, command[:-1] + ['<brief.md>'], checkout)
         before = git_state(checkout)
         result = run(command, checkout, out, args.timeout)
-        write_in(out, 'result.md', read_answer(answer / 'result.md'))
+        final = read_answer(answer / 'result.md')
+        write_in(out, 'result.md', final)
     finally:
         shutil.rmtree(answer, ignore_errors=True)
     refusals = [line.strip() for line in (out / 'stderr.txt').read_text().splitlines()
                 if 'blocked by PreToolUse hook' in line]
-    return out, finish(out, checkout, before, result,
-                       {'agent': 'codex', 'read_only': not args.write, 'refusals': refusals})
+    extra = {'agent': 'codex', 'read_only': not args.write, 'refusals': refusals}
+    problem = None
+    if args.write:
+        extra['bridge_commit'], problem = commit_codex_work(checkout, out, branch, result, final)
+    return out, finish(out, checkout, before, result, extra, problem)
 
 
 def agy_job(args):
@@ -647,6 +841,7 @@ def agy_job(args):
     if args.write:
         branch = f'antigravity/{args.branch}'
         start_branch(checkout, branch)
+    code = guard_code_snapshot(checkout)
     out = job_folder(checkout, 'agy', 'write' if args.write else 'read')
     prompt = brief_text(args, checkout, branch)
     write_in(out, 'brief.md', prompt)
@@ -656,8 +851,11 @@ def agy_job(args):
         command += ['--model', args.model]
     write_command(out, [part if part != prompt else '<brief.md>' for part in command], checkout)
     before = git_state(checkout)
-    result = run(command, checkout, out, args.timeout + 1)
-    guard_hook, guard_problem = restore_agy_guard(checkout, guard)
+    try:
+        result = run(command, checkout, out, args.timeout + 1)
+    finally:  # put back what guards agy, however the job ended
+        guard_hook, guard_problem = restore_agy_guard(checkout, guard)
+        guard_code, code_problem = restore_guard_code(checkout, code, before['head'])
     refusals, steps, response, ran_in, status = [], 0, '', None, None
     for line in (out / 'output.txt').read_text().splitlines():
         try:
@@ -679,8 +877,8 @@ def agy_job(args):
     write_in(out, 'result.md', response)
     extra = {'agent': 'agy', 'read_only': not args.write, 'refusals': refusals,
              'tool_steps': steps, 'agy_status': status, 'ran_in': ran_in,
-             'guard_hook': guard_hook}
-    problems = [guard_problem] if guard_problem else []
+             'guard_hook': guard_hook, 'guard_code': guard_code}
+    problems = [problem for problem in (guard_problem, code_problem) if problem]
     if ran_in and Path(ran_in).resolve() != checkout:
         problems.append(f'ran in the wrong folder ({ran_in})')
     return out, finish(out, checkout, before, result, extra, '; '.join(problems) or None)

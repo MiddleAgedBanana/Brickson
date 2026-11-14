@@ -21,7 +21,9 @@ from pathlib import Path
 # An agent that runs the checks inside a bridge job inherits the job's
 # no-push settings; this file's throwaway origins need plain git.
 for key in [key for key in os.environ if key.startswith(('GIT_CONFIG_KEY_', 'GIT_CONFIG_VALUE_'))
-            or key in ('GIT_CONFIG_COUNT', 'GIT_CONFIG_PARAMETERS')]:
+            or key in ('GIT_CONFIG_COUNT', 'GIT_CONFIG_PARAMETERS', 'GIT_CONFIG', 'GIT_DIR', 'GIT_WORK_TREE',
+                       'GIT_INDEX_FILE', 'GIT_OBJECT_DIRECTORY', 'GIT_COMMON_DIR',
+                       'GIT_ALTERNATE_OBJECT_DIRECTORIES')]:
     del os.environ[key]
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -117,18 +119,71 @@ if 'unhook' in mode:
     elif how == 'folder':  # a folder where the file was, which cannot be put back
         os.remove(hooks)
         os.makedirs(os.path.join(hooks, 'inside'))
+if 'edit' in mode:
+    # A write job's work, left uncommitted as Codex's sandbox leaves it: a
+    # changed file, a deleted one and new ones, one of them named like a
+    # pathspec that would leave AGENTS.md out ("magic" after a colon).
+    with open('AGENTS.md', 'w') as tracked:
+        tracked.write('changed by the agent\n')
+    os.remove(os.path.join('docs', 'old.md'))
+    os.makedirs('notes', exist_ok=True)
+    for name in (os.path.join('notes', 'new note.md'), 'r\u00e9sum\u00e9.md', ':!AGENTS.md'):
+        with open(name, 'w') as new:
+            new.write('new\n')
+    os.symlink('AGENTS.md', os.path.join('notes', 'link'))
+    with open(os.path.join('notes', 'run.sh'), 'w') as script:
+        script.write('#!/bin/sh\n')
+    os.chmod(os.path.join('notes', 'run.sh'), 0o755)
+if 'filter' in mode:
+    # Name a clean filter for the new files, which the shared git settings
+    # define (an unsandboxed agent could have set it there).
+    with open('.gitattributes', 'w') as attributes:
+        attributes.write('* filter=mark\n')
+if 'unguard' in mode:
+    # Weaken the guard's own code in agy's folder, which git tracks: the
+    # adapter runs this guard, and the guard runs the privacy check.
+    import shutil, subprocess
+    how, outside = os.environ['STUB_UNGUARD'], os.environ.get('STUB_OUTSIDE', '')
+    guard = os.path.join('.claude', 'hooks', 'guard.py')
+    check = os.path.join('scripts', 'privacy-check.py')
+    if how in ('rewrite', 'commit'):
+        for name in (guard, check):
+            with open(name, 'w') as file:
+                file.write('print("allow everything")\n')
+        if how == 'commit':  # a write job keeps it on its branch
+            subprocess.run(['git', 'add', guard, check], check=True, capture_output=True)
+            subprocess.run(['git', 'commit', '-q', '-m', 'Weaken'], check=True, capture_output=True)
+    elif how == 'link':  # a link to a file outside the folder
+        with open(os.path.join(outside, 'guard.py'), 'w') as file:
+            file.write('print("outside")\n')
+        os.remove(guard)
+        os.symlink(os.path.join(outside, 'guard.py'), guard)
+    elif how == 'remove':
+        shutil.rmtree('.claude')
+        os.remove(check)
+if 'badconfig' in mode:
+    # Break the git settings every worktree shares, as an agent with no
+    # sandbox could (or another job while this one runs), so every git
+    # command fails from here on.
+    import subprocess
+    shared = subprocess.run(['git', 'rev-parse', '--path-format=absolute', '--git-common-dir'],
+                            check=True, capture_output=True, text=True).stdout.strip()
+    with open(os.path.join(shared, 'config'), 'a') as config:
+        config.write('[broken\n')
 if entry['tool'] == 'codex':
     if args and args[0] == 'review':
         print('No P0 or P1 findings.')
         sys.exit(0)
     if '-o' in args:
         with open(args[args.index('-o') + 1], 'w') as out:
-            out.write('codex final answer\n')
+            out.write(os.environ.get('STUB_ANSWER', 'codex final answer\n'))
     print(json.dumps({'type': 'thread.started'}))
     if 'blocked' in mode:
         print('ERROR codex_core::tools::router: error=Command blocked by PreToolUse hook: '
               'Stage only your own changes', file=sys.stderr)
-    sys.exit(0)
+    if 'hang' in mode:
+        time.sleep(20)
+    sys.exit(3 if 'fail' in mode else 0)
 if args and args[0] == '--version':
     print('stub 1.0')
     sys.exit(0)
@@ -141,12 +196,23 @@ for event in [{'event': 'init', 'init': {'cwd': cwd}},
                'tool call denied by pre-tool hook: Stage only your own changes'}}}},
               {'event': 'result', 'result': {'status': 'SUCCESS', 'response': 'agy final answer'}}]:
     print(json.dumps(event))
+if 'fail' in mode:
+    sys.exit(3)
 '''
 
 
 def git(folder, *args):
     subprocess.run(['git', '-C', str(folder), *args], check=True, capture_output=True,
                    stdin=subprocess.DEVNULL)
+
+
+def git_out(folder, *args):
+    return subprocess.run(['git', '-C', str(folder), *args], check=True, capture_output=True,
+                          text=True, stdin=subprocess.DEVNULL).stdout
+
+
+# The guard's own code in agy's folder, which git tracks (agent-bridge.py's AGY_GUARD_CODE).
+GUARD_CODE = ('.claude/hooks/guard.py', 'scripts/privacy-check.py')
 
 
 class BridgeTests(unittest.TestCase):
@@ -174,12 +240,12 @@ class BridgeTests(unittest.TestCase):
         origin, seed = base / 'origin.git', base / 'seed'
         subprocess.run(['git', 'init', '-q', '--bare', '-b', 'main', str(origin)], check=True)
         subprocess.run(['git', 'init', '-q', '-b', 'main', str(seed)], check=True)
-        for part in ('.claude/hooks/guard.py', 'scripts/privacy-check.py', 'AGENTS.md'):
+        for part in ('.claude/hooks/guard.py', 'scripts/privacy-check.py', 'AGENTS.md', 'docs/old.md'):
             (seed / part).parent.mkdir(parents=True, exist_ok=True)
             (seed / part).write_text('# stand-in\n')
         (seed / '.gitignore').write_text('build/\n.agents/\n')
         env = {**os.environ, **self.env}
-        for args in (['add', '.claude', 'scripts', 'AGENTS.md', '.gitignore'],
+        for args in (['add', '.claude', 'scripts', 'AGENTS.md', 'docs', '.gitignore'],
                      ['commit', '-q', '-m', 'start'], ['remote', 'add', 'origin', str(origin)],
                      ['push', '-q', 'origin', 'main']):
             subprocess.run(['git', '-C', str(seed), *args], check=True, env=env, capture_output=True)
@@ -298,9 +364,241 @@ class BridgeTests(unittest.TestCase):
         self.assertEqual(Path(call['cwd']).resolve(), folder)
         self.assertIn('branch codex/tests', call['argv'][-1])
         self.assertIn('Do not push', call['argv'][-1])
+        # Codex's sandbox keeps git's folder read-only, so it is not asked to commit.
+        self.assertIn('Leave your work uncommitted', call['argv'][-1])
+        self.assertNotIn('Commit your', call['argv'][-1])
         branch = subprocess.run(['git', '-C', str(folder), 'branch', '--show-current'],
                                 capture_output=True, text=True).stdout.strip()
         self.assertEqual(branch, 'codex/tests')
+
+    def test_the_bridge_commits_a_codex_write_jobs_work_outside_the_sandbox(self):
+        # Codex's workspace-write sandbox keeps a worktree's git folder
+        # read-only, so a Codex write job could not commit (found on the Mac
+        # on 2026-11-12, docs/log/2026-11-12-bridge-safety-gaps.md). The
+        # bridge commits what the finished job changed, by name, with the
+        # agent's final message as the commit message.
+        self.install_codex_hook()
+        result = self.bridge('codex', '--brief', str(self.brief), '--write', '--branch', 'tests',
+                             env={'STUB_MODE': 'edit',
+                                  'STUB_ANSWER': 'Add two notes\n\nWhat I did and checked.\n'})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        folder = self.home / 'code' / 'brickson-codex-tests'
+        summary = json.loads((self.job_folder(result) / 'summary.json').read_text())
+        self.assertEqual(summary['status'], 'finished')
+        self.assertEqual(summary['changed_files'], [])
+        self.assertEqual(len(summary['commits']), 1, summary['commits'])
+        self.assertTrue(summary['bridge_commit'].startswith('made '), summary['bridge_commit'])
+        self.assertEqual(git_out(folder, 'status', '--porcelain', '--untracked-files=all'), '')
+        self.assertEqual(git_out(folder, 'rev-parse', 'HEAD~1'), git_out(folder, 'rev-parse', 'origin/main'))
+        self.assertEqual(git_out(folder, 'branch', '--show-current').strip(), 'codex/tests')
+        message = git_out(folder, 'log', '-1', '--format=%B')
+        self.assertTrue(message.startswith('Add two notes\n\nWhat I did and checked.\n'), message)
+        self.assertIn('agent-bridge.py', message)
+        fields = git_out(folder, 'diff-tree', '-r', '-z', '--no-commit-id', '--name-status',
+                         'HEAD').split('\0')
+        changes = dict(zip(fields[1::2], fields[0::2]))
+        self.assertEqual(changes, {'AGENTS.md': 'M', 'docs/old.md': 'D', 'notes/new note.md': 'A',
+                                   'r\u00e9sum\u00e9.md': 'A', ':!AGENTS.md': 'A', 'notes/link': 'A',
+                                   'notes/run.sh': 'A'})
+        modes = {line.split('\t')[1]: line.split()[0] for line in
+                 git_out(folder, 'ls-tree', '-r', 'HEAD', 'notes').splitlines()}
+        self.assertEqual(modes, {'notes/link': '120000', 'notes/new note.md': '100644',
+                                 'notes/run.sh': '100755'})
+        self.assertEqual(git_out(folder, 'cat-file', 'blob', 'HEAD:notes/link'), 'AGENTS.md')
+
+    def test_the_bridges_commit_runs_no_filter_the_job_names(self):
+        # A clean filter runs whatever command the git settings give it. An
+        # unsandboxed agent can define one in the git settings every
+        # worktree shares, and a Codex job can select it for its files, so
+        # the bridge's commit, outside the sandbox, must not run it
+        # (CodeRabbit, on #108).
+        self.install_codex_hook()
+        outside = Path(self.temp.name) / 'outside'
+        outside.mkdir()
+        git(self.owner, 'config', 'filter.mark.clean', f"touch '{outside}/ran'; cat")
+        result = self.bridge('codex', '--brief', str(self.brief), '--write', '--branch', 'tests',
+                             env={'STUB_MODE': 'edit filter'})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertFalse((outside / 'ran').exists())
+        summary = json.loads((self.job_folder(result) / 'summary.json').read_text())
+        self.assertEqual(summary['changed_files'], [])
+        folder = self.home / 'code' / 'brickson-codex-tests'
+        self.assertEqual(git_out(folder, 'cat-file', 'blob', 'HEAD:AGENTS.md'),
+                         'changed by the agent\n')
+        self.assertEqual(git_out(folder, 'cat-file', 'blob', 'HEAD:notes/new note.md'), 'new\n')
+
+    def test_the_bridges_commit_runs_no_filter_its_environment_names(self):
+        # GIT_CONFIG_PARAMETERS (what `git -c` passes on) outranks every
+        # other git setting, the bridge's own filter switches included, so a
+        # thread that runs the bridge with one naming a filter command would
+        # have the bridge's commit run it. GIT_CONFIG points `git config`
+        # alone at another file, so the bridge would look for filters there,
+        # find none and turn none off, while its `git add` still ran the one
+        # the shared settings define (CodeRabbit, on #108).
+        self.install_codex_hook()
+        outside = Path(self.temp.name) / 'outside'
+        outside.mkdir()
+        empty = Path(self.temp.name) / 'empty.gitconfig'
+        empty.write_text('')
+        for topic, key in (('cleans', 'clean'), ('processes', 'process'), ('hides', 'hidden')):
+            with self.subTest(key):
+                mark = outside / f'ran-{key}'
+                if key == 'hidden':
+                    git(self.owner, 'config', 'filter.mark.clean', f"touch '{mark}'; cat")
+                    settings = {'GIT_CONFIG': str(empty)}
+                else:
+                    settings = {'GIT_CONFIG_PARAMETERS': f"'filter.mark.{key}=touch {mark}; cat'"}
+                result = self.bridge(
+                    'codex', '--brief', str(self.brief), '--write', '--branch', topic,
+                    env={'STUB_MODE': 'edit filter', **settings})
+                self.assertEqual(result.returncode, 0, result.stderr)
+                self.assertFalse(mark.exists())
+                folder = self.home / 'code' / f'brickson-codex-{topic}'
+                self.assertEqual(git_out(folder, 'cat-file', 'blob', 'HEAD:AGENTS.md'),
+                                 'changed by the agent\n')
+                self.assertEqual(git_out(folder, 'status', '--porcelain', '--untracked-files=all'), '')
+
+    def test_a_filter_set_for_the_jobs_branch_never_runs_while_its_worktree_is_made(self):
+        # The shared git settings can define a filter for codex/ branches
+        # only (includeIf "onbranch:"). Where the bridge starts it is off,
+        # so the bridge's settings did not name it, but `git worktree add`
+        # filled the new worktree on its codex/ branch, where it is on, and
+        # ran its smudge command outside any sandbox (CodeRabbit, on #108).
+        self.install_codex_hook()
+        outside = Path(self.temp.name) / 'outside'
+        outside.mkdir()
+        mark = outside / 'ran'
+        included = Path(self.temp.name) / 'codex-branches.gitconfig'
+        included.write_text(f"[filter \"mark\"]\n\tsmudge = touch '{mark}'; cat\n"
+                            f"\tclean = touch '{mark}'; cat\n")
+        git(self.owner, 'config', 'includeIf.onbranch:codex/.path', str(included))
+        (self.owner / '.git' / 'info').mkdir(exist_ok=True)
+        (self.owner / '.git' / 'info' / 'attributes').write_text('* filter=mark\n')
+        result = self.bridge('codex', '--brief', str(self.brief), '--write', '--branch', 'tests',
+                             env={'STUB_MODE': 'edit'})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        # Checked before any git of these tests runs there, since that git
+        # would run the filter itself.
+        self.assertFalse(mark.exists())
+        folder = self.home / 'code' / 'brickson-codex-tests'
+        self.assertEqual(git_out(folder, 'cat-file', 'blob', 'HEAD:AGENTS.md'),
+                         'changed by the agent\n')
+        self.assertEqual(git_out(folder, 'cat-file', 'blob', 'HEAD:.gitignore'), 'build/\n.agents/\n')
+
+    def test_the_bridge_stops_when_it_cannot_read_which_filters_to_turn_off(self):
+        # With a GIT_CONFIG_COUNT that is not a number, `git config` fails
+        # and prints nothing; the bridge read that as no filters, then put
+        # a good count in its place, so its git ran the filter the shared
+        # settings define (CodeRabbit, on #108).
+        self.install_codex_hook()
+        outside = Path(self.temp.name) / 'outside'
+        outside.mkdir()
+        mark = outside / 'ran'
+        git(self.owner, 'config', 'filter.mark.clean', f"touch '{mark}'; cat")
+        result = self.bridge('codex', '--brief', str(self.brief), '--write', '--branch', 'tests',
+                             env={'STUB_MODE': 'edit filter', 'GIT_CONFIG_COUNT': 'many'})
+        self.assertEqual(result.returncode, 2, result.stderr)
+        self.assertIn('filters', result.stderr)
+        self.assertFalse(mark.exists())
+        self.assertEqual(self.calls(), [])
+
+    def test_a_job_that_leaves_git_unable_to_read_its_settings_still_ends_with_done(self):
+        # The bridge's git stops when it cannot read which filters to turn
+        # off, so a job that breaks the git settings every worktree shares
+        # left no summary.json or done, and a caller waiting for done
+        # waited forever (CodeRabbit, on #108). The job now ends with both,
+        # saying what could not be read.
+        self.point_agy_at(self.agy_folder)
+        self.install_agy_hook()
+        self.install_codex_hook()
+        shared = Path(git_out(self.owner, 'rev-parse', '--path-format=absolute',
+                              '--git-common-dir').strip()) / 'config'
+        good = shared.read_bytes()
+        committed = {name: (self.agy_folder / name).read_bytes() for name in GUARD_CODE}
+        for agent, args, mode in (('agy', [], 'badconfig'),
+                                  ('codex', ['--write', '--branch', 'tests'], 'edit badconfig')):
+            with self.subTest(agent):
+                result = self.bridge(agent, '--brief', str(self.brief), *args,
+                                     env={'STUB_MODE': mode})
+                broken = shared.read_bytes()
+                shared.write_bytes(good)  # so the next case, and these checks, can read git
+                self.assertNotEqual(broken, good)  # the agent did break it
+                self.assertEqual(result.returncode, 1, result.stderr)
+                out = self.job_folder(result)
+                summary = json.loads((out / 'summary.json').read_text())
+                self.assertIn('could not read the checkout after the job', summary['status'])
+                self.assertIn('could not read which git filters to turn off', summary['status'])
+                self.assertEqual((out / 'done').read_text(), summary['status'] + '\n')
+                if agent == 'agy':
+                    self.assertIn("could not check whether the job committed a change to the "
+                                  "guard's own code", summary['status'])
+                    self.assertTrue(summary['guard_code'].startswith('unchanged in the folder; '),
+                                    summary['guard_code'])
+                    for name in GUARD_CODE:
+                        self.assertEqual((self.agy_folder / name).read_bytes(), committed[name])
+                else:
+                    self.assertTrue(summary['status'].startswith(
+                        'finished, but the bridge could not read its changes'), summary['status'])
+                    self.assertTrue(summary['bridge_commit'].startswith('not made: '),
+                                    summary['bridge_commit'])
+                    folder = self.home / 'code' / 'brickson-codex-tests'
+                    self.assertIn(' M AGENTS.md', git_out(folder, 'status', '--porcelain'))
+                    self.assertEqual(git_out(folder, 'rev-parse', 'HEAD'),
+                                     git_out(folder, 'rev-parse', 'origin/main'))
+
+    def test_the_bridges_git_ignores_a_repository_named_in_its_environment(self):
+        # git uses GIT_INDEX_FILE (and GIT_DIR and the like) over the folder
+        # it is given, so a thread that runs the bridge with one set would
+        # have it stage and commit through another checkout's index
+        # (CodeRabbit, on #108).
+        self.install_codex_hook()
+        index = Path(git_out(self.owner, 'rev-parse', '--absolute-git-dir').strip()) / 'index'
+        before = index.read_bytes()
+        result = self.bridge('codex', '--brief', str(self.brief), '--write', '--branch', 'tests',
+                             env={'STUB_MODE': 'edit', 'GIT_INDEX_FILE': str(index)})
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(index.read_bytes(), before)
+        folder = self.home / 'code' / 'brickson-codex-tests'
+        self.assertEqual(git_out(folder, 'status', '--porcelain', '--untracked-files=all'), '')
+        self.assertIn('notes/new note.md', git_out(folder, 'ls-tree', '-r', '--name-only', 'HEAD'))
+
+    def test_a_codex_write_job_that_does_not_finish_is_left_uncommitted(self):
+        self.install_codex_hook()
+        for topic, mode, extra, status in (('fails', 'edit fail', [], 'failed (exit 3)'),
+                                           ('stops', 'edit hang', ['--timeout', '0.02'], 'timed out')):
+            with self.subTest(mode):
+                result = self.bridge('codex', '--brief', str(self.brief), '--write', '--branch', topic,
+                                     *extra, env={'STUB_MODE': mode})
+                self.assertEqual(result.returncode, 1, result.stderr)
+                summary = json.loads((self.job_folder(result) / 'summary.json').read_text())
+                self.assertEqual(summary['status'], status)
+                self.assertEqual(summary['commits'], [])
+                self.assertTrue(summary['bridge_commit'].startswith('not made'), summary['bridge_commit'])
+                self.assertIn(' M AGENTS.md', summary['changed_files'])
+
+    def test_a_codex_write_job_that_changes_nothing_makes_no_commit(self):
+        self.install_codex_hook()
+        result = self.bridge('codex', '--brief', str(self.brief), '--write', '--branch', 'tests')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        summary = json.loads((self.job_folder(result) / 'summary.json').read_text())
+        self.assertEqual(summary['status'], 'finished')
+        self.assertEqual(summary['commits'], [])
+        self.assertEqual(summary['bridge_commit'], 'nothing to commit')
+
+    def test_a_commit_the_bridge_cannot_make_is_reported(self):
+        # git refuses an empty author name, so the commit fails after the job.
+        self.install_codex_hook()
+        result = self.bridge('codex', '--brief', str(self.brief), '--write', '--branch', 'tests',
+                             env={'STUB_MODE': 'edit', 'GIT_AUTHOR_NAME': ''})
+        self.assertEqual(result.returncode, 1, result.stderr)
+        out = self.job_folder(result)
+        summary = json.loads((out / 'summary.json').read_text())
+        self.assertTrue(summary['status'].startswith('finished, but the bridge could not commit'),
+                        summary['status'])
+        self.assertIn('left staged, not committed', summary['status'])
+        self.assertEqual(summary['commits'], [])
+        self.assertIn('M  AGENTS.md', summary['changed_files'])
+        self.assertEqual((out / 'done').read_text(), summary['status'] + '\n')
 
     def test_write_needs_a_branch_and_a_branch_needs_write(self):
         self.assertEqual(self.bridge('codex', '--brief', str(self.brief), '--write').returncode, 2)
@@ -507,6 +805,81 @@ class BridgeTests(unittest.TestCase):
         self.assertEqual(refused.returncode, 2, refused.stderr)
         self.assertIn('guard hook', refused.stderr)
 
+    def test_an_agy_job_that_changes_the_guards_own_code_is_reported_and_put_back(self):
+        # The adapter runs the guard in agy's folder, which git tracks, and
+        # the guard runs the privacy check. A job that weakens either is
+        # put back when it ends, whether the job finished or failed.
+        self.point_agy_at(self.agy_folder)
+        self.install_agy_hook()
+        committed = {name: (self.agy_folder / name).read_bytes() for name in GUARD_CODE}
+        for how in ('rewrite', 'link', 'remove'):
+            for mode in ('unguard', 'unguard fail'):
+                with self.subTest(how=how, mode=mode):
+                    outside = Path(self.temp.name) / f'outside-{how}-{len(mode)}'
+                    outside.mkdir()
+                    result = self.bridge('agy', '--brief', str(self.brief),
+                                         env={'STUB_MODE': mode, 'STUB_UNGUARD': how,
+                                              'STUB_OUTSIDE': str(outside)})
+                    self.assertEqual(result.returncode, 1, result.stderr)
+                    out = self.job_folder(result)
+                    summary = json.loads((out / 'summary.json').read_text())
+                    self.assertIn("changed the guard's own code", summary['status'])
+                    self.assertIn('the bridge put it back', summary['status'])
+                    if 'fail' in mode:
+                        self.assertTrue(summary['status'].startswith('failed (exit 3); '),
+                                        summary['status'])
+                    self.assertIn('put back', summary['guard_code'])
+                    self.assertEqual((out / 'done').read_text(), summary['status'] + '\n')
+                    for name in GUARD_CODE:
+                        self.assertFalse((self.agy_folder / name).is_symlink(), name)
+                        self.assertEqual((self.agy_folder / name).read_bytes(), committed[name], name)
+                    if how == 'link':  # nothing written through the link
+                        self.assertEqual((outside / 'guard.py').read_text(), 'print("outside")\n')
+                    self.assertEqual(git_out(self.agy_folder, 'status', '--porcelain'), '')
+                    again = self.bridge('agy', '--brief', str(self.brief))
+                    self.assertEqual(again.returncode, 0, again.stderr)
+                    self.assertEqual(json.loads((self.job_folder(again) / 'summary.json')
+                                                .read_text())['guard_code'], 'unchanged')
+
+    def test_an_agy_write_job_that_commits_a_weaker_guard_is_reported_and_stops_the_next_job(self):
+        # The branch stays checked out in agy's folder for the next job, so
+        # the folder keeps the guard as it was before the job, and the next
+        # job is refused until someone has read the commit.
+        self.point_agy_at(self.agy_folder)
+        self.install_agy_hook()
+        main = {name: git_out(self.agy_folder, 'show', f'origin/main:{name}') for name in GUARD_CODE}
+        result = self.bridge('agy', '--brief', str(self.brief), '--write', '--branch', 'docs',
+                             env={'STUB_MODE': 'unguard', 'STUB_UNGUARD': 'commit'})
+        self.assertEqual(result.returncode, 1, result.stderr)
+        summary = json.loads((self.job_folder(result) / 'summary.json').read_text())
+        self.assertIn("committed a change to the guard's own code", summary['status'])
+        self.assertIn('committed on its branch', summary['guard_code'])
+        self.assertEqual(len(summary['commits']), 1)
+        for name in GUARD_CODE:
+            self.assertEqual((self.agy_folder / name).read_text(), main[name], name)
+        refused = self.bridge('agy', '--brief', str(self.brief))
+        self.assertEqual(refused.returncode, 2, refused.stderr)
+        self.assertIn('uncommitted changes', refused.stderr)
+        self.assertEqual(len(self.calls()), 1)  # agy never ran with the weaker guard
+
+    def test_agy_refuses_a_guard_that_is_not_a_plain_file(self):
+        # A branch can hold the guard as a link, which the bridge would
+        # follow to put it back; the job is refused before agy starts.
+        self.point_agy_at(self.agy_folder)
+        self.install_agy_hook()
+        guard = self.agy_folder / GUARD_CODE[0]
+        elsewhere = Path(self.temp.name) / 'elsewhere.py'
+        elsewhere.write_text('# a guard outside the folder\n')
+        guard.unlink()
+        guard.symlink_to(elsewhere)
+        for args in (['add', GUARD_CODE[0]], ['commit', '-q', '-m', 'Link the guard']):
+            subprocess.run(['git', '-C', str(self.agy_folder), *args], check=True,
+                           capture_output=True, env={**os.environ, **self.env})
+        refused = self.bridge('agy', '--brief', str(self.brief))
+        self.assertEqual(refused.returncode, 2, refused.stderr)
+        self.assertIn('guard.py', refused.stderr)
+        self.assertEqual(self.calls(), [])
+
     def test_agy_write_job_starts_its_branch_from_origin_main(self):
         self.point_agy_at(self.agy_folder)
         self.install_agy_hook()
@@ -704,12 +1077,19 @@ class BridgeTests(unittest.TestCase):
     def test_a_checkout_with_its_own_push_url_is_refused(self):
         # git pushes to every push URL a remote has, and skips pushInsteadOf
         # for them, so the job's no-push URL would only be added beside it.
+        # GIT_CONFIG would point the bridge's `git config` alone at another
+        # file, where it would find no push URL (CodeRabbit, on #108).
         origin = subprocess.run(['git', '-C', str(self.worktree), 'remote', 'get-url', 'origin'],
                                 capture_output=True, text=True, check=True).stdout.strip()
         git(self.worktree, 'config', 'remote.origin.pushurl', origin)
-        result = self.bridge('codex', '--brief', str(self.brief), env={'STUB_MODE': 'push'})
-        self.assertEqual(result.returncode, 2, result.stderr)
-        self.assertIn('push URL', result.stderr)
+        empty = Path(self.temp.name) / 'empty.gitconfig'
+        empty.write_text('')
+        for settings in ({}, {'GIT_CONFIG': str(empty)}):
+            with self.subTest(**settings):
+                result = self.bridge('codex', '--brief', str(self.brief),
+                                     env={'STUB_MODE': 'push', **settings})
+                self.assertEqual(result.returncode, 2, result.stderr)
+                self.assertIn('push URL', result.stderr)
         self.assertEqual(self.calls(), [])
         self.assertFalse((self.worktree / 'build').exists())
         branches = subprocess.run(['git', '-C', str(self.owner), 'ls-remote', '--heads', 'origin'],

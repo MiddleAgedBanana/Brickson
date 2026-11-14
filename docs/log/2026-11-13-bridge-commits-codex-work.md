@@ -1,0 +1,305 @@
+# The bridge commits a Codex write job's work, and puts agy's guard code back
+
+*2026-11-13. Pull request #108 (`claude/project-thread-rgqoqf`). A cloud
+thread, from the coordinator's brief, for the two bridge follow-ups that
+pull request #99 left ([record](2026-11-12-bridge-safety-gaps.md), *Follow-ups*), and
+one stale line in that record.*
+
+## What changed and why
+
+Nothing in the app changes. `scripts/agent-bridge.py`, which hands a job
+to Codex or agy (Google Antigravity) on the owner's Mac, closes the two
+gaps #99's record left for the next bridge pull request.
+
+**The bridge commits a Codex write job's work.** A Codex write job could
+not commit: the bridge makes `~/code/brickson-codex-<topic>` a git
+worktree, whose git folder sits inside the owner's checkout's `.git`, and
+Codex's `workspace-write` sandbox keeps that folder read-only on purpose
+(found on the Mac on 2026-11-12, job `20261112T054316Z-codex-write`).
+Of the two ways #99's record named, this takes the one that loosens
+nothing:
+
+- Codex's brief now tells it to leave its work uncommitted, and to begin
+  its final message with one line under 72 characters that says what the
+  change does. agy's brief is unchanged: it has no sandbox and commits
+  itself.
+- Once the job has **finished** (exit 0, not timed out, not stopped), the
+  bridge, outside the sandbox, stages every changed, deleted or new file
+  outside `build/` by name and makes one commit on `codex/<topic>`, with
+  Codex's final message as the commit message and a last line naming the
+  bridge and the job. The worktree was clean when the job began (the
+  bridge refuses it otherwise), so every such file is the job's. Names
+  are read literally (`--literal-pathspecs`), so a file named like a
+  pathspec, such as `:!AGENTS.md`, is committed itself and never leaves
+  another file out. The bridge's own git still runs with git hooks and
+  `core.fsmonitor` off and without the thread's GitHub tokens, and now
+  with every filter off too (below), so no hook, fsmonitor command or
+  filter the job set runs there; other git settings can still name
+  commands (*Not verified*). The commit is unsigned (`--no-gpg-sign`):
+  nobody is there to answer a signing prompt, as for an agent's own
+  commits on the Mac ([record](2026-11-07-workflow-lockfile.md)). Nothing
+  is pushed; the thread checks the commit, runs the privacy check before
+  its push as for any push, and pushes.
+- A job that failed, timed out or was stopped is not committed: its
+  changes stay in the worktree for the thread to read. A job that changed
+  nothing makes no commit. If the commit itself fails, the job ends as
+  `finished, but the bridge could not commit its work (...)`, exits 1,
+  and leaves the changes staged.
+- `summary.json` has a new `bridge_commit` entry for Codex write jobs:
+  `made <hash>`, `nothing to commit`, or `not made: ...` with the reason.
+
+**agy's guard code is put back after every job.** agy's adapter runs the
+guard in agy's folder, `.claude/hooks/guard.py`, which git tracks, and the
+guard runs `scripts/privacy-check.py` there. A job that changed either
+weakened the guard for the next agy session: a read-only job's change was
+reported and the next job refused, but never put back, and a write job
+could commit a weaker guard on its branch, which agy's folder keeps
+checked out for the next job. Now:
+
+- Before every agy job (after the write job's new branch is made), the
+  bridge keeps both files' bytes, reading them without following a link,
+  and refuses the job if either is missing or a link.
+- When the job ends, however it ends (finished, failed, timed out,
+  stopped, or the bridge itself stopping with an error), it puts back
+  any of them the job changed, without following a link the job left, as
+  #99 does for agy's hook. The job ends as `changed the guard's own code
+  (...); the bridge put it back` and exits 1.
+- If the job committed a change to either file, the bridge does not
+  rewrite the agent's commit: the folder keeps the guard as it was before
+  the job, so it differs from that commit, the job ends as `committed a
+  change to the guard's own code (...) on its branch; ...`, and the next
+  agy job is refused (uncommitted changes) until someone has read that
+  commit and cleaned the folder.
+- `summary.json` has a new `guard_code` entry, like `guard_hook`.
+
+**The bridge's own git runs no filter, and ignores a repository named
+in its environment** (CodeRabbit's two findings on this pull request's
+first push). A git filter runs a command on a file's contents wherever
+the attributes name it: `clean` when git reads a file (`git add`, and
+`git status` when it has to compare contents), `smudge` when it writes
+one (`git switch`, `git worktree add`). agy has no sandbox and can
+define one in the git settings every worktree shares, and a Codex job
+can name it for its files in a `.gitattributes` of its own, so the
+bridge's commit, outside both, would have run it. The bridge's git now
+lists the filters git's settings define and turns each off for its own
+commands (an empty command, so contents are read and written as they
+are, and not required, so none can fail), as it already turns off
+`core.fsmonitor` and git hooks. And git uses `GIT_INDEX_FILE`, `GIT_DIR`
+and the like over the folder it is given, so a thread that ran the
+bridge with one set would have had it stage and commit through another
+checkout's index. The bridge's git, and the agent's environment, now
+leave those variables out. They also leave out an inherited
+`GIT_CONFIG_PARAMETERS` (what `git -c` passes on to the commands it
+starts), which outranks every other git setting, the bridge's filter
+switches included, so one naming a filter command would still have run
+it (CodeRabbit's reply on the second push). And they leave out an
+inherited `GIT_CONFIG`, which points `git config` alone at another file:
+the bridge reads the filters it turns off, and the push URL it refuses,
+with `git config`, so with one set it found neither in the file the rest
+of git reads, turned no filter off, and let a checkout with its own push
+URL have a job (CodeRabbit's review of the third push). CodeRabbit's
+review of the final push found two more ways round the filter switches.
+Settings can switch a filter on for one branch or worktree alone
+(`includeIf "onbranch:codex/"`): where the bridge starts it is off, so
+the bridge did not name it, but `git worktree add` filled the new
+worktree on its `codex/` branch, where it is on, and ran its smudge
+command. The bridge now makes the worktree empty (`--no-checkout`) and
+fills it with its own git from inside (`git reset --hard`), where it
+sees that filter and turns it off. And the bridge read a failed `git
+config` (a `GIT_CONFIG_COUNT` that is not a number, which only the one
+who starts the bridge can set) as no filters, then put a good count in
+its place, so its git ran every filter; a failure other than "none
+set" now stops the job. CodeRabbit's review of that push found the stop
+came too soon in one place: after a job that broke the git settings
+every worktree shares (agy can, with no sandbox, or another job while
+Codex works), the bridge's reads stopped it before it wrote
+`summary.json` and `done`, so a caller waiting for `done` waited
+forever. Before that push the same job did end with `done`, but read
+what it could not read as nothing: a Codex write job showed as
+finished, with nothing to commit. Each read after a job now reports its
+failure in the job's status, what it could not read is null in
+`summary.json`, and the job still ends with `done`.
+
+**A job that did not finish still says so first.** When a job that
+failed or timed out also has a problem to report (its guard changed, or
+it ran in the wrong folder), its status now starts with `failed (exit
+n); ` or `timed out; ` before the problem, where it used to show only the
+problem.
+
+**The stale line in #99's record.** Its *Not verified* list said the hook
+file installed on the Mac had not been checked against the exact text the
+bridge requires. It had: on 2026-11-12, before the merge, a thread on the
+Mac ran `python3 scripts/agent-bridge.py status` in a throwaway worktree
+of #99's last commit, `117ab61`, and it printed `agy guard hook:
+installed` and `codex guard hook: installed`. The line now sits under
+*Verified* there, saying it was corrected, and the follow-up asking for
+that check says it was done.
+
+## Commits
+
+- `d736d13` Put agy's guard code back after every job, finished or not.
+- `16878d4` Commit a Codex write job's work outside its sandbox.
+- `a9da3e4` Record the bridge's two fixes, and correct #99's stale line.
+- `f80ae16` Run no git filter, and no repository named in the
+  environment, in the bridge's git.
+- `08a9023` Record the bridge's filter and environment fixes, and the
+  shared-settings gap.
+- `98078b4` Merge main, after pull requests #100 and #106 merged.
+- `1fdf558` Leave an inherited GIT_CONFIG_PARAMETERS out of the bridge's
+  git.
+- `a932f54` Record the GIT_CONFIG_PARAMETERS fix and its test.
+- `37efe21` Leave an inherited GIT_CONFIG out of the bridge's git.
+- `f91a97d` Record the GIT_CONFIG fix, the commits, and a narrower
+  isolation claim.
+- `f01cbd0` Merge main, after pull request #107 merged.
+- The commits after the final push, made for CodeRabbit's reviews and
+  pushed only under the owner's standing permission of 2026-11-13 to
+  finish the open threads:
+  - `b97a561` Turn off filters a new worktree alone sees, and stop when
+    git config fails.
+  - `8b74630` Record the two fixes for CodeRabbit's review of the final
+    push.
+  - `8ea3e22` End a job with done even when git cannot read its settings
+    after it.
+  - The commit that adds this entry, which cannot hold its own hash.
+
+## Verified
+
+In a cloud container (Linux, git 2.43), with Python 3.13 and with
+Python 3.9.25, the version of the Mac's `/usr/bin/python3`:
+
+- `scripts/test-agent-bridge.py`: 53 of 53 on both. Thirteen tests are
+  new and two older ones changed. The first seven new ones failed on
+  `main`'s bridge, as did the first changed one; the next two failed on
+  this pull request's first push, the next on its second, the next two
+  on its final push, and the last on the push after it. The
+  `GIT_CONFIG` cases added to the third
+  round's test and to the second changed one failed on its third push:
+  - `test_the_bridge_commits_a_codex_write_jobs_work_outside_the_sandbox`:
+    a stand-in Codex changes `AGENTS.md`, deletes a file and adds three
+    (one with a space, one with letters outside ASCII, one named
+    `:!AGENTS.md`); the job finishes with one commit on `codex/tests`
+    whose parent is `origin/main`, holding exactly those five changes,
+    with the final message as its message, and a clean worktree.
+  - `test_a_codex_write_job_that_does_not_finish_is_left_uncommitted`:
+    one that fails (exit 3) and one that times out, each with no commit
+    and its changes left. The commit test also checks that a link is
+    committed as a link and an executable file keeps its mode.
+  - `test_a_codex_write_job_that_changes_nothing_makes_no_commit`.
+  - `test_a_commit_the_bridge_cannot_make_is_reported`: git refuses an
+    empty author name; the job ends saying so, exits 1, and writes `done`.
+  - `test_an_agy_job_that_changes_the_guards_own_code_is_reported_and_put_back`:
+    a stand-in agy rewrites both files, swaps the guard for a link to a
+    file outside the folder, or deletes `.claude/` and the privacy check,
+    each in a job that finishes and in one that fails (exit 3). Each is
+    put back byte for byte, nothing is written through the link, the
+    folder is clean, and the next job runs with `guard_code: unchanged`.
+  - `test_an_agy_write_job_that_commits_a_weaker_guard_is_reported_and_stops_the_next_job`:
+    the folder keeps `origin/main`'s guard, and the next job is refused
+    before agy starts.
+  - `test_agy_refuses_a_guard_that_is_not_a_plain_file`: a branch that
+    holds the guard as a link is refused before agy starts.
+  - `test_a_codex_write_job_needs_the_hook_and_starts_its_own_branch`
+    now also checks that Codex is told to leave its work uncommitted.
+  - `test_the_bridges_commit_runs_no_filter_the_job_names`: the shared
+    settings define a clean filter that leaves a mark outside the
+    checkout, and the job's `.gitattributes` names it for every file; the
+    job is committed with its contents as written and no mark.
+  - `test_the_bridges_git_ignores_a_repository_named_in_its_environment`:
+    the bridge runs with `GIT_INDEX_FILE` set to the owner's checkout's
+    index; that index is unchanged and the commit is right.
+  - `test_the_bridges_commit_runs_no_filter_its_environment_names`: the
+    bridge runs with `GIT_CONFIG_PARAMETERS` naming a clean filter, then
+    a process filter, that leaves a mark outside the checkout, and the
+    job's `.gitattributes` names it; no mark, and the job is committed.
+    The process filter's mark appeared on the second push's bridge. A
+    third case sets `GIT_CONFIG` to an empty file while the shared
+    settings define the filter; its mark appeared on the third push's.
+  - `test_a_checkout_with_its_own_push_url_is_refused` now also runs the
+    bridge with `GIT_CONFIG` set to an empty file; the third push's
+    bridge started that job.
+  - `test_a_filter_set_for_the_jobs_branch_never_runs_while_its_worktree_is_made`:
+    the shared settings include a file defining a filter for `codex/`
+    branches only, and `.git/info/attributes` names it for every file;
+    the write job's worktree is made, filled and committed with no mark.
+    The final push's bridge left the mark while making the worktree.
+  - `test_the_bridge_stops_when_it_cannot_read_which_filters_to_turn_off`:
+    the bridge runs with `GIT_CONFIG_COUNT=many` while the shared
+    settings define a clean filter; it stops (exit 2) before Codex
+    starts, with no mark. The final push's bridge ran the job.
+  - `test_a_job_that_leaves_git_unable_to_read_its_settings_still_ends_with_done`:
+    a stand-in agy job, and a stand-in Codex write job, each break the
+    shared settings; each ends (exit 1) with `summary.json` and `done`,
+    a status naming what could not be read, the guard code as it was,
+    and Codex's work left uncommitted. The push after the final one
+    wrote neither file, and the final push's bridge, like `main`'s, gave
+    each a wrong status: the agy job as a read-only job that changed
+    files, the Codex job as finished (with nothing to commit).
+- Eight broken copies of the new code each failed the tests named:
+  staging without `--literal-pathspecs` and never committing (the commit
+  test and the failed-commit test); committing a job that did not finish
+  (that test); a failed commit reported as nothing (that test); never
+  putting the guard code back (both put-back tests); not reading what the
+  job committed (the write-job test); allowing a linked guard (that
+  test); and a failed job's status showing only the problem (the put-back
+  test). Two more failed the round-two tests: filters left on, and
+  `GIT_INDEX_FILE` kept. And the code of the second and third pushes,
+  `GIT_CONFIG_PARAMETERS` kept and then `GIT_CONFIG` kept, failed the
+  cases added after each, the final push's code failed the two tests
+  added after it, and the next push's code the test added after that.
+- `scripts/test-docs.py`, `scripts/test-runner.py`,
+  `scripts/test-hooks.py` and `scripts/test-privacy.py` (results in the
+  pull request), and `scripts/privacy-check.py --outgoing --no-list`: a
+  cloud thread has no private list, so that checked the built-in
+  patterns only.
+- GitHub CI runs these tests on macOS with `/usr/bin/python3`, Apple's
+  Python 3.9, through `scripts/test.sh`.
+
+## Not verified
+
+- **A real Codex write job through the new code.** The stand-in edits
+  files and stops as the real one did on 2026-11-12; whether the real
+  Codex, told to leave its work uncommitted, does so without trying a
+  commit first, and whether its final message begins with a usable
+  summary line, is for the first real write job on the Mac.
+- **A real agy job through the new code**, as for #99.
+- **A commit on the Mac**: that the owner's git identity is set where the
+  bridge runs, and that an unsigned commit is what the owner wants for
+  the bridge's commits, as for an agent's own commits there.
+- Whether agy or its guard reads `guard.py` again during a job: if so,
+  steps a job takes after weakening it may run unguarded within that same
+  job. The bridge then reports it and puts it back, and the job's no-push
+  settings still apply.
+- When a job deletes `.claude/`, only `guard.py` comes back; anything
+  else it deleted there (such as `.claude/settings.json`) stays deleted,
+  shows as a changed file, and the next job is refused until the folder
+  is clean.
+- **Git settings agy can write are shared by every worktree.** The
+  bridge's own git now runs no filter, fsmonitor command or hook, but
+  other git settings name commands too (`core.sshCommand` and credential
+  helpers for a fetch, for example), and a thread's or the owner's own
+  git in a job's worktree still runs any filter the settings and the
+  job's `.gitattributes` name. An agy job that changes git's shared
+  settings is not reported (*Follow-ups*).
+- The Mac's own filter settings have not been read. CodeRabbit asked for
+  `git config --show-origin --get-regexp '^filter\..*\.(clean|process)$'`
+  there before the bridge's next commit. The bridge's own git turns
+  every filter off, so its commit does not depend on the answer; a
+  thread's or the owner's own git in that folder does.
+- One commit holds a Codex job's whole work. AGENTS.md asks for one task
+  per commit; the thread can split it before pushing, and a brief can ask
+  for one task per job.
+
+## Follow-ups
+
+- **Report an agy job that changes git's shared settings** (the next
+  bridge pull request, for the coordinator). agy has no sandbox, and its
+  worktree shares `.git/config` and `.git/info/` with the owner's
+  checkout and every other worktree. The bridge could keep them before an
+  agy job and report, or put back, a change, as it does for agy's hook
+  and the guard's code. Found on this pull request (CodeRabbit's filter
+  finding); outside the three items it was for.
+
+- The first real Codex write job on the Mac is the test of this change
+  (a thread on the Mac, when the coordinator next hands Codex a write
+  job).
