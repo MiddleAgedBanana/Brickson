@@ -4932,6 +4932,82 @@ before release (APP-STORE.md, section 3). The in-app copy is the same
 file (*The privacy policy ships inside the app*), so it changed with the
 page.
 
+## The website's pages, contact links and pictures of the app
+
+*2026-11-13. Owner's request of 2026-11-13: header links that go to real
+pages, contact links that open the mail app, the real app shown in
+pictures and video, and a calm look for families rather than a start-up
+one. How each is done is a default, reversible if the owner objects.*
+
+**Pages and the header.** The website has three pages: Home (the App
+Store's support URL, with its contact section kept at `#support`),
+Accessibility in Brickson, and the privacy policy. Every page's header
+has the same three links: Accessibility, Privacy and Contact. A header
+link goes to another page or opens the mail app, never to a place on the
+same page: a short page needs no menu of its own sections, and a link
+that only scrolls a little way is one the owner found pointless. The two
+long pages keep their "On this page" list beside the text, which is a
+table of contents, not the header. Home's hero offers "Email a question"
+and the accessibility page, and no link drawn as a button only scrolls
+the page.
+
+**Contact.** Every header, footer and Home link that offers contact
+(Contact, Email …, the address itself) is a `mailto:` link to the one
+published support address, with the subject "Brickson", so it opens the
+visitor's mail app with the address already filled in. The address links
+inside the two long pages' own text keep their plain `mailto:` with no
+subject, so those pages' `<main>` stays as it is (*The privacy policy
+ships inside the app*), and the privacy policy's "On this page" list
+names its Contact section as "Contact details", so no two links on a page
+share the name Contact. There is no contact form, which would need a
+server (invariant 9), and no sign-up list. The contact section says the
+address is not for emergencies and that no medical details are needed.
+`scripts/test-site.py` (`NavigationTests`) checks that every header link
+leaves the page, that the headers match, that no button only scrolls,
+and that every link offering contact outside a long page's section list
+is a `mailto:` link to the one address.
+
+**Pictures of the app.** Every screenshot and the recording is of the
+real app, built from `main` and captured in Apple's simulators, with how
+it was captured in the pull request's log; never a drawing, a mock-up or
+a generated image. A screen is shown bare, with rounded corners and a
+thin measured edge, never inside a drawn iPhone or iPad: Apple's
+marketing guidelines allow device images only from Apple's own artwork.
+In the hero, where they stand together, iPhone and iPad are shown at
+their true relative size; elsewhere each screen is sized to be read.
+Light appearance
+only, so there is one set to retake when Home changes how it looks.
+Every picture has words that say what it shows, written from the
+picture, and a width and height so nothing jumps while it loads.
+
+**The recording.** It never starts or loops on its own (WCAG 2.2.2): it
+has the browser's controls, starts muted, plays in the page and loads
+only its first details until asked. It has no sound, because the
+simulator plays none, so the steps it shows, including every button that
+changes its name, are written out beside it, and the video, named by its
+`aria-label`, points to them with `aria-describedby` (WCAG 1.2.1: a text
+alternative for video with no sound). It has no captions track, since
+captions are for sound. The caption says it has no sound and that in the
+simulator "Speaking" stayed under the message from the first phrase on;
+why the simulator's speech never reported finishing is not known (the
+pull request's log), so the page gives no reason. `scripts/test-site.py`
+(`MediaTests`) checks these and every file's size.
+
+**Look.** The brand's ivory (`#f7f5ee`) and navy (`#172e47`), the
+colours of the logo (`design/brand/README.md`), kept on purpose although
+a cream page with a serif heading is a look many generated pages share:
+here it ties the site to the app's icon. A serif for headings and the
+system font for reading; reading lines kept to about 40rem; no
+gradients, motion, sticky header, arrows on links, stock photos or
+pictures of people. Every colour pair is
+measured in light and dark appearance by `scripts/test-site.py`
+(invariant 6), and Increase Contrast and forced colours are handled.
+
+*Before:* Home's header linked to three of its own sections ("Our
+approach", "Why Brickson?" and "Support"), its hero button scrolled a
+short way down, and its only picture was an illustration of two speech
+bubbles, not the app.
+
 ## Automatic keeps the person's Personal Voice
 
 *2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
