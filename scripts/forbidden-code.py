@@ -35,8 +35,8 @@ What it checks:
     notification observers on the main queue inside
     MainActor.assumeIsolated (never with a selector).
 - The Swift files and pictures of the targets that ship (every one but an
-  app target that is never installed, `SKIP_INSTALL: YES`, such as a test
-  app), for Apple's look (docs/DECISIONS.md, "Guards for Apple's look"):
+  app target left out of every archive, `SKIP_INSTALL: YES`, such as a
+  test app), for Apple's look (docs/DECISIONS.md, "Guards for Apple's look"):
   no Liquid Glass or material of the app's own; no PrimitiveButtonStyle
   and no trigger(); no button that repeats while held; every icon an SF
   Symbol, and no picture files but the app icon and custom symbols; no
@@ -1060,8 +1060,8 @@ def swiftdata_calls(source):
 # The rules of Apple's look that a script can decide
 # (docs/DECISIONS.md, "Guards for Apple's look"). Each message says which
 # rule, why it matters to the person using the app, and what to do
-# instead. They hold every target that ships, never an app target that is
-# never installed (`SKIP_INSTALL: YES`, such as a test app).
+# instead. They hold every target that ships, never an app target left
+# out of every archive (`SKIP_INSTALL: YES`, such as a test app).
 
 LOOK_SECTION = "Guards for Apple's look"
 GLASS = ('the app adds no Liquid Glass or see-through material of its own: glass and materials '
@@ -1369,10 +1369,10 @@ def check_apple_look(source, symbols=frozenset(), exceptions=KNOWN_EXCEPTIONS, e
 
 
 def never_shipped(entries, name):
-    """Whether project.yml marks the target as never installed: its
+    """Whether project.yml keeps the target out of every archive: its
     settings give `SKIP_INSTALL` a true value for every build, and no
     build turns it off. An archive of such an app holds no app, so it is
-    never uploaded."""
+    never uploaded, though Xcode can still run it on a device."""
     settings = ('targets', name, 'settings')
     # A settings group, read from the project's `settingGroups`, can turn
     # it back on for a build, so a target that names one stays checked.
@@ -2293,8 +2293,8 @@ def check(root=ROOT):
     # Everything that ships: the app, and any extension or framework in it.
     apps = [name for name, kind in kinds.items() if 'test' not in kind]
     app_folders = [source for name in apps for source in sources.get(name, [])]
-    # Apple's look holds what reaches people: not an app target that is
-    # never installed, such as a test app.
+    # Apple's look holds what reaches people: not an app target left out
+    # of every archive, such as a test app.
     shipped = [name for name in apps
                if not (kinds[name] == 'application' and never_shipped(entries, name))]
     if not any(kinds[name] == 'application' for name in shipped):
@@ -2336,11 +2336,20 @@ def check(root=ROOT):
                 PICTURE_FOLDERS.search(path)):
             findings.append(Finding(path, 0, 'not an SF Symbol',
                                     f'a picture shipped in the app: {SYMBOL}.'))
+    listed = set(files)
     for rule, path, name in sorted(KNOWN_EXCEPTIONS - excused):
-        # A file moved or removed leaves its exception excusing nothing.
-        if under(path, look_folders):
-            what = (f'`{name}` no longer breaks "{rule}"' if path in swift else
-                    f'{path} is gone, so the exception for `{name}` excuses nothing')
+        # A file fixed, removed, or no longer in a target that ships leaves
+        # its exception excusing nothing. (One whose file and folder are
+        # both gone is the documentation tests' to find: from here it looks
+        # like another checkout.)
+        if path in listed or under(path, look_folders):
+            if path not in listed:
+                what = f'{path} is gone, so the exception for `{name}` excuses nothing'
+            elif not under(path, look_folders):
+                what = (f'{path} is no longer in a target that ships, so the exception for '
+                        f'`{name}` excuses nothing')
+            else:
+                what = f'`{name}` no longer breaks "{rule}"'
             findings.append(Finding(path, 0, 'stale exception',
                                     f'{what}: remove its known '
                                     'exception from KNOWN_EXCEPTIONS in '

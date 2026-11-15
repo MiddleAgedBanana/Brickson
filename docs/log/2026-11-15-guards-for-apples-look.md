@@ -41,9 +41,10 @@ fixed 20 points). An exception the code no longer needs fails the check,
 so it leaves with the code.
 
 The rules hold the targets that ship. The experiments' probe app, from
-pull request #112, is an application target marked `SKIP_INSTALL: YES`,
-never installed, so it keeps every rule of the first check and none of
-these.
+pull request #112, is an application target marked `SKIP_INSTALL: YES`:
+Xcode can run it on a device, but it is left out of every archive, so it
+never reaches the App Store. It keeps every rule of the first check and
+none of these.
 
 AGENTS.md gains one line under *Apple's current frameworks first*, and
 *Code Review Rules* now names a new known exception as something to flag.
@@ -82,13 +83,22 @@ AGENTS.md gains one line under *Apple's current frameworks first*, and
   capitals (a script cannot tell them from an acronym), and a fixed
   custom font in a file that scales another (a script cannot follow
   which font `UIFontMetrics` scales).
-- A merge brings in `main`, which now holds pull requests #112 (the
+- `13097b9` merges `main`, which now holds pull requests #112 (the
   probe app) and #113 (colour tokens), with no conflict.
-- The commit after it answers CodeRabbit's second review. A target that
+- `890d6fc` answers CodeRabbit's second review. A target that
   names a settings group stays checked, since a group can turn
   `SKIP_INSTALL` back off for a build; a known exception whose file is
   gone is a finding, as one whose code is fixed already was; and a
   comment beside a custom symbol's name no longer hides the name.
+- `0a38a91` reads an argument's label in linear time. Its pattern had
+  two runs of spaces that could share the same spaces, so a long string
+  blanked to spaces made it backtrack (20,000 spaces took over a
+  second); SonarCloud flagged it, and a test now bounds it.
+- The commit after it answers cubic's third review. An exception whose
+  file is still there but in no target that ships is a finding, and
+  this record and docs/DECISIONS.md say the probe app is left out of
+  every archive (Xcode can still run it on a device), not that it is
+  never installed.
 
 ## Verified
 
@@ -111,7 +121,8 @@ In this cloud session, which cannot build Swift:
   tests and the documentation tests pass on the result. Held to these
   rules, the probe app's own files would break five of them in 24 places
   (toggles, glass, a hover lift, fixed sizes, views passed off as
-  buttons), which is why a never installed app is left out.
+  buttons), which is why an app left out of every archive is left out
+  here.
 - The documentation, hook, privacy, runner, agent bridge, site and Xcode
   selection checks listed in AGENTS.md, *Build and test*.
 

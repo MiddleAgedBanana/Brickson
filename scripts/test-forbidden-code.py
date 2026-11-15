@@ -1320,6 +1320,17 @@ class KnownExceptionTests(unittest.TestCase):
                          [('App/Rows.swift', 'stale exception')])
         self.assertIn('is gone', findings[0].message)
 
+    def test_one_whose_file_no_longer_ships_is_a_finding(self):
+        # The file is still there, but no target that ships builds it.
+        checkout = fixture_checkout(**{'Old/Rows.swift': self.TEXT})
+        self.addCleanup(checkout.close)
+        with unittest.mock.patch.object(forbidden, 'KNOWN_EXCEPTIONS',
+                                        frozenset({('primitive button style', 'Old/Rows.swift', 'Rows')})):
+            findings = checkout.check()
+        self.assertEqual([(finding.path, finding.rule) for finding in findings],
+                         [('Old/Rows.swift', 'stale exception')])
+        self.assertIn('no longer in a target that ships', findings[0].message)
+
 
 class TableTests(unittest.TestCase):
     """The kept legacy APIs come from docs/DECISIONS.md's table, and a

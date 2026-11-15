@@ -5722,8 +5722,8 @@ what to do instead. Nothing the app shows or does changed.
   accessibility actions, escape and magic tap are allowed: they add a
   way in, not a second meaning for one.
 - **Scope.** The targets that ship: every target that is not a test,
-  except an application target that `project.yml` marks never installed
-  (`SKIP_INSTALL` true for every build, where XcodeGen reads it: under
+  except an application target that `project.yml` leaves out of every
+  archive, so it is never uploaded (`SKIP_INSTALL` true for every build, where XcodeGen reads it: under
   `base`, or straight under `settings` only when it has no `base`,
   `configs` or `groups`) and naming no settings group, which could turn
   it back off, such as the experiments' probe app, which keeps every
@@ -5736,7 +5736,8 @@ what to do instead. Nothing the app shows or does changed.
   *Known gaps*, as an input to the new design. It excuses nothing else
   (a call to `trigger()` is a rule of its own, so the exception for a
   `PrimitiveButtonStyle` never excuses one), and one the code no longer
-  needs, or whose file is gone, is a finding of its own. There are two,
+  needs, or whose file is gone or in no target that ships, is a finding
+  of its own. There are two,
   both in Settings: `SettingsRowButtonStyle` and `SettingsPairLabel`.
   Adding one is an exception, which *Code Review Rules* flags for the
   owner. These two were proposed in pull request #114, not accepted by
