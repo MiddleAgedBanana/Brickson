@@ -244,6 +244,81 @@ what the system reports about a dimmed button.
   same is DEV-10's D-07 (device) part; until then, treat this as the
   Simulator's answer only.
 
+### SIM-7. Smart Invert on Home (D-14)
+
+- **Done.** iPhone, Brickson with the starter library: a screenshot of
+  Home; Smart Invert turned on in the Simulator's Settings >
+  Accessibility > Display & Text Size; Brickson opened again and a
+  second screenshot taken; the probe's Status station read.
+- **Observed.** The probe read `accessibilityInvertColors = true`, so
+  apps are told Smart Invert is on. But the two screenshots of Home are
+  identical pixel for pixel, and the Settings page itself was still
+  drawn light (#F2F2F7) with Smart Invert on.
+- **Answer.** Could not test in the Simulator: its screenshots do not
+  show Smart Invert (whether the Simulator applies it to the display at
+  all could not be told from here).
+- **What it means.** Every Home pair under Smart Invert waits for a
+  device (DEV-12), measured from the device's own screenshots or a
+  photograph. Smart Invert was turned off again afterwards.
+
+### SIM-8. Text under the scroll edge (D-17)
+
+- **Done.** The probe's Styles station does not produce the case: its
+  scroll view starts below the station's readout, so its rows never
+  pass under the navigation bar. Brickson does: in Settings > Family
+  Setup > Phrases and Categories > Basics (the starter library), the
+  phrase list scrolls under the bar that holds Back and the title. On
+  the iPhone, scrolled so a row sat under the bar, waited three
+  seconds, and took a screenshot, in six appearances: light and dark,
+  each plain, with Increase Contrast, and with Reduce Transparency.
+  Measured the title "Basics" and the Back button's chevron against the
+  background around them, taking the worst background pixel beside the
+  title.
+- **Observed.** The scroll edge effect fades and blurs the row under
+  the bar (its words are not meant to be read there). Over it:
+
+  | Appearance | Title, worst / best | Back chevron |
+  |---|---|---|
+  | Light | 11.32 / 14.21 | 16.82 |
+  | Dark | 11.15 / 15.14 | 19.72 |
+  | Light, Increase Contrast | 11.30 / 14.38 | 17.61 |
+  | Dark, Increase Contrast | 10.60 / 14.78 | 15.53 |
+  | Light, Reduce Transparency | 20.82 / 21.00 | 19.03 |
+  | Dark, Reduce Transparency | 20.88 / 21.00 | 16.90 |
+
+  With Reduce Transparency the bar is opaque white or black.
+- **Answer.** At rest, the bar's own words stay above 10:1 over a
+  scrolled row in every appearance measured; the rows themselves are
+  faded under the bar by design.
+- **What it means.** No fix is needed for the bar over a scrolling
+  library (invariant 6 holds for its text). A row's words are readable
+  only once scrolled out from under the bar, which is the system's
+  behaviour; the record of what a scroll costs dwell users stands.
+
+### SIM-9. An inactive iPad window (D-20)
+
+- **Done.** iPad Pro 13-inch, Brickson with the starter library: its
+  window narrowed by dragging its corner, the Settings app's window
+  narrowed and moved to the left, and Settings made active, so
+  Brickson showed beside it as the inactive window (the status bar
+  named Settings). The colours in Brickson's part of the screen were
+  counted, then Brickson made active (by tapping its message words,
+  which press nothing) and counted again.
+- **Observed.** Inactive and active, Brickson drew exactly its asset
+  colours: phrase tiles #0A60D6, Yes, No, Phrases, Type, the categories
+  and Settings #5A6474, Emergency #C8161E, Get Attention #B45309, each
+  with white words (5.74, 5.98, 5.85 and 5.02:1), and black words on
+  white for the message. Nothing dimmed. The probe's Styles station
+  (system styles, with `appearsActive` shown) was not run inactive:
+  arranging the windows by dragging was slow, and the time went to
+  Brickson.
+- **Answer.** An inactive window does not dim Home's solid fills or
+  its words on iPadOS 27.2 in the Simulator.
+- **What it means.** Home's safety controls keep invariant 6 in an
+  inactive window. Whether system glass and system buttons (used on
+  the family screens) change when inactive is not answered
+  (*Not verified*).
+
 ### SIM-11. The trees each tool sees (A-45 Simulator part: B3-U8; A2-U13, A3-U17)
 
 - **Done.** Groups station on the iPhone in all four combinations of
