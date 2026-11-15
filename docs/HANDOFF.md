@@ -839,13 +839,17 @@ release in docs/ROADMAP.md when no thread has it yet.
   image `HomeAccessibilityOrderTests.testQuickControlsComeFirstInEveryStateAtDefaultText`
   failed once on the iPhone, just opened, reading Phrases and Type before
   Yes and No. It has passed on the Mac's iOS 27.2 each time, and on
-  PR #82's last commit, with all three jobs on the newer image. It
-  failed again on 2026-11-15 on that image, in its largest-text case
-  (`testQuickControlsComeFirstInEveryStateAtTheLargestText`, the same
-  reading), in pull request #114, which changes no Swift: its app was
-  `main`'s at `7cb0299`, where the test passed an hour earlier. So it is
-  intermittent, and a pull request's CI can fail on it with no change to
-  the app. Cause unknown. *(a Mac thread)*
+  PR #82's last commit, with all three jobs on the newer image. On
+  2026-11-15, on that image, it failed on two pushes in a row of pull
+  request #114, which changes no Swift: first its largest-text case
+  (`testQuickControlsComeFirstInEveryStateAtTheLargestText`), then the
+  default-text one, both with the same reading. That app was `main`'s at
+  `7cb0299`, where the test passed an hour before the first. Only the
+  read just after launch fails; every later state in the same test
+  passes. So it is intermittent, and a pull request's CI can fail on it
+  with no change to the app. Cause unknown, and whether a person using
+  Switch Control or VoiceOver can meet that order just after launch is
+  not known. *(a Mac thread)*
 - `SettingsTests.testAnIdleSettingsReturnsToItsFirstScreenAndStaysOpen`
   has failed once each on 2026-10-22, 2026-11-08 and 2026-11-12, on
   branches that did not touch it, and passed on each re-run: Family

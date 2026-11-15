@@ -1324,10 +1324,8 @@ def check_apple_look(source, symbols=frozenset(), exceptions=KNOWN_EXCEPTIONS, e
         if code[after] == '(':
             arguments = top_level_arguments(code, after, source.closing(after))
             # Named actions (`named:`, a Text, `action:label:`) and the
-            # other kinds (`.escape`, `.magicTap`) are not the default one;
-            # a handler alone (`({ … })`) leaves the kind at its default.
-            if (arguments and not DEFAULT_ACTION.fullmatch(arguments[0])
-                    and not arguments[0].lstrip().startswith('{')):
+            # other kinds (`.escape`, `.magicTap`) are not the default one.
+            if arguments and not DEFAULT_ACTION.fullmatch(arguments[0]):
                 continue
         elif re.match(r'\s*label\s*:', code[source.closing(after) + 1:]):
             continue  # accessibilityAction { … } label: { … } is a named action

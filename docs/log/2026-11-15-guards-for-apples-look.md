@@ -99,15 +99,24 @@ AGENTS.md gains one line under *Apple's current frameworks first*, and
   this record and docs/DECISIONS.md say the probe app is left out of
   every archive (Xcode can still run it on a device), not that it is
   never installed.
-- The commit after it answers CodeRabbit's third review. A handler
-  passed alone in parentheses (`.accessibilityAction({ … })`) leaves
-  the action at its default kind, so it is found as a view passed off
-  as a button; the tests' copy of this repository keeps its custom
+- `e16839d` answers CodeRabbit's third review. It found a handler
+  passed alone in parentheses as the default action (taken back by the
+  commit after it); the tests' copy of this repository keeps its custom
   symbol sets; and a test shows that code moved with its folder is
   checked at its new place, since an exception names a path. It also
   records in docs/HANDOFF.md that the iPhone's Home order test failed
   on this pull request's second push, with no Swift changed: the
   intermittent failure HANDOFF already described.
+- The commit after it takes back that part of `e16839d`. Swift rejects
+  `.accessibilityAction({ … })`: the action's kind comes first, and a
+  parenthesized argument fills it ("missing argument for parameter #1",
+  CodeRabbit's compile of the same signature; not compiled in this
+  session). So the clause and its test line guarded code that cannot
+  build, and `e16839d`'s entry here was wrong to say that spelling
+  leaves the action at its default kind.
+  It also updates docs/HANDOFF.md: the iPhone's Home order test failed
+  again on `e16839d`, in its default-text case, so it failed on two
+  pushes in a row with no Swift changed.
 
 ## Verified
 
