@@ -23,8 +23,11 @@ struct ProbeButton: View {
             Text(verbatim: name)
                 .font(.title3.weight(.semibold))
                 .multilineTextAlignment(.center)
-                // Only where a fixed size cannot hold the words (the
-                // Rings station's 44-point button).
+                // Where a fixed size cannot hold the words (the Rings
+                // station's 44-point button, a phone's narrow slots),
+                // they shrink rather than break mid-word: a probe
+                // exception (docs/DECISIONS.md, "A probe app for the
+                // experiments, kept out of Brickson").
                 .minimumScaleFactor(0.5)
                 .frame(width: fills ? nil : width, height: fills ? nil : height)
                 .frame(maxWidth: fills ? .infinity : nil, maxHeight: fills ? .infinity : nil)

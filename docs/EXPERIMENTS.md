@@ -82,10 +82,11 @@ updates this file's step with what was found.
   uses the camera or the microphone: Eye Tracking, Head Tracking and
   Voice Control stop working (docs/DEVICE-CHECKS.md, *Mount the
   device*).
-- **If the probe stops speaking,** close it from the App Switcher and
-  open it again, and write down the time. Unlike Brickson,
-  it does not recover its speech after a call, an alarm or a reset of
-  the system's audio (docs/DECISIONS.md, "A probe app for the
+- **If the probe stops speaking,** share its log first: the log lives
+  only in memory, and closing the probe empties it. Then close the probe
+  from the App Switcher, open it again, and write down the time. Unlike
+  Brickson, it does not recover its speech after a call, an alarm or a
+  reset of the system's audio (docs/DECISIONS.md, "A probe app for the
   experiments, kept out of Brickson").
 - **Film the screen.** Start Control Center's Screen Recording; if the
   pointer does not show in the recording, film the screen with a second
@@ -503,14 +504,22 @@ people Brickson serves.
   3. Repeat with the button at 88 and at 120 points.
   4. Dwell Control on. Probe > Landing. Dwell on **Wide** five times,
      each at a different place on it; then on **Landing** five times.
-  5. Repeat on the iPhone.
+  5. Repeat on the iPhone. A ring whose left or right points lie past
+     the screen's edge cannot be reached there: write it down as off
+     screen, not as a ring the pointer does not jump to.
 - **Record.** The farthest ring that still snaps, for each button size
   and direction; for step 4, which button the log says fired each time.
 - **What it means.**
-  - **The farthest ring grows by about half the button's size change**
-    (38 points from 44 to 120, since the rings count from the centre):
-    Snap measures to the edge; **it stays the same:** to the centre. The chain engine then scores only that rule, and only to the
-    measured reach (today it scores both rules at three ranges).
+  - **The farthest ring grows from the 44-point to the 120-point
+    button:** Snap measures to the edge (an edge reach moves the
+    farthest ring out by about half the size change, 38 points, since
+    the rings count from the centre). The chain engine then scores only
+    that rule, to the measured reach; it still scores chains of
+    activations, not only the first. **It stays the same:** not yet an
+    answer. The rings are 50 to 100 points apart, so a 38-point change
+    can fall between two of them, and a centre rule gives the same
+    result; the chain engine keeps scoring both rules at three ranges,
+    as it does today, and the question stays with Apple (ASK-1).
   - **A dwell on Wide fires Landing:** the press is delivered as a touch
     at the activation point, so an activation point must never sit over
     another control. **Wide fires:** the press is an activation or lands

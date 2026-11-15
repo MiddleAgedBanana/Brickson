@@ -132,6 +132,16 @@ structure and documentation lists).
   (it can, and the probe reads UIKit's value beside SwiftUI's to compare
   them); and DEV-11 placing the keep-awake setting on the Screen station
   (it is on the probe's first list). All three are corrected.
+- CodeRabbit's second review (on `8d936bd`): the run sheet says to share
+  the log before closing a probe whose speech stopped (the log lives only
+  in memory); DEV-2 writes down a ring past the iPhone's edge as off
+  screen, not a miss; and an unchanged farthest ring is no longer read as
+  a centre rule, because the rings are 50 to 100 points apart and a
+  38-point change can fall between two of them, so the chain engine keeps
+  both rules until a result separates them. Its request to stop button
+  words shrinking was declined: without it a long word breaks mid-word in
+  a phone's narrow slot, so docs/DECISIONS.md now names the shrinking as
+  one of the probe's exceptions.
 
 ## Verified
 

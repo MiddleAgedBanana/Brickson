@@ -6273,7 +6273,10 @@ station answers.
   - it says a Voice Control command and a Siri test sentence aloud, and
     posts announcements (A-16, A-18, A-31, A-40);
   - its words are English only, written with `Text(verbatim:)`, with no
-    String Catalog: only the person running an experiment reads them;
+    String Catalog, and a button's words shrink to fit where a fixed
+    size cannot hold them (the Rings station's 44-point button, a
+    phone's narrow slots) rather than break mid-word: only the person
+    running an experiment reads them;
   - it has no Get Attention, no Emergency and no safety bar, and no
     chain-engine scoring. Nobody uses it to communicate, and the run
     sheet says so before every session on a device.
