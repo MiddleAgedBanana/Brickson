@@ -516,10 +516,11 @@ people Brickson serves.
     the rings count from the centre). The chain engine then scores only
     that rule, to the measured reach; it still scores chains of
     activations, not only the first. **It stays the same:** not yet an
-    answer. The rings are 50 to 100 points apart, so a 38-point change
-    can fall between two of them, and a centre rule gives the same
-    result; the chain engine keeps scoring both rules at three ranges,
-    as it does today, and the question stays with Apple (ASK-1).
+    answer. Beyond 50 points the rings are 50 or 100 points apart, so
+    a 38-point change can fall between two of them, and a centre rule
+    gives the same result; the chain engine keeps scoring both rules at
+    three ranges, as it does today, and the question stays with Apple
+    (ASK-1).
   - **A dwell on Wide fires Landing:** the press is delivered as a touch
     at the activation point, so an activation point must never sit over
     another control. **Wide fires:** the press is an activation or lands

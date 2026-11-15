@@ -136,9 +136,9 @@ structure and documentation lists).
   the log before closing a probe whose speech stopped (the log lives only
   in memory); DEV-2 writes down a ring past the iPhone's edge as off
   screen, not a miss; and an unchanged farthest ring is no longer read as
-  a centre rule, because the rings are 50 to 100 points apart and a
-  38-point change can fall between two of them, so the chain engine keeps
-  both rules until a result separates them. Its request to stop button
+  a centre rule, because beyond 50 points the rings are 50 or 100 points
+  apart and a 38-point change can fall between two of them, so the chain
+  engine keeps both rules until a result separates them. Its request to stop button
   words shrinking was declined: without it a long word breaks mid-word in
   a phone's narrow slot, so docs/DECISIONS.md now names the shrinking as
   one of the probe's exceptions.
