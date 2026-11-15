@@ -5433,6 +5433,15 @@ removed. Nothing was changed to pass: a new colour, or a border on
 Settings' buttons, changes how the app looks, which is the owner's call,
 and no test was weakened.
 
+**The six edges are not accepted.** They break invariant 6 on the lifted
+dark screen today, as they did before this change, when nothing measured
+them (the base recorded only the message field's edge). A known issue
+keeps CI green while measuring them; it is not an exception to the
+invariant. The owner decides, by merging this or asking otherwise,
+whether they wait for the design of the app's look or get the border now
+(Codex's review of pull request #113). The 32 look-alike pairs break no
+invariant: 15 is the colour search's target, not a rule here.
+
 Before: each colour set had one value for every appearance, and
 `PaletteTests` measured that value in the four appearances against the
 base screen; the words on fills were `Color.white`.

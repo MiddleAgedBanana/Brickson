@@ -698,7 +698,9 @@ release in docs/ROADMAP.md when no thread has it yet.
   waits for the owner's design of the app's look, which chooses dark
   mode's values and may solve it with brighter dark fills instead. The
   test reads the lifted gray from UIKit, so CI's log gives the measured
-  ratios.
+  ratios. These are breaches of invariant 6, not accepted exceptions:
+  the owner decides whether they wait for the design or get the border
+  now.
   *(the owner's design of the app's look; docs/DECISIONS.md, "Colour
   tokens in four appearances")*
 - Every colour token has four slots (light, dark, and each with Increase

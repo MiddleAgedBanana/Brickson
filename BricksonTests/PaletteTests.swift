@@ -167,9 +167,10 @@ struct PaletteTests {
 
     /// Where today's values miss the budget's 3:1 edge: a fill drawn with
     /// no border on the lifted dark screen, whose gray leaves it under
-    /// 3:1 (2.59 to 2.96:1). Inputs for the design that chooses new
-    /// values (docs/HANDOFF.md, *Known gaps*); remove a line when its value
-    /// passes.
+    /// 3:1 (2.59 to 2.96:1). Breaches of invariant 6 this test found, not
+    /// exceptions to it: the owner decides whether they wait for the
+    /// design that chooses new values or get a border now (docs/HANDOFF.md,
+    /// *Known gaps*); remove a line when its value passes.
     private static let knownEdgeFailures: Set<BudgetCase> = [
         BudgetCase(surface: .systemButton, fill: "AccentColor", appearance: .dark, lifted: true),
         BudgetCase(surface: .systemButton, fill: "AccentColor", appearance: .increasedContrastDark, lifted: true),

@@ -30,7 +30,11 @@ system buttons and the typing fields' edge), and 8 pairs of fills that
 look alike for one colour vision, in each of the four appearances (32),
 Emergency and Get Attention at 2.7 for deuteranopia the closest. Nothing
 was recoloured and no test was weakened. Decision: docs/DECISIONS.md,
-"Colour tokens in four appearances".
+"Colour tokens in four appearances". Codex's review pointed out that the
+six edges are newly recorded breaches of invariant 6, and that a known
+issue must not make them look accepted; the documents now say they are
+not, and that the owner decides at merge whether they wait for the
+design or get the border now.
 
 ## Commits
 
