@@ -43,7 +43,9 @@ Contrast, so a unit test cannot resolve the drawn colour there either.
 The new test, `everyFillIsDrawnFromItsColourSet`, pins the cause instead:
 each fill in `Palette.fills`, and the words on fills, must equal its
 colour set by name, and it checks that `Color.accentColor` does not, so a
-fill drawn with the accent cannot pass. `Palette.assetNames` now comes
+fill drawn with the accent cannot pass. It checks `Palette`, not the
+views: a view drawing a colour of its own would still pass, as before.
+`Palette.assetNames` now comes
 from `Palette.fills`, so the list the other tests measure and the
 colours the app draws are one list.
 

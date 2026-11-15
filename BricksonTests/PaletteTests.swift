@@ -329,8 +329,9 @@ struct PaletteTests {
     /// (the white words 3.95:1), against `#0A60D6` in all four slots.
     /// SwiftUI's environment cannot set Increase Contrast, so no unit test
     /// can resolve a drawn colour there; this pins the cause instead.
-    /// Fails if a fill, or the words on fills, is made any way but from
-    /// its colour set by name, `Color.accentColor` included.
+    /// Fails if one of `Palette`'s fills, or its fill label, is made any
+    /// way but from its colour set by name, `Color.accentColor` included.
+    /// It checks `Palette`, not whether a view draws `Palette`'s colours.
     @Test func everyFillIsDrawnFromItsColourSet() {
         for (asset, color) in Palette.fills {
             #expect(color == Color(asset), "\(asset) is not drawn from its colour set")
