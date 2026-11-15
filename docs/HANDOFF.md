@@ -731,6 +731,26 @@ release in docs/ROADMAP.md when no thread has it yet.
     words at 4.5:1 on a fill, the fill can stand at most 3.78:1 from the
     lifted gray and 4.67:1 from black, the "contrast budget".
   *(the owner's design of the app's look)*
+- **The accent is drawn differently from its asset under Increase
+  Contrast** (simulator experiments, 2026-11-15, SIM-10 in
+  [`log/2026-11-15-experiments-simulator.md`](log/2026-11-15-experiments-simulator.md)).
+  `PaletteTests` checks the asset catalog, where `AccentColor` is
+  `#0A60D6` in all four appearances; in the iOS 27.2 Simulator, every
+  control filled with `Color.accentColor` (the phrase tiles, the
+  selected category, Settings' Back to Talking) is drawn `#084DAB` with
+  Increase Contrast in light (7.89:1 with its white words) and `#1A7BFF`
+  in dark, **3.95:1, under invariant 6's 4.5:1**. Controls filled with
+  the named colours (Yes, No, Emergency, Get Attention, the other
+  categories) keep their values. Not yet seen on a device. Fixing it
+  (filling those controls with a named colour, or choosing Increase
+  Contrast values) is part of the item above. *(the owner's design of
+  the app's look; a device check confirms it first)*
+- The layout engine's named windows (`HomeLayoutEngineTests.windows`)
+  lack five that today's simulators give an app (SIM-12 in the same
+  record): iPhone Air 420 by 912 (insets 68 and 34), iPad Air 13-inch
+  1024 by 1366, the iPad (A16) and iPad Air 11-inch at 820 by 1180, and
+  the newest iPad mini at 756 by 1158 (the table's "iPad mini" is 744 by
+  1133). *(a test pull request; R0)*
 - iPad windows the person can resize have two gaps besides being
   untested (*Verification*). No scene has a minimum window size, though
   docs/LESSONS.md, "Windows need a minimum size", asks for one derived
@@ -1274,9 +1294,11 @@ leaves ([`log/2026-11-04-device-procedures.md`](log/2026-11-04-device-procedures
 2026-11-14 asked for have one ordered run sheet,
 [docs/EXPERIMENTS.md](EXPERIMENTS.md), and a probe app to run them,
 `BricksonProbe/`, which never ships (docs/DECISIONS.md, "A probe app for
-the experiments, kept out of Brickson"): a Mac session builds the probe
-and runs the simulator group first (its *What the Mac session does
-next*); its device group starts with A-1 and needs the Team ID. R0 in
+the experiments, kept out of Brickson"): a Mac session ran its
+simulator group on 2026-11-15
+([`log/2026-11-15-experiments-simulator.md`](log/2026-11-15-experiments-simulator.md),
+which lists what each step found and what moves to a device); its
+device group starts with A-1 and needs the Team ID. R0 in
 [docs/ROADMAP.md](ROADMAP.md), in order; the owner's
 long-term vision, the direction behind it, is its *Where this goes*.
 The next pull requests, in order, with which may run side by side and
