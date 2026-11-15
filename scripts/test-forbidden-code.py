@@ -1109,7 +1109,8 @@ class AppleLookTests(unittest.TestCase):
             'Text("Yes").accessibilityRespondsToUserInteraction(true)',
             'Text("Yes").accessibilityAction { speak() }',
             'Text("Yes").accessibilityAction(.default) { speak() }',
-            'Text("Yes").accessibilityAction(AccessibilityActionKind.default) { speak() }'],
+            'Text("Yes").accessibilityAction(AccessibilityActionKind.default) { speak() }',
+            'Text("Yes").accessibilityAction({ speak() })'],
         'empty catch': ['do { try save() } catch {}', 'do { try save() } catch {   }',
                         'do { try save() } catch { /* nothing to do */ }'],
         'old clock': ['let t = CACurrentMediaTime()', 'let t = CFAbsoluteTimeGetCurrent()',
@@ -1330,6 +1331,21 @@ class KnownExceptionTests(unittest.TestCase):
         self.assertEqual([(finding.path, finding.rule) for finding in findings],
                          [('Old/Rows.swift', 'stale exception')])
         self.assertIn('no longer in a target that ships', findings[0].message)
+
+    def test_code_moved_with_its_folder_is_checked_at_its_new_place(self):
+        # The exception names a path, so it never follows the code: the
+        # moved type is a finding again, and the repository test below
+        # (test_each_known_exception_names_a_real_place_and_its_gap)
+        # fails on an exception whose file this repository no longer has.
+        moved = PROJECT.replace('      - App\n      - path: site', '      - Src\n      - path: site')
+        self.assertNotEqual(moved, PROJECT)
+        checkout = fixture_checkout(**{'project.yml': moved, 'App/HomeView.swift': None,
+                                       'Src/HomeView.swift': APP_FILE, 'Src/Rows.swift': self.TEXT})
+        self.addCleanup(checkout.close)
+        with unittest.mock.patch.object(forbidden, 'KNOWN_EXCEPTIONS', frozenset({self.EXCEPTION})):
+            findings = checkout.check()
+        self.assertIn(('Src/Rows.swift', 'primitive button style'),
+                      [(finding.path, finding.rule) for finding in findings])
 
 
 class TableTests(unittest.TestCase):
@@ -2311,7 +2327,8 @@ def copy_of_this_checkout():
     for path in tracked.stdout.decode().split('\0'):
         if path and (ROOT / path).is_file() and (
                 path in ('project.yml', 'CLAUDE.md', 'docs/DECISIONS.md')
-                or path.startswith('.github/') or path.endswith(('.swift', '.plist'))):
+                or path.startswith('.github/') or path.endswith(('.swift', '.plist'))
+                or '.symbolset/' in path):
             files[path] = (ROOT / path).read_bytes()
     return Checkout(files)
 

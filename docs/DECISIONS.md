@@ -5737,7 +5737,9 @@ what to do instead. Nothing the app shows or does changed.
   (a call to `trigger()` is a rule of its own, so the exception for a
   `PrimitiveButtonStyle` never excuses one), and one the code no longer
   needs, or whose file is gone or in no target that ships, is a finding
-  of its own. There are two,
+  of its own. A file moved with its whole folder is not: the check
+  cannot tell that from another repository's checkout, so its tests fail
+  instead, and the moved code is checked at its new place. There are two,
   both in Settings: `SettingsRowButtonStyle` and `SettingsPairLabel`.
   Adding one is an exception, which *Code Review Rules* flags for the
   owner. These two were proposed in pull request #114, not accepted by

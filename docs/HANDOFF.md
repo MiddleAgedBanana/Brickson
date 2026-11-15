@@ -839,10 +839,13 @@ release in docs/ROADMAP.md when no thread has it yet.
   image `HomeAccessibilityOrderTests.testQuickControlsComeFirstInEveryStateAtDefaultText`
   failed once on the iPhone, just opened, reading Phrases and Type before
   Yes and No. It has passed on the Mac's iOS 27.2 each time, and on
-  PR #82's last commit, with all three jobs on the newer image. If it
-  fails again on that image, it is intermittent, and pull requests will
-  meet it once every machine has the image. *(the next thread whose CI
-  shows it)*
+  PR #82's last commit, with all three jobs on the newer image. It
+  failed again on 2026-11-15 on that image, in its largest-text case
+  (`testQuickControlsComeFirstInEveryStateAtTheLargestText`, the same
+  reading), in pull request #114, which changes no Swift: its app was
+  `main`'s at `7cb0299`, where the test passed an hour earlier. So it is
+  intermittent, and a pull request's CI can fail on it with no change to
+  the app. Cause unknown. *(a Mac thread)*
 - `SettingsTests.testAnIdleSettingsReturnsToItsFirstScreenAndStaysOpen`
   has failed once each on 2026-10-22, 2026-11-08 and 2026-11-12, on
   branches that did not touch it, and passed on each re-run: Family

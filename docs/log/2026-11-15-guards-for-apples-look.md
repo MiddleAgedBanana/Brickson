@@ -94,11 +94,20 @@ AGENTS.md gains one line under *Apple's current frameworks first*, and
   two runs of spaces that could share the same spaces, so a long string
   blanked to spaces made it backtrack (20,000 spaces took over a
   second); SonarCloud flagged it, and a test now bounds it.
-- The commit after it answers cubic's third review. An exception whose
+- `5c686d7` answers cubic's third review. An exception whose
   file is still there but in no target that ships is a finding, and
   this record and docs/DECISIONS.md say the probe app is left out of
   every archive (Xcode can still run it on a device), not that it is
   never installed.
+- The commit after it answers CodeRabbit's third review. A handler
+  passed alone in parentheses (`.accessibilityAction({ … })`) leaves
+  the action at its default kind, so it is found as a view passed off
+  as a button; the tests' copy of this repository keeps its custom
+  symbol sets; and a test shows that code moved with its folder is
+  checked at its new place, since an exception names a path. It also
+  records in docs/HANDOFF.md that the iPhone's Home order test failed
+  on this pull request's second push, with no Swift changed: the
+  intermittent failure HANDOFF already described.
 
 ## Verified
 
@@ -108,8 +117,8 @@ In this cloud session, which cannot build Swift:
   the new ones. Each new rule has lines that break it, one way each,
   found on their line; the nearest code that keeps it, passing; the same
   lines in comments and strings, ignored; the known exceptions excusing
-  only their rule in their type; a stale exception found; a never
-  installed app target held to the first check only; picture files found
+  only their rule in their type; a stale exception found; an app
+  target left out of every archive held to the first check only; picture files found
   outside the app icon and custom symbols. Removing any rule or any
   alternative of a rule's pattern fails at least one test.
 - `python3 scripts/forbidden-code.py` over this checkout: nothing found,
