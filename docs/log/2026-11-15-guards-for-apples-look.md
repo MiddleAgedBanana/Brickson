@@ -55,8 +55,21 @@ AGENTS.md gains one line under *Apple's current frameworks first*, and
   and its tests)
 - `4d1a07f` Record the guards for Apple's look (docs/DECISIONS.md,
   AGENTS.md, docs/HANDOFF.md and this record)
-- The commit after it: this record lists the commits and gains the
-  merge check with pull requests #112 and #113.
+- `ffd9575` This record lists the commits and gains the merge check
+  with pull requests #112 and #113.
+- The commit after it answers the first reviews (Codex, CodeRabbit and
+  Graphify; Copilot had no quota). Each `ButtonStyle` needs its own
+  press state (another style's `isPressed` in the same file no longer
+  counts, a view of the file the style names does); the button-trait
+  rule reads through a call inside the traits; `trigger()` is a rule of
+  its own, so the `PrimitiveButtonStyle` exception cannot excuse one;
+  swipe to delete and drag to move are found with a trailing closure;
+  a bare `SKIP_INSTALL` counts only where XcodeGen reads it; and
+  docs/DECISIONS.md says the two known exceptions are proposed for the
+  owner, whose merge accepts them. Declined, with the reason in
+  docs/DECISIONS.md: refusing an empty handler for one kind of error,
+  which found `DraftStore.write`'s correct handling of a draft already
+  removed.
 
 ## Verified
 

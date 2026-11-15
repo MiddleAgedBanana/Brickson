@@ -1031,8 +1031,8 @@ class AppleLookTests(unittest.TestCase):
             'let e = UIGlassEffect()'],
         'primitive button style': [
             'struct Tap: PrimitiveButtonStyle { func makeBody(configuration: Configuration) -> some View '
-            '{ configuration.label } }',
-            'configuration.trigger()', 'let fire = configuration.trigger'],
+            '{ configuration.label } }'],
+        'button trigger': ['configuration.trigger()', 'let fire = configuration.trigger'],
         'repeating button': [
             'Button("Faster") {}.buttonRepeatBehavior(.enabled)',
             'Button("Faster") {}.buttonRepeatBehavior(ButtonRepeatBehavior.enabled)',
@@ -1064,7 +1064,11 @@ class AppleLookTests(unittest.TestCase):
             'struct Flat: ButtonStyle { func makeBody(configuration: Configuration) -> some View '
             '{ configuration.label } }',
             'extension Flat: SwiftUI.ButtonStyle { func makeBody(configuration: Configuration) -> some '
-            'View { configuration.label } }'],
+            'View { configuration.label } }',
+            'struct Press: ButtonStyle { func makeBody(configuration: Configuration) -> some View '
+            '{ configuration.label.opacity(configuration.isPressed ? 0.8 : 1) } }; struct Flat: '
+            'ButtonStyle { func makeBody(configuration: Configuration) -> some View '
+            '{ configuration.label } }'],
         'all capitals': ['Text("Yes").textCase(.uppercase)', 'Text("Yes").textCase(Text.Case.uppercase)',
                          'let c = Text.Case.uppercase'],
         'gesture-only control': [
@@ -1073,6 +1077,9 @@ class AppleLookTests(unittest.TestCase):
             'ForEach(rows) { Text($0.name) }.onDelete(perform: remove)',
             'ForEach(rows) { Text($0.name) }.onMove(perform: move)',
             'ForEach(rows) { Text($0.name) }.onInsert(of: [.text], perform: add)',
+            'ForEach(rows) { Text($0.name) }.onDelete { offsets in remove(offsets) }',
+            'ForEach(rows) { Text($0.name) }.onMove { from, to in move(from, to) }',
+            'ForEach(rows) { Text($0.name) }.onInsert(of: [.text]) { index, items in add(items) }',
             'Text("Yes").onDrag { NSItemProvider() }', 'Text("Yes").draggable(phrase)',
             'Text("Yes").dropDestination(for: String.self) { _, _ in true }',
             'Text("Yes").onDrop(of: [.text], isTargeted: nil) { _ in true }'],
@@ -1091,6 +1098,7 @@ class AppleLookTests(unittest.TestCase):
             'Text("Yes").accessibilityAddTraits(.isButton)',
             'Text("Yes").accessibilityAddTraits([.isSelected, .isButton])',
             'Text("Yes").accessibility(addTraits: .isButton)',
+            'Text("Yes").accessibilityAddTraits(isLive(row) ? .isButton : [])',
             'Text("Yes").accessibilityRespondsToUserInteraction(true)',
             'Text("Yes").accessibilityAction { speak() }',
             'Text("Yes").accessibilityAction(.default) { speak() }',
@@ -1110,6 +1118,13 @@ class AppleLookTests(unittest.TestCase):
         'let glassy = isGlass', 'let g = model.glassCount',
         'struct Press: ButtonStyle { func makeBody(configuration: Configuration) -> some View '
         '{ configuration.label.opacity(configuration.isPressed ? 0.8 : 1) } }',
+        'struct Tile: ButtonStyle { func makeBody(configuration: Configuration) -> some View '
+        '{ TileBody(configuration: configuration) } }; struct TileBody: View { let configuration: '
+        'ButtonStyleConfiguration; var body: some View '
+        '{ configuration.label.opacity(configuration.isPressed ? 0.8 : 1) } }',
+        'struct Tile { func makeBody(configuration: ButtonStyleConfiguration) -> some View '
+        '{ configuration.label.scaleEffect(configuration.isPressed ? 0.98 : 1) } }; '
+        'extension Tile: ButtonStyle {}',
         'Button("Yes") {}.sensoryFeedback(.impact, trigger: count)',
         'Button("Faster") {}.buttonRepeatBehavior(.disabled)',
         'Button("Faster") {}.buttonRepeatBehavior(.automatic)',
@@ -1138,6 +1153,9 @@ class AppleLookTests(unittest.TestCase):
         'do { try save() } catch { report(error) }',
         'do { try await Task.sleep(for: .seconds(1)) } catch is CancellationError {}',
         'let t = ContinuousClock.now', 'Text("Yes").hoverEffect(.highlight)',
+        'do { try save() } catch is SaveError { retry() } catch { report(error) }',
+        # One error that is the wanted outcome, every other one thrown on.
+        'do { try remove() } catch let error as CocoaError where isMissingFile(error) {}',
     ]
 
     def test_every_rule_is_tested(self):
@@ -1171,6 +1189,21 @@ class AppleLookTests(unittest.TestCase):
         text = ('struct Flat: ButtonStyle {\n    // configuration.isPressed is not drawn\n'
                 '    func makeBody(configuration: Configuration) -> some View { configuration.label }\n}\n')
         self.assertEqual(rules(look_findings(text)), ['no press state'])
+
+    def test_each_button_style_needs_its_own_press_state(self):
+        # Another style's isPressed, or a type the style never names, is
+        # not this style's press state.
+        text = ('struct Press: ButtonStyle {\n'
+                '    func makeBody(configuration: Configuration) -> some View {\n'
+                '        configuration.label.opacity(configuration.isPressed ? 0.8 : 1)\n    }\n}\n'
+                'struct Flat: ButtonStyle {\n'
+                '    func makeBody(configuration: Configuration) -> some View { configuration.label }\n}\n'
+                'struct Unrelated: View {\n    let isPressed = false\n'
+                '    var body: some View { Text("Yes") }\n}\n')
+        findings = look_findings(text)
+        self.assertEqual([(finding.rule, finding.line) for finding in findings],
+                         [('no press state', 6)])
+        self.assertIn('`Flat`', findings[0].message)
 
     def test_a_custom_symbol_named_by_a_literal_passes(self):
         for line in ['Image("brickson.wave")', 'Image(decorative: "brickson.wave")',
@@ -1219,6 +1252,14 @@ class KnownExceptionTests(unittest.TestCase):
         self.assertEqual(excused, {self.EXCEPTION})
         self.assertEqual(sorted((finding.line, finding.rule) for finding in findings),
                          [(2, 'glass or material'), (4, 'primitive button style')])
+
+    def test_it_never_excuses_a_trigger_call_in_its_type(self):
+        text = ('struct Rows: PrimitiveButtonStyle {\n'
+                '    func makeBody(configuration: Configuration) -> some View {\n'
+                '        Button { configuration.trigger() } label: { configuration.label }\n    }\n}\n')
+        findings = look_findings(text, path='App/Rows.swift', exceptions={self.EXCEPTION})
+        self.assertEqual([(finding.line, finding.rule) for finding in findings],
+                         [(3, 'button trigger')])
 
     def test_it_excuses_nothing_in_another_file(self):
         excused = set()
@@ -2064,6 +2105,28 @@ class CheckoutTests(unittest.TestCase):
                     expected |= {('Probe/Station.swift', 'toggle'),
                                  ('Probe/Assets.xcassets/Logo.imageset/logo.png', 'not an SF Symbol')}
                 self.assertEqual(found, expected)
+
+    def test_a_bare_skip_install_counts_only_where_xcodegen_reads_it(self):
+        # XcodeGen ignores keys written straight under `settings` once it
+        # has `base`, `configs` or `groups`, so such a target can install.
+        files = {'Probe/Station.swift': 'let t = Toggle("A", isOn: $a)\n'}
+        probe = '  Probe:\n    type: application\n    platform: iOS\n    sources: [Probe]\n{settings}  AppTests:\n'
+        for settings, checked in [
+                ('    settings:\n      SKIP_INSTALL: YES\n', False),
+                ('    settings:\n      SKIP_INSTALL: YES\n      configs:\n        Debug:\n'
+                 '          ENABLE_TESTABILITY: YES\n', True),
+                ('    settings:\n      SKIP_INSTALL: YES\n      groups: [Shared]\n', True),
+                ('    settings:\n      SKIP_INSTALL: YES\n      base:\n        SWIFT_VERSION: "6.0"\n',
+                 True),
+                ('    settings: {SKIP_INSTALL: YES, configs: {Debug: {ENABLE_TESTABILITY: YES}}}\n', True),
+                ('    settings:\n      base:\n        SKIP_INSTALL: YES\n      configs:\n        Debug:\n'
+                 '          ENABLE_TESTABILITY: YES\n', False)]:
+            with self.subTest(settings=settings):
+                project = PROJECT.replace('  AppTests:\n', probe.format(settings=settings))
+                checkout = fixture_checkout(**{'project.yml': project}, **files)
+                self.addCleanup(checkout.close)
+                found = [(finding.path, finding.rule) for finding in checkout.check()]
+                self.assertEqual(found, [('Probe/Station.swift', 'toggle')] if checked else [])
 
     def test_an_app_that_never_ships_alone_stops_the_check(self):
         project = PROJECT.replace('    dependencies: []\n', '    dependencies: []\n    settings:\n'

@@ -1104,8 +1104,8 @@ SETTING = ('the person\'s own display settings win: writing Bold Text, Reduce Mo
            'draw a designed answer for each setting instead')
 PRESS = ('every custom ButtonStyle draws a press state from `configuration.isPressed`: without '
          'one, a tap, a switch or a dwell shows no sign that it landed, and the person may try '
-         'again (Human Interface Guidelines, Buttons). Read `isPressed` in the style\'s file and '
-         'change the look without moving anything')
+         'again (Human Interface Guidelines, Buttons). Read `isPressed` in the style, or in the '
+         'view of the same file its body draws, and change the look without moving anything')
 UPPERCASE = ('words keep the capitals they are written with: all-capital labels are slower to '
              'read and are not Apple\'s style, which uses title-style capitals on buttons (Human '
              'Interface Guidelines, Buttons). Write the words in the String Catalog as people '
@@ -1145,7 +1145,7 @@ LOOK_RULES = [
         r'|glassBackgroundEffect|Glass|Material|(?:ultraThin|thin|regular|thick|ultraThick)Material'
         r'|UIBlurEffect|UIVisualEffectView|UIGlass\w*|(?<=\.)glass(?:Prominent)?'), None),
     ('primitive button style', PRIMITIVE, word(r'PrimitiveButtonStyle'), None),
-    ('primitive button style', TRIGGER, re.compile(r'\.\s*trigger\b(?!\s*:)'), '.trigger'),
+    ('button trigger', TRIGGER, re.compile(r'\.\s*trigger\b(?!\s*:)'), '.trigger'),
     ('repeating button', REPEAT, re.compile(r'\bButtonRepeatBehavior\s*\.\s*enabled\b'),
      'buttonRepeatBehavior'),
     ('light font weight', LIGHT_WEIGHT, re.compile(
@@ -1167,13 +1167,17 @@ LOOK_RULES = [
         r'|\bText\s*\.\s*Case\s*\.\s*uppercase\b'), None),
     ('gesture-only control', GESTURE_ONLY, re.compile(
         r'\.\s*(?:contextMenu|swipeActions)\s*(?=[({])'
+        r'|\.\s*(?:onDelete|onMove|onInsert)\s*(?:\([^()]*\)\s*)?(?=\{)'
         r'|\.\s*(?:onDelete|onMove|onInsert)\s*\((?=[^()]*\bperform\s*:)'
         r'|\.\s*(?:onDrag|onDrop|draggable|dropDestination)\s*(?=[({])'), None),
     ('system dialog', DIALOG, word(r'Alert|ActionSheet|UIAlertController'), None),
     ('toggle', TOGGLE, word(r'Toggle|ToggleStyle\w*|toggleStyle'), None),
     ('fake button', FAKE_BUTTON, re.compile(
-        r'(?:\baccessibilityAddTraits\s*\(|\baddTraits\s*:)[^()]*\bisButton\b'), '.isButton'),
+        r'(?:\baccessibilityAddTraits\s*\(|\baddTraits\s*:)(?:[^()]|\([^()]*\))*\bisButton\b'),
+     '.isButton'),
     ('fake button', FAKE_BUTTON, word(r'accessibilityRespondsToUserInteraction'), None),
+    # Only a catch with no pattern: an empty handler for one error, such
+    # as a file already gone when removing it, can be the recovery.
     ('empty catch', SILENT_CATCH, re.compile(r'(?<![\w.$])catch\s*\{\s*\}'), 'catch {}'),
     ('old clock', OLD_CLOCK, word(
         r'CACurrentMediaTime|CFAbsoluteTimeGetCurrent|mach_absolute_time|mach_continuous_time'
@@ -1236,6 +1240,19 @@ def owner(spans, offset):
     return max(inside)[1] if inside else ''
 
 
+def reads_press_state(code, spans, name):
+    """Whether the ButtonStyle `name` reads `isPressed` in its own code
+    (every declaration and extension of that name in the file, nested
+    types included) or in a type of the same file that its code names,
+    such as the view its `makeBody` returns. Another style's press state
+    in the same file is not this one's."""
+    own = [code[start:end] for start, end, owner_name in spans if owner_name == name]
+    named = {name} | ({word for text in own for word in re.findall(r'[A-Za-z_]\w*', text)}
+                      & {owner_name for _, _, owner_name in spans})
+    return any(re.search(r'\bisPressed\b', code[start:end])
+               for start, end, owner_name in spans if owner_name in named)
+
+
 def declares_function(code, offset):
     return re.search(r'\bfunc\s*$', code[max(0, offset - 12):offset]) is not None
 
@@ -1292,10 +1309,10 @@ def check_apple_look(source, symbols=frozenset(), exceptions=KNOWN_EXCEPTIONS, e
             continue  # accessibilityAction { … } label: { … } is a named action
         found(match.start(), 'fake button', f'`.accessibilityAction`: {FAKE_BUTTON}.')
 
-    if not re.search(r'\bisPressed\b', code):
-        for match in BUTTON_STYLE.finditer(code):
-            found(match.start('name'), 'no press state',
-                  f'`{match.group("name")}`: {PRESS}.')
+    for match in BUTTON_STYLE.finditer(code):
+        name = match.group('name')
+        if not reads_press_state(code, spans, name):
+            found(match.start('name'), 'no press state', f'`{name}`: {PRESS}.')
 
     for match in IMAGE_CALL.finditer(code):
         if declares_function(code, match.start()):
@@ -1329,12 +1346,18 @@ def never_shipped(entries, name):
     settings give `SKIP_INSTALL` a true value for every build, and no
     build turns it off. An archive of such an app holds no app, so it is
     never uploaded."""
+    settings = ('targets', name, 'settings')
     values = [entry for entry in entries
-              if len(entry.path) >= 4 and entry.path[:3] == ('targets', name, 'settings')
+              if len(entry.path) >= 4 and entry.path[:3] == settings
               and setting_name(entry.key) == 'SKIP_INSTALL']
+    # XcodeGen reads keys written straight under `settings` only when it
+    # has no `base`, `configs` or `groups`; otherwise only `base` holds
+    # the setting for every build.
+    advanced = any(entry.path in {settings + (key,) for key in ('base', 'configs', 'groups')}
+                   for entry in entries)
+    every_build = ('base', 'SKIP_INSTALL') if advanced else ('SKIP_INSTALL',)
     return bool(values) and all(truthy(entry.value) for entry in values) and any(
-        entry.path[3:] in ((entry.key,), ('base', entry.key)) and entry.key == 'SKIP_INSTALL'
-        for entry in values)
+        entry.path[3:] == every_build for entry in values)
 
 
 def check_app_file(source, allowed, declared):

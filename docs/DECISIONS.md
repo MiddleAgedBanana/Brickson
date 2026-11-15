@@ -5582,8 +5582,9 @@ what to do instead. Nothing the app shows or does changed.
   font's `fixedSize:`); circular corners and the deprecated
   `cornerRadius(_:antialiased:)`; an accessibility setting or Bold Text
   written into the environment, which hides the person's choice; a
-  `ButtonStyle` whose file never reads `isPressed`; all-capital text; a
-  context menu, swipe action, swipe to delete, drag to move or drag and
+  `ButtonStyle` that never reads `isPressed`, in its own code or in a
+  view of its file that it names (another style's press state does not
+  count); all-capital text; a context menu, swipe action, swipe to delete, drag to move or drag and
   drop (invariants 1 and 3); a system alert, confirmation dialog or
   action sheet (invariants 3 and 4; *Settings is a cover with a fixed
   safety bar*); a toggle (invariant 10); a view given the button trait,
@@ -5601,18 +5602,25 @@ what to do instead. Nothing the app shows or does changed.
   way in, not a second meaning for one.
 - **Scope.** The targets that ship: every target that is not a test,
   except an application target that `project.yml` marks never installed
-  (`SKIP_INSTALL` true for every build), such as the experiments' probe
-  app, which keeps every other rule. A framework or extension ships
+  (`SKIP_INSTALL` true for every build, where XcodeGen reads it: under
+  `base`, or straight under `settings` only when it has no `base`,
+  `configs` or `groups`), such as the experiments' probe app, which keeps
+  every other rule. A framework or extension ships
   inside the app whatever its own setting says. If every application
   target is marked so, the check stops with status 2.
 - **Known exceptions.** Where today's code breaks one of these rules and
   the fix would change what a person sees, the place is named in
   `KNOWN_EXCEPTIONS` (rule, file and type) and in docs/HANDOFF.md,
-  *Known gaps*, as an input to the new design. It excuses nothing else,
-  and one the code no longer needs is a finding of its own. There are two,
+  *Known gaps*, as an input to the new design. It excuses nothing else
+  (a call to `trigger()` is a rule of its own, so the exception for a
+  `PrimitiveButtonStyle` never excuses one), and one the code no longer
+  needs is a finding of its own. There are two,
   both in Settings: `SettingsRowButtonStyle` and `SettingsPairLabel`.
   Adding one is an exception, which *Code Review Rules* flags for the
-  owner.
+  owner. These two were proposed in pull request #114, not accepted by
+  it: the owner's merge accepts them until the new design (programme
+  stage 6) replaces both places, and declining them means that design
+  comes first, since fixing either now changes what a person sees.
 - **Not guarded, and why.** Each needs judgment, a screenshot or a
   device, or would raise false alarms: two layers and hierarchy;
   colour's meaning, placement and four appearances (the colour tokens'
@@ -5628,7 +5636,10 @@ what to do instead. Nothing the app shows or does changed.
   crash message (whether it can hold a person's words is judgment);
   intervals between `Date`s (right for calendar time people read); caps
   on Dynamic Type (`textSize` caps on purpose); menus, steppers and
-  sliders (allowed on family screens).
+  sliders (allowed on family screens); an empty handler for one kind of
+  error (`catch is SomeError {}`), which can be the recovery, as where
+  removing a draft finds the file already gone and every other error is
+  thrown on (only a bare `catch {}` is refused).
 
 ## Personal details stay out of the repository
 
