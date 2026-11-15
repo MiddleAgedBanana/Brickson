@@ -678,16 +678,16 @@ release in docs/ROADMAP.md when no thread has it yet.
   check on a device (docs/DECISIONS.md, "Get Attention"). *(owner, with a
   device build)*
 - In dark mode, iPad multitasking can lift a window's background from
-  black to the elevated gray. Against `#1C1C1E` (a commonly reported
-  value, not read from Apple) the accent, control and Emergency fills
+  black to the elevated gray. Against `#1C1C1E` (UIKit's value, as CI
+  read it on 2026-11-15) the accent, control and Emergency fills
   come to 2.84 to 2.96:1, under invariant 6's 3:1. Since 2026-11-02
   every Home button draws a white border in dark mode, and `PaletteTests`
   measures it against the lifted screen (4.5:1 or better), so no button's
   fill meets that screen. Two things there still meet it with no border,
   and since 2026-11-15 `PaletteTests.everyFillKeepsItsContrastBudget`
   measures both, as named known issues, with and without Increase
-  Contrast (where the lifted gray is lighter still, `#242426` by the same
-  reports, so the ratios fall to 2.59 to 2.70:1): the typing fields'
+  Contrast (where the lifted gray is lighter still, `#242426` as CI read
+  it, so the ratios fall to 2.59 to 2.70:1): the typing fields'
   2pt edge, the control fill (2.84:1 against `#1C1C1E`), on Home's message
   field and the Library's text fields; and the system's bordered prominent
   buttons tinted with the accent or control fill (2.96 and 2.84:1), on
@@ -697,8 +697,10 @@ release in docs/ROADMAP.md when no thread has it yet.
   primary-ink field edge in dark mode. It changes how they look, so it
   waits for the owner's design of the app's look, which chooses dark
   mode's values and may solve it with brighter dark fills instead. The
-  test reads the lifted gray from UIKit, so CI's log gives the measured
-  ratios. These are breaches of invariant 6, not accepted exceptions:
+  test reads the lifted gray from UIKit; the measured ratios are in CI's
+  unit result bundle (the `unit-test-results` artifact's
+  `ExpectedFailures`), not its printed log, which leaves out tests that
+  record known issues. These are breaches of invariant 6, not accepted exceptions:
   the owner decides whether they wait for the design or get the border
   now.
   *(the owner's design of the app's look; docs/DECISIONS.md, "Colour

@@ -116,9 +116,11 @@ What came from where:
 Every colour token has four slots, one for each appearance a person can
 choose: light, dark, and each with Increase Contrast, as Apple asks of a
 custom colour (docs/DECISIONS.md, "Colour tokens in four appearances").
-Today each slot holds the one value below, so every pair holds in both
-appearances and under Increase Contrast and Reduce Transparency, which
-never lighten a solid fill; choosing a value for each slot is the work of
+Today each slot holds the one value below, so every pair below holds in
+both appearances and under Increase Contrast and Reduce Transparency,
+which never lighten a solid fill, against the screens it is listed
+against; on iPad multitasking's lifted dark screen six edges do not
+(docs/HANDOFF.md, *Known gaps*). Choosing a value for each slot is the work of
 the app's redesign. Ratios are WCAG 2 contrast, computed from the hex
 values; `PaletteTests` must pin each pair the app adopts, in each
 appearance (AGENTS.md, invariant 6: text 4.5:1 or better, control edges

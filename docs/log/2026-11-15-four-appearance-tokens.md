@@ -48,11 +48,24 @@ design or get the border now.
   lifted gray corrected from 3.79 to 3.78:1 (white on `#1C1C1E` is
   17.01:1, so 17.01 / 4.5); and the App Store accessibility rows brought
   up to date.
+- Corrections after CI and the report-only verifier: where the measured
+  ratios are (the result bundle, not the printed log), the lifted grays
+  as CI read them, DESIGN's colour paragraph scoped to the screens it
+  lists, `Palette.fillLabel`'s comment naming the Library's check, and
+  this log's *Verified* and *Not verified*.
 
 ## Verified
 
-- **Not built or run on Apple's tools here.** This is a cloud session
-  with no Mac: the app and its tests are untested until CI passes.
+- **Built and run only by CI.** This is a cloud session with no Mac.
+- CI on `e1d543e` (run 43711421833) passed: unit tests, and UI tests on
+  the iPad and iPhone simulators. In `PaletteTests` all 15 tests ran: 13
+  passed and 2 recorded known issues. The unit result bundle records
+  exactly the 6 + 32 listed, at the values measured on Linux (the edges
+  at 2.963, 2.698, 2.844, 2.590, 2.844 and 2.590:1), so UIKit's lifted
+  grays there are `#1C1C1E` in dark and `#242426` in dark with Increase
+  Contrast, and `everyTokenHasFourSlots` read the catalog's source through
+  `#filePath`. The printed log leaves out tests that record known
+  issues; the ratios are in the bundle's `ExpectedFailures`.
 - `BricksonTests/ColourArithmetic.swift` compiled with Swift 6.2 on Linux
   (Swift 6 mode, complete strict concurrency, main-actor default
   isolation, warnings as errors) and reproduced the colour search's
@@ -77,24 +90,26 @@ design or get the border now.
   a colour set with three slots, or a new colour set not in the table
   (`everyTokenHasFourSlots`); Home's dark-mode border removed from
   `HomeButtonLook` (`everyFillKeepsItsContrastBudget`, on the lifted
-  screen); an Increase Contrast slot darker than its default on a white
-  screen (`increasedContrastNeverLowersContrast`); a known issue's value
+  screen); an Increase Contrast slot lighter than its default in light
+  mode, or one that lowers its words or its edge against black in dark
+  mode (`increasedContrastNeverLowersContrast`); a known issue's value
   fixed without removing its line; a slip in the ported formulas
   (`theArithmeticMatchesTheColourSearch`).
 
 ## Not verified
 
-- That Apple's lifted gray with Increase Contrast is `#242426`, as
-  commonly reported. If CI's simulator resolves a gray darker than
-  `#1B1B1B` there, the accent fill would pass on it and its known issue
-  would fail the test; the fix is to remove that line. The CI log prints
-  every measured ratio.
-- That the simulator lets a hosted unit test read the asset catalog's
-  source through `#filePath` (swift-snapshot-testing relies on the same
-  access to write next to its tests).
-- How the system's bordered prominent buttons draw under Increase
-  Contrast: the budget measures the fill they are tinted with, not the
-  rendered pixels (docs/ROADMAP.md, Q17).
+- How the system's bordered prominent buttons (Settings' rows, Voice
+  Settings' speeds, setup's choices) draw under Increase Contrast and on
+  the lifted dark screen: the budget measures the fill they are tinted
+  with, not the rendered pixels (docs/ROADMAP.md, Q17). A screenshot in
+  dark mode, with Increase Contrast on and off, in a lifted (Slide Over
+  or Stage Manager) window would settle it.
+- No UI test runs in a lifted window, so the six edges are known only
+  from arithmetic on UIKit's resolved colours.
+- "Nothing looks different" rests on identical slot values and white for
+  white; no before-and-after screenshots were compared.
+- Private words were not checked in this cloud session (no private
+  list); CI's privacy check read the list and passed.
 
 ## Follow-ups
 

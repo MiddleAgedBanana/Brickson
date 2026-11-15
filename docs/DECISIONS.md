@@ -5497,7 +5497,7 @@ R0 item 3's accessibility work (docs/ACCESSIBILITY.md, section 6;
   4.5:1 or better (`PaletteTests`) against the lighter screen iPad
   multitasking can give a window, where the accent, control and
   Emergency fills' own edges come to 2.84 to 2.96:1 against `#1C1C1E`,
-  a commonly reported value not read from Apple (docs/HANDOFF.md,
+  UIKit's value as CI read it on 2026-11-15 (docs/HANDOFF.md,
   *Known gaps*). The pressed and selection rings follow it as under Show
   Borders, so in dark mode the pressed ring is 4pt and the selection ring
   black. Light mode with Show Borders off is unchanged. Settings' safety

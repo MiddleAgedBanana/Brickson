@@ -44,8 +44,9 @@ nonisolated enum Palette {
     static let stopFill = Color("StopFill")
 
     /// The words and icons on every fill above, wherever a control is
-    /// drawn filled: Home's controls (`HomeButtonStyle`) and Settings' rows
-    /// (`SettingsRowLabel`, `SettingsPairLabel`). A token of its own, so
+    /// drawn filled: Home's controls (`HomeButtonStyle`), Settings' rows
+    /// (`SettingsRowLabel`, `SettingsPairLabel`) and the Library's
+    /// chosen-picture check (`LibraryQuestions`). A token of its own, so
     /// each appearance can carry its own words; white in all four today.
     static let fillLabel = Color("FillLabel")
 
