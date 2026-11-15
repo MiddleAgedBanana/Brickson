@@ -109,6 +109,12 @@ structure and documentation lists).
     a Personal Voice speaks; the 18 G numbers the field study does not
     use are named; and it says to reopen the probe if its speech stops,
     which docs/DECISIONS.md lists with the probe's other exceptions.
+- The owner's answer, 2026-11-15: docs/DECISIONS.md, *A probe app for
+  the experiments, kept out of Brickson*, records that the owner
+  accepted the probe's exceptions (asked about five, yes to all, and the
+  rest left to the agents as objective coding choices). Its keep-awake
+  line had the idle timer backwards; it now says the probe keeps the
+  screen on by default and lets the person switch that off.
 
 ## Verified
 

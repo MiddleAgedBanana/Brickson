@@ -6220,8 +6220,8 @@ runs it in seconds. On 2026-11-13 `main` broke none of its rules.
 
 *2026-11-14. Default, from the thread that prepared the hands-on
 experiments, on the owner's choice that day of the safe way: public
-sources and public API only, no reverse engineering. Reversible if the
-owner objects; the exceptions below are the owner's to accept
+sources and public API only, no reverse engineering. 2026-11-15, owner:
+the exceptions below are accepted, for the probe only
 ([`log/2026-11-14-experiments-run-sheet-and-probe.md`](log/2026-11-14-experiments-run-sheet-and-probe.md)).*
 
 The research of 14 November 2026 asked for one small test app with one
@@ -6250,13 +6250,19 @@ station answers.
   (`OffMainThreadCallbackTests`). It keeps its log in memory only and
   shares it only when the person chooses Share.
 - **What it does that Brickson must not, on purpose.** Each is what an
-  experiment measures, and each holds for the probe only:
+  experiment measures, and each holds for the probe only. On 2026-11-15
+  the owner was asked about the five that matter most (the screen may
+  lock, dimmed and hidden buttons, the main thread held busy, English-only
+  words, no Emergency or Get Attention), said yes to all five, and said
+  that objective coding choices like the rest of this list are the
+  agents' to make; the thread accepted the rest on that basis:
   - it shows dimmed, hidden, non-responding and trait-only elements, an
     activation point moved over another button, hover effects, and
     Apple's own button styles and glass (A-1, A-7, A-8, A-28, D-01 to
     D-24 in the run sheet);
-  - it lets the person turn the idle timer off (A-22, A-23, G-25);
-    Brickson never does (invariant 12);
+  - it keeps the screen on by default but lets the person switch that
+    off, so the screen can lock (A-22, A-23, G-25); Brickson always keeps
+    it on (invariant 12);
   - it declares Assistive Access's own scene and
     `UISupportsAssistiveAccess` (D-13); Brickson never does
     (*Accessibility API coverage*; `AppBundleTests`);
