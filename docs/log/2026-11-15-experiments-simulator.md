@@ -136,6 +136,44 @@ what the system reports about a dimmed button.
   profiles without a custom style, which stage 5 would have to justify;
   and its words would not follow the person's text size.
 
+### SIM-4. Brickson's edit sheets against Apple's sheet guidance (D-22)
+
+- **Done.** Read the Human Interface Guidelines' Sheets page
+  (developer.apple.com, `.md` form; its change log: "March 24, 2026:
+  Updated guidance for button placement"). Ran Brickson on the iPhone
+  with fresh test storage (the starter library), opened Settings >
+  Family Setup > Phrases and Categories > Basics > Edit Phrase >
+  Delete Phrase, and took a screenshot and the tree of each screen.
+  Searched `Brickson/` for `.sheet(`, `fullScreenCover(`,
+  `confirmationDialog(` and `.alert(`.
+- **Observed.** Apple's page, for iOS and iPadOS: "the Cancel button
+  belongs on the leading edge of the top toolbar. When present, the
+  Done button belongs on the trailing edge"; a Done button is always
+  paired with Cancel or Back; Cancel, Done and Back are never shown
+  together; swiping down dismisses a sheet, with an action sheet to
+  confirm unsaved changes. Brickson's library edits use **no sheets**:
+  Settings is a full-screen cover (docs/DECISIONS.md, "Settings is a
+  cover with a fixed safety bar"), and Phrases and Categories, a
+  category, Edit Phrase, New Phrase and the Delete Phrase question are
+  screens pushed inside it. Each has the standard Back button on the
+  leading edge, its title, and its action as a large button in the
+  content (Save; Delete for Good above, Keep Phrase in the place of the
+  row that asked). Back to Talking, the way out of the cover, sits at
+  the top trailing corner on every screen. The app's only `.sheet` is
+  the privacy policy's web page (Safari's own view controller); the
+  backup's share sheet and file picker are the system's. There is no
+  `confirmationDialog` or `.alert` in `Brickson/`.
+- **Answer.** Apple's sheet placement rules have nothing in Brickson to
+  apply to: the edit screens are pushed screens with standard Back,
+  not sheets. The one resemblance is the cover's way out: Back to
+  Talking is at the trailing edge, where a sheet would put Done; a
+  sheet's Cancel or Close goes on the leading edge, which Brickson's
+  screens give to the standard Back.
+- **What it means.** No roadmap item is needed for sheets. Whether
+  the cover's trailing way out still reads as Apple's would is a design
+  question for the family screens; the placement is recorded in the
+  decision above and nothing changes in this stage.
+
 ### SIM-5. What the system says about each element (A-1a, A3-U8 Simulator part)
 
 - **Done.** Snap station on both devices: AXe, the UI test's
@@ -175,6 +213,36 @@ what the system reports about a dimmed button.
   their effect, if any, is a device question too (DEV-1, DEV-7, DEV-8).
   A UI test that sees an element does not prove VoiceOver reaches it
   (SIM-11).
+
+### SIM-6. The speaking indicator and Reduce Motion (D-07)
+
+- **Done.** iPhone, Speech station. For each indicator effect
+  (Variable colour, Pulse, Breathe), with Reduce Motion off and then
+  on: chose the effect on the probe's list, opened Speech, chose Speak
+  sentence, and recorded the screen for 7 seconds (`xcrun simctl io
+  recordVideo`). From every frame's own timestamp, measured the
+  indicator's region (`speaker.wave.3`, 74 by 54 points): how often its
+  look changed, its brightness cycles per second, and the symbol's
+  drawn width. The probe's Status station confirmed
+  `accessibilityReduceMotion = true` for the "on" runs. (In the
+  Simulator the speech stalls without finishing, SIM-14, so the
+  indicator stayed active through each recording.)
+- **Observed.**
+
+  | Effect | Reduce Motion off | Reduce Motion on |
+  |---|---|---|
+  | Variable colour | changes continuously; about 0.7 brightness cycles a second; width steady (73 to 74 points) | the same |
+  | Pulse | changes continuously; about 0.44 cycles a second; width steady (72 to 74) | the same |
+  | Breathe | changes continuously; about 0.44 cycles a second; **grows and shrinks, 74 to 88 points wide** | **the same, still growing and shrinking** |
+
+- **Answer.** In the iOS 27.2 Simulator none of the three effects stops
+  or changes with Reduce Motion on, and Breathe keeps changing size.
+  All repeat well under three times a second.
+- **What it means.** None of the three is a candidate as it stands for
+  a person who asked for less motion: the indicator would need to read
+  Reduce Motion itself and stop (E-08). Whether a device behaves the
+  same is DEV-10's D-07 (device) part; until then, treat this as the
+  Simulator's answer only.
 
 ### SIM-11. The trees each tool sees (A-45 Simulator part: B3-U8; A2-U13, A3-U17)
 
@@ -220,3 +288,127 @@ what the system reports about a dimmed button.
   If Brickson ever sets a sort priority, `HomeAccessibilityOrderTests`
   stops standing for VoiceOver's order. Switch Control's scan is not in
   the Simulator, so whether its groups follow the trees stays DEV-7.
+
+### SIM-12. Window sizes and safe areas (B2-U4, B2-U6)
+
+- **Done.** Every iPhone and iPad simulator installed (one runtime,
+  iOS 27.2; iPhone Duo on its own build of it), portrait: booted each,
+  opened the Ruler station, and read the window and its safe-area
+  insets from a temporary line in the probe (never committed) that
+  logged SwiftUI's `GeometryReader` size and `safeAreaInsets` at the
+  root; `axe displays` gave each screen's size. A first version of that
+  line read the insets inside an area that ignores the safe area and
+  logged zeros everywhere; it was corrected and every device read
+  again. The iPad (A16)'s screen never came up on its first boot
+  (screenshots failed with "Invalid argument", and Device Hub's live
+  view of it failed to connect, error 4002, at 17:21 and 17:24 UTC);
+  after a shutdown and a second boot it was measured normally.
+- **Observed (window in points; insets top / bottom; leading and
+  trailing 0 unless given):**
+
+  | Simulator | Window | Insets | In the layout engine's windows? |
+  |---|---|---|---|
+  | iPhone 17 | 402 by 874 | 62 / 34 | yes ("iPhone 17") |
+  | iPhone 18 Pro | 402 by 874 | 62 / 34 | yes (same as iPhone 17) |
+  | iPhone 18 Pro Max | 440 by 956 | 62 / 34 | yes ("iPhone 17 Pro Max") |
+  | iPhone 17e | 390 by 844 | 47 / 34 | yes ("iPhone 16e") |
+  | **iPhone Air** | **420 by 912** | **68 / 34** | **no** |
+  | iPhone Duo, closed (outer screen) | 466 by 678 | 0 / 34, **trailing 84** | handled by "iPhone Duo"'s own tests, not this table |
+  | iPad Pro 13-inch (M5) | 1032 by 1376 | 32 / 20 | yes ("13-inch iPad") |
+  | **iPad Air 13-inch (M4)** | **1024 by 1366** | 32 / 20 | **no** |
+  | iPad Pro 11-inch (M5) | 834 by 1210 | 32 / 20 | yes ("11-inch iPad") |
+  | **iPad Air 11-inch (M4)** | **820 by 1180** | 32 / 20 | **no** |
+  | **iPad (A16)** | **820 by 1180** | 32 / 20 | **no** |
+  | **iPad mini (A20 Pro)** | **756 by 1158** | 32 / 20 | **no: the table's "iPad mini" is 744 by 1133** |
+
+- **Answer.** The newest iPad mini gives an app a 756 by 1158 window
+  with 32 points at the top and 20 at the bottom. Its corner radius is
+  not readable through any public API, so it was not measured. iOS 26
+  against iOS 27 could not be compared: no iOS 26 runtime is installed.
+- **What it means.** Five windows real simulators give are not among
+  `HomeLayoutEngineTests.windows` (its width sweep, with no safe
+  areas, covers their widths but not these windows with their insets):
+  iPhone Air, iPad Air 13-inch, the 820 by 1180 iPads and the new iPad
+  mini. Adding them is a test change for a later pull request
+  (*Follow-ups*). The corner radius and iOS 26's insets move to a
+  device (HW-6 or DEV-12).
+
+### SIM-13. Checks that need only the compiler (B1-U10, B2-U10, L1-U4)
+
+- **Done.** Scratch Swift files (never committed) type-checked with
+  `swiftc -typecheck` against the iOS 27.2 SDK, for an iOS 27 and an
+  iOS 26 simulator target and an iOS 26 device target; the SDK's
+  SwiftUI interface files searched for the names.
+- **Observed.**
+  - `.pointerStyle(_:)` on a `Button`: does not compile for any iOS or
+    iPadOS target ("value of type 'Button<Text>' has no member
+    'pointerStyle'"); the name is not in the iOS SDK's SwiftUI
+    interface at all.
+  - `.accessibilityAddTraits(.adjustable)`: does not compile
+    ("'AccessibilityTraits' has no member 'adjustable'"). SwiftUI's
+    `AccessibilityTraits` in this SDK has `isButton`, `isHeader`,
+    `isSelected`, `isLink`, `isSearchField`, `isImage`, `playsSound`,
+    `isKeyboardKey`, `isStaticText`, `isSummaryElement`,
+    `updatesFrequently`, `startsMediaSession`, `allowsDirectInteraction`,
+    `causesPageTurn`, `isModal`, `isToggle` and `isTabBar`.
+    `accessibilityAdjustableAction` compiles.
+  - `CHHapticEngine.capabilitiesForHardware().supportsHaptics` compiles
+    for iOS. What it returns on each iPad needs the device (DEV-12).
+- **Answer.** `pointerStyle(_:)` is not available to an iPadOS app in
+  this SDK; SwiftUI has no `.adjustable` trait, and an adjustable
+  element is made with `accessibilityAdjustableAction`. The haptics
+  check compiles; its answer is a device's.
+- **What it means.** Stage 1's notes on these two APIs should read as
+  above. The confirmation-dialog part of this step is below, with the
+  simulator results.
+
+### SIM-14. Analysis on the Mac (G-40; G-30 and D-25 Simulator part)
+
+**G-40, a copy of the message for a listener.**
+
+- **Done.** A temporary unit test (never committed) built Home's layout
+  with the layout engine for each of the twelve windows in
+  `HomeLayoutEngineTests.windows` (four phones, the 13-inch, 11-inch and
+  mini iPads in both orientations, and the zoomed ones), for the touch,
+  head tracking and Eye Tracking profiles, in both modes (phrases only;
+  phrases and typing), at the default text size. It searched each
+  window's safe area, in 4-point steps, for the largest rectangles that
+  touch no slot's frame (every slot, the message and status line
+  included, and every phrase tile that shows), keeping any of at least
+  120 by 24 points. For each such place, and for the message slot
+  itself, it asked the chain engine (`ChainEngine.nearest`, by centre and
+  by edge, ties counted) which controls a look anywhere in it meets
+  first. Nothing was added to Home.
+- **Observed.** No window, profile or mode has a free place of 120 by
+  24 points or more: the layout gives all the room that is not a
+  control to the message. The message slot's nearest controls are Yes,
+  No and Emergency in phrases-only mode, and Yes, No, Phrases and Type
+  (with Emergency on iPads) with typing; on the 13-inch iPad in
+  landscape, phrases only, also Again and Settings.
+- **Answer.** No position exists for a separate listener copy without
+  moving a target, and inside the message slot a speaking control (Yes
+  or No) is a nearest neighbour of the text in every window.
+- **What it means.** "None is a finding too": a listener copy needs
+  either room taken from another region (a layout change that moves
+  targets, the owner's decision) or a place that is not on Home's
+  surface (another screen or display); stage 5 (H-02) starts from this.
+
+**G-30 and D-25, word reports when a message is spoken in parts or with
+SSML.**
+
+- **Done.** iPhone, Speech station, default voice: Speak sentence,
+  Speak in three parts and Speak with SSML pauses, each followed by
+  Stop speaking after about 10 seconds; the log shared with the share
+  sheet's Copy and read from the Simulator's clipboard.
+- **Observed.** No utterance ever finished in the Simulator. Speak
+  sentence reported 8 of its 14 words (0, 5, 9, 13, 20, 24, 36 and 55;
+  "brown", "jumps", "over", "the" and "dog." were never reported), in
+  about 1.4 seconds, then nothing until Stop; the same 8 again on a
+  second try. Speak in three parts reported part 1's four words, then
+  stalled for 12.8 seconds; parts 2 and 3 never started. The SSML
+  version reported 11 of its words and stalled. Stop then logged five
+  utterances the probe never queued finishing or being cancelled.
+- **Answer.** Could not test in the Simulator: its synthesizer drops
+  word reports and never finishes, so continuity cannot be judged.
+- **What it means.** G-30 and D-25 need a device: DEV-10 with the
+  default voice and a Personal Voice.
