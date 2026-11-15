@@ -1,6 +1,6 @@
 # The simulator experiments, run (SIM-1 to SIM-14)
 
-*2026-11-15. Pull request #<n> (`claude/experiments-simulator`). A Claude
+*2026-11-15. Pull request #115 (`claude/experiments-simulator`). A Claude
 Code session on the owner's Mac, running Group 1 of
 [docs/EXPERIMENTS.md](../EXPERIMENTS.md) as its *What the Mac session
 does next* says, with no person and no device.*
@@ -69,19 +69,19 @@ what the system reports about a dimmed button.
 | Step | IDs | Answer in the Simulator |
 |---|---|---|
 | SIM-1 | D-13, A4-U13 | No: the Simulator offers no Assistive Access; the preview needs Xcode open (not done) |
-| SIM-2 | D-01 | Yes, answered: `.extraLarge` equals `.large` (54 points; 96 at AX5) |
+| SIM-2 | D-01 | Yes, answered: `.extraLarge` equals `.large` (54 points at the default text size; 96 at AX5) |
 | SIM-3 | D-24 | Yes, answered: glass takes border shapes; segmented pickers stop at 48 points and ignore Dynamic Type |
 | SIM-4 | D-22 | Yes, answered: Brickson's library has no sheets to compare |
 | SIM-5 | A-1a, A3-U8 (Simulator part) | Yes, answered: a dimmed Button is reported "not enabled" ("dimmed" in VoiceOver). This is not A-1 |
 | SIM-6 | D-07 | Yes, answered for the Simulator: all three effects keep moving with Reduce Motion on |
 | SIM-7 | D-14 | Could not test: Smart Invert does not show in Simulator screenshots |
 | SIM-8 | D-17 | Yes, answered: the bar's words stay above 10:1 over scrolled rows |
-| SIM-9 | D-20 | Partly: Home's fills do not dim in an inactive window; system styles not run |
+| SIM-9 | D-20 | Partly: Home's fills keep their contrast in an inactive window; system styles not run |
 | SIM-10 | D-21, D-02, A-33 (A4-U17, L1-U22) | Yes, answered, with **one shipped defect**: the accent under Increase Contrast in dark (3.95:1) |
 | SIM-11 | A-45 (B3-U8), A2-U13, A3-U17 | Yes, answered: three differences between the trees and VoiceOver |
 | SIM-12 | B2-U4, B2-U6 | Mostly: all windows and insets; corner radius has no public API; no iOS 26 runtime |
 | SIM-13 | B1-U10, B2-U10, L1-U4 | Yes, answered (the haptics value itself needs devices) |
-| SIM-14 | G-40; G-30, D-25 (Simulator part) | G-40 answered (no free place); G-30 and D-25 could not test |
+| SIM-14 | G-40; G-30, D-25 (Simulator part) | G-40 partly: no free place outside Home's slots (non-control slots not scored); G-30 and D-25 could not test |
 
 ## Results, step by step
 
@@ -169,8 +169,8 @@ what the system reports about a dimmed button.
   with fresh test storage (the starter library), opened Settings >
   Family Setup > Phrases and Categories > Basics > Edit Phrase >
   Delete Phrase, and took a screenshot and the tree of each screen.
-  Searched `Brickson/` for `.sheet(`, `fullScreenCover(`,
-  `confirmationDialog(` and `.alert(`.
+  Searched `Brickson/` for `sheet(`, `fullScreenCover(`,
+  `confirmationDialog(` and `alert(`.
 - **Observed.** Apple's page, for iOS and iPadOS: "the Cancel button
   belongs on the leading edge of the top toolbar. When present, the
   Done button belongs on the trailing edge"; a Done button is always
@@ -186,8 +186,9 @@ what the system reports about a dimmed button.
   row that asked). Back to Talking, the way out of the cover, sits at
   the top trailing corner on every screen. The app's only `.sheet` is
   the privacy policy's web page (Safari's own view controller); the
-  backup's share sheet and file picker are the system's. There is no
-  `confirmationDialog` or `.alert` in `Brickson/`.
+  backup's share sheet and file picker are the system's. The other
+  full-screen cover is guided setup's. There is no `confirmationDialog`
+  or `alert` in `Brickson/`.
 - **Answer.** Apple's sheet placement rules have nothing in Brickson to
   apply to: the edit screens are pushed screens with standard Back,
   not sheets. The one resemblance is the cover's way out: Back to
@@ -249,7 +250,8 @@ what the system reports about a dimmed button.
   indicator's region (`speaker.wave.3`, 74 by 54 points): how often its
   look changed, its brightness cycles per second, and the symbol's
   drawn width. The probe's Status station confirmed
-  `accessibilityReduceMotion = true` for the "on" runs. (In the
+  `accessibilityReduceMotion = true` with Reduce Motion on, in a
+  separate launch after the recordings. (In the
   Simulator the speech stalls without finishing, SIM-14, so the
   indicator stayed active through each recording.)
 - **Observed.**
@@ -260,14 +262,16 @@ what the system reports about a dimmed button.
   | Pulse | changes continuously; about 0.44 cycles a second; width steady (72 to 74) | the same |
   | Breathe | changes continuously; about 0.44 cycles a second; **grows and shrinks, 74 to 88 points wide** | **the same, still growing and shrinking** |
 
-- **Answer.** In the iOS 27.2 Simulator none of the three effects stops
-  or changes with Reduce Motion on, and Breathe keeps changing size.
-  All repeat well under three times a second.
-- **What it means.** None of the three is a candidate as it stands for
-  a person who asked for less motion: the indicator would need to read
-  Reduce Motion itself and stop (E-08). Whether a device behaves the
-  same is DEV-10's D-07 (device) part; until then, treat this as the
-  Simulator's answer only.
+- **Answer.** In the iOS 27.2 Simulator none of the three effects
+  stopped or changed with Reduce Motion on. Breathe kept changing size;
+  Pulse and Variable colour changed brightness only. All repeat well
+  under three times a second.
+- **What it means.** By the run sheet's rule Breathe, which still moves,
+  cannot be the indicator as it is. Whether a change of brightness
+  alone counts as motion for a person who asked for less is a design
+  question for stage 5 (E-08). Whether a device behaves the same is
+  DEV-10's D-07 (device) part; until then this is the Simulator's
+  answer only.
 
 ### SIM-7. Smart Invert on Home (D-14)
 
@@ -318,7 +322,7 @@ what the system reports about a dimmed button.
 - **What it means.** No fix is needed for the bar over a scrolling
   library (invariant 6 holds for its text). A row's words are readable
   only once scrolled out from under the bar, which is the system's
-  behaviour; the record of what a scroll costs dwell users stands.
+  behaviour.
 
 ### SIM-9. An inactive iPad window (D-20)
 
@@ -329,16 +333,20 @@ what the system reports about a dimmed button.
   named Settings). The colours in Brickson's part of the screen were
   counted, then Brickson made active (by tapping its message words,
   which press nothing) and counted again.
-- **Observed.** Inactive and active, Brickson drew exactly its asset
-  colours: phrase tiles #0A60D6, Yes, No, Phrases, Type, the categories
+- **Observed.** Inactive and active, Brickson drew its asset colours:
+  phrase tiles #0A60D6, Yes, No, Phrases, Type, the categories
   and Settings #5A6474, Emergency #C8161E, Get Attention #B45309, each
   with white words (5.74, 5.98, 5.85 and 5.02:1), and black words on
-  white for the message. Nothing dimmed. The probe's Styles station
+  white for the message. Inactive, some tile pixels were also drawn one
+  to four levels darker (#0A60D5 to #0A5ED2, 5.76 to 5.92:1 with white),
+  which were gone once Brickson was active; the cause was not
+  established (the Settings window's shadow is one guess). Nothing was
+  drawn lighter or with less contrast. The probe's Styles station
   (system styles, with `appearsActive` shown) was not run inactive:
   arranging the windows by dragging was slow, and the time went to
   Brickson.
-- **Answer.** An inactive window does not dim Home's solid fills or
-  its words on iPadOS 27.2 in the Simulator.
+- **Answer.** An inactive window did not lower the contrast of Home's
+  solid fills or their words on iPadOS 27.2 in the Simulator.
 - **What it means.** Home's safety controls keep invariant 6 in an
   inactive window. Whether system glass and system buttons (used on
   the family screens) change when inactive is not answered
@@ -444,10 +452,14 @@ what the system reports about a dimmed button.
   it (SIM-5); `accessibilitySortPriority` changes VoiceOver's order but
   neither the trees' order nor Full Keyboard Access's; and on iPad
   VoiceOver reaches the system's window handle.
-- **What it means.** Brickson uses neither `accessibilitySortPriority`
-  nor `accessibilityHidden` on a control today (a search of
-  `Brickson/`), so for Home as it is, the order its UI tests read is
-  the order VoiceOver and Full Keyboard Access took in the Simulator.
+- **What it means.** Brickson uses no `accessibilitySortPriority` (a
+  search of `Brickson/`), so for Home as it is, the order its UI tests
+  read is the order VoiceOver and Full Keyboard Access took in the
+  Simulator. It hides one control with `accessibilityHidden`: a voice
+  row in Voice Settings once its voice is gone, which is also
+  see-through, disabled and not hit-testable; a UI test still finds it
+  there, VoiceOver would not (SIM-5). Home's empty Stop well is a
+  hidden `Color.clear`, not a control, and the trees do not list it.
   If Brickson ever sets a sort priority, `HomeAccessibilityOrderTests`
   stops standing for VoiceOver's order. Switch Control's scan is not in
   the Simulator, so whether its groups follow the trees stays DEV-7.
@@ -476,7 +488,7 @@ what the system reports about a dimmed button.
   | iPhone 18 Pro Max | 440 by 956 | 62 / 34 | yes ("iPhone 17 Pro Max") |
   | iPhone 17e | 390 by 844 | 47 / 34 | yes ("iPhone 16e") |
   | **iPhone Air** | **420 by 912** | **68 / 34** | **no** |
-  | iPhone Duo, closed (outer screen) | 466 by 678 | 0 / 34, **trailing 84** | handled by "iPhone Duo"'s own tests, not this table |
+  | iPhone Duo, closed (outer screen) | 466 by 678 | 0 / 34, **trailing 84** | not compared (the Duo's other poses were not measured) |
   | iPad Pro 13-inch (M5) | 1032 by 1376 | 32 / 20 | yes ("13-inch iPad") |
   | **iPad Air 13-inch (M4)** | **1024 by 1366** | 32 / 20 | **no** |
   | iPad Pro 11-inch (M5) | 834 by 1210 | 32 / 20 | yes ("11-inch iPad") |
@@ -545,7 +557,7 @@ what the system reports about a dimmed button.
 - **What it means.** A repeated activation at the same spot (Dwell,
   Snap to Item, a switch's auto-select) would meet the destructive item
   next. Brickson must never use a system confirmation dialog on a dwell
-  path; it uses none today (no `confirmationDialog` or `.alert` in
+  path; it uses none today (no `confirmationDialog` or `alert` in
   `Brickson/`, SIM-4), and its delete questions are screens of their
   own (docs/DECISIONS.md, "Editing the library").
 
@@ -560,25 +572,30 @@ what the system reports about a dimmed button.
   head tracking and Eye Tracking profiles, in both modes (phrases only;
   phrases and typing), at the default text size. It searched each
   window's safe area, in 4-point steps, for the largest rectangles that
-  touch no slot's frame (every slot, the message and status line
-  included, and every phrase tile that shows), keeping any of at least
+  touch no slot's frame (every slot counted as taken: the message, the
+  status line, Stop's well and the whole phrase grid, its empty cells
+  included, as well as every control), keeping any of at least
   120 by 24 points. For each such place, and for the message slot
   itself, it asked the chain engine (`ChainEngine.nearest`, by centre and
   by edge, ties counted) which controls a look anywhere in it meets
   first. Nothing was added to Home.
 - **Observed.** No window, profile or mode has a free place of 120 by
-  24 points or more: the layout gives all the room that is not a
-  control to the message. The message slot's nearest controls are Yes,
+  24 points or more outside the layout's slots: the layout gives the
+  room that is not a control to its slots. Places inside slots that
+  are not controls (an empty grid cell where a category has fewer
+  phrases, Stop's well while no alarm sounds, the status line) were
+  **not scored**. The message slot's nearest controls are Yes,
   No and Emergency in phrases-only mode, and Yes, No, Phrases and Type
   (with Emergency on iPads) with typing; on the 13-inch iPad in
   landscape, phrases only, also Again and Settings.
-- **Answer.** No position exists for a separate listener copy without
-  moving a target, and inside the message slot a speaking control (Yes
-  or No) is a nearest neighbour of the text in every window.
-- **What it means.** "None is a finding too": a listener copy needs
-  either room taken from another region (a layout change that moves
-  targets, the owner's decision) or a place that is not on Home's
-  surface (another screen or display); stage 5 (H-02) starts from this.
+- **Answer.** Outside the slots, no place exists for a listener copy
+  without moving a target; inside the message slot a speaking control
+  (Yes or No) is a nearest neighbour of the text in every window. The
+  non-control slots remain to be scored.
+- **What it means.** Stage 5 (H-02) starts from this: the candidates
+  left are the non-control slots, which this run did not score, or room
+  taken from another region (a layout change that moves targets, the
+  owner's decision).
 
 **G-30 and D-25, word reports when a message is spoken in parts or with
 SSML.**

@@ -741,10 +741,11 @@ release in docs/ROADMAP.md when no thread has it yet.
   Increase Contrast in light (7.89:1 with its white words) and `#1A7BFF`
   in dark, **3.95:1, under invariant 6's 4.5:1**. Controls filled with
   the named colours (Yes, No, Emergency, Get Attention, the other
-  categories) keep their values. Not yet seen on a device. Fixing it
-  (filling those controls with a named colour, or choosing Increase
-  Contrast values) is part of the item above. *(the owner's design of
-  the app's look; a device check confirms it first)*
+  categories) keep their values. Not yet seen on a device: the device
+  check "Buttons under Increase Contrast and Reduce Transparency,
+  measured on the rendered pixels" (*Checks that need a real device*)
+  covers it. A fix is part of the item above. *(the owner's design of
+  the app's look; the device check first)*
 - The layout engine's named windows (`HomeLayoutEngineTests.windows`)
   lack five that today's simulators give an app (SIM-12 in the same
   record): iPhone Air 420 by 912 (insets 68 and 34), iPad Air 13-inch

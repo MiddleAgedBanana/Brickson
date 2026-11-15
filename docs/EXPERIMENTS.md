@@ -206,9 +206,9 @@ session does next*, below, has the commands.
   for stage 5, and check whether any reaches a profile's floor.
 - **Found, 2026-11-15.** `.extraLarge` is exactly as tall as `.large` on
   iPhone and iPad (54 points at the default text size, 96 at AX5; drawn
-  fills measured too). No system size reaches the switch, head or eye
-  floors. ([record](log/2026-11-15-experiments-simulator.md))
-
+  fills measured too). At the default text size no system size reaches
+  the switch, head or eye floors.
+  ([record](log/2026-11-15-experiments-simulator.md))
 ### SIM-3. Shapes, text sizes and the segmented picker — D-24
 
 - **Asks.** Does `buttonBorderShape` shape the glass button styles? How
@@ -244,10 +244,10 @@ session does next*, below, has the commands.
   screens. Nothing changes in this stage.
 - **Found, 2026-11-15.** Brickson's library edits use no sheets: they
   are screens pushed inside Settings' full-screen cover, with standard
-  Back; the only sheet is the privacy policy's web page. No roadmap
-  item; Back to Talking sits at the trailing edge, where a sheet would
-  put Done. ([record](log/2026-11-15-experiments-simulator.md))
-
+  Back; the only sheet is the privacy policy's web page, and there is no
+  confirmation dialog or alert. No roadmap item; Back to Talking sits at
+  the trailing edge, where a sheet would put Done.
+  ([record](log/2026-11-15-experiments-simulator.md))
 ### SIM-5. What the system says about each element — A-1a, A3-U8 (Simulator part)
 
 - **Asks.** What does the accessibility tree report for a dimmed
@@ -288,12 +288,12 @@ session does next*, below, has the commands.
 - **What it means.** An effect that still moves under Reduce Motion, or
   repeats close to the rate Apple warns about, cannot be the indicator
   as it is (E-08); one that stops is a candidate.
-- **Found, 2026-11-15.** With Reduce Motion on, Variable colour, Pulse
-  and Breathe all kept animating in the Simulator, Breathe still
-  changing size (74 to 88 points wide); all under three repeats a
-  second. None is a candidate as it stands; DEV-10 checks a device.
+- **Found, 2026-11-15.** with Reduce Motion on, Variable colour, Pulse
+  and Breathe all kept animating in the Simulator: Breathe still
+  changing size (74 to 88 points wide), the other two changing
+  brightness only; all under three repeats a second. Breathe cannot be
+  the indicator as it is; DEV-10 checks a device.
   ([record](log/2026-11-15-experiments-simulator.md))
-
 ### SIM-7. Smart Invert on Home — D-14
 
 - **Asks.** What does a person using Smart Invert see on Brickson's
@@ -348,11 +348,10 @@ session does next*, below, has the commands.
   its ratio, that is an invariant 6 failure in a state Brickson does not
   test today, and needs a pinned pair or a style that keeps its
   contrast.
-- **Found, 2026-11-15.** An inactive Brickson window beside Settings
-  drew Home's fills and words unchanged (5.02 to 5.98:1). The probe's
-  system styles were not run inactive.
-  ([record](log/2026-11-15-experiments-simulator.md))
-
+- **Found, 2026-11-15.** an inactive Brickson window beside Settings
+  kept Home's fills and words at their contrast (5.02 to 5.98:1; a few
+  tile pixels drawn slightly darker). The probe's system styles were not
+  run inactive. ([record](log/2026-11-15-experiments-simulator.md))
 ### SIM-10. Apple's own components in every appearance — D-21, D-02, A-33 (Simulator part: A4-U17, L1-U22)
 
 - **Asks.** Do standard controls, `Material`, toolbars, sheets and
@@ -477,11 +476,12 @@ session does next*, below, has the commands.
   losing word lighting; gaps: shaping and lighting conflict, and DEV-10
   checks it with a Personal Voice.
 - **Found, 2026-11-15.** (G-40) on every tested window, profile and mode
-  Home has no free place of 120 by 24 points, and the message slot's
-  nearest controls include Yes and No. (G-30, D-25) could not test: the
-  Simulator's synthesizer drops word reports and never finishes an
-  utterance. ([record](log/2026-11-15-experiments-simulator.md))
-
+  Home has no free place of 120 by 24 points outside its slots, and the
+  message slot's nearest controls include Yes and No; places inside
+  non-control slots (empty grid cells, Stop's well, the status line)
+  were not scored. (G-30, D-25) could not test: the Simulator's
+  synthesizer drops word reports and never finishes an utterance.
+  ([record](log/2026-11-15-experiments-simulator.md))
 ---
 
 ## Group 2. On a device, with a person
