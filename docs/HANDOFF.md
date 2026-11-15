@@ -683,9 +683,50 @@ release in docs/ROADMAP.md when no thread has it yet.
   come to 2.84 to 2.96:1, under invariant 6's 3:1. Since 2026-11-02
   every Home button draws a white border in dark mode, and `PaletteTests`
   measures it against the lifted screen (4.5:1 or better), so no button's
-  fill meets that screen. The message field's 2pt border is still the
-  control fill there (2.84:1 against `#1C1C1E`); `PaletteTests` does not
-  measure it. *(the next accessibility thread)*
+  fill meets that screen. Two things there still meet it with no border,
+  and since 2026-11-15 `PaletteTests.everyFillKeepsItsContrastBudget`
+  measures both, as named known issues, with and without Increase
+  Contrast (where the lifted gray is lighter still, `#242426` by the same
+  reports, so the ratios fall to 2.59 to 2.70:1): the typing fields'
+  2pt edge, the control fill (2.84:1 against `#1C1C1E`), on Home's message
+  field and the Library's text fields; and the system's bordered prominent
+  buttons tinted with the accent or control fill (2.96 and 2.84:1), on
+  Settings' rows, Voice Settings' speeds and setup's choices. A rule-backed
+  fix that needs no new colour exists: draw the primary-ink border Home's
+  controls draw in dark mode (`HomeButtonLook`) on those too, and a
+  primary-ink field edge in dark mode. It changes how they look, so it
+  waits for the owner's design of the app's look, which chooses dark
+  mode's values and may solve it with brighter dark fills instead. The
+  test reads the lifted gray from UIKit, so CI's log gives the measured
+  ratios.
+  *(the owner's design of the app's look; docs/DECISIONS.md, "Colour
+  tokens in four appearances")*
+- Every colour token has four slots (light, dark, and each with Increase
+  Contrast) since 2026-11-15, each holding the one value the app always
+  had, so nothing looks different (docs/DECISIONS.md, "Colour tokens in
+  four appearances"). What the measurements leave for the owner's design
+  of the app's look, which chooses new values, each a named known issue in
+  `PaletteTests` that fails loudly when its value is fixed:
+  - **Fills that look alike** (`theFillsTellApartInEveryVision`, CIEDE2000
+    under 15, in all four appearances): Emergency `#C8161E` and Get
+    Attention `#B45309` are 2.7 apart for deuteranopia, 9.9 for
+    protanopia and 9.1 for tritanopia, close to one colour; the control
+    fill `#5A6474` and Stop `#0F766E` are 3.7, 9.7 and 14.8 apart for the
+    same three; the accent `#0A60D6` and the control fill 13.9, and the
+    accent and Stop 10.9, for tritanopia. Words, icons and places still
+    tell each of them apart, so nothing depends on colour alone.
+  - **Edges on the lifted dark screen**: the item above.
+  - **Increase Contrast adds nothing yet.** Each Increase Contrast slot
+    repeats its default value, which `increasedContrastNeverLowersContrast`
+    allows; Apple asks for "an increased contrast option for each variant
+    that provides a significantly higher amount of visual differentiation"
+    (Human Interface Guidelines, Color).
+  - **Dark mode reuses light's values.** Apple's own dark colours are
+    lighter than its light ones; Brickson's are the same, which is why
+    white words leave the fills near 3:1 on dark screens: with white
+    words at 4.5:1 on a fill, the fill can stand at most 3.79:1 from the
+    lifted gray and 4.67:1 from black, the "contrast budget".
+  *(the owner's design of the app's look)*
 - iPad windows the person can resize have two gaps besides being
   untested (*Verification*). No scene has a minimum window size, though
   docs/LESSONS.md, "Windows need a minimum size", asks for one derived

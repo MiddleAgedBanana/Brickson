@@ -113,12 +113,18 @@ What came from where:
 
 ## Colour
 
-One value in light and dark, so every pair below holds in both
+Every colour token has four slots, one for each appearance a person can
+choose: light, dark, and each with Increase Contrast, as Apple asks of a
+custom colour (docs/DECISIONS.md, "Colour tokens in four appearances").
+Today each slot holds the one value below, so every pair holds in both
 appearances and under Increase Contrast and Reduce Transparency, which
-never lighten a solid fill. Ratios are WCAG 2 contrast, computed from the
-hex values; `PaletteTests` must pin each pair the app adopts (AGENTS.md,
-invariant 6: text 4.5:1 or better, control edges 3:1 or better against
-what they sit on).
+never lighten a solid fill; choosing a value for each slot is the work of
+the app's redesign. Ratios are WCAG 2 contrast, computed from the hex
+values; `PaletteTests` must pin each pair the app adopts, in each
+appearance (AGENTS.md, invariant 6: text 4.5:1 or better, control edges
+3:1 or better against what they sit on), and measures each fill's
+contrast budget: its words at 4.5:1 and its edge, or the border drawn
+over it, at 3:1 against the screen, base and lifted.
 
 | Token | Hex | Used for | White label on it | Edge on white | Edge on black |
 |---|---|---|---|---|---|
@@ -127,6 +133,9 @@ what they sit on).
 | `emergency` (`EmergencyFill`) | `#C8161E` | Emergency, emergency phrases | 5.85:1 | 5.85:1 | 3.59:1 |
 | `attention` (`AttentionFill`) | `#B45309` | Get Attention | 5.02:1 | 5.02:1 | 4.18:1 |
 | `stop` (`StopFill`) | `#0F766E` | Stop (Stop Alert in the drawings) | 5.47:1 | 5.47:1 | 3.84:1 |
+
+The words on every fill are their own token, `FillLabel`
+(`Palette.fillLabel`), white in all four slots.
 
 All five are `Palette`'s fills, pinned by `PaletteTests` (the last two
 since *Get Attention and Stop on Home*, 2026-10-23). The "Used for" column is the drawings' assignment, except the Library's deletes: the drawings put them on `emergency`, and the built Library keeps red for Emergency alone, telling Delete apart by its words, icon and place (docs/DECISIONS.md, "The Library in Settings", 2026-11-05). Today's

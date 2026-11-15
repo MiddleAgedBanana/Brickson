@@ -1001,9 +1001,10 @@ what passes and who checks it:
   - *Colour:* each colour works in light, dark and Increase Contrast,
     and each custom colour has light and dark variants, each with an
     increased-contrast option, as the HIG asks, or a recorded reason for
-    fewer (docs/DECISIONS.md, "Solid fills on Home, system glass
-    elsewhere", keeps one value per role, the same in light and dark,
-    today); one
+    fewer (since 2026-11-15 every colour token has the four slots,
+    each still holding its one value per role, the same in light and
+    dark, until the app's look is redesigned: docs/DECISIONS.md, "Colour
+    tokens in four appearances"); one
     meaning per colour; never colour alone; system colours through
     their names, never their values.
   - *Buttons:* every hit region at least 44 by 44 points and the
@@ -1048,8 +1049,10 @@ what passes and who checks it:
   (docs/DESIGN.md, *Apple's guidelines and Liquid Glass*). On dark
   mode's lifted background, `PaletteTests` measures the border every
   Home button draws in dark mode and primary ink, with and without
-  Increase Contrast, since pull request #74; the message field's edge
-  there is not measured (docs/HANDOFF.md, *Known gaps*).
+  Increase Contrast, since pull request #74; since 2026-11-15 its
+  contrast budget measures the typing fields' edge and the system
+  buttons tinted with a fill there too, both under 3:1 today, as named
+  known issues (docs/HANDOFF.md, *Known gaps*).
 - **Q18. Nothing tuned by eye.** Every size, gap, corner radius, colour
   and font in view code comes from the layout engine, `Palette` or the
   tokens in docs/DESIGN.md; a thread lists every other number or colour
