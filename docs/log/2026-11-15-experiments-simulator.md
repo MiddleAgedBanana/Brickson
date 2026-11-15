@@ -35,6 +35,12 @@ what the system reports about a dimmed button.
   opacity 0.5, no colour filter, VoiceOver off; Full Keyboard Access off
   (Settings). Every setting changed for a step was put back after it.
 - Unless a step says otherwise: Light, text size Large, portrait.
+- Stills (the probe, and Brickson with the starter library only) are in
+  [`docs/evidence/2026-11-15-experiments-simulator/`](../evidence/2026-11-15-experiments-simulator/):
+  Home in dark with and without Increase Contrast (SIM-10), the
+  confirmation dialog on the iPhone (SIM-13) and the segmented pickers
+  at AX5 on the iPad (SIM-3). Raw captures stay in the ignored
+  `private/device-checks/`.
 - Builds: `BricksonProbe` and `Brickson` from `main` at `7cb0299`, in a
   clone beside the owner's checkout (`~/code/brickson-experiments`).
 
@@ -57,6 +63,25 @@ what the system reports about a dimmed button.
   coefficients and its 0.04045 threshold).
 - Settings were changed with `axe settings set` and checked in the
   probe's Status station or in what was drawn.
+
+## Results at a glance
+
+| Step | IDs | Answer in the Simulator |
+|---|---|---|
+| SIM-1 | D-13, A4-U13 | No: the Simulator offers no Assistive Access; the preview needs Xcode open (not done) |
+| SIM-2 | D-01 | Yes, answered: `.extraLarge` equals `.large` (54 points; 96 at AX5) |
+| SIM-3 | D-24 | Yes, answered: glass takes border shapes; segmented pickers stop at 48 points and ignore Dynamic Type |
+| SIM-4 | D-22 | Yes, answered: Brickson's library has no sheets to compare |
+| SIM-5 | A-1a, A3-U8 (Simulator part) | Yes, answered: a dimmed Button is reported "not enabled" ("dimmed" in VoiceOver). This is not A-1 |
+| SIM-6 | D-07 | Yes, answered for the Simulator: all three effects keep moving with Reduce Motion on |
+| SIM-7 | D-14 | Could not test: Smart Invert does not show in Simulator screenshots |
+| SIM-8 | D-17 | Yes, answered: the bar's words stay above 10:1 over scrolled rows |
+| SIM-9 | D-20 | Partly: Home's fills do not dim in an inactive window; system styles not run |
+| SIM-10 | D-21, D-02, A-33 (A4-U17, L1-U22) | Yes, answered, with **one shipped defect**: the accent under Increase Contrast in dark (3.95:1) |
+| SIM-11 | A-45 (B3-U8), A2-U13, A3-U17 | Yes, answered: three differences between the trees and VoiceOver |
+| SIM-12 | B2-U4, B2-U6 | Mostly: all windows and insets; corner radius has no public API; no iOS 26 runtime |
+| SIM-13 | B1-U10, B2-U10, L1-U4 | Yes, answered (the haptics value itself needs devices) |
+| SIM-14 | G-40; G-30, D-25 (Simulator part) | G-40 answered (no free place); G-30 and D-25 could not test |
 
 ## Results, step by step
 
@@ -319,6 +344,69 @@ what the system reports about a dimmed button.
   the family screens) change when inactive is not answered
   (*Not verified*).
 
+### SIM-10. Apple's own components in every appearance (D-21, D-02, A-33 Simulator part: A4-U17, L1-U22)
+
+- **Done.** Measured every on-screen control's words against its fill
+  (or the page) and its fill against the page around it, from a
+  screenshot and the accessibility tree, with `PaletteTests`' formula:
+  - the probe's Styles station on the iPhone in light and dark, each
+    plain, with Increase Contrast, with Reduce Transparency and with
+    Show Borders (the glass rows sit below the iPhone's screen, so the
+    glass buttons were measured on the iPad, in light and dark, at
+    Liquid Glass opacity 0 and 1);
+  - the pressed look of `.borderedProminent`, a touch held down while
+    the screenshot was taken, in light and dark;
+  - Brickson's Home in light and dark with and without Increase
+    Contrast, and Brickson's family screens (Phrases and Categories in
+    all eight appearances; the Delete Phrase question in light and
+    dark, with and without Increase Contrast), counting only the
+    cover's own controls (the tree also lists Home's, hidden under the
+    cover).
+  - The Simulator offers neither Clear nor Tinted Liquid Glass ("This
+    device does not offer the clear Liquid Glass style"); iOS 27.2's
+    setting here is an opacity, so its two ends were used instead.
+- **Observed, Apple's components (the probe, Apple's default tint).**
+  - `.borderedProminent`: white words on the system blue are **3.52:1
+    in light (#0088FF), 3.23:1 in dark (#0091FF) and 2.15:1 in dark
+    with Increase Contrast (#5CB8FF)**; with Increase Contrast in light
+    they pass. `.glassProminent` (iPad, light and dark only): 3.57:1
+    and 3.23:1. **Pressed**, they fall
+    to 2.59:1 in light (#40A6FF) and 2.05:1 in dark (#33A7FF, words
+    #CCE9FF); the pressed fill's edge is 2.59:1 against white.
+  - `.bordered` (and Automatic under Show Borders): blue words on the
+    grey fill 2.90:1 in light (3.44 with Increase Contrast); the fill
+    stands 1.21:1 from a white page and 1.39 to 1.60:1 from black.
+  - Plain blue words (Automatic, Borderless): 3.52:1 on white.
+  - `.glass`: words 16 to 21:1; in dark its shape stands 1.27 to 1.29:1
+    from the page; in light it shows no fill against white. Opacity 0
+    and 1 gave the same numbers over the plain page (glass over other
+    content was not measured).
+  - Dimmed buttons of every style measure 1.47 to 4.45:1 (WCAG exempts
+    controls that are not available; listed in the raw results).
+- **Observed, Brickson.** Home and the family screens keep their
+  tokens in every appearance measured: words 5.02 to 5.98:1 on the
+  fills, fill edges 3.51 to 4.18:1 on black and 5.02 to 5.98:1 on white,
+  except where `Color.accentColor` fills a control: **with Increase
+  Contrast in dark the phrase tiles, the selected category and Back to
+  Talking are drawn #1A7BFF and their white words are 3.95:1** (in
+  light with Increase Contrast, #084DAB and 7.89:1), although the asset
+  holds #0A60D6 in all four appearances. The system Back button's
+  chevron is 15.5 to 19:1; its glass circle stands 1.14 to 1.29:1 from
+  the dark page.
+- **Answer.** Apple's prominent and bordered buttons with the default
+  tint, and their pressed looks, do not keep 4.5:1 words or 3:1 edges;
+  `.glass` keeps its words but not a 3:1 edge in dark. Brickson's own
+  fills hold, except the accent under Increase Contrast in dark, which
+  is an invariant 6 failure in the shipped app (docs/HANDOFF.md, *Known
+  gaps*).
+- **What it means.** None of the failing Apple styles can carry
+  Brickson's words with the system tint; Brickson's solid fills and
+  its named colours are right to replace them. The accent defect needs
+  a device check and the owner's design decision (*Follow-ups*).
+  Whether a system Back button's 1.3:1 glass circle counts as a control
+  edge under invariant 6, when its chevron is 15:1, is a question for
+  the owner (*Follow-ups*).
+
 ### SIM-11. The trees each tool sees (A-45 Simulator part: B3-U8; A2-U13, A3-U17)
 
 - **Done.** Groups station on the iPhone in all four combinations of
@@ -434,8 +522,32 @@ what the system reports about a dimmed button.
   element is made with `accessibilityAdjustableAction`. The haptics
   check compiles; its answer is a device's.
 - **What it means.** Stage 1's notes on these two APIs should read as
-  above. The confirmation-dialog part of this step is below, with the
-  simulator results.
+  above.
+
+**The confirmation dialog (L1-U4).**
+
+- **Done.** A temporary button (never committed) at the top of the
+  probe's list opened a system `confirmationDialog` with a title, a
+  destructive "Delete" and a plain "Keep"; its frames were read from
+  the accessibility tree right after a tap at the button's centre.
+- **Observed.** On both devices the dialog opens as a popover beside
+  the button, with its title, Delete first and Keep below, and no
+  Cancel: a tap anywhere else dismisses it (the tree shows a
+  full-screen "dismiss popup" region). On the iPhone the button
+  (16, 168, 370 by 52) was tapped at its centre (201, 194), and Delete
+  opened at (147, 164, 208 by 48): **the spot just tapped is inside
+  Delete** (by centre 50 points away, Keep 71). On the iPad (tap at
+  516, 164) Delete is again the nearest item, by centre (238 against
+  243 points) and by edge (110 against 113).
+- **Answer.** Yes: in iOS 27.2 a system confirmation dialog puts its
+  first item, here the destructive one, nearest the spot just
+  activated, and on the iPhone directly under it.
+- **What it means.** A repeated activation at the same spot (Dwell,
+  Snap to Item, a switch's auto-select) would meet the destructive item
+  next. Brickson must never use a system confirmation dialog on a dwell
+  path; it uses none today (no `confirmationDialog` or `.alert` in
+  `Brickson/`, SIM-4), and its delete questions are screens of their
+  own (docs/DECISIONS.md, "Editing the library").
 
 ### SIM-14. Analysis on the Mac (G-40; G-30 and D-25 Simulator part)
 
@@ -487,3 +599,78 @@ SSML.**
   word reports and never finishes, so continuity cannot be judged.
 - **What it means.** G-30 and D-25 need a device: DEV-10 with the
   default voice and a Personal Voice.
+
+## What waits for a real device
+
+- **A-1 first**, and all of DEV-1 to DEV-13: Snap to Item, Dwell, Eye
+  Tracking, Head Tracking, Switch Control and Voice Control do not
+  exist in the Simulator, and how any of them feels is the owner's
+  judgement on a device.
+- From this group: Assistive Access, with the probe and with Brickson
+  (SIM-1, to DEV-12); Smart Invert on Home (SIM-7, DEV-12); the speaking
+  indicator under Reduce Motion (SIM-6, DEV-10); word reports with the
+  default voice and a Personal Voice (SIM-14, DEV-10); the haptics
+  capability on each iPad (SIM-13, DEV-12); the corner radius and iOS
+  26's insets (SIM-12, HW-6 or DEV-12); and **the accent under Increase
+  Contrast in dark** (SIM-10): confirm 3.95:1 on a device before the fix.
+
+## Commits
+
+On `claude/experiments-simulator`: this record, the "Found, 2026-11-15"
+lines in docs/EXPERIMENTS.md, and docs/HANDOFF.md's experiments line and
+two *Known gaps* items. Nothing in `Brickson/`, `BricksonProbe/` or the
+tests changed: every temporary test, probe line and scratch file was
+removed before committing.
+
+## Verified
+
+- Every result above, on the Mac with Xcode 27.2, iOS 27.2 Simulator,
+  iPhone 17 and iPad Pro 13-inch (M5) in portrait, and for SIM-12 every
+  installed iPhone and iPad simulator; text size, appearance and
+  settings as each step says.
+- `python3 scripts/test-docs.py` passes.
+
+## Not verified
+
+- Anything a device would show (*What waits for a real device*).
+- Accessibility Inspector itself: AXe stood in for it (*The tools*).
+- The probe's "Assistive Access" preview (SIM-1 b).
+- System styles in an inactive window (SIM-9), glass over content
+  other than a plain page (SIM-10), and Clear or Tinted Liquid Glass,
+  which the Simulator does not offer.
+- iOS 26: no runtime installed.
+- Only the iPhone was used for SIM-6, SIM-7, SIM-8, SIM-11's Groups
+  station and SIM-14's speech; only the iPad for SIM-9.
+
+## Follow-ups
+
+- **The accent under Increase Contrast in dark** (SIM-10): a device
+  check, then the owner's design decision, as the new *Known gaps* item
+  says. `PaletteTests` pins the asset's values, not what is drawn, so it
+  cannot see this; a rendered check of the fills under each appearance
+  would. *(owner; then a thread)*
+- **Five windows missing from the layout engine's table** (SIM-12): a
+  test pull request adds them. *(a thread, R0)*
+- **The run sheet's SIM-1 (b) asks an agent to open the project in
+  Xcode**, which AGENTS.md forbids. Proposed fix: say in
+  docs/EXPERIMENTS.md that the owner renders the "Assistive Access"
+  preview in Xcode's canvas, or drop (b) and leave it to DEV-12.
+  *(owner)*
+- **The run sheet's step 2 makes the worktree from the owner's
+  checkout** (`git fetch` there). This session used a separate clone
+  instead, so the owner's checkout was not touched at all; the run sheet
+  could say either works. *(owner)*
+- **A system Back button's glass circle** stands 1.14 to 1.29:1 from a
+  dark page while its chevron is 15 to 19:1 (SIM-10): whether
+  invariant 6's 3:1 for control edges applies to it is the owner's
+  question.
+- `accessibilitySortPriority`: if Brickson ever uses it,
+  `HomeAccessibilityOrderTests` stops standing for VoiceOver's order
+  (SIM-11).
+- The automation trees list controls hidden with
+  `accessibilityHidden(true)` and, under Settings' cover, Home's
+  controls too: a UI test that checks a control is unreachable must not
+  rely on either (SIM-5, SIM-10).
+- The iPad Pro 13-inch simulator was left with Brickson's and the
+  Settings app's windows narrowed (SIM-9); dragging them back by hand
+  restores them.

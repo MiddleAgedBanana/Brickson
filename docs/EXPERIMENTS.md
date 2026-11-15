@@ -368,6 +368,17 @@ session does next*, below, has the commands.
 - **Record.** Each component, appearance and pair, with its ratio.
 - **What it means.** Any pair below its bar that Brickson shows fails
   invariant 6, and is replaced or fixed and pinned in `PaletteTests`.
+- **Found, 2026-11-15.** Apple's `.borderedProminent` and
+  `.glassProminent` with the default tint keep under 4.5:1 for their
+  white words (3.52 light, 3.23 dark, 2.15 dark with Increase Contrast;
+  pressed 2.59 and 2.05), `.bordered` fills stand 1.21 to 1.60:1 from
+  the page, and `.glass` stands 1.3:1 in dark. Brickson's fills hold
+  except one shipped defect: with Increase Contrast in dark,
+  `Color.accentColor` is drawn #1A7BFF and the white words on phrase
+  tiles, the selected category and Back to Talking are 3.95:1
+  (docs/HANDOFF.md, *Known gaps*). The Simulator offers no Clear or
+  Tinted Liquid Glass; opacity 0 and 1 measured the same.
+  ([record](log/2026-11-15-experiments-simulator.md))
 
 ### SIM-11. The trees each tool sees — A-45 (Simulator part: B3-U8), A2-U13, A3-U17
 
@@ -436,6 +447,13 @@ session does next*, below, has the commands.
   dialog's harmful item lands nearest the spot just activated, Brickson
   must never use a system confirmation dialog on a dwell path (it does
   not today; docs/DECISIONS.md, "Editing the library").
+- **Found, 2026-11-15.** `pointerStyle(_:)` does not exist for iOS or
+  iPadOS in the iOS 27.2 SDK; SwiftUI has no `.adjustable` trait
+  (`accessibilityAdjustableAction` is the way); the haptics check
+  compiles. A system confirmation dialog opens as a popover with its
+  destructive first item nearest the spot just activated, on the iPhone
+  directly under it: never on a dwell path.
+  ([record](log/2026-11-15-experiments-simulator.md))
 
 ### SIM-14. Analysis on the Mac — G-40, G-30 and D-25 (Simulator part)
 
