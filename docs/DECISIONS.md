@@ -5576,13 +5576,16 @@ what to do instead. Nothing the app shows or does changed.
   that repeats while held (invariant 10); a picture that is not an SF
   Symbol, in code or as a file, the app icon and custom symbols
   (`.symbolset`, named by a literal) apart; Ultralight, Thin and Light
-  weights; a fixed text size (`.system(size:)` with a number, a custom
-  font's `fixedSize:`); circular corners and the deprecated
+  weights; a fixed text size (`.system(size:)` or UIKit's system font
+  with a number, bare or in `CGFloat(…)` or `Double(…)`; a custom font's
+  `fixedSize:`; `UIFont(name:size:)` with a number in a file that never
+  scales a font with `UIFontMetrics`); circular corners and the deprecated
   `cornerRadius(_:antialiased:)`; an accessibility setting or Bold Text
   written into the environment, which hides the person's choice; a
-  `ButtonStyle` that never reads `isPressed`, in its own code or in a
-  view of its file that it names (another style's press state does not
-  count); all-capital text; a context menu, swipe action, swipe to delete, drag to move or drag and
+  `ButtonStyle` that never reads `configuration.isPressed` or another
+  value's `isPressed`, in its own code or in a view of its file that it
+  names (another style's press state, or a property of its own called
+  `isPressed`, does not count); `.textCase(.uppercase)`; a context menu, swipe action, swipe to delete, drag to move or drag and
   drop (invariants 1 and 3); a system alert, confirmation dialog or
   action sheet (invariants 3 and 4; *Settings is a cover with a fixed
   safety bar*); a toggle (invariant 10); a view given the button trait,
@@ -5637,7 +5640,11 @@ what to do instead. Nothing the app shows or does changed.
   sliders (allowed on family screens); an empty handler for one kind of
   error (`catch is SomeError {}`), which can be the recovery, as where
   removing a draft finds the file already gone and every other error is
-  thrown on (only a bare `catch {}` is refused).
+  thrown on (only a bare `catch {}` is refused); words typed in capitals
+  (`Text("DELETE")`), which a script cannot tell from an acronym such as
+  "OK" or "SOS"; a custom UIKit font with a fixed size in a file that
+  scales another font, since `UIFontMetrics` often scales a font in
+  another statement and a script cannot follow which.
 
 ## Personal details stay out of the repository
 

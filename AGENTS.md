@@ -157,9 +157,10 @@ its Effective date and the in-app copy in the same pull request.
 - **Look like Apple made it.** The app adds no glass or material of its
   own and has no `PrimitiveButtonStyle`, toggle, system alert, context
   menu, swipe action, repeating button, Light weight, fixed text size or
-  circular corner; every icon is an SF Symbol and every `ButtonStyle`
-  draws `isPressed`. `scripts/forbidden-code.py` checks these
-  (docs/DECISIONS.md, "Guards for Apple's look").
+  circular corner; every picture is an SF Symbol or custom symbol and
+  every `ButtonStyle` draws `isPressed`. `scripts/forbidden-code.py`
+  checks these, except where it names an exception (docs/DECISIONS.md,
+  "Guards for Apple's look").
 
 ## Design rules for dwell, switch and pointer input
 

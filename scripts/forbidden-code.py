@@ -1104,8 +1104,9 @@ SETTING = ('the person\'s own display settings win: writing Bold Text, Reduce Mo
            'draw a designed answer for each setting instead')
 PRESS = ('every custom ButtonStyle draws a press state from `configuration.isPressed`: without '
          'one, a tap, a switch or a dwell shows no sign that it landed, and the person may try '
-         'again (Human Interface Guidelines, Buttons). Read `isPressed` in the style, or in the '
-         'view of the same file its body draws, and change the look without moving anything')
+         'again (Human Interface Guidelines, Buttons). Read `configuration.isPressed` in the '
+         'style, or in a view of the same file that its body draws, and change the look '
+         'without moving anything')
 UPPERCASE = ('words keep the capitals they are written with: all-capital labels are slower to '
              'read and are not Apple\'s style, which uses title-style capitals on buttons (Human '
              'Interface Guidelines, Buttons). Write the words in the String Catalog as people '
@@ -1137,6 +1138,9 @@ LIFT = ('a hover effect that lifts scales the control and casts a shadow where a
         'reach (Human Interface Guidelines, Pointing devices: tint, not scale and shadow, where '
         'an element has little space around it). Use `.highlight`')
 
+# A size written as a number, bare or wrapped in a conversion.
+FIXED_NUMBER = r'(?=[\d.]|(?:CGFloat|Double)\s*\(\s*[\d.])'
+
 # Each: the rule's name, why, the pattern, and what to print for a match
 # (None: the match itself, its spacing tidied).
 LOOK_RULES = [
@@ -1153,7 +1157,7 @@ LOOK_RULES = [
         r'Weight|\bSymbolWeight)\s*\.\s*(?:ultraLight|thin|light)\b'), None),
     ('fixed text size', FIXED_SIZE, re.compile(
         r'\.\s*(?:system|(?:bold|italic|monospaced|monospacedDigit)?[sS]ystemFont)\s*\(\s*'
-        r'(?:size|ofSize)\s*:\s*(?=[\d.])'), None),
+        r'(?:size|ofSize)\s*:\s*' + FIXED_NUMBER), None),
     ('fixed text size', FIXED_SIZE, re.compile(r'\bcustom\s*\([^()]*\bfixedSize\s*:'),
      'Font.custom(_:fixedSize:)'),
     ('circular corners', CORNERS, re.compile(
@@ -1196,6 +1200,11 @@ DEFAULT_ACTION = re.compile(r'\s*(?:AccessibilityActionKind\s*)?\.\s*default\s*'
 # name only ends with it).
 BUTTON_STYLE = re.compile(r'(?<![\w.$])(?:struct|class|enum|actor|extension)\s+'
                           r'(?P<name>[A-Za-z_]\w*)[^{;]*?(?<![\w$])ButtonStyle(?!\w)[^{;]*\{')
+# A read of another value's isPressed (`configuration.isPressed`, `$0.isPressed`),
+# never the style's own property.
+PRESS_READ = re.compile(r'(?<![\w$])(?!self\b)[\w$]+\s*\.\s*isPressed\b')
+NAMED_UI_FONT = re.compile(r'\bUIFont\s*\(\s*name\s*:[^()]*\bsize\s*:\s*' + FIXED_NUMBER)
+UI_FONT_METRICS = re.compile(r'\bUIFontMetrics\b')
 IMAGE_CALL = re.compile(r'(?<![\w.$])(?:SwiftUI\s*\.\s*)?(?P<type>UIImage|Image|Label)\s*'
                         r'(?:\.\s*init\s*)?\(')
 SYMBOL_LITERAL = re.compile(r'\s*(?:(?:decorative|named|image)\s*:\s*)?"(?P<name>[^"\\]*)"\s*')
@@ -1245,11 +1254,13 @@ def reads_press_state(code, spans, name):
     (every declaration and extension of that name in the file, nested
     types included) or in a type of the same file that its code names,
     such as the view its `makeBody` returns. Another style's press state
-    in the same file is not this one's."""
+    in the same file is not this one's, and neither is a property of its
+    own called `isPressed`: only a read of another value's `isPressed`,
+    such as `configuration.isPressed`, counts."""
     own = [code[start:end] for start, end, owner_name in spans if owner_name == name]
     named = {name} | ({word for text in own for word in re.findall(r'[A-Za-z_]\w*', text)}
                       & {owner_name for _, _, owner_name in spans})
-    return any(re.search(r'\bisPressed\b', code[start:end])
+    return any(PRESS_READ.search(code[start:end])
                for start, end, owner_name in spans if owner_name in named)
 
 
@@ -1313,6 +1324,13 @@ def check_apple_look(source, symbols=frozenset(), exceptions=KNOWN_EXCEPTIONS, e
         name = match.group('name')
         if not reads_press_state(code, spans, name):
             found(match.start('name'), 'no press state', f'`{name}`: {PRESS}.')
+
+    # A custom UIKit font scales only through UIFontMetrics, often in
+    # another statement, so a number is a fixed size only in a file that
+    # never scales a font.
+    if not UI_FONT_METRICS.search(code):
+        for match in NAMED_UI_FONT.finditer(code):
+            found(match.start(), 'fixed text size', f'`UIFont(name:size:)`: {FIXED_SIZE}.')
 
     for match in IMAGE_CALL.finditer(code):
         if declares_function(code, match.start()):

@@ -21,8 +21,8 @@ ships may not add glass or a material of its own, use a
 `PrimitiveButtonStyle` or `trigger()`, let a button repeat while held,
 show a picture that is not an SF Symbol, use Ultralight, Thin or Light,
 fix a text size, draw circular corners, write an accessibility setting
-into the environment, leave a `ButtonStyle` with no press state, put
-text in capitals, offer a context menu, swipe or drag action, show a
+into the environment, leave a `ButtonStyle` with no press state, set
+text in capitals with `.textCase(.uppercase)`, offer a context menu, swipe or drag action, show a
 system alert or dialog, use a toggle, make a view pass for a button,
 swallow an error in an empty `catch`, time with an old clock, or lift a
 control on hover. Each message names the rule, why it matters to the
@@ -56,7 +56,7 @@ AGENTS.md gains one line under *Apple's current frameworks first*, and
   AGENTS.md, docs/HANDOFF.md and this record)
 - `ffd9575` This record lists the commits and gains the merge check
   with pull requests #112 and #113.
-- The commit after it answers the first reviews (Codex, CodeRabbit and
+- `209f33a` answers the first reviews (Codex, CodeRabbit and
   Graphify; Copilot had no quota). Each `ButtonStyle` needs its own
   press state (another style's `isPressed` in the same file no longer
   counts, a view of the file the style names does); the button-trait
@@ -69,9 +69,19 @@ AGENTS.md gains one line under *Apple's current frameworks first*, and
   docs/DECISIONS.md: refusing an empty handler for one kind of error,
   which found `DraftStore.write`'s correct handling of a draft already
   removed.
-- The commit after that names Apple's Human Interface Guidelines and
+- `a76624b` names Apple's Human Interface Guidelines and
   AGENTS.md as the source of the rules in this record, docs/DECISIONS.md
   and the script.
+- The commit after it answers cubic's review. A style's own property
+  called `isPressed` is no longer its press state (only a read such as
+  `configuration.isPressed` is); a fixed size wrapped in `CGFloat(…)` or
+  `Double(…)` is found, and so is `UIFont(name:size:)` with a number in
+  a file that never scales a font with `UIFontMetrics`; and AGENTS.md's
+  line names the custom symbols and the named exceptions.
+  Declined, with the reasons in docs/DECISIONS.md: words typed in
+  capitals (a script cannot tell them from an acronym), and a fixed
+  custom font in a file that scales another (a script cannot follow
+  which font `UIFontMetrics` scales).
 
 ## Verified
 

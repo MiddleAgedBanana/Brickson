@@ -1051,7 +1051,9 @@ class AppleLookTests(unittest.TestCase):
             'Text("Yes").font(.system(size: 20))', 'Text("Yes").font(.system(size: 20, weight: .semibold))',
             'let f = Font.system(size: 17.5)', 'let f = Font.custom("Avenir", fixedSize: 20)',
             'let f = UIFont.systemFont(ofSize: 17)', 'let f = UIFont.boldSystemFont(ofSize: 17)',
-            'let f = UIFont.monospacedDigitSystemFont(ofSize: 17, weight: .regular)'],
+            'let f = UIFont.monospacedDigitSystemFont(ofSize: 17, weight: .regular)',
+            'Text("Yes").font(.system(size: CGFloat(20)))', 'let f = UIFont.systemFont(ofSize: Double(17))',
+            'let f = UIFont(name: "Avenir", size: 18)', 'let f = UIFont(name: face, size: CGFloat(18))!'],
         'circular corners': [
             'RoundedRectangle(cornerRadius: 12, style: .circular)', 'let s = RoundedCornerStyle.circular',
             'UnevenRoundedRectangle(topLeadingRadius: 8, style: .circular)', 'Text("Yes").cornerRadius(12)'],
@@ -1068,7 +1070,11 @@ class AppleLookTests(unittest.TestCase):
             'struct Press: ButtonStyle { func makeBody(configuration: Configuration) -> some View '
             '{ configuration.label.opacity(configuration.isPressed ? 0.8 : 1) } }; struct Flat: '
             'ButtonStyle { func makeBody(configuration: Configuration) -> some View '
-            '{ configuration.label } }'],
+            '{ configuration.label } }',
+            'struct Flat: ButtonStyle { let isPressed = false; func makeBody(configuration: '
+            'Configuration) -> some View { configuration.label.opacity(isPressed ? 0.8 : 1) } }',
+            'struct Flat: ButtonStyle { var isPressed = false; func makeBody(configuration: '
+            'Configuration) -> some View { configuration.label.opacity(self.isPressed ? 0.8 : 1) } }'],
         'all capitals': ['Text("Yes").textCase(.uppercase)', 'Text("Yes").textCase(Text.Case.uppercase)',
                          'let c = Text.Case.uppercase'],
         'gesture-only control': [
@@ -1122,6 +1128,10 @@ class AppleLookTests(unittest.TestCase):
         '{ TileBody(configuration: configuration) } }; struct TileBody: View { let configuration: '
         'ButtonStyleConfiguration; var body: some View '
         '{ configuration.label.opacity(configuration.isPressed ? 0.8 : 1) } }',
+        'struct Tile: ButtonStyle { func makeBody(configuration: Configuration) -> some View '
+        '{ TileBody(isPressed: configuration.isPressed) { configuration.label } } }; '
+        'struct TileBody<Content: View>: View { let isPressed: Bool; let content: () -> Content; '
+        'var body: some View { content().opacity(isPressed ? 0.8 : 1) } }',
         'struct Tile { func makeBody(configuration: ButtonStyleConfiguration) -> some View '
         '{ configuration.label.scaleEffect(configuration.isPressed ? 0.98 : 1) } }; '
         'extension Tile: ButtonStyle {}',
@@ -1139,6 +1149,8 @@ class AppleLookTests(unittest.TestCase):
         'Text("Yes").font(.title2.weight(.semibold))', 'Text("Yes").font(.system(size: scaledSize))',
         'let f = UIFont.systemFont(ofSize: pointSize(at: size), weight: weight)',
         'let f = Font.custom("Avenir", size: 20)',
+        'Text("Yes").font(.system(size: CGFloat(scaledSize)))', 'let f = UIFont(name: face, size: size)',
+        'let f = UIFontMetrics(forTextStyle: .body).scaledFont(for: UIFont(name: "Avenir", size: 18)!)',
         'RoundedRectangle(cornerRadius: 12)', 'RoundedRectangle(cornerRadius: 12, style: .continuous)',
         'let r = HomeButtonStyle.cornerRadius', 'ProgressView().progressViewStyle(.circular)',
         '@Environment(\\.legibilityWeight) var weight', '@Environment(\\.accessibilityReduceMotion) var still',
@@ -1204,6 +1216,14 @@ class AppleLookTests(unittest.TestCase):
         self.assertEqual([(finding.rule, finding.line) for finding in findings],
                          [('no press state', 6)])
         self.assertIn('`Flat`', findings[0].message)
+
+    def test_a_custom_uikit_font_is_fixed_only_in_a_file_that_never_scales_one(self):
+        # UIFontMetrics often scales the font in another statement.
+        fixed = 'let base = UIFont(name: "Avenir", size: 18)!\n'
+        self.assertEqual([(finding.rule, finding.line) for finding in look_findings(fixed)],
+                         [('fixed text size', 1)])
+        scaled = fixed + 'let font = UIFontMetrics(forTextStyle: .body).scaledFont(for: base)\n'
+        self.assertEqual(look_findings(scaled), [])
 
     def test_a_custom_symbol_named_by_a_literal_passes(self):
         for line in ['Image("brickson.wave")', 'Image(decorative: "brickson.wave")',
