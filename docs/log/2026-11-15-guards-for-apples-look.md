@@ -51,8 +51,12 @@ AGENTS.md gains one line under *Apple's current frameworks first*, and
 
 ## Commits
 
-The commits of this pull request: the check and its tests, then this
-record and the documents.
+- `2cf9f36` Guard Apple's look in the forbidden-code check (the check
+  and its tests)
+- `4d1a07f` Record the guards for Apple's look (docs/DECISIONS.md,
+  AGENTS.md, docs/HANDOFF.md and this record)
+- The commit after it: this record lists the commits and gains the
+  merge check with pull requests #112 and #113.
 
 ## Verified
 
@@ -71,8 +75,11 @@ In this cloud session, which cannot build Swift:
   `HomeView.swift` and finds exactly them, then removes one known
   exception's code and finds the stale exception.
 - The branch merged with pull request #112 (the probe app) and with pull
-  request #113 (colour tokens), each in a scratch worktree: the check
-  finds nothing in either.
+  request #113 (colour tokens), each in a scratch worktree, with no
+  conflict: the check, its tests and the documentation tests pass in
+  both. Held to these rules, the probe app's own files would break five
+  of them in 24 places (toggles, glass, a hover lift, fixed sizes, views
+  passed off as buttons), which is why a never installed app is left out.
 - The documentation, hook, privacy, runner, agent bridge, site and Xcode
   selection checks listed in AGENTS.md, *Build and test*.
 
