@@ -134,6 +134,13 @@ needs the Team ID in `project.yml` (`DEVELOPMENT_TEAM`, from the personal
 membership the owner chose on 2026-10-10; docs/DECISIONS.md, *App identity*) and, before anything is uploaded, the
 final bundle identifier.
 
+The same sessions can run the hands-on experiments in
+[`docs/EXPERIMENTS.md`](EXPERIMENTS.md) (started 2026-11-14), which
+answer how Apple's accessibility features behave before the next design
+is drawn. Its simulator group needs no device and runs first, on the
+Mac; its device group starts with A-1, Snap to Item on a dimmed button,
+using the `BricksonProbe` test app, which never ships.
+
 ## Wave 3: the next pull requests, in order
 
 *Planned 2026-10-23, as Wave 2 (Settings, Get Attention, Stop and Show

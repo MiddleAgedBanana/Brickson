@@ -15,6 +15,10 @@ The Apple setting paths and tool claims listed in
 were checked against Apple's own pages on 2026-11-04; the record of
 that check, with what Apple does not say, is
 [`log/2026-11-04-device-procedures.md`](log/2026-11-04-device-procedures.md).
+The experiments about how Apple's features behave in general, run with
+the `BricksonProbe` test app rather than Brickson, are in
+[`EXPERIMENTS.md`](EXPERIMENTS.md); its device group repeats none of
+these procedures and names the ones it builds on.
 
 ## Who does each step
 

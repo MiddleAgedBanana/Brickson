@@ -183,6 +183,7 @@ are still necessary for audio, dwell, Eye Tracking and other access methods.
 | `Brickson/` | SwiftUI app, speech services, phrase library and resources |
 | `BricksonTests/` | Unit tests for core logic and safety rules |
 | `BricksonUITests/` | Simulator UI and accessibility tests |
+| `BricksonProbe/` | A test app for the hands-on experiments, run with its own **BricksonProbe** scheme; never part of Brickson |
 | `project.yml` | XcodeGen project configuration |
 | `scripts/` | App test runner and static website checks |
 | `site/` | GitHub Pages website and privacy policy |
@@ -242,6 +243,7 @@ date, and accessibility page changes an updated "Last updated" date.
 - [How the project is run, stage by stage](docs/SDLC.md)
 - [Design and engineering decisions](docs/DECISIONS.md)
 - [Accessibility features and APIs, by ALS stage](docs/ACCESSIBILITY.md)
+- [Hands-on experiments: the run sheet](docs/EXPERIMENTS.md)
 - [Lessons from the reference app](docs/LESSONS.md)
 - [Implementation and porting sequence](docs/PORTING.md)
 - [Research behind the roadmap](docs/recon/README.md)

@@ -1270,7 +1270,14 @@ work is the owner's first two sessions there, for which a thread makes the
 look-target sheet and, when the owner writes "go" with a device on the
 cable, runs A1 over Remote Control; its record lists what else it
 leaves ([`log/2026-11-04-device-procedures.md`](log/2026-11-04-device-procedures.md),
-*Follow-ups*). R0 in [docs/ROADMAP.md](ROADMAP.md), in order; the owner's
+*Follow-ups*). The hands-on experiments that the research of
+2026-11-14 asked for have one ordered run sheet,
+[docs/EXPERIMENTS.md](EXPERIMENTS.md), and a probe app to run them,
+`BricksonProbe/`, which never ships (docs/DECISIONS.md, "A probe app for
+the experiments, kept out of Brickson"): a Mac session builds the probe
+and runs the simulator group first (its *What the Mac session does
+next*); its device group starts with A-1 and needs the Team ID. R0 in
+[docs/ROADMAP.md](ROADMAP.md), in order; the owner's
 long-term vision, the direction behind it, is its *Where this goes*.
 The next pull requests, in order, with which may run side by side and
 which change Home, are its

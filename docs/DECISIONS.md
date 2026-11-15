@@ -686,6 +686,7 @@ one replaces with no loss.
 | `UIHostingController.sizeThatFits(in:)` | `StarterLabelFitTests` | The exact size SwiftUI gives a label, to within half a point. SwiftUI's `ImageRenderer` draws pixels, and Apple does not say its size is unrounded. | — |
 | A `UIHostingController` shown in a `UIWindow` | `SwiftDataBehaviourTests` | Checks that SwiftUI's `modelContainer` leaves the library's autosave off, which happens only for a view on screen; a unit test has no SwiftUI way to put a view in a window. | — |
 | `INAlternativeAppNames`, SiriKit's Info.plist key | `project.yml` | App Intents has no way to give the app other names. Apple's App Shortcuts sessions say `.applicationName` includes these names; SiriKit's article says they need an Intents extension (*App identity*). | R2's Siri device check |
+| In the experiments' probe app only: `UIApplication.isIdleTimerDisabled`, `UIAccessibility.post(notification:argument:)` with `.pauseAssistiveTechnology` and `.resumeAssistiveTechnology`, and `UIAccessibility`'s status values | `ProbeSystem` | The probe measures them (*A probe app for the experiments, kept out of Brickson*). SwiftUI has no way to keep the screen awake or to pause VoiceOver or Switch Control, and none to read whether AssistiveTouch, Guided Access or Shake to Undo is on. Where SwiftUI has a value too (VoiceOver, Switch Control, Reduce Motion), the probe reads UIKit's beside it to compare the two (A-27). | With the probe |
 
 Siri and Shortcuts (R2) are built with App Intents and App Shortcuts. A
 SiriKit Intents extension is added only if R2's device check shows the
@@ -6333,6 +6334,78 @@ runs it in seconds. On 2026-11-13 `main` broke none of its rules.
   hook that runs it after each edit, and no line of AGENTS.md trimmed.
   Every rule keeps its line there; the script backs some of them and
   replaces none.
+
+## A probe app for the experiments, kept out of Brickson
+
+*2026-11-14. Default, from the thread that prepared the hands-on
+experiments, on the owner's choice that day of the safe way: public
+sources and public API only, no reverse engineering. 2026-11-15, owner:
+the exceptions below are accepted, for the probe only
+([`log/2026-11-14-experiments-run-sheet-and-probe.md`](log/2026-11-14-experiments-run-sheet-and-probe.md)).*
+
+The research of 14 November 2026 asked for one small test app with one
+test screen, built only to learn and never shipped. Building it in this
+repository, instead of a throwaway project, means CI compiles it with
+Brickson's settings, `scripts/forbidden-code.py` checks it, and the Mac
+session and the owner build it with the commands they already use.
+[`EXPERIMENTS.md`](EXPERIMENTS.md) says how to run it and what each
+station answers.
+
+- **Where.** `BricksonProbe/`, an application target of its own in
+  `project.yml`, with its own bundle identifier (Brickson's with
+  `.probe` after it), so installing it never replaces Brickson on a
+  device. `SKIP_INSTALL` is on, so an archive of it holds no app and it
+  cannot be uploaded. The `Brickson` scheme builds it only for testing:
+  the unit-test job compiles it on every pull request, and no Brickson
+  run, profile or archive includes it. The `BricksonProbe` scheme runs
+  it. Nothing of it is in the `Brickson` target.
+- **Which rules hold.** Everything `scripts/forbidden-code.py` checks
+  holds in the probe as in the app, because it is a target that is not a
+  test: standard SwiftUI controls only; no gestures, hover code, or
+  custom input, switch, head or gaze code; no network code; no
+  third-party packages; no choice by device. Its plain logic is in
+  `BricksonProbe/Logic` and is tested in the unit tests
+  (`ProbeLogicTests`); its speech delegate is tested off the main thread
+  (`OffMainThreadCallbackTests`). It keeps its log in memory only and
+  shares it only when the person chooses Share.
+- **What it does that Brickson must not, on purpose.** Each is what an
+  experiment measures, and each holds for the probe only. On 2026-11-15
+  the owner was asked about the five that matter most (the screen may
+  lock, dimmed and hidden buttons, the main thread held busy, English-only
+  words, no Emergency or Get Attention), said yes to all five, and said
+  that objective coding choices like the rest of this list are the
+  agents' to make; the thread accepted the rest on that basis:
+  - it shows dimmed, hidden, non-responding and trait-only elements, an
+    activation point moved over another button, hover effects, and
+    Apple's own button styles and glass (A-1, A-7, A-8, A-28, D-01 to
+    D-24 in the run sheet);
+  - it keeps the screen on by default but lets the person switch that
+    off, so the screen can lock (A-22, A-23, G-25); Brickson always keeps
+    it on (invariant 12);
+  - it declares Assistive Access's own scene and
+    `UISupportsAssistiveAccess` (D-13); Brickson never does
+    (*Accessibility API coverage*; `AppBundleTests`);
+  - it holds its main thread busy for three seconds when asked (A-43);
+  - its speech does not recover from an interruption or a reset of the
+    system's media services (invariant 4): it only measures speech, and
+    the run sheet says to close and reopen it if speech stops;
+  - it says a Voice Control command and a Siri test sentence aloud, and
+    posts announcements (A-16, A-18, A-31, A-40);
+  - its words are English only, written with `Text(verbatim:)`, with no
+    String Catalog, and a button's words shrink to fit where a fixed
+    size cannot hold them (the Rings station's 44-point button, a
+    phone's narrow slots) rather than break mid-word: only the person
+    running an experiment reads them;
+  - it has no Get Attention, no Emergency and no safety bar, and no
+    chain-engine scoring. Nobody uses it to communicate, and the run
+    sheet says so before every session on a device.
+- **What it never holds.** A person's phrases, Brickson's starter
+  library, anything from the private list, Apple's private API, or
+  anything learned by taking Apple's software apart. It speaks neutral
+  test words only (docs/DEVICE-CHECKS.md, *Keep the repository's rules*).
+- **Revisit when** stage 4's experiments are done: the owner chooses
+  whether the probe is removed or kept to run them again after a new
+  iOS.
 
 ## Reviews, updates and GitHub settings
 
