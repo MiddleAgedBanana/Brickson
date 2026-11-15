@@ -686,6 +686,7 @@ one replaces with no loss.
 | `UIHostingController.sizeThatFits(in:)` | `StarterLabelFitTests` | The exact size SwiftUI gives a label, to within half a point. SwiftUI's `ImageRenderer` draws pixels, and Apple does not say its size is unrounded. | — |
 | A `UIHostingController` shown in a `UIWindow` | `SwiftDataBehaviourTests` | Checks that SwiftUI's `modelContainer` leaves the library's autosave off, which happens only for a view on screen; a unit test has no SwiftUI way to put a view in a window. | — |
 | `INAlternativeAppNames`, SiriKit's Info.plist key | `project.yml` | App Intents has no way to give the app other names. Apple's App Shortcuts sessions say `.applicationName` includes these names; SiriKit's article says they need an Intents extension (*App identity*). | R2's Siri device check |
+| In the experiments' probe app only: `UIApplication.isIdleTimerDisabled`, `UIAccessibility.post(notification:argument:)` with `.pauseAssistiveTechnology` and `.resumeAssistiveTechnology`, and `UIAccessibility`'s status values | `ProbeSystem` | The probe measures them (*A probe app for the experiments, kept out of Brickson*). SwiftUI has no way to keep the screen awake or to pause VoiceOver or Switch Control, and none to read whether AssistiveTouch, Guided Access or Shake to Undo is on. Where SwiftUI has a value too (VoiceOver, Switch Control, Reduce Motion), the probe reads UIKit's beside it to compare the two (A-27). | With the probe |
 
 Siri and Shortcuts (R2) are built with App Intents and App Shortcuts. A
 SiriKit Intents extension is added only if R2's device check shows the
@@ -5332,6 +5333,125 @@ Glass*, has the measurements and the review.
 
 Before: `Palette` had the three fills and no rule about glass.
 
+Since 2026-11-15 each role's colour is a token with four slots, each
+holding the value above (*Colour tokens in four appearances*).
+
+## Colour tokens in four appearances
+
+*2026-11-15. Default, reversible: an engineering choice the owner leaves
+to the project. No colour changed.*
+
+Every colour set in the asset catalog has the four slots Apple's colour
+sets offer: any (light), dark, high contrast, and dark with high
+contrast. Apple asks this of every custom colour: "If you define a custom
+color, make sure to supply light and dark variants, and an increased
+contrast option for each variant that provides a significantly higher
+amount of visual differentiation" (Human Interface Guidelines, Color,
+read 2026-11-15; the same words in *Adopting Liquid Glass*), and its
+dark-mode article names the asset catalog as the place ("specify
+different color values for both light and dark appearances. You can
+also specify high-contrast versions of your colors", *Supporting Dark
+Mode in your interface*, read 2026-11-15).
+
+**Each slot holds the value the role always had**, so the app looks
+exactly as before and no screenshot changes. Choosing a value for each
+slot is the owner's design of the app's look; until then the slots are
+plumbing that design can fill without touching a view.
+
+**Why the asset catalog, not code.** SwiftUI's `Color("Name")` picks the
+slot from the environment's `colorScheme` and `colorSchemeContrast` with
+no code of Brickson's, and UIKit's trait resolution reads the same
+slots, which is how `PaletteTests` measures Increase Contrast (SwiftUI's
+environment cannot set it: *Apple's current frameworks first*, the
+`UIColor` and `UITraitCollection` row). A colour built in code would
+need UIKit's dynamic provider in the app, a closure the renderer calls
+off the main thread (the crash `OffMainThreadCallbackTests` guards
+against), and a row in that table; and the slots are visible and
+editable in Xcode's colour-set editor.
+
+**The words on fills are a token too.** `FillLabel` (`Palette.fillLabel`),
+white in all four slots, is what Home's controls, Settings' rows and the
+Library's chosen-picture check draw on a fill, where they drew
+`Color.white`. Each label pair has two sides; with only the fill a token,
+an appearance could not carry its own words (dark words on a luminous
+fill, which Apple's own dark and Increase Contrast dark system colours
+favour: by their published values they carry black words far better than
+white) without touching every view.
+
+**What `PaletteTests` measures**, ported from the stage 5 colour search's
+checked arithmetic (`BricksonTests/ColourArithmetic.swift`, cross-checked
+against that search's Python and Sharma, Wu and Dalal's published
+CIEDE2000 pairs in `theArithmeticMatchesTheColourSearch`), except that
+contrast keeps WCAG's own luminance coefficients (0.2126, 0.7152,
+0.0722), as `PaletteTests` always did: the search's longer CIE Y
+coefficients move a ratio in its fourth decimal, enough to pass `#B60015`
+on black at 3.0002:1 where WCAG gives 2.9998:1
+(`theContrastFormulaMatchesWCAG` pins it):
+
+- **Every slot's value**, from a table of tokens, and every colour set in
+  the catalog's source has exactly the four slots, in sRGB, and is in the
+  table (`everyTokenHasFourSlots` reads the catalog's source; the
+  simulator reaches the files of the machine that built the tests).
+- **The contrast budget** (`everyFillKeepsItsContrastBudget`): wherever a
+  fill is drawn, in each appearance, its words at 4.5:1 and what meets
+  the screen at its edge at 3:1, on the base screen and on the lifted one
+  iPad multitasking can give a window. What meets the screen is the fill,
+  or a border drawn over its edge: on Home it is whatever
+  `HomeButtonLook` draws there (the primary-ink border in dark mode); on
+  the system's bordered prominent buttons tinted with a fill (Settings'
+  rows, Voice Settings' speeds, setup's choices) and the typing fields'
+  edge it is the fill. The two pull against each other on dark screens:
+  white words at 4.5:1 leave a fill at most 3.78:1 from the lifted gray.
+- **Increase Contrast never lowers contrast**
+  (`increasedContrastNeverLowersContrast`): its words and its fill
+  against the screen measure at least what they do without it. Measured
+  on the base screen, which Increase Contrast leaves white or black; the
+  lifted gray is itself lighter under Increase Contrast, an Apple value
+  no token can change, and the budget holds 3:1 there.
+- **Fills that mean different things never look alike**
+  (`theFillsTellApartInEveryVision`): every two of the five fills at
+  least 15 apart in CIEDE2000, with typical colour vision and as
+  simulated for protanopia, deuteranopia and tritanopia (Machado,
+  Oliveira and Fernandes, 2009, at full severity), in each appearance.
+  Apple: "Avoid using the same color to mean different things" (Human
+  Interface Guidelines, Color). 15 is the colour search's step for
+  colours that must not be taken for each other (its rules R3 and R4,
+  from the field's thresholds: 10 "clearly different at a glance", 15
+  for colour-blind checks). Greyscale is not asked: with words at 4.5:1
+  the search proved there is no room for these fills to differ in gray,
+  so their words and icons carry it, as Apple asks.
+
+The earlier pins stay: the fill label on every fill, every fill against
+the base screen, every ring ink on every fill, and primary ink on the
+base and lifted screens.
+
+**Today's values miss in two places, and the misses are recorded, not
+fixed.** Each is a strict `withKnownIssue` citing this section, listed
+in `PaletteTests` (`knownEdgeFailures`, `knownLookalikes`) and in
+docs/HANDOFF.md, *Known gaps*, as inputs for the design: the accent and
+control fills on system buttons and the control fill as the typing
+fields' edge, on the lifted dark screen with and without Increase
+Contrast (6); and eight pairs of fills under 15 for one of the three
+colour visions, in all four appearances (32), Emergency and Get
+Attention at 2.7 for deuteranopia the closest. The day a value passes,
+its known issue is not recorded and the test fails, until its line is
+removed. Nothing was changed to pass: a new colour, or a border on
+Settings' buttons, changes how the app looks, which is the owner's call,
+and no test was weakened.
+
+**The six edges are not accepted.** They break invariant 6 on the lifted
+dark screen today, as they did before this change, when nothing measured
+them (the base recorded only the message field's edge). A known issue
+keeps CI green while measuring them; it is not an exception to the
+invariant. The owner decides, by merging this or asking otherwise,
+whether they wait for the design of the app's look or get the border now
+(Codex's review of pull request #113). The 32 look-alike pairs break no
+invariant: 15 is the colour search's target, not a rule here.
+
+Before: each colour set had one value for every appearance, and
+`PaletteTests` measured that value in the four appearances against the
+base screen; the words on fills were `Color.white`.
+
 ## Show Borders and the Large Content Viewer on Home
 
 *2026-10-23. Default, adopted 2026-10-23: the owner left these choices to
@@ -5378,7 +5498,7 @@ R0 item 3's accessibility work (docs/ACCESSIBILITY.md, section 6;
   4.5:1 or better (`PaletteTests`) against the lighter screen iPad
   multitasking can give a window, where the accent, control and
   Emergency fills' own edges come to 2.84 to 2.96:1 against `#1C1C1E`,
-  a commonly reported value not read from Apple (docs/HANDOFF.md,
+  UIKit's value as CI read it on 2026-11-15 (docs/HANDOFF.md,
   *Known gaps*). The pressed and selection rings follow it as under Show
   Borders, so in dark mode the pressed ring is 4pt and the selection ring
   black. Light mode with Show Borders off is unchanged. Settings' safety
@@ -6308,6 +6428,78 @@ runs it in seconds. On 2026-11-13 `main` broke none of its rules.
   hook that runs it after each edit, and no line of AGENTS.md trimmed.
   Every rule keeps its line there; the script backs some of them and
   replaces none.
+
+## A probe app for the experiments, kept out of Brickson
+
+*2026-11-14. Default, from the thread that prepared the hands-on
+experiments, on the owner's choice that day of the safe way: public
+sources and public API only, no reverse engineering. 2026-11-15, owner:
+the exceptions below are accepted, for the probe only
+([`log/2026-11-14-experiments-run-sheet-and-probe.md`](log/2026-11-14-experiments-run-sheet-and-probe.md)).*
+
+The research of 14 November 2026 asked for one small test app with one
+test screen, built only to learn and never shipped. Building it in this
+repository, instead of a throwaway project, means CI compiles it with
+Brickson's settings, `scripts/forbidden-code.py` checks it, and the Mac
+session and the owner build it with the commands they already use.
+[`EXPERIMENTS.md`](EXPERIMENTS.md) says how to run it and what each
+station answers.
+
+- **Where.** `BricksonProbe/`, an application target of its own in
+  `project.yml`, with its own bundle identifier (Brickson's with
+  `.probe` after it), so installing it never replaces Brickson on a
+  device. `SKIP_INSTALL` is on, so an archive of it holds no app and it
+  cannot be uploaded. The `Brickson` scheme builds it only for testing:
+  the unit-test job compiles it on every pull request, and no Brickson
+  run, profile or archive includes it. The `BricksonProbe` scheme runs
+  it. Nothing of it is in the `Brickson` target.
+- **Which rules hold.** Everything `scripts/forbidden-code.py` checks
+  holds in the probe as in the app, because it is a target that is not a
+  test: standard SwiftUI controls only; no gestures, hover code, or
+  custom input, switch, head or gaze code; no network code; no
+  third-party packages; no choice by device. Its plain logic is in
+  `BricksonProbe/Logic` and is tested in the unit tests
+  (`ProbeLogicTests`); its speech delegate is tested off the main thread
+  (`OffMainThreadCallbackTests`). It keeps its log in memory only and
+  shares it only when the person chooses Share.
+- **What it does that Brickson must not, on purpose.** Each is what an
+  experiment measures, and each holds for the probe only. On 2026-11-15
+  the owner was asked about the five that matter most (the screen may
+  lock, dimmed and hidden buttons, the main thread held busy, English-only
+  words, no Emergency or Get Attention), said yes to all five, and said
+  that objective coding choices like the rest of this list are the
+  agents' to make; the thread accepted the rest on that basis:
+  - it shows dimmed, hidden, non-responding and trait-only elements, an
+    activation point moved over another button, hover effects, and
+    Apple's own button styles and glass (A-1, A-7, A-8, A-28, D-01 to
+    D-24 in the run sheet);
+  - it keeps the screen on by default but lets the person switch that
+    off, so the screen can lock (A-22, A-23, G-25); Brickson always keeps
+    it on (invariant 12);
+  - it declares Assistive Access's own scene and
+    `UISupportsAssistiveAccess` (D-13); Brickson never does
+    (*Accessibility API coverage*; `AppBundleTests`);
+  - it holds its main thread busy for three seconds when asked (A-43);
+  - its speech does not recover from an interruption or a reset of the
+    system's media services (invariant 4): it only measures speech, and
+    the run sheet says to close and reopen it if speech stops;
+  - it says a Voice Control command and a Siri test sentence aloud, and
+    posts announcements (A-16, A-18, A-31, A-40);
+  - its words are English only, written with `Text(verbatim:)`, with no
+    String Catalog, and a button's words shrink to fit where a fixed
+    size cannot hold them (the Rings station's 44-point button, a
+    phone's narrow slots) rather than break mid-word: only the person
+    running an experiment reads them;
+  - it has no Get Attention, no Emergency and no safety bar, and no
+    chain-engine scoring. Nobody uses it to communicate, and the run
+    sheet says so before every session on a device.
+- **What it never holds.** A person's phrases, Brickson's starter
+  library, anything from the private list, Apple's private API, or
+  anything learned by taking Apple's software apart. It speaks neutral
+  test words only (docs/DEVICE-CHECKS.md, *Keep the repository's rules*).
+- **Revisit when** stage 4's experiments are done: the owner chooses
+  whether the probe is removed or kept to run them again after a new
+  iOS.
 
 ## Reviews, updates and GitHub settings
 
