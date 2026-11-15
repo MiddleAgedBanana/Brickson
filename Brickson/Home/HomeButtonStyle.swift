@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// The look of every control on Home: a measured fill with white words, a
+/// The look of every control on Home: a measured fill with measured words, a
 /// rounded rectangle, and a narrow, known margin around the label.
 ///
 /// It replaces `.borderedProminent` on Home for two measured failures
@@ -11,8 +11,9 @@ import SwiftUI
 ///
 /// What it draws in each state, and with Show Borders, is `HomeButtonLook`:
 ///
-/// - Enabled: white words on `fill`. Every fill carries white text at 4.5:1
-///   or better (`PaletteTests`).
+/// - Enabled: words in `Palette.fillLabel` (white today) on `fill`. Every
+///   fill carries them at 4.5:1 or better in each appearance
+///   (`PaletteTests`).
 /// - Disabled: the same words in primary ink on the screen with a
 ///   primary-ink border, unfilled, so it reads as off and stays readable.
 /// - Selected (a category, or Emergency while its phrases show): an inner
@@ -62,7 +63,7 @@ struct HomeButtonStyle: ButtonStyle {
             .padding(.horizontal, sideInset)
             .padding(.vertical, HomeLayout.labelInset.vertical)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .foregroundStyle(look.isFilled ? Color.white : Color.primary)
+            .foregroundStyle(look.isFilled ? Palette.fillLabel : Color.primary)
             .background(look.isFilled ? fill : Color.clear, in: shape)
             .overlay {
                 // In order, each over the ones before.

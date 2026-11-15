@@ -367,7 +367,7 @@ private struct LibraryPictureContent: View {
                 // when the choice does.
                 Image(systemName: "checkmark.circle.fill")
                     .font(.body.weight(.bold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(Palette.fillLabel)
                     .opacity(isChosen ? 1 : 0)
                     .accessibilityHidden(true)
             }

@@ -3,8 +3,8 @@ import SwiftUI
 /// The building blocks every Settings screen shares, so each screen looks
 /// and measures the same.
 ///
-/// Colours are only pairs `PaletteTests` already pins: white on
-/// `Palette.controlFill` or `Palette.phraseFill` for controls, and primary
+/// Colours are only pairs `PaletteTests` already pins: `Palette.fillLabel`
+/// on `Palette.controlFill` or `Palette.phraseFill` for controls, and primary
 /// ink on the screen for text, card edges and dimmed rows. The system's
 /// secondary gray, grouped-list headers and dimmed buttons are not used:
 /// they measure under 4.5:1 (AGENTS.md, invariant 6).
@@ -56,13 +56,14 @@ struct SettingsRowLabel: View {
             Image(systemName: systemImage)
         }
         .font(.title3.weight(.semibold))
-        .foregroundStyle(isEnabled ? Color.white : Color.primary)
+        .foregroundStyle(isEnabled ? Palette.fillLabel : Color.primary)
         .multilineTextAlignment(.leading)
         .frame(maxWidth: .infinity, minHeight: SettingsMetrics.rowHeight, alignment: .leading)
     }
 }
 
-/// Settings' row: the system's bordered prominent button, white on `fill`.
+/// Settings' row: the system's bordered prominent button, `Palette.fillLabel`
+/// on `fill`.
 ///
 /// Dimmed, the system draws a light gray with paler words, which Apple's
 /// audit measured under 4.5:1 on the Library's Add a Category on CI
@@ -136,7 +137,7 @@ struct SettingsPairLabel: View {
                 .fixedSize(horizontal: false, vertical: true)
         }
         .font(.title3.weight(.semibold))
-        .foregroundStyle(isEnabled ? Color.white : Color.primary)
+        .foregroundStyle(isEnabled ? Palette.fillLabel : Color.primary)
         .frame(maxWidth: .infinity, minHeight: SettingsMetrics.rowHeight)
     }
 }

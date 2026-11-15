@@ -1,0 +1,121 @@
+# Colour tokens in four appearances, and a contrast budget
+
+*2026-11-15. Pull request #113 (`claude/project-thread-z3jbgy`). A cloud thread
+(Claude Code), from the project's foundations work, items E-01 and E-02.*
+
+## What changed and why
+
+Nothing a person using Brickson can see. Every colour in the asset
+catalog now has the four slots Apple asks a custom colour to have (light,
+dark, and each with Increase Contrast), each holding the value it always
+had, and the words on fills became a colour of their own, `FillLabel`,
+white in all four. The point is the plumbing: the design of the app's
+look can now give dark mode and Increase Contrast their own colours
+without touching a view, and every value it chooses is measured the
+moment it lands.
+
+`PaletteTests` now measures, in all four appearances: every slot's value;
+that every colour set has exactly the four slots and none goes unpinned;
+a **contrast budget** for every place a fill is drawn (its words at 4.5:1,
+and its edge, or the border drawn over it, at 3:1 against the screen,
+base and lifted); that Increase Contrast never lowers contrast; and that
+the five fills never look alike to people with typical colour vision or
+any of the three dichromacies (CIEDE2000 15 or more). The arithmetic is
+ported from the stage 5 colour search's Python and checked against it.
+
+Where today's values miss, the test records a named, strict known issue
+instead of failing, and docs/HANDOFF.md, *Known gaps*, lists each for the
+design: 6 edges on iPad multitasking's lifted dark screen (Settings'
+system buttons and the typing fields' edge), and 8 pairs of fills that
+look alike for one colour vision, in each of the four appearances (32),
+Emergency and Get Attention at 2.7 for deuteranopia the closest. Nothing
+was recoloured and no test was weakened. Decision: docs/DECISIONS.md,
+"Colour tokens in four appearances". Codex's review pointed out that the
+six edges are newly recorded breaches of invariant 6, and that a known
+issue must not make them look accepted; the documents now say they are
+not, and that the owner decides at merge whether they wait for the
+design or get the border now.
+
+## Commits
+
+- `b668e2a` Give every colour token four values and measure a contrast
+  budget (asset catalog, `Palette.fillLabel` in four views,
+  `ColourArithmetic`, `PaletteTests`).
+- The documentation commit after it.
+- Review fixes: the six edges recorded as breaches for the owner to
+  decide, not accepted exceptions (Codex); WCAG's own coefficients for
+  contrast, with a boundary pin (CodeRabbit); the budget figure on the
+  lifted gray corrected from 3.79 to 3.78:1 (white on `#1C1C1E` is
+  17.01:1, so 17.01 / 4.5); and the App Store accessibility rows brought
+  up to date.
+- Corrections after CI and the report-only verifier: where the measured
+  ratios are (the result bundle, not the printed log), the lifted grays
+  as CI read them, DESIGN's colour paragraph scoped to the screens it
+  lists, `Palette.fillLabel`'s comment naming the Library's check, and
+  this log's *Verified* and *Not verified*.
+
+## Verified
+
+- **Built and run only by CI.** This is a cloud session with no Mac.
+- CI on `e1d543e` (run 43711421833) passed: unit tests, and UI tests on
+  the iPad and iPhone simulators. In `PaletteTests` all 15 tests ran: 13
+  passed and 2 recorded known issues. The unit result bundle records
+  exactly the 6 + 32 listed, at the values measured on Linux (the edges
+  at 2.963, 2.698, 2.844, 2.590, 2.844 and 2.590:1), so UIKit's lifted
+  grays there are `#1C1C1E` in dark and `#242426` in dark with Increase
+  Contrast, and `everyTokenHasFourSlots` read the catalog's source through
+  `#filePath`. The printed log leaves out tests that record known
+  issues; the ratios are in the bundle's `ExpectedFailures`.
+- `BricksonTests/ColourArithmetic.swift` compiled with Swift 6.2 on Linux
+  (Swift 6 mode, complete strict concurrency, main-actor default
+  isolation, warnings as errors) and reproduced the colour search's
+  Python values to about 13 decimal places, including Sharma's published
+  pairs (2.0425, 27.1492, 0.9082). Contrast uses WCAG's own coefficients
+  (0.2126, 0.7152, 0.0722), not the search's CIE Y ones: the first port
+  took the search's, which CodeRabbit caught (`#B60015` on black passes
+  at 3.0002:1 with them, fails at 2.9998:1 with WCAG's), and with them
+  back the boundary pin in `theContrastFormulaMatchesWCAG` and the
+  contrast cross-check both fail on Linux, as they should.
+- `BricksonTests/PaletteTests.swift` type-checked and ran on Linux with
+  Swift Testing against small stand-ins for the UIKit and SwiftUI types it
+  uses, with Apple's colours taken as white and black screens, `#1C1C1E`
+  lifted in dark and `#242426` lifted in dark with Increase Contrast: all
+  15 tests passed, with exactly the 6 + 32 known issues listed, and
+  `everyTokenHasFourSlots` read the real asset catalog. With the lifted
+  gray set to `#1A1A1A`, where the accent fill passes, the budget test
+  failed with "Known issue was not recorded", as it should.
+- `scripts/forbidden-code.py`: nothing AGENTS.md forbids.
+- What would make each new test fail: a slot's value changed in the
+  catalog without its table row (`everyTokenHoldsItsValueInEachAppearance`);
+  a colour set with three slots, or a new colour set not in the table
+  (`everyTokenHasFourSlots`); Home's dark-mode border removed from
+  `HomeButtonLook` (`everyFillKeepsItsContrastBudget`, on the lifted
+  screen); an Increase Contrast slot lighter than its default in light
+  mode, or one that lowers its words or its edge against black in dark
+  mode (`increasedContrastNeverLowersContrast`); a known issue's value
+  fixed without removing its line; a slip in the ported formulas
+  (`theArithmeticMatchesTheColourSearch`).
+
+## Not verified
+
+- How the system's bordered prominent buttons (Settings' rows, Voice
+  Settings' speeds, setup's choices) draw under Increase Contrast and on
+  the lifted dark screen: the budget measures the fill they are tinted
+  with, not the rendered pixels (docs/ROADMAP.md, Q17). A screenshot in
+  dark mode, with Increase Contrast on and off, in a lifted (Slide Over
+  or Stage Manager) window would settle it.
+- No UI test runs in a lifted window, so the six edges are known only
+  from arithmetic on UIKit's resolved colours.
+- "Nothing looks different" rests on identical slot values and white for
+  white; no before-and-after screenshots were compared.
+- Private words were not checked in this cloud session (no private
+  list); CI's privacy check read the list and passed.
+
+## Follow-ups
+
+- The owner's design of the app's look chooses each slot's value, using
+  the known issues in docs/HANDOFF.md, *Known gaps*, as inputs, and
+  removes each known issue's line as its value passes.
+- If the design keeps white words on deep fills in dark mode, the
+  Settings buttons and typing fields need the border Home's controls
+  already draw (docs/HANDOFF.md, *Known gaps*).
