@@ -181,13 +181,13 @@ session does next*, below, has the commands.
   cannot run Assistive Access, DEV-12 does (c) on a device. Brickson
   keeps its full-screen key whatever this shows (docs/DECISIONS.md,
   "Accessibility API coverage").
-- **Found, 2026-11-15.** The iOS 27.2 Simulator offers no Assistive
-  Access (nor Guided Access, Switch Control, Voice Control, Touch, Eye
-  or Head Tracking) on iPhone or iPad; no iOS 26 runtime was installed.
-  Part (b) needs the project open in Xcode, which AGENTS.md keeps from
-  agents: not done. Parts (a) and (c) move to DEV-12.
-  ([record](log/2026-11-15-experiments-simulator.md))
-
+- **Found, 2026-11-15.** Part (a) is answered: the iOS 27.2 Simulator
+  offers no Assistive Access (nor Guided Access, Switch Control, Voice
+  Control, Touch, Eye or Head Tracking) on iPhone or iPad; no iOS 26
+  runtime was installed. Part (b) needs the project open in Xcode, which
+  AGENTS.md keeps from agents: not done, so the pictures of Apple's
+  dressing wait for the owner in Xcode or DEV-12. Part (c) moves to
+  DEV-12. ([record](log/2026-11-15-experiments-simulator.md))
 ### SIM-2. Control sizes — D-01
 
 - **Asks.** Does `.controlSize(.extraLarge)` draw larger than `.large`
@@ -325,12 +325,12 @@ session does next*, below, has the commands.
 - **Record.** Each sample and its ratio.
 - **What it means.** Below 4.5:1 at rest: every scrolling surface under
   a glass bar needs a fix before it ships (invariant 6).
-- **Found, 2026-11-15.** The probe's Styles rows never pass under its
-  bar; Brickson's library list does. Over a scrolled row the bar's title
-  stays at least 10.6:1 and its Back chevron at least 15.5:1 in light,
-  dark, Increase Contrast and Reduce Transparency.
+- **Found, 2026-11-15.** Partly. The probe's Styles rows never pass
+  under its bar; Brickson's library list does. Over a scrolled row the
+  bar's title stays at least 10.6:1 and its Back chevron at least 15.5:1
+  in light, dark, Increase Contrast and Reduce Transparency. The rows'
+  own words under the bar, faded by design, were not measured.
   ([record](log/2026-11-15-experiments-simulator.md))
-
 ### SIM-9. An inactive iPad window — D-20
 
 - **Asks.** On iPadOS 27, with Brickson beside another app and not the

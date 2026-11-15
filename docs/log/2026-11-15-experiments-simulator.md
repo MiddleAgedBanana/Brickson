@@ -75,7 +75,7 @@ what the system reports about a dimmed button.
 | SIM-5 | A-1a, A3-U8 (Simulator part) | Yes, answered: a dimmed Button is reported "not enabled" ("dimmed" in VoiceOver). This is not A-1 |
 | SIM-6 | D-07 | Yes, answered for the Simulator: all three effects keep moving with Reduce Motion on |
 | SIM-7 | D-14 | Could not test: Smart Invert does not show in Simulator screenshots |
-| SIM-8 | D-17 | Yes, answered: the bar's words stay above 10:1 over scrolled rows |
+| SIM-8 | D-17 | Partly: the bar's words stay above 10:1 over scrolled rows; the rows' own words under the bar not measured |
 | SIM-9 | D-20 | Partly: Home's fills keep their contrast in an inactive window; system styles not run |
 | SIM-10 | D-21, D-02, A-33 (A4-U17, L1-U22) | Yes, answered, with **one shipped defect**: the accent under Increase Contrast in dark (3.95:1) |
 | SIM-11 | A-45 (B3-U8), A2-U13, A3-U17 | Mostly: three differences on the probe; on Home the tree and VoiceOver agree; Full Keyboard Access on Home not measured |
@@ -316,9 +316,10 @@ what the system reports about a dimmed button.
   | Dark, Reduce Transparency | 20.88 / 21.00 | 16.90 |
 
   With Reduce Transparency the bar is opaque white or black.
-- **Answer.** At rest, the bar's own words stay above 10:1 over a
-  scrolled row in every appearance measured; the rows themselves are
-  faded under the bar by design.
+- **Answer.** Partly. At rest, the bar's own words stay above 10:1 over
+  a scrolled row in every appearance measured. The run sheet also asks
+  for the contrast of a row's own words under the effect; they are
+  faded there by design and were not measured (*Follow-ups*).
 - **What it means.** No fix is needed for the bar over a scrolling
   library (invariant 6 holds for its text). A row's words are readable
   only once scrolled out from under the bar, which is the system's
@@ -555,7 +556,8 @@ what the system reports about a dimmed button.
   element is made with `accessibilityAdjustableAction`. The haptics
   check compiles; its answer is a device's.
 - **What it means.** Stage 1's notes on these two APIs should read as
-  above.
+  above, and so should docs/ACCESSIBILITY.md's row that lists
+  `pointerStyle(_:)` (*Follow-ups*).
 
 **The confirmation dialog (L1-U4).**
 
@@ -667,7 +669,14 @@ removed before committing.
   iPhone 17 and iPad Pro 13-inch (M5) in portrait, and for SIM-12 every
   installed iPhone and iPad simulator; text size, appearance and
   settings as each step says.
-- `python3 scripts/test-docs.py` passes.
+- `python3 scripts/test-docs.py`, `test-hooks.py`, `test-privacy.py`,
+  `test-forbidden-code.py`, `test-runner.py`, `test-agent-bridge.py`,
+  `test-site.py` and `test-select-xcode.py` pass on the Mac, and
+  `privacy-check.py --outgoing` passes with the private list read.
+- The Swift unit and UI tests were not run for this pull request (no
+  Swift changed); GitHub CI runs them on it.
+- No software keyboard showed in any step: nothing was typed. The only
+  key presses were Full Keyboard Access's Tab, sent as hardware keys.
 
 ## Not verified
 
@@ -691,6 +700,15 @@ removed before committing.
 - **Four window sizes (five simulators) missing from the layout
   engine's table** (SIM-12): a test pull request adds them. *(a thread,
   R0)*
+- **docs/ACCESSIBILITY.md lists `View.pointerStyle(_:)` as a SwiftUI
+  18.0 API** (the row with `HoverEffectGroup` and `pointerVisibility`),
+  but it does not compile for iOS or iPadOS in the iOS 27.2 SDK
+  (SIM-13). Proposed fix: take it out of that row or mark it macOS and
+  visionOS only, after checking the row's other names the same way.
+  *(a documents pull request)*
+- **The rows' own words under the scroll edge** (SIM-8) were not
+  measured; a run that samples them, if the owner wants that number.
+  *(a thread)*
 - **The run sheet's SIM-1 (b) asks an agent to open the project in
   Xcode**, which AGENTS.md forbids. Proposed fix: say in
   docs/EXPERIMENTS.md that the owner renders the "Assistive Access"
