@@ -747,7 +747,7 @@ release in docs/ROADMAP.md when no thread has it yet.
   covers it. A fix is part of the item above. *(the owner's design of
   the app's look; the device check first)*
 - The layout engine's named windows (`HomeLayoutEngineTests.windows`)
-  lack five that today's simulators give an app (SIM-12 in the same
+  lack four window sizes that five of today's simulators give an app (SIM-12 in the same
   record): iPhone Air 420 by 912 (insets 68 and 34), iPad Air 13-inch
   1024 by 1366, the iPad (A16) and iPad Air 11-inch at 820 by 1180, and
   the newest iPad mini at 756 by 1158 (the table's "iPad mini" is 744 by

@@ -402,13 +402,14 @@ session does next*, below, has the commands.
   reachability claims then need a device check (AGENTS.md, *Workflow
   rules*).
 - **Found, 2026-11-15.** AXe and the UI test agree on elements, order
-  and frames. Differences: VoiceOver skips an `accessibilityHidden`
-  button both trees list; `accessibilitySortPriority` changes
-  VoiceOver's order but not the trees' or Full Keyboard Access's (which
-  the Simulator offers); on iPad VoiceOver also reaches the window's
-  resize handle. `XCUIDevice.voiceOverService` runs in the Simulator.
+  and frames. On the probe, VoiceOver skips an `accessibilityHidden`
+  button both trees list, and `accessibilitySortPriority` on two
+  side-by-side regions changed VoiceOver's order but not the trees' or
+  Full Keyboard Access's. On Brickson's Home the tree and VoiceOver both
+  follow its sort priority; Full Keyboard Access on Home was not
+  measured (DEV-9). On iPad VoiceOver also reaches the window's resize
+  handle; `XCUIDevice.voiceOverService` runs in the Simulator.
   ([record](log/2026-11-15-experiments-simulator.md))
-
 ### SIM-12. Window sizes and safe areas — B2-U4, B2-U6
 
 - **Asks.** What window size, safe areas and corner radius does the
@@ -421,12 +422,12 @@ session does next*, below, has the commands.
 - **What it means.** A window the layout engine's tests do not hold is
   added to them; a device with no simulator moves to HW-6.
 - **Found, 2026-11-15.** Window sizes and insets for all twelve
-  simulators; five are not among the layout engine's tested windows
-  (iPhone Air 420 by 912; iPad Air 13-inch 1024 by 1366; the 820 by 1180
-  iPads; the new iPad mini 756 by 1158, whose insets are 32 and 20).
-  Corner radius has no public API; iOS 26 not installed.
+  simulators; four window sizes (five simulators) are not among the
+  layout engine's tested windows (iPhone Air 420 by 912; iPad Air
+  13-inch 1024 by 1366; the 820 by 1180 iPads; the new iPad mini 756 by
+  1158, whose insets are 32 and 20). Corner radius has no public API;
+  iOS 26 not installed.
   ([record](log/2026-11-15-experiments-simulator.md))
-
 ### SIM-13. Checks that need only the compiler — B1-U10, B2-U10, L1-U4
 
 - **Asks.** Does `pointerStyle(_:)` compile for an iPadOS target, and

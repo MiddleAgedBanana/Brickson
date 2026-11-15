@@ -78,7 +78,7 @@ what the system reports about a dimmed button.
 | SIM-8 | D-17 | Yes, answered: the bar's words stay above 10:1 over scrolled rows |
 | SIM-9 | D-20 | Partly: Home's fills keep their contrast in an inactive window; system styles not run |
 | SIM-10 | D-21, D-02, A-33 (A4-U17, L1-U22) | Yes, answered, with **one shipped defect**: the accent under Increase Contrast in dark (3.95:1) |
-| SIM-11 | A-45 (B3-U8), A2-U13, A3-U17 | Yes, answered: three differences between the trees and VoiceOver |
+| SIM-11 | A-45 (B3-U8), A2-U13, A3-U17 | Mostly: three differences on the probe; on Home the tree and VoiceOver agree; Full Keyboard Access on Home not measured |
 | SIM-12 | B2-U4, B2-U6 | Mostly: all windows and insets; corner radius has no public API; no iOS 26 runtime |
 | SIM-13 | B1-U10, B2-U10, L1-U4 | Yes, answered (the haptics value itself needs devices) |
 | SIM-14 | G-40; G-30, D-25 (Simulator part) | G-40 partly: no free place outside Home's slots (non-control slots not scored); G-30 and D-25 could not test |
@@ -447,18 +447,39 @@ what the system reports about a dimmed button.
   gave the clean order above. On the iPad, VoiceOver also reaches the
   system's window handle ("Resize Brickson Probe Bottom Right") after
   the app's own elements; neither tree lists it.
-- **Answer.** Same elements, with three differences: a button hidden
-  with `accessibilityHidden(true)` is in both trees but VoiceOver skips
-  it (SIM-5); `accessibilitySortPriority` changes VoiceOver's order but
-  neither the trees' order nor Full Keyboard Access's; and on iPad
-  VoiceOver reaches the system's window handle.
-- **What it means.** Brickson uses no `accessibilitySortPriority` (a
-  search of `Brickson/`), so for Home as it is, the order its UI tests
-  read is the order VoiceOver and Full Keyboard Access took in the
-  Simulator. It hides one control with `accessibilityHidden`: a voice
-  row in Voice Settings once its voice is gone, which is also
+- **Brickson's Home, measured after review.** Home sets
+  `accessibilitySortPriority` on its regions and on controls inside them
+  (`HomeView`, `HomeRegion`), so the probe's result was checked on Home
+  itself: iPhone, starter library, a temporary UI test (never
+  committed) listing Home's buttons from XCTest's tree, and a VoiceOver
+  walk. The tree lists Yes, No, Emergency, Get Attention, Again,
+  Phrases, Type, the categories, Settings, then the tiles, which is
+  Home's sort order, not the order its regions are declared in or sit
+  on screen; VoiceOver walked the same order, with the message's words
+  between Again and Phrases. Full Keyboard Access on Home could not be
+  measured: after the iPhone simulator had been restarted, Tab presses
+  sent through AXe no longer moved focus on Home or on the probe, where
+  they had worked before (a tool or Simulator problem, not Brickson's).
+- **Answer.** Same elements, with three differences on the probe: a
+  button hidden with `accessibilityHidden(true)` is in both trees but
+  VoiceOver skips it (SIM-5); with the probe's two side-by-side regions,
+  `accessibilitySortPriority` changed VoiceOver's order but neither the
+  trees' order nor Full Keyboard Access's; and on iPad VoiceOver reaches
+  the system's window handle. On Brickson's Home, though, the tree and
+  VoiceOver both follow the sort priority; what makes Home differ from
+  the probe was not established.
+- **What it means.** For Home as it is, the order
+  `HomeAccessibilityOrderTests` reads is the order VoiceOver took in the
+  Simulator. Whether Full Keyboard Access follows it on Home is
+  unmeasured: if it behaves as it did on the probe, it would ignore the
+  sort priority, and Phrases and Type could come before Yes and No; DEV-9
+  checks it on a device. A new screen that relies on sort priority needs
+  its own check, since the probe shows the tree does not always follow
+  it. Brickson hides one live control with `accessibilityHidden`: a
+  voice row in Voice Settings once its voice is gone, which is also
   see-through, disabled and not hit-testable; a UI test still finds it
-  there, VoiceOver would not (SIM-5). Home's empty Stop well is a
+  there, VoiceOver would not (SIM-5). Two more are invisible copies used
+  only to size a layout (`FamilySetupView`, `VoiceSettingsView`). Home's empty Stop well is a
   hidden `Color.clear`, not a control, and the trees do not list it.
   If Brickson ever sets a sort priority, `HomeAccessibilityOrderTests`
   stops standing for VoiceOver's order. Switch Control's scan is not in
@@ -500,7 +521,7 @@ what the system reports about a dimmed button.
   with 32 points at the top and 20 at the bottom. Its corner radius is
   not readable through any public API, so it was not measured. iOS 26
   against iOS 27 could not be compared: no iOS 26 runtime is installed.
-- **What it means.** Five windows real simulators give are not among
+- **What it means.** Four window sizes that five simulators give are not among
   `HomeLayoutEngineTests.windows` (its width sweep, with no safe
   areas, covers their widths but not these windows with their insets):
   iPhone Air, iPad Air 13-inch, the 820 by 1180 iPads and the new iPad
@@ -633,9 +654,10 @@ SSML.**
 
 ## Commits
 
-On `claude/experiments-simulator`: this record, the "Found, 2026-11-15"
-lines in docs/EXPERIMENTS.md, and docs/HANDOFF.md's experiments line and
-two *Known gaps* items. Nothing in `Brickson/`, `BricksonProbe/` or the
+On `claude/experiments-simulator`, `dc83b2a` to the last commit of
+pull request #115: this record (written step by step as the run went),
+the "Found, 2026-11-15" lines in docs/EXPERIMENTS.md, docs/HANDOFF.md's
+experiments line and two *Known gaps* items, and the stills. Nothing in `Brickson/`, `BricksonProbe/` or the
 tests changed: every temporary test, probe line and scratch file was
 removed before committing.
 
@@ -666,8 +688,9 @@ removed before committing.
   says. `PaletteTests` pins the asset's values, not what is drawn, so it
   cannot see this; a rendered check of the fills under each appearance
   would. *(owner; then a thread)*
-- **Five windows missing from the layout engine's table** (SIM-12): a
-  test pull request adds them. *(a thread, R0)*
+- **Four window sizes (five simulators) missing from the layout
+  engine's table** (SIM-12): a test pull request adds them. *(a thread,
+  R0)*
 - **The run sheet's SIM-1 (b) asks an agent to open the project in
   Xcode**, which AGENTS.md forbids. Proposed fix: say in
   docs/EXPERIMENTS.md that the owner renders the "Assistive Access"
@@ -681,9 +704,11 @@ removed before committing.
   dark page while its chevron is 15 to 19:1 (SIM-10): whether
   invariant 6's 3:1 for control edges applies to it is the owner's
   question.
-- `accessibilitySortPriority`: if Brickson ever uses it,
-  `HomeAccessibilityOrderTests` stops standing for VoiceOver's order
-  (SIM-11).
+- **Full Keyboard Access's order on Home** (SIM-11): unmeasured here;
+  if it ignores Home's sort priority as it did on the probe, Phrases and
+  Type would come before Yes and No. DEV-9 on a device, or a simulator
+  run whose key presses reach the app. *(owner's device session, or a
+  thread)*
 - The automation trees list controls hidden with
   `accessibilityHidden(true)` and, under Settings' cover, Home's
   controls too: a UI test that checks a control is unreachable must not
