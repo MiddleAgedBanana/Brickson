@@ -139,6 +139,12 @@ def workflow_findings(text, path='.github/workflows/example.yml'):
     return forbidden.check_workflow(path, text)
 
 
+def look_findings(text, path='App/Example.swift', symbols=(), exceptions=frozenset(),
+                  excused=None):
+    return forbidden.check_apple_look(forbidden.Swift(path, text), frozenset(symbols),
+                                      exceptions, excused)
+
+
 def rules(findings):
     return [finding.rule for finding in findings]
 
@@ -1002,6 +1008,236 @@ class AppRuleTests(unittest.TestCase):
         self.assertFalse(set(forbidden.FAMILY_BY_MODULE) & set(forbidden.FORBIDDEN_IMPORTS))
 
 
+class AppleLookTests(unittest.TestCase):
+    """Each rule of Apple's look fails on every way of breaking it listed
+    here and passes the nearest code that keeps it, and never reads a
+    comment or a string."""
+
+    # Lines that break each rule, one way each, so dropping any part of a
+    # rule fails this test.
+    BREAKS = {
+        'glass or material': [
+            'Text("Yes").glassEffect()', 'Text("Yes").glassEffect(.regular.interactive(), in: .capsule)',
+            'GlassEffectContainer { Text("Yes") }', 'Text("Yes").glassEffectID("a", in: space)',
+            'Text("Yes").glassEffectUnion(id: 1, namespace: space)',
+            'Button("Yes") {}.buttonStyle(.glass)', 'Button("Yes") {}.buttonStyle(.glassProminent)',
+            'Button("Yes") {}.buttonStyle(GlassButtonStyle())',
+            'Button("Yes") {}.buttonStyle(GlassProminentButtonStyle())',
+            'Text("Yes").glassBackgroundEffect()', 'let g = Glass.clear',
+            'Text("Yes").background(.ultraThinMaterial)', 'Text("Yes").background(.thinMaterial)',
+            'Text("Yes").background(.regularMaterial)', 'Text("Yes").background(.thickMaterial)',
+            'Text("Yes").background(.ultraThickMaterial)', 'let m: Material = .bar',
+            'let v = UIVisualEffectView(effect: nil)', 'let b = UIBlurEffect(style: .dark)',
+            'let e = UIGlassEffect()'],
+        'primitive button style': [
+            'struct Tap: PrimitiveButtonStyle { func makeBody(configuration: Configuration) -> some View '
+            '{ configuration.label } }',
+            'configuration.trigger()', 'let fire = configuration.trigger'],
+        'repeating button': [
+            'Button("Faster") {}.buttonRepeatBehavior(.enabled)',
+            'Button("Faster") {}.buttonRepeatBehavior(ButtonRepeatBehavior.enabled)',
+            'Button("Faster") {}.buttonRepeatBehavior(repeats)', 'let r = ButtonRepeatBehavior.enabled'],
+        'not an SF Symbol': [
+            'Image("logo")', 'Image(decorative: "logo")', 'Image(uiImage: photo)', 'Image(.logo)',
+            'Image(name)', 'Image("logo", bundle: .main)', 'SwiftUI.Image("logo")', 'Image.init("logo")',
+            'Label("Yes", image: "logo")', 'let i = UIImage(named: "logo")',
+            'let i = UIImage(data: data)'],
+        'light font weight': [
+            'Text("Yes").fontWeight(.light)', 'Text("Yes").font(.system(.title, weight: .thin))',
+            'Text("Yes").font(.title.weight(.ultraLight))', 'let w = Font.Weight.light',
+            'let w = UIFont.Weight.thin', 'let c = UIImage.SymbolConfiguration(weight: .ultraLight)',
+            'let w = UIImage.SymbolWeight.light'],
+        'fixed text size': [
+            'Text("Yes").font(.system(size: 20))', 'Text("Yes").font(.system(size: 20, weight: .semibold))',
+            'let f = Font.system(size: 17.5)', 'let f = Font.custom("Avenir", fixedSize: 20)',
+            'let f = UIFont.systemFont(ofSize: 17)', 'let f = UIFont.boldSystemFont(ofSize: 17)',
+            'let f = UIFont.monospacedDigitSystemFont(ofSize: 17, weight: .regular)'],
+        'circular corners': [
+            'RoundedRectangle(cornerRadius: 12, style: .circular)', 'let s = RoundedCornerStyle.circular',
+            'UnevenRoundedRectangle(topLeadingRadius: 8, style: .circular)', 'Text("Yes").cornerRadius(12)'],
+        'display setting overridden': [
+            'Text("Yes").environment(\\.legibilityWeight, .regular)',
+            'Text("Yes").environment(\\.accessibilityReduceMotion, false)',
+            'Text("Yes").environment(\\EnvironmentValues.accessibilityShowButtonShapes, false)',
+            'Text("Yes").transformEnvironment(\\.accessibilityDifferentiateWithoutColor) { $0 = false }'],
+        'no press state': [
+            'struct Flat: ButtonStyle { func makeBody(configuration: Configuration) -> some View '
+            '{ configuration.label } }',
+            'extension Flat: SwiftUI.ButtonStyle { func makeBody(configuration: Configuration) -> some '
+            'View { configuration.label } }'],
+        'all capitals': ['Text("Yes").textCase(.uppercase)', 'Text("Yes").textCase(Text.Case.uppercase)',
+                         'let c = Text.Case.uppercase'],
+        'gesture-only control': [
+            'Text("Yes").contextMenu { Button("Delete") {} }', 'Text("Yes").contextMenu(menuItems: {})',
+            'Text("Yes").swipeActions { Button("Delete") {} }',
+            'ForEach(rows) { Text($0.name) }.onDelete(perform: remove)',
+            'ForEach(rows) { Text($0.name) }.onMove(perform: move)',
+            'ForEach(rows) { Text($0.name) }.onInsert(of: [.text], perform: add)',
+            'Text("Yes").onDrag { NSItemProvider() }', 'Text("Yes").draggable(phrase)',
+            'Text("Yes").dropDestination(for: String.self) { _, _ in true }',
+            'Text("Yes").onDrop(of: [.text], isTargeted: nil) { _ in true }'],
+        'system dialog': [
+            'Text("Yes").alert("Delete?", isPresented: $asking) { Button("Delete") {} }',
+            'Text("Yes").alert(isPresented: $failed, error: failure) {}',
+            'Text("Yes").alert(item: $failure) { _ in Text("No") }',
+            'Text("Yes").confirmationDialog("Delete?", isPresented: $asking) {}',
+            'Text("Yes").confirmationDialog("Delete?", isPresented: $asking, presenting: row) { _ in }',
+            'Text("Yes").actionSheet(isPresented: $asking) { sheet }', 'let a = Alert(title: Text("No"))',
+            'let s = ActionSheet(title: Text("No"))',
+            'let c = UIAlertController(title: nil, message: nil, preferredStyle: .alert)'],
+        'toggle': ['Toggle("Sounds", isOn: $sounds)', 'Toggle(isOn: $sounds) { Text("Sounds") }',
+                   'Button("Sounds") {}.toggleStyle(.button)', 'struct Switch: ToggleStyle {}'],
+        'fake button': [
+            'Text("Yes").accessibilityAddTraits(.isButton)',
+            'Text("Yes").accessibilityAddTraits([.isSelected, .isButton])',
+            'Text("Yes").accessibility(addTraits: .isButton)',
+            'Text("Yes").accessibilityRespondsToUserInteraction(true)',
+            'Text("Yes").accessibilityAction { speak() }',
+            'Text("Yes").accessibilityAction(.default) { speak() }',
+            'Text("Yes").accessibilityAction(AccessibilityActionKind.default) { speak() }'],
+        'empty catch': ['do { try save() } catch {}', 'do { try save() } catch {   }',
+                        'do { try save() } catch { /* nothing to do */ }'],
+        'old clock': ['let t = CACurrentMediaTime()', 'let t = CFAbsoluteTimeGetCurrent()',
+                      'let t = mach_absolute_time()', 'let t = mach_continuous_time()',
+                      'let t = ProcessInfo.processInfo.systemUptime'],
+        'lifting hover': ['Text("Yes").hoverEffect(.lift)', 'Text("Yes").hoverEffect(HoverEffect.lift)',
+                          'Text("Yes").defaultHoverEffect(.lift)', 'let e = HoverEffect.lift'],
+    }
+
+    # The nearest code that keeps each rule: none of it is a finding.
+    KEEPS = [
+        'Text("Yes").background(Palette.phraseFill)', 'Button("Yes") {}.buttonStyle(.borderedProminent)',
+        'let glassy = isGlass', 'let g = model.glassCount',
+        'struct Press: ButtonStyle { func makeBody(configuration: Configuration) -> some View '
+        '{ configuration.label.opacity(configuration.isPressed ? 0.8 : 1) } }',
+        'Button("Yes") {}.sensoryFeedback(.impact, trigger: count)',
+        'Button("Faster") {}.buttonRepeatBehavior(.disabled)',
+        'Button("Faster") {}.buttonRepeatBehavior(.automatic)',
+        'Image(systemName: "hand.raised.fill")', 'Image(systemName: name)',
+        'Image(systemName: "speaker.wave.3.fill", variableValue: level)',
+        'Label("Yes", systemImage: "hand.thumbsup.fill")',
+        'Label { Text("Yes") } icon: { Image(systemName: "checkmark") }',
+        'let i = UIImage(systemName: "checkmark", withConfiguration: c)',
+        'let c = UIImage.SymbolConfiguration(font: f)',
+        'Text("Yes").fontWeight(.semibold)', 'Text("Yes").font(.title.weight(.regular))',
+        'let scheme: ColorScheme = .light', 'switch scheme { case .light: break; default: break }',
+        'Text("Yes").font(.title2.weight(.semibold))', 'Text("Yes").font(.system(size: scaledSize))',
+        'let f = UIFont.systemFont(ofSize: pointSize(at: size), weight: weight)',
+        'let f = Font.custom("Avenir", size: 20)',
+        'RoundedRectangle(cornerRadius: 12)', 'RoundedRectangle(cornerRadius: 12, style: .continuous)',
+        'let r = HomeButtonStyle.cornerRadius', 'ProgressView().progressViewStyle(.circular)',
+        '@Environment(\\.legibilityWeight) var weight', '@Environment(\\.accessibilityReduceMotion) var still',
+        'Text("Yes").environment(\\.isVolatileStore, true)', 'Text("Yes").textCase(nil)',
+        'row.onDelete()', 'self.onMove(to: 2)', 'Button("Delete") { remove() }',
+        'attention.alert()', 'AttentionAlertPlayer.shared.start()', 'isOn.toggle()',
+        'Button("Sound On") { soundOn = true }', 'Text("Yes").accessibilityAddTraits(.isHeader)',
+        'Text("Yes").accessibilityAction(named: "Speak Again") { speak() }',
+        'Text("Yes").accessibilityAction(.escape) { close() }',
+        'Text("Yes").accessibilityAction(.magicTap) { speak() }',
+        'Text("Yes").accessibilityAction { speak() } label: { Text("Speak Again") }',
+        'do { try save() } catch { report(error) }',
+        'do { try await Task.sleep(for: .seconds(1)) } catch is CancellationError {}',
+        'let t = ContinuousClock.now', 'Text("Yes").hoverEffect(.highlight)',
+    ]
+
+    def test_every_rule_is_tested(self):
+        named = {rule for rule, _, _, _ in forbidden.LOOK_RULES} | {
+            'repeating button', 'system dialog', 'fake button', 'no press state', 'not an SF Symbol'}
+        self.assertEqual(set(self.BREAKS), named)
+
+    def test_each_way_of_breaking_a_rule_is_found_on_its_line(self):
+        for rule, samples in self.BREAKS.items():
+            for line in samples:
+                with self.subTest(rule=rule, line=line):
+                    findings = look_findings(f'func f() {{\n    {line}\n}}\n')
+                    self.assertIn(rule, rules(findings))
+                    self.assertIn(2, [finding.line for finding in findings if finding.rule == rule])
+
+    def test_the_code_that_keeps_each_rule_passes(self):
+        for line in self.KEEPS:
+            with self.subTest(line=line):
+                self.assertEqual(look_findings(f'func f() {{\n    {line}\n}}\n'), [])
+
+    def test_the_same_code_in_comments_and_strings_is_left_alone(self):
+        for samples in self.BREAKS.values():
+            for line in samples:
+                with self.subTest(line=line):
+                    quoted = line.replace('\\', '\\\\').replace('"', '\\"')
+                    text = (f'// {line}\n/// never `{line}`\n/* {line} */\n'
+                            f'let a = "{quoted}"\nlet b = """\n{line}\n"""\n')
+                    self.assertEqual(look_findings(text), [])
+
+    def test_a_press_state_read_only_in_a_comment_is_not_one(self):
+        text = ('struct Flat: ButtonStyle {\n    // configuration.isPressed is not drawn\n'
+                '    func makeBody(configuration: Configuration) -> some View { configuration.label }\n}\n')
+        self.assertEqual(rules(look_findings(text)), ['no press state'])
+
+    def test_a_custom_symbol_named_by_a_literal_passes(self):
+        for line in ['Image("brickson.wave")', 'Image(decorative: "brickson.wave")',
+                     'Label("Wave", image: "brickson.wave")', 'let i = UIImage(named: "brickson.wave")']:
+            with self.subTest(line=line):
+                self.assertEqual(look_findings(f'let v = {line}\n', symbols={'brickson.wave'}), [])
+        # Another name, or a name chosen at run time, is still a picture.
+        for line in ['Image("logo")', 'Image(name)']:
+            with self.subTest(line=line):
+                self.assertEqual(rules(look_findings(f'let v = {line}\n', symbols={'brickson.wave'})),
+                                 ['not an SF Symbol'])
+
+    def test_a_function_of_its_own_with_a_rules_name_is_not_a_use(self):
+        text = ('extension View {\n    func cornerRadius(_ r: CGFloat) -> some View { self }\n'
+                '    func buttonRepeatBehavior(_ on: Bool) -> some View { self }\n}\n')
+        self.assertEqual(look_findings(text), [])
+
+    def test_messages_say_which_rule_why_and_what_to_do(self):
+        whys = {why for _, why, _, _ in forbidden.LOOK_RULES} | {
+            forbidden.REPEAT, forbidden.DIALOG, forbidden.FAKE_BUTTON, forbidden.PRESS, forbidden.SYMBOL}
+        for why in whys:
+            with self.subTest(why=why[:40]):
+                self.assertRegex(why, r'\((?:invariant|Human Interface|AGENTS\.md|Apple)')
+                self.assertRegex(why, r'\b(?:Use|Give|Make|Leave|Ask|Read|Write|Recover|Draw|Let)\b')
+
+    def test_findings_name_the_place_and_never_the_code(self):
+        findings = look_findings('let phrase = "Call my sister"; let v = Image("sister")\n')
+        self.assertEqual([(finding.path, finding.line) for finding in findings], [('App/Example.swift', 1)])
+        self.assertNotIn('sister', str(findings[0]))
+
+
+class KnownExceptionTests(unittest.TestCase):
+    """A known exception excuses one rule in one type of one file, and
+    nothing else; one the code no longer needs is a finding."""
+
+    TEXT = ('struct Rows: PrimitiveButtonStyle {\n'
+            '    func makeBody(configuration: Configuration) -> some View { Text("A").glassEffect() }\n}\n'
+            'struct Other: PrimitiveButtonStyle {\n'
+            '    func makeBody(configuration: Configuration) -> some View { configuration.label }\n}\n')
+    EXCEPTION = ('primitive button style', 'App/Rows.swift', 'Rows')
+
+    def test_it_excuses_only_its_rule_in_its_type(self):
+        excused = set()
+        findings = look_findings(self.TEXT, path='App/Rows.swift', exceptions={self.EXCEPTION},
+                                 excused=excused)
+        self.assertEqual(excused, {self.EXCEPTION})
+        self.assertEqual(sorted((finding.line, finding.rule) for finding in findings),
+                         [(2, 'glass or material'), (4, 'primitive button style')])
+
+    def test_it_excuses_nothing_in_another_file(self):
+        excused = set()
+        findings = look_findings(self.TEXT, path='App/Other.swift', exceptions={self.EXCEPTION},
+                                 excused=excused)
+        self.assertEqual(excused, set())
+        self.assertEqual(rules(findings).count('primitive button style'), 2)
+
+    def test_one_the_code_no_longer_needs_is_a_finding(self):
+        checkout = fixture_checkout(**{'App/Rows.swift': 'struct Rows {}\n'})
+        self.addCleanup(checkout.close)
+        with unittest.mock.patch.object(forbidden, 'KNOWN_EXCEPTIONS', frozenset({self.EXCEPTION})):
+            self.assertEqual([(finding.path, finding.rule) for finding in checkout.check()],
+                             [('App/Rows.swift', 'stale exception')])
+            checkout.write('App/Rows.swift', self.TEXT.split('struct Other')[0].replace(
+                'Text("A").glassEffect()', 'configuration.label'))
+            self.assertEqual(checkout.check(), [])
+
+
 class TableTests(unittest.TestCase):
     """The kept legacy APIs come from docs/DECISIONS.md's table, and a
     table the check can no longer read stops it rather than passing."""
@@ -1803,6 +2039,55 @@ class CheckoutTests(unittest.TestCase):
                          [('Alerts/Alert.swift', 'forbidden framework'),
                           ('Shared/Cloud.swift', 'cloud sync')])
 
+    def test_apples_look_holds_what_ships_and_not_a_test_app(self):
+        probe = ('  Probe:\n    type: application\n    platform: iOS\n    sources: [Probe]\n'
+                 '    settings:\n      base:\n        SKIP_INSTALL: "YES"\n{configs}'
+                 '  Shared:\n    type: framework\n    platform: iOS\n    sources: [Shared]\n'
+                 '    settings:\n      base:\n        SKIP_INSTALL: "YES"\n  AppTests:\n')
+        files = {'Probe/Station.swift': 'let t = Toggle("A", isOn: $a); let s = URLSession.shared\n',
+                 'Shared/Kit.swift': 'let t = Toggle("A", isOn: $a)\n',
+                 'Probe/Assets.xcassets/Logo.imageset/logo.png': b'\x89PNG'}
+        for configs, probe_toggle in [('', False),
+                                      ('      configs:\n        Release:\n          SKIP_INSTALL: "NO"\n',
+                                       True),
+                                      ('      configs:\n        Debug:\n'
+                                       '          SKIP_INSTALL[sdk=iphoneos*]: "NO"\n', True)]:
+            with self.subTest(configs=configs):
+                project = PROJECT.replace('  AppTests:\n', probe.format(configs=configs))
+                checkout = fixture_checkout(**{'project.yml': project}, **files)
+                self.addCleanup(checkout.close)
+                found = {(finding.path, finding.rule) for finding in checkout.check()}
+                # The test app keeps every other rule, and a framework
+                # ships inside the app whatever its own setting says.
+                expected = {('Probe/Station.swift', 'network code'), ('Shared/Kit.swift', 'toggle')}
+                if probe_toggle:
+                    expected |= {('Probe/Station.swift', 'toggle'),
+                                 ('Probe/Assets.xcassets/Logo.imageset/logo.png', 'not an SF Symbol')}
+                self.assertEqual(found, expected)
+
+    def test_an_app_that_never_ships_alone_stops_the_check(self):
+        project = PROJECT.replace('    dependencies: []\n', '    dependencies: []\n    settings:\n'
+                                  '      SKIP_INSTALL: YES\n', 1)
+        checkout = fixture_checkout(**{'project.yml': project})
+        self.addCleanup(checkout.close)
+        status, out, err = checkout.run()
+        self.assertEqual((status, out), (2, ''))
+        self.assertIn('SKIP_INSTALL', err)
+
+    def test_pictures_the_app_ships_are_icons_or_symbols_only(self):
+        checkout = fixture_checkout(**{
+            'App/Assets.xcassets/Logo.imageset/logo.png': b'\x89PNG',
+            'App/Art/Banner.SVG': '<svg/>',
+            'App/Assets.xcassets/AppIcon.appiconset/icon.png': b'\x89PNG',
+            'App/AppIcon.icon/Assets/layer.png': b'\x89PNG',
+            'App/Assets.xcassets/brickson.wave.symbolset/wave.svg': '<svg/>',
+            'App/Wave.swift': 'let w = Image("brickson.wave")\n',
+            'AppTests/Fixtures/screen.png': b'\x89PNG'})
+        self.addCleanup(checkout.close)
+        self.assertEqual([(finding.path, finding.line, finding.rule) for finding in checkout.check()],
+                         [('App/Art/Banner.SVG', 0, 'not an SF Symbol'),
+                          ('App/Assets.xcassets/Logo.imageset/logo.png', 0, 'not an SF Symbol')])
+
     def test_a_byte_order_mark_hides_no_import(self):
         checkout = fixture_checkout()
         self.addCleanup(checkout.close)
@@ -1965,6 +2250,40 @@ class RepositoryTests(unittest.TestCase):
                                  (home, 'legacy framework'),
                                  ('BricksonTests/SlipTests.swift', 'unexplained skip'),
                                  ('.github/workflows/tests.yml', 'workflow permissions')})
+
+    def test_apples_look_reads_the_app_and_its_known_exceptions_are_live(self):
+        checkout = copy_of_this_checkout()
+        self.addCleanup(checkout.close)
+        app = sorted(path.relative_to(checkout.root).as_posix()
+                     for path in (checkout.root / 'Brickson').rglob('*.swift'))
+        home = next(path for path in app if path.endswith('/HomeView.swift'))
+        checkout.append(home, '\nfunc look() -> some View { Toggle("A", isOn: .constant(true))'
+                              '.glassEffect().textCase(.uppercase) }\n')
+        # The known exceptions excuse their own places and nothing else.
+        found = {(finding.path, finding.rule) for finding in checkout.check()}
+        self.assertEqual(found, {(home, 'toggle'), (home, 'glass or material'),
+                                 (home, 'all capitals')})
+        # Once an exception's code is gone, it is a finding of its own.
+        components = 'Brickson/Settings/SettingsComponents.swift'
+        text = (checkout.root / components).read_text(encoding='utf-8')
+        checkout.write(components, text.replace('.font(.system(size: 20, weight: .semibold))',
+                                                '.font(.title3)'))
+        found = {(finding.path, finding.rule) for finding in checkout.check()}
+        self.assertIn((components, 'stale exception'), found)
+
+    def test_each_known_exception_names_a_real_place_and_its_gap(self):
+        handoff = forbidden.markdown_sections(
+            (ROOT / 'docs' / 'HANDOFF.md').read_text(encoding='utf-8'))['Known gaps']
+        rules_named = {rule for rule, _, _, _ in forbidden.LOOK_RULES} | {
+            'repeating button', 'system dialog', 'fake button', 'no press state', 'not an SF Symbol'}
+        for rule, path, name in sorted(forbidden.KNOWN_EXCEPTIONS):
+            with self.subTest(rule=rule, path=path, name=name):
+                self.assertIn(rule, rules_named)
+                self.assertTrue((ROOT / path).is_file())
+                self.assertRegex((ROOT / path).read_text(encoding='utf-8'),
+                                 rf'\b(?:struct|class|enum|actor|extension)\s+{name}\b')
+                self.assertTrue(f'`{name}`' in handoff,
+                                f'docs/HANDOFF.md, *Known gaps*, names `{name}`')
 
     def test_the_test_script_runs_this_check(self):
         text = (ROOT / 'scripts' / 'test.sh').read_text(encoding='utf-8')
