@@ -1208,7 +1208,7 @@ UI_FONT_METRICS = re.compile(r'\bUIFontMetrics\b')
 IMAGE_CALL = re.compile(r'(?<![\w.$])(?:SwiftUI\s*\.\s*)?(?P<type>UIImage|Image|Label)\s*'
                         r'(?:\.\s*init\s*)?\(')
 SYMBOL_LITERAL = re.compile(r'"(?P<name>[^"\\]*)"')
-LABEL_ONLY = re.compile(r'\s*(?:(?:decorative|named|image)\s*:)?\s*')
+LABEL_ONLY = re.compile(r'\s*(?:(?:decorative|named|image)\s*:\s*)?')
 IMAGE_SUFFIXES = ('.png', '.jpg', '.jpeg', '.heic', '.heif', '.gif', '.pdf', '.svg', '.tif',
                   '.tiff', '.webp', '.bmp')
 # Folders whose pictures are not icons in the interface: the app icon, and

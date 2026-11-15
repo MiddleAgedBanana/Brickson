@@ -18,6 +18,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import time
 import unittest
 import unittest.mock
 
@@ -1216,6 +1217,14 @@ class AppleLookTests(unittest.TestCase):
         self.assertEqual([(finding.rule, finding.line) for finding in findings],
                          [('no press state', 6)])
         self.assertIn('`Flat`', findings[0].message)
+
+    def test_a_long_argument_is_read_in_linear_time(self):
+        # A long string or comment is blanked to spaces in the code, and
+        # reading an argument's label must not backtrack over them.
+        text = 'let v = Image("brickson.wave"' + ' ' * 60000 + '+ suffix)\n'
+        start = time.monotonic()
+        self.assertEqual(rules(look_findings(text, symbols={'brickson.wave'})), ['not an SF Symbol'])
+        self.assertLess(time.monotonic() - start, 2)
 
     def test_a_custom_uikit_font_is_fixed_only_in_a_file_that_never_scales_one(self):
         # UIFontMetrics often scales the font in another statement.
