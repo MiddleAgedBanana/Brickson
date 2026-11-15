@@ -138,10 +138,16 @@ structure and documentation lists).
   screen, not a miss; and an unchanged farthest ring is no longer read as
   a centre rule, because beyond 50 points the rings are 50 or 100 points
   apart and a 38-point change can fall between two of them, so the chain
-  engine keeps both rules until a result separates them. Its request to stop button
-  words shrinking was declined: without it a long word breaks mid-word in
-  a phone's narrow slot, so docs/DECISIONS.md now names the shrinking as
-  one of the probe's exceptions.
+  engine keeps both rules until a result separates them. Its request to
+  stop button words shrinking was declined: without it a long word breaks
+  mid-word in a phone's narrow slot, so docs/DECISIONS.md now names the
+  shrinking as one of the probe's exceptions.
+- CodeRabbit's third review (on `1d56aad`): DEV-2 set the chain engine's
+  reach at the farthest ring that snapped, but the real reach lies
+  between that ring and the next, so scoring only to it could miss a
+  control a held look can reach. DEV-2 now records the nearest ring that
+  does not snap too and takes the reach from it, keeping the unlimited
+  range where every ring on screen snapped.
 
 ## Verified
 

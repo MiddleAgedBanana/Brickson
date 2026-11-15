@@ -507,15 +507,19 @@ people Brickson serves.
   5. Repeat on the iPhone. A ring whose left or right points lie past
      the screen's edge cannot be reached there: write it down as off
      screen, not as a ring the pointer does not jump to.
-- **Record.** The farthest ring that still snaps, for each button size
-  and direction; for step 4, which button the log says fired each time.
+- **Record.** The farthest ring that still snaps and the nearest that
+  does not (or "off screen"), for each button size and direction; for
+  step 4, which button the log says fired each time.
 - **What it means.**
   - **The farthest ring grows from the 44-point to the 120-point
     button:** Snap measures to the edge (an edge reach moves the
     farthest ring out by about half the size change, 38 points, since
     the rings count from the centre). The chain engine then scores only
-    that rule, to the measured reach; it still scores chains of
-    activations, not only the first. **It stays the same:** not yet an
+    that rule, with its reach taken from the nearest ring that did not
+    snap, never the farthest that did: the real reach lies somewhere
+    between the two. Where every ring on screen snapped, it keeps the
+    unlimited range. It still scores chains of activations, not only
+    the first. **It stays the same:** not yet an
     answer. Beyond 50 points the rings are 50 or 100 points apart, so
     a 38-point change can fall between two of them, and a centre rule
     gives the same result; the chain engine keeps scoring both rules at
