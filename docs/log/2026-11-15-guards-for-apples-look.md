@@ -6,11 +6,10 @@ standing word that objective engineering is the threads' to decide.*
 
 ## What changed and why
 
-The owner wants Brickson to read as an app Apple made. The project's
-design study (programme stage 2, kept in the project's shared files, not
-this repository) wrote that down as 39 testable rules and a ten-second
-audit for every design review. Its next-stages list asked for guard
-tests, so that code review could never miss a "not Apple" regression.
+The owner wants Brickson to read as an app Apple made. Some of what
+that takes, from Apple's Human Interface Guidelines and API pages and
+from AGENTS.md, can be decided from the code alone, and a check in CI
+means code review can never miss a "not Apple" regression of that kind.
 
 `scripts/forbidden-code.py` already failed CI on code AGENTS.md forbids
 (*A check for code the app must never contain*). This pull request
@@ -70,6 +69,9 @@ AGENTS.md gains one line under *Apple's current frameworks first*, and
   docs/DECISIONS.md: refusing an empty handler for one kind of error,
   which found `DraftStore.write`'s correct handling of a draft already
   removed.
+- The commit after that names Apple's Human Interface Guidelines and
+  AGENTS.md as the source of the rules in this record, docs/DECISIONS.md
+  and the script.
 
 ## Verified
 
@@ -107,8 +109,8 @@ In this cloud session, which cannot build Swift:
 
 ## Follow-ups
 
-- The new design (programme stage 6) settles the two known exceptions,
+- The new design settles the two known exceptions,
   then removes them from `KNOWN_EXCEPTIONS` and docs/HANDOFF.md.
-- The colour rules of the study (four appearances, semantic colours, no
+- Colour rules (four appearances, semantic colours, no
   typed-in system values) are left to the colour tokens' own tests in
   pull request #113, not guarded here.

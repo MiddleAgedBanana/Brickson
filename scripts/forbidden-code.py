@@ -1057,7 +1057,7 @@ def swiftdata_calls(source):
 
 # ── Apple's look, in the app that ships ──────────────────────────────────────
 #
-# The rules of the "made by Apple" audit that a script can decide
+# The rules of Apple's look that a script can decide
 # (docs/DECISIONS.md, "Guards for Apple's look"). Each message says which
 # rule, why it matters to the person using the app, and what to do
 # instead. They hold every target that ships, never an app target that is

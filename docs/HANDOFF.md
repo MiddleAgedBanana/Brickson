@@ -1109,7 +1109,7 @@ release in docs/ROADMAP.md when no thread has it yet.
   dimmed look at 4.5:1; the system's style still decides when the row
   fires. `SettingsPairLabel` draws the icons above Hear and Use at a fixed
   20 points, so they do not grow with the person's text size.
-  *(the new design, programme stage 6)*
+  *(the new design)*
 
 ## Next steps, in order
 

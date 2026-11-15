@@ -5559,14 +5559,12 @@ request merges only when they pass.
 objective engineering is the threads' to decide; reversible if the owner
 objects ([record](log/2026-11-15-guards-for-apples-look.md)).*
 
-The owner wants Brickson to read as an app Apple made. The project's
-design study turned that into testable rules, from Apple's Human
-Interface Guidelines and API pages, and a ten-second audit for every
-design review. Some of those rules, and some of AGENTS.md's, can be
-decided from the code alone. `scripts/forbidden-code.py` checks them in
-the same run as *A check for code the app must never contain*, so a
-review can no longer miss a regression the audit would catch. Each
-finding names its rule, why it matters to the person using the app, and
+The owner wants Brickson to read as an app Apple made. Some of what
+that takes, from Apple's Human Interface Guidelines and API pages and
+from AGENTS.md, can be decided from the code alone.
+`scripts/forbidden-code.py` checks those rules in the same run as *A
+check for code the app must never contain*, so a review can no longer
+miss such a regression. Each finding names its rule, why it matters to the person using the app, and
 what to do instead. Nothing the app shows or does changed.
 
 - **What it refuses**, in the Swift of the targets that ship: Liquid
@@ -5618,8 +5616,8 @@ what to do instead. Nothing the app shows or does changed.
   both in Settings: `SettingsRowButtonStyle` and `SettingsPairLabel`.
   Adding one is an exception, which *Code Review Rules* flags for the
   owner. These two were proposed in pull request #114, not accepted by
-  it: the owner's merge accepts them until the new design (programme
-  stage 6) replaces both places, and declining them means that design
+  it: the owner's merge accepts them until the new design replaces
+  both places, and declining them means that design
   comes first, since fixing either now changes what a person sees.
 - **Not guarded, and why.** Each needs judgment, a screenshot or a
   device, or would raise false alarms: two layers and hierarchy;
