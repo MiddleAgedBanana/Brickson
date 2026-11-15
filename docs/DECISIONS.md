@@ -5725,8 +5725,9 @@ what to do instead. Nothing the app shows or does changed.
   except an application target that `project.yml` marks never installed
   (`SKIP_INSTALL` true for every build, where XcodeGen reads it: under
   `base`, or straight under `settings` only when it has no `base`,
-  `configs` or `groups`), such as the experiments' probe app, which keeps
-  every other rule. A framework or extension ships
+  `configs` or `groups`) and naming no settings group, which could turn
+  it back off, such as the experiments' probe app, which keeps every
+  other rule. A framework or extension ships
   inside the app whatever its own setting says. If every application
   target is marked so, the check stops with status 2.
 - **Known exceptions.** Where today's code breaks one of these rules and
@@ -5735,7 +5736,7 @@ what to do instead. Nothing the app shows or does changed.
   *Known gaps*, as an input to the new design. It excuses nothing else
   (a call to `trigger()` is a rule of its own, so the exception for a
   `PrimitiveButtonStyle` never excuses one), and one the code no longer
-  needs is a finding of its own. There are two,
+  needs, or whose file is gone, is a finding of its own. There are two,
   both in Settings: `SettingsRowButtonStyle` and `SettingsPairLabel`.
   Adding one is an exception, which *Code Review Rules* flags for the
   owner. These two were proposed in pull request #114, not accepted by

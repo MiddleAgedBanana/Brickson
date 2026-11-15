@@ -40,10 +40,10 @@ dimmed look at 4.5:1) and `SettingsPairLabel` (Hear and Use's icons at a
 fixed 20 points). An exception the code no longer needs fails the check,
 so it leaves with the code.
 
-The rules hold the targets that ship. The experiments' probe app in pull
-request #112 is an application target marked `SKIP_INSTALL: YES`, never
-installed, so it keeps every rule of the first check and none of these,
-whichever pull request merges first.
+The rules hold the targets that ship. The experiments' probe app, from
+pull request #112, is an application target marked `SKIP_INSTALL: YES`,
+never installed, so it keeps every rule of the first check and none of
+these.
 
 AGENTS.md gains one line under *Apple's current frameworks first*, and
 *Code Review Rules* now names a new known exception as something to flag.
@@ -72,7 +72,7 @@ AGENTS.md gains one line under *Apple's current frameworks first*, and
 - `a76624b` names Apple's Human Interface Guidelines and
   AGENTS.md as the source of the rules in this record, docs/DECISIONS.md
   and the script.
-- The commit after it answers cubic's review. A style's own property
+- `ac209c2` answers cubic's review. A style's own property
   called `isPressed` is no longer its press state (only a read such as
   `configuration.isPressed` is); a fixed size wrapped in `CGFloat(…)` or
   `Double(…)` is found, and so is `UIFont(name:size:)` with a number in
@@ -82,6 +82,13 @@ AGENTS.md gains one line under *Apple's current frameworks first*, and
   capitals (a script cannot tell them from an acronym), and a fixed
   custom font in a file that scales another (a script cannot follow
   which font `UIFontMetrics` scales).
+- A merge brings in `main`, which now holds pull requests #112 (the
+  probe app) and #113 (colour tokens), with no conflict.
+- The commit after it answers CodeRabbit's second review. A target that
+  names a settings group stays checked, since a group can turn
+  `SKIP_INSTALL` back off for a build; a known exception whose file is
+  gone is a finding, as one whose code is fixed already was; and a
+  comment beside a custom symbol's name no longer hides the name.
 
 ## Verified
 
@@ -99,12 +106,12 @@ In this cloud session, which cannot build Swift:
   and the copy-of-the-repository test plants three look slips in
   `HomeView.swift` and finds exactly them, then removes one known
   exception's code and finds the stale exception.
-- The branch merged with pull request #112 (the probe app) and with pull
-  request #113 (colour tokens), each in a scratch worktree, with no
-  conflict: the check, its tests and the documentation tests pass in
-  both. Held to these rules, the probe app's own files would break five
-  of them in 24 places (toggles, glass, a hover lift, fixed sizes, views
-  passed off as buttons), which is why a never installed app is left out.
+- `main`, with pull requests #112 (the probe app) and #113 (colour
+  tokens), merged into the branch with no conflict, and the check, its
+  tests and the documentation tests pass on the result. Held to these
+  rules, the probe app's own files would break five of them in 24 places
+  (toggles, glass, a hover lift, fixed sizes, views passed off as
+  buttons), which is why a never installed app is left out.
 - The documentation, hook, privacy, runner, agent bridge, site and Xcode
   selection checks listed in AGENTS.md, *Build and test*.
 

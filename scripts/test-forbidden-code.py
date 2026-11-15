@@ -1227,11 +1227,14 @@ class AppleLookTests(unittest.TestCase):
 
     def test_a_custom_symbol_named_by_a_literal_passes(self):
         for line in ['Image("brickson.wave")', 'Image(decorative: "brickson.wave")',
-                     'Label("Wave", image: "brickson.wave")', 'let i = UIImage(named: "brickson.wave")']:
+                     'Label("Wave", image: "brickson.wave")', 'let i = UIImage(named: "brickson.wave")',
+                     'Image(/* the wave */ "brickson.wave")',
+                     'Image(decorative: /* the wave */ "brickson.wave" /* drawn by hand */)']:
             with self.subTest(line=line):
                 self.assertEqual(look_findings(f'let v = {line}\n', symbols={'brickson.wave'}), [])
-        # Another name, or a name chosen at run time, is still a picture.
-        for line in ['Image("logo")', 'Image(name)']:
+        # Another name, or a name chosen or built at run time, is still a picture.
+        for line in ['Image("logo")', 'Image(name)', 'Image("brickson.wave" + suffix)',
+                     'Image("brickson.\\(kind)")', 'Image(/* "brickson.wave" */ name)']:
             with self.subTest(line=line):
                 self.assertEqual(rules(look_findings(f'let v = {line}\n', symbols={'brickson.wave'})),
                                  ['not an SF Symbol'])
@@ -1297,6 +1300,16 @@ class KnownExceptionTests(unittest.TestCase):
             checkout.write('App/Rows.swift', self.TEXT.split('struct Other')[0].replace(
                 'Text("A").glassEffect()', 'configuration.label'))
             self.assertEqual(checkout.check(), [])
+
+    def test_one_whose_file_is_gone_is_a_finding(self):
+        # Moved or removed: the exception excuses nothing any more.
+        checkout = fixture_checkout(**{'App/Buttons.swift': 'struct Rows {}\n'})
+        self.addCleanup(checkout.close)
+        with unittest.mock.patch.object(forbidden, 'KNOWN_EXCEPTIONS', frozenset({self.EXCEPTION})):
+            findings = checkout.check()
+        self.assertEqual([(finding.path, finding.rule) for finding in findings],
+                         [('App/Rows.swift', 'stale exception')])
+        self.assertIn('is gone', findings[0].message)
 
 
 class TableTests(unittest.TestCase):
@@ -2140,7 +2153,12 @@ class CheckoutTests(unittest.TestCase):
                  True),
                 ('    settings: {SKIP_INSTALL: YES, configs: {Debug: {ENABLE_TESTABILITY: YES}}}\n', True),
                 ('    settings:\n      base:\n        SKIP_INSTALL: YES\n      configs:\n        Debug:\n'
-                 '          ENABLE_TESTABILITY: YES\n', False)]:
+                 '          ENABLE_TESTABILITY: YES\n', False),
+                # A settings group can turn it back on for a build.
+                ('    settings:\n      base:\n        SKIP_INSTALL: YES\n      groups: [Installable]\n',
+                 True),
+                ('    settings:\n      base:\n        SKIP_INSTALL: YES\n      configs:\n        Release:\n'
+                 '          groups: [Installable]\n', True)]:
             with self.subTest(settings=settings):
                 project = PROJECT.replace('  AppTests:\n', probe.format(settings=settings))
                 checkout = fixture_checkout(**{'project.yml': project}, **files)

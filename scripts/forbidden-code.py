@@ -1207,7 +1207,8 @@ NAMED_UI_FONT = re.compile(r'\bUIFont\s*\(\s*name\s*:[^()]*\bsize\s*:\s*' + FIXE
 UI_FONT_METRICS = re.compile(r'\bUIFontMetrics\b')
 IMAGE_CALL = re.compile(r'(?<![\w.$])(?:SwiftUI\s*\.\s*)?(?P<type>UIImage|Image|Label)\s*'
                         r'(?:\.\s*init\s*)?\(')
-SYMBOL_LITERAL = re.compile(r'\s*(?:(?:decorative|named|image)\s*:\s*)?"(?P<name>[^"\\]*)"\s*')
+SYMBOL_LITERAL = re.compile(r'"(?P<name>[^"\\]*)"')
+LABEL_ONLY = re.compile(r'\s*(?:(?:decorative|named|image)\s*:)?\s*')
 IMAGE_SUFFIXES = ('.png', '.jpg', '.jpeg', '.heic', '.heif', '.gif', '.pdf', '.svg', '.tif',
                   '.tiff', '.webp', '.bmp')
 # Folders whose pictures are not icons in the interface: the app icon, and
@@ -1262,6 +1263,16 @@ def reads_press_state(code, spans, name):
                       & {owner_name for _, _, owner_name in spans})
     return any(PRESS_READ.search(code[start:end])
                for start, end, owner_name in spans if owner_name in named)
+
+
+def lone_literal(source, start, end):
+    """The words of the one plain string literal that the argument from
+    start to end holds, its label and any comments aside, or None."""
+    inside = [(first, last) for first, last in source.strings if start <= first and last <= end]
+    if len(inside) != 1 or not LABEL_ONLY.fullmatch(source.code[start:end]):
+        return None
+    literal = SYMBOL_LITERAL.fullmatch(source.text[inside[0][0]:inside[0][1]])
+    return literal.group('name') if literal else None
 
 
 def declares_function(code, offset):
@@ -1349,9 +1360,7 @@ def check_apple_look(source, symbols=frozenset(), exceptions=KNOWN_EXCEPTIONS, e
             if pictures and label(code[pictures[0][0]:pictures[0][1]]) == 'systemName':
                 continue
         for start, end in pictures:
-            literal = SYMBOL_LITERAL.fullmatch(source.text[start:end])
-            if literal and literal.group('name') in symbols and label(
-                    code[start:end]) in ('', 'decorative', 'named', 'image'):
+            if lone_literal(source, start, end) in symbols:
                 continue
             which = label(code[start:end])
             name = f'{kind}({which}:)' if which else f'{kind}(_:)'
@@ -1365,6 +1374,10 @@ def never_shipped(entries, name):
     build turns it off. An archive of such an app holds no app, so it is
     never uploaded."""
     settings = ('targets', name, 'settings')
+    # A settings group, read from the project's `settingGroups`, can turn
+    # it back on for a build, so a target that names one stays checked.
+    if any(entry.path[:3] == settings and 'groups' in entry.path[3:] for entry in entries):
+        return False
     values = [entry for entry in entries
               if len(entry.path) >= 4 and entry.path[:3] == settings
               and setting_name(entry.key) == 'SKIP_INSTALL']
@@ -2324,9 +2337,12 @@ def check(root=ROOT):
             findings.append(Finding(path, 0, 'not an SF Symbol',
                                     f'a picture shipped in the app: {SYMBOL}.'))
     for rule, path, name in sorted(KNOWN_EXCEPTIONS - excused):
-        if path in swift and under(path, look_folders):
+        # A file moved or removed leaves its exception excusing nothing.
+        if under(path, look_folders):
+            what = (f'`{name}` no longer breaks "{rule}"' if path in swift else
+                    f'{path} is gone, so the exception for `{name}` excuses nothing')
             findings.append(Finding(path, 0, 'stale exception',
-                                    f'`{name}` no longer breaks "{rule}": remove its known '
+                                    f'{what}: remove its known '
                                     'exception from KNOWN_EXCEPTIONS in '
                                     'scripts/forbidden-code.py, and its line from '
                                     'docs/HANDOFF.md, *Known gaps*, in this pull request.'))
