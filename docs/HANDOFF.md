@@ -726,7 +726,7 @@ release in docs/ROADMAP.md when no thread has it yet.
   - **Dark mode reuses light's values.** Apple's own dark colours are
     lighter than its light ones; Brickson's are the same, which is why
     white words leave the fills near 3:1 on dark screens: with white
-    words at 4.5:1 on a fill, the fill can stand at most 3.79:1 from the
+    words at 4.5:1 on a fill, the fill can stand at most 3.78:1 from the
     lifted gray and 4.67:1 from black, the "contrast budget".
   *(the owner's design of the app's look)*
 - iPad windows the person can resize have two gaps besides being

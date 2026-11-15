@@ -42,6 +42,12 @@ design or get the border now.
   budget (asset catalog, `Palette.fillLabel` in four views,
   `ColourArithmetic`, `PaletteTests`).
 - The documentation commit after it.
+- Review fixes: the six edges recorded as breaches for the owner to
+  decide, not accepted exceptions (Codex); WCAG's own coefficients for
+  contrast, with a boundary pin (CodeRabbit); the budget figure on the
+  lifted gray corrected from 3.79 to 3.78:1 (white on `#1C1C1E` is
+  17.01:1, so 17.01 / 4.5); and the App Store accessibility rows brought
+  up to date.
 
 ## Verified
 
@@ -51,7 +57,12 @@ design or get the border now.
   (Swift 6 mode, complete strict concurrency, main-actor default
   isolation, warnings as errors) and reproduced the colour search's
   Python values to about 13 decimal places, including Sharma's published
-  pairs (2.0425, 27.1492, 0.9082).
+  pairs (2.0425, 27.1492, 0.9082). Contrast uses WCAG's own coefficients
+  (0.2126, 0.7152, 0.0722), not the search's CIE Y ones: the first port
+  took the search's, which CodeRabbit caught (`#B60015` on black passes
+  at 3.0002:1 with them, fails at 2.9998:1 with WCAG's), and with them
+  back the boundary pin in `theContrastFormulaMatchesWCAG` and the
+  contrast cross-check both fail on Linux, as they should.
 - `BricksonTests/PaletteTests.swift` type-checked and ran on Linux with
   Swift Testing against small stand-ins for the UIKit and SwiftUI types it
   uses, with Apple's colours taken as white and black screens, `#1C1C1E`

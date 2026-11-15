@@ -322,7 +322,7 @@ struct PaletteTests {
     /// what meets the screen at the fill's edge, the fill or the border
     /// drawn over it, at 3:1, on the base screen and on the lifted one.
     /// In dark mode the two pull against each other: white words at 4.5:1
-    /// leave a fill at most 3.79:1 from the lifted gray, so a border must
+    /// leave a fill at most 3.78:1 from the lifted gray, so a border must
     /// carry the edge there or the fill falls under 3:1. The misses today
     /// are `knownEdgeFailures`.
     @Test func everyFillKeepsItsContrastBudget() throws {
@@ -555,12 +555,22 @@ struct PaletteTests {
         // #767676 is the classic lightest gray that passes 4.5:1 on white.
         let gray = UIColor(red: 0x76 / 255, green: 0x76 / 255, blue: 0x76 / 255, alpha: 1)
         #expect(abs(Self.ratio(.white, gray) - 4.54) < 0.01)
+        // WCAG's own coefficients, not the CIE Y of linear sRGB: #B60015 on
+        // black is 2.99985:1 by WCAG and would pass at 3.00021:1 by CIE Y.
+        let boundary = ColourArithmetic.contrast(
+            ColourArithmetic.SRGB(red: 0xB6 / 255, green: 0, blue: 0x15 / 255),
+            ColourArithmetic.SRGB(red: 0, green: 0, blue: 0)
+        )
+        #expect(boundary < 3, "#B60015 on black: \(boundary):1")
+        #expect(abs(boundary - 2.999845) < 0.000001, "#B60015 on black: \(boundary):1")
     }
 
     /// The arithmetic agrees with the colour search's Python (`colourmath.py`)
     /// to four decimals, and its colour difference with Sharma, Wu and
     /// Dalal's published test pairs, so a slip in the port cannot pass the
-    /// budget or the colour-vision test above.
+    /// budget or the colour-vision test above. Contrast is WCAG's, with
+    /// WCAG's coefficients (`theContrastFormulaMatchesWCAG`), so its values
+    /// here are the Python's formula with those coefficients.
     @Test func theArithmeticMatchesTheColourSearch() throws {
         let tolerance = 0.00005
         func colour(_ hex: String) throws -> SRGB {
@@ -576,9 +586,10 @@ struct PaletteTests {
             let difference = ColourArithmetic.ciede2000(first, second)
             #expect(abs(difference - expected) < tolerance, "Sharma's \(expected): \(difference)")
         }
-        // Values the colour search's Python computed.
+        // Values the colour search's Python computed (contrast with WCAG's
+        // coefficients, 0.2126, 0.7152 and 0.0722).
         let contrasts: [(String, String, Double)] = [
-            ("#FFFFFF", "#0A60D6", 5.7426),
+            ("#FFFFFF", "#0A60D6", 5.7423),
             ("#5A6474", "#1C1C1E", 2.8437),
         ]
         for (first, second, expected) in contrasts {

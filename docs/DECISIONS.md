@@ -5380,7 +5380,12 @@ white) without touching every view.
 **What `PaletteTests` measures**, ported from the stage 5 colour search's
 checked arithmetic (`BricksonTests/ColourArithmetic.swift`, cross-checked
 against that search's Python and Sharma, Wu and Dalal's published
-CIEDE2000 pairs in `theArithmeticMatchesTheColourSearch`):
+CIEDE2000 pairs in `theArithmeticMatchesTheColourSearch`), except that
+contrast keeps WCAG's own luminance coefficients (0.2126, 0.7152,
+0.0722), as `PaletteTests` always did: the search's longer CIE Y
+coefficients move a ratio in its fourth decimal, enough to pass `#B60015`
+on black at 3.0002:1 where WCAG gives 2.9998:1
+(`theContrastFormulaMatchesWCAG` pins it):
 
 - **Every slot's value**, from a table of tokens, and every colour set in
   the catalog's source has exactly the four slots, in sRGB, and is in the
@@ -5395,7 +5400,7 @@ CIEDE2000 pairs in `theArithmeticMatchesTheColourSearch`):
   the system's bordered prominent buttons tinted with a fill (Settings'
   rows, Voice Settings' speeds, setup's choices) and the typing fields'
   edge it is the fill. The two pull against each other on dark screens:
-  white words at 4.5:1 leave a fill at most 3.79:1 from the lifted gray.
+  white words at 4.5:1 leave a fill at most 3.78:1 from the lifted gray.
 - **Increase Contrast never lowers contrast**
   (`increasedContrastNeverLowersContrast`): its words and its fill
   against the screen measure at least what they do without it. Measured

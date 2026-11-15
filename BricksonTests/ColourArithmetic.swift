@@ -7,8 +7,11 @@ import Foundation
 /// formula is here, with no colour library:
 ///
 /// - sRGB's transfer curve (IEC 61966-2-1).
-/// - WCAG 2.x relative luminance and contrast ratio, with luminance as the
-///   CIE Y of linear sRGB (the same coefficients the search uses).
+/// - WCAG 2.x relative luminance and contrast ratio, with WCAG's own
+///   coefficients (0.2126, 0.7152, 0.0722), as `PaletteTests` always
+///   measured. The search took luminance as the CIE Y of linear sRGB,
+///   whose longer coefficients differ in the fourth decimal of a ratio:
+///   enough to pass a colour at 3.0002:1 that WCAG puts at 2.9998:1.
 /// - CIELAB (D65) and CIEDE2000 colour difference (Sharma, Wu and Dalal,
 ///   2005).
 /// - Colour-vision deficiency: Machado, Oliveira and Fernandes (2009) at
@@ -81,13 +84,13 @@ nonisolated enum ColourArithmetic {
         channel <= 0.04045 ? channel / 12.92 : pow((channel + 0.055) / 1.055, 2.4)
     }
 
-    /// WCAG 2.x relative luminance: the CIE Y of the linear colour.
+    /// WCAG 2.x relative luminance, with WCAG's coefficients.
     static func luminance(_ colour: SRGB) -> Double {
         luminance(linear: colour.linear)
     }
 
     static func luminance(linear: [Double]) -> Double {
-        linear[0] * 0.2126390059 + linear[1] * 0.7151686788 + linear[2] * 0.0721923054
+        linear[0] * 0.2126 + linear[1] * 0.7152 + linear[2] * 0.0722
     }
 
     /// WCAG 2.x contrast ratio between two opaque colours, 1 to 21.
