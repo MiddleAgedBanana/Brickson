@@ -17,8 +17,8 @@ anything from this pull request. People working on it get two things.
 
 **One ordered run sheet,** [`docs/EXPERIMENTS.md`](../EXPERIMENTS.md).
 It keeps every question ID from the studies (A-1 to A-45 and A-1a, B-1
-to B-4, D-01 to D-26, G-01 to G-40, and the studies' own unit IDs such
-as A4-U13) and the device checks F1 to F4 in
+to B-4, D-01 to D-26, the 23 G questions numbered between G-01 and
+G-41, and the studies' own unit IDs such as A4-U13) and the device checks F1 to F4 in
 [`docs/DEVICE-CHECKS.md`](../DEVICE-CHECKS.md), and sorts them into five
 groups: on the simulator only; on a device with a person; with borrowed
 hardware; ask Apple first; and wait for the owner's decision. Within each
@@ -121,6 +121,17 @@ structure and documentation lists).
   break inside a field into a space, so an error's own words cannot
   break a line's four columns (`aTabOrLineBreakInAnEventStaysInItsColumn`:
   fails if the export writes either as it is).
+- The second review round (Codex on `8d936bd`): Apple's plain style lets
+  only a label's words take a touch, so a dwell inside an exact-size
+  button's outline but beside its words could miss. Those buttons now
+  use `ProbeExactButtonStyle`, which adds no padding and makes the whole
+  outlined shape take a touch. The verifier's read of `8d936bd` also
+  found: this log's G range (the run sheet has 23 G questions numbered
+  between G-01 and G-41, not G-01 to G-40); the frameworks row and
+  `ProbeSystem` saying SwiftUI cannot read whether Switch Control is on
+  (it can, and the probe reads UIKit's value beside SwiftUI's to compare
+  them); and DEV-11 placing the keep-awake setting on the Screen station
+  (it is on the probe's first list). All three are corrected.
 
 ## Verified
 
@@ -174,10 +185,13 @@ The new tests, and the change that would make each fail:
 
 ## Not verified
 
-- **Nothing here has been compiled.** A cloud session cannot build
-  Swift. The probe, its tests and the project change count as untested
-  until GitHub CI's unit-test job, which builds the probe for testing,
-  passes on this branch.
+- **Compiled only by CI.** A cloud session cannot build Swift. GitHub
+  CI on `958287a` passed (unit tests, which build the probe for testing,
+  and the UI tests on an iPhone and an iPad simulator). Each later
+  commit counts as untested until CI passes on the pull request's last
+  push.
+- Whether the exact-size buttons take a touch across their whole
+  outline: that needs a dwell or a tap on a device, read in the log.
 - The probe has not run on a simulator or a device. Whether each station
   shows what the run sheet says it shows is the Mac session's first job
   ([`EXPERIMENTS.md`](../EXPERIMENTS.md), *What the Mac session does

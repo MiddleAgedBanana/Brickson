@@ -33,15 +33,24 @@ struct ProbeButton: View {
 }
 
 extension View {
-    /// A plain button with an outline for its edge. The plain style adds
-    /// no padding, so the button's frame is exactly the size it was given:
-    /// the Rings and Landing stations measure it.
+    /// A button exactly the size it was given, with an outline for its
+    /// edge: the Rings and Landing stations measure it.
     func probeExactButton() -> some View {
-        buttonStyle(.plain)
-            .background {
-                RoundedRectangle(cornerRadius: 8)
-                    .strokeBorder(Color.accentColor, lineWidth: 2)
-            }
+        buttonStyle(ProbeExactButtonStyle())
+    }
+}
+
+/// Adds no padding, so the button's frame is the size its label was
+/// given, and makes the whole outlined shape take a touch: with Apple's
+/// plain style only the words did, so a dwell inside the outline but
+/// beside the words could miss.
+struct ProbeExactButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        let shape = RoundedRectangle(cornerRadius: 8)
+        configuration.label
+            .opacity(configuration.isPressed ? 0.6 : 1)
+            .background { shape.strokeBorder(Color.accentColor, lineWidth: 2) }
+            .contentShape(shape)
     }
 }
 

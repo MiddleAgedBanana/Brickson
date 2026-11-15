@@ -803,11 +803,12 @@ people Brickson serves.
 - **Why.** The screen must never lock for a person who cannot unlock it
   (invariant 12), all day and all night.
 - **How.**
-  1. Probe > Screen, "keep the screen on" on. Turn Low Power Mode on.
-     Leave the device untouched for five minutes; note whether it dims
-     or locks (the log records the app leaving the screen).
-  2. Turn "keep the screen on" off; Auto-Lock 30 seconds. Dwell on
-     Snap's Counter every 20 seconds for two minutes; then press a
+  1. On the probe's first list, "Screen: keep the screen on" on; open
+     Probe > Screen. Turn Low Power Mode on. Leave the device untouched
+     for five minutes; note whether it dims or locks (the log records
+     the app leaving the screen).
+  2. Turn "Screen: keep the screen on" off; Auto-Lock 30 seconds. Dwell
+     on Snap's Counter every 20 seconds for two minutes; then press a
      switch every 20 seconds. Note whether it locks.
   3. With Attention Aware Features on, look away for a minute; then
      start Guided Access with its own Display Auto-Lock set short.
@@ -815,9 +816,10 @@ people Brickson serves.
      after the session.
   4. Probe > Typing: type "test", then tap the mounted device's mount
      firmly; note any Undo prompt and where it appears.
-  5. Probe > Screen, kept on, Eye Tracking on, plugged in: two hours;
-     note the thermal state lines in the log, the battery level at start
-     and end, and each recalibration. Repeat unplugged.
+  5. Probe > Screen, with "Screen: keep the screen on" on, Eye Tracking
+     on, plugged in: two hours; note the thermal state lines in the log,
+     the battery level at start and end, and each recalibration. Repeat
+     unplugged.
   6. With the screen off: try to wake it by looking, by a switch, by
      voice.
   7. A dark room: Eye Tracking on, the screen at normal and at low
