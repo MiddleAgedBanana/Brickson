@@ -499,17 +499,20 @@ people Brickson serves.
      button's real size; write down the size it gives if it differs.
      Rest your look on each ring, nearest first, for five seconds each,
      on its right, left, top and bottom. Note the farthest ring where
-     the pointer still jumps to the button, and the nearest where it
-     does not.
-  3. Repeat with the button at 88 and at 120 points.
+     the pointer still jumps to the button, and the nearest ring beyond
+     it where the pointer does not.
+  3. Repeat with the button at 88 and at 120 points. A ring whose points
+     lie inside the button (the 25-point ring on the 88-point button;
+     the 25- and 50-point rings on the 120) puts the look on the button
+     itself, so skip it: it says nothing about reach.
   4. Dwell Control on. Probe > Landing. Dwell on **Wide** five times,
      each at a different place on it; then on **Landing** five times.
   5. Repeat on the iPhone. A ring whose left or right points lie past
      the screen's edge cannot be reached there: write it down as off
      screen, not as a ring the pointer does not jump to.
-- **Record.** The farthest ring that still snaps and the nearest that
-  does not (or "off screen"), for each button size and direction; for
-  step 4, which button the log says fired each time.
+- **Record.** The farthest ring that still snaps and the nearest ring
+  beyond it that does not (or "off screen"), for each button size and
+  direction; for step 4, which button the log says fired each time.
 - **What it means.**
   - **The farthest ring grows from the 44-point to the 120-point
     button:** Snap measures to the edge (an edge reach moves the

@@ -148,6 +148,12 @@ structure and documentation lists).
   control a held look can reach. DEV-2 now records the nearest ring that
   does not snap too and takes the reach from it, keeping the unlimited
   range where every ring on screen snapped.
+- CodeRabbit's fourth review (on `ced3cc8`): a ring inside the button
+  (the 25-point ring on the 88-point button, the 25- and 50-point rings
+  on the 120) puts the look on the button itself, so reading it as "does
+  not snap" could set the reach shorter than a farther ring that snapped.
+  DEV-2 now skips those rings and takes the ring that does not snap only
+  from beyond the farthest that does.
 
 ## Verified
 
