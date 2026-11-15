@@ -16,6 +16,15 @@ import UIKit
 /// a contrast budget whose known failures are named there. Recompute
 /// before changing a value.
 ///
+/// Every fill is its colour set by name, `Color("Name")`, so it is drawn
+/// as the catalog holds it and as `PaletteTests` measures it. Never
+/// `Color.accentColor`: the system treats the app's accent as a colour for
+/// words and symbols, and with Increase Contrast on draws it darker in
+/// light mode and lighter in dark mode than its colour set says, whatever
+/// the set's slots hold. Under the tiles' white words that lighter blue
+/// measured 3.95:1 (docs/DECISIONS.md, "Colour tokens in four
+/// appearances").
+///
 /// | Asset          | Value (all four) | Fill label on it | Against black | Against white |
 /// |----------------|------------------|------------------|---------------|---------------|
 /// | AccentColor    | `#0A60D6`        | 5.74:1           | 3.66:1        | 5.74:1        |
@@ -31,8 +40,9 @@ import UIKit
 /// depends on colour alone (docs/DECISIONS.md, "Solid fills on Home,
 /// system glass elsewhere").
 nonisolated enum Palette {
-    /// Phrase tiles and the selected category.
-    static let phraseFill = Color.accentColor
+    /// Phrase tiles and the selected category: the accent's colour set, by
+    /// name like every other fill, never `Color.accentColor` (above).
+    static let phraseFill = Color("AccentColor")
     /// Yes, No, Again, and categories that are not selected.
     static let controlFill = Color("ControlFill")
     /// The Emergency control and the emergency category's tiles.
@@ -50,8 +60,18 @@ nonisolated enum Palette {
     /// each appearance can carry its own words; white in all four today.
     static let fillLabel = Color("FillLabel")
 
-    /// Every fill above, by asset name, for `PaletteTests`.
-    static let assetNames = ["AccentColor", "ControlFill", "EmergencyFill", "AttentionFill", "StopFill"]
+    /// Every fill above with the colour set it is drawn from, for
+    /// `PaletteTests`, which measures each colour set and checks that each
+    /// fill is that colour set and nothing else.
+    static let fills: [(asset: String, color: Color)] = [
+        ("AccentColor", phraseFill),
+        ("ControlFill", controlFill),
+        ("EmergencyFill", emergencyFill),
+        ("AttentionFill", attentionFill),
+        ("StopFill", stopFill),
+    ]
+    /// Every fill's asset name, for `PaletteTests`.
+    static let assetNames = fills.map { $0.asset }
     /// `fillLabel`'s asset name, for `PaletteTests`.
     static let fillLabelAssetName = "FillLabel"
 

@@ -5448,6 +5448,45 @@ whether they wait for the design of the app's look or get the border now
 (Codex's review of pull request #113). The 32 look-alike pairs break no
 invariant: 15 is the colour search's target, not a rule here.
 
+**Every fill is its colour set by name, never `Color.accentColor`**
+*(added 2026-11-15, pull request #116; a correctness fix, no colour
+chosen)*. The Simulator run recorded in pull request #115 found the phrase
+tiles, the selected category and Back to Talking drawn `#084DAB` with
+Increase Contrast in light and `#1A7BFF` in dark, although their colour
+set, `AccentColor`, holds `#0A60D6` in all four slots. They were filled
+with `Color.accentColor`, the app's accent, which the system treats as a
+colour for words and symbols: with Increase Contrast on it draws the
+accent darker in light mode and lighter in dark mode, on top of whatever
+the colour set's high-contrast slots hold (they held `#0A60D6` and the
+accent still changed). Under the tiles' white words the lighter blue
+measured 3.95:1, and in light the black pressed ring came to 2.66:1 on
+the darker one: invariant 6 broken on both sides, while every test here
+passed, because they read the catalog through UIKit, not the colour a
+view draws.
+
+- `Palette.phraseFill` is `Color("AccentColor")`, the same colour set
+  loaded by name like every other fill, so it is drawn as the catalog
+  holds it: `#0A60D6` in all four appearances, words 5.74:1 and the
+  pressed ring 3.66:1, as the budget measures. Without Increase Contrast
+  nothing changes; with it, these controls keep the blue they show
+  without it (in light, a little lighter than the system drew them).
+- `everyFillIsDrawnFromItsColourSet` fails if any fill, or the words on
+  fills, is made any other way. SwiftUI's environment cannot set
+  Increase Contrast, so no unit test can resolve the drawn colour there;
+  the test pins the cause, and the device check of rendered pixels
+  (docs/HANDOFF.md, *Checks that need a real device*) confirms the
+  result.
+- Why not new Increase Contrast values instead: the system's change
+  comes after the slot is read, so no slot value fixes a fill drawn with
+  `Color.accentColor`. And in dark mode, with white words and a black
+  screen, the words' ratio and the fill's edge multiply to 21, so a
+  darker slot gains words only by losing edge; `#0A60D6` is the value
+  that lowers neither (`increasedContrastNeverLowersContrast`).
+- The colour set keeps its name and stays the app's global accent
+  (`project.yml`), so system controls that use the accent for their
+  words and symbols still get the system's adjustment, which suits a
+  colour drawn as words.
+
 Before: each colour set had one value for every appearance, and
 `PaletteTests` measured that value in the four appearances against the
 base screen; the words on fills were `Color.white`.
