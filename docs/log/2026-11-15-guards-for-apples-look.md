@@ -1,0 +1,94 @@
+# Guards for Apple's look
+
+*2026-11-15. Pull request #114 (`claude/project-thread-gnet07`). A Claude
+Code cloud thread, chosen by the project's coordinator under the owner's
+standing word that objective engineering is the threads' to decide.*
+
+## What changed and why
+
+The owner wants Brickson to read as an app Apple made. The project's
+design study (programme stage 2, kept in the project's shared files, not
+this repository) wrote that down as 39 testable rules and a ten-second
+audit for every design review. Its next-stages list asked for guard
+tests, so that code review could never miss a "not Apple" regression.
+
+`scripts/forbidden-code.py` already failed CI on code AGENTS.md forbids
+(*A check for code the app must never contain*). This pull request
+extends that check rather than building a second one: same run, same
+reports, same tests file. The new rules are in docs/DECISIONS.md, *Guards
+for Apple's look*, with what each refuses, the choices made, its scope
+and every rule left unguarded with the reason. In short, the app that
+ships may not add glass or a material of its own, use a
+`PrimitiveButtonStyle` or `trigger()`, let a button repeat while held,
+show a picture that is not an SF Symbol, use Ultralight, Thin or Light,
+fix a text size, draw circular corners, write an accessibility setting
+into the environment, leave a `ButtonStyle` with no press state, put
+text in capitals, offer a context menu, swipe or drag action, show a
+system alert or dialog, use a toggle, make a view pass for a button,
+swallow an error in an empty `catch`, time with an old clock, or lift a
+control on hover. Each message names the rule, why it matters to the
+person using the app, and what to do instead.
+
+Nobody using the app sees or hears anything different: the change is in
+a script and its tests, and in documents.
+
+Two places break a rule today, both in Settings. Fixing either would
+change what a person sees, so each is a named known exception in the
+script and a line of docs/HANDOFF.md, *Known gaps*, for the new design:
+`SettingsRowButtonStyle` (a `PrimitiveButtonStyle`, the only kind that
+can wrap the system's bordered prominent style, used to redraw the
+dimmed look at 4.5:1) and `SettingsPairLabel` (Hear and Use's icons at a
+fixed 20 points). An exception the code no longer needs fails the check,
+so it leaves with the code.
+
+The rules hold the targets that ship. The experiments' probe app in pull
+request #112 is an application target marked `SKIP_INSTALL: YES`, never
+installed, so it keeps every rule of the first check and none of these,
+whichever pull request merges first.
+
+AGENTS.md gains one line under *Apple's current frameworks first*, and
+*Code Review Rules* now names a new known exception as something to flag.
+
+## Commits
+
+The commits of this pull request: the check and its tests, then this
+record and the documents.
+
+## Verified
+
+In this cloud session, which cannot build Swift:
+
+- `python3 scripts/test-forbidden-code.py`: every test passes, including
+  the new ones. Each new rule has lines that break it, one way each,
+  found on their line; the nearest code that keeps it, passing; the same
+  lines in comments and strings, ignored; the known exceptions excusing
+  only their rule in their type; a stale exception found; a never
+  installed app target held to the first check only; picture files found
+  outside the app icon and custom symbols. Removing any rule or any
+  alternative of a rule's pattern fails at least one test.
+- `python3 scripts/forbidden-code.py` over this checkout: nothing found,
+  and the copy-of-the-repository test plants three look slips in
+  `HomeView.swift` and finds exactly them, then removes one known
+  exception's code and finds the stale exception.
+- The branch merged with pull request #112 (the probe app) and with pull
+  request #113 (colour tokens), each in a scratch worktree: the check
+  finds nothing in either.
+- The documentation, hook, privacy, runner, agent bridge, site and Xcode
+  selection checks listed in AGENTS.md, *Build and test*.
+
+## Not verified
+
+- No Swift was built or run here, and none changed. CI's "Unit tests" job
+  runs the check's tests before the build; until it passes, treat the
+  pull request as untested.
+- Whether Snap to Item, Switch Control or Voice Control treat the two
+  known exceptions differently from a plain `ButtonStyle` was not
+  measured; they predate this change.
+
+## Follow-ups
+
+- The new design (programme stage 6) settles the two known exceptions,
+  then removes them from `KNOWN_EXCEPTIONS` and docs/HANDOFF.md.
+- The colour rules of the study (four appearances, semantic colours, no
+  typed-in system values) are left to the colour tokens' own tests in
+  pull request #113, not guarded here.

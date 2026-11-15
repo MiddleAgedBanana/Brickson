@@ -5553,6 +5553,83 @@ request merges only when they pass.
   and raising the iPad job's time limit (2026-11-13). Record:
   [`log/2026-11-13-ipad-ui-test-stall.md`](log/2026-11-13-ipad-ui-test-stall.md).
 
+## Guards for Apple's look
+
+*2026-11-15. Default, under the owner's standing word of 2026-11-15 that
+objective engineering is the threads' to decide; reversible if the owner
+objects ([record](log/2026-11-15-guards-for-apples-look.md)).*
+
+The owner wants Brickson to read as an app Apple made. The project's
+design study turned that into testable rules, from Apple's Human
+Interface Guidelines and API pages, and a ten-second audit for every
+design review. Some of those rules, and some of AGENTS.md's, can be
+decided from the code alone. `scripts/forbidden-code.py` checks them in
+the same run as *A check for code the app must never contain*, so a
+review can no longer miss a regression the audit would catch. Each
+finding names its rule, why it matters to the person using the app, and
+what to do instead. Nothing the app shows or does changed.
+
+- **What it refuses**, in the Swift of the targets that ship: Liquid
+  Glass or a see-through material added by the app (`glassEffect`, the
+  glass button styles, `Material`; invariant 6 and *Solid fills on Home,
+  system glass elsewhere*, whose system bars keep their glass with no
+  code); a `PrimitiveButtonStyle` or a call to its `trigger()`, which
+  decide themselves when a button fires (invariants 1 and 9); a button
+  that repeats while held (invariant 10); a picture that is not an SF
+  Symbol, in code or as a file, the app icon and custom symbols
+  (`.symbolset`, named by a literal) apart; Ultralight, Thin and Light
+  weights; a fixed text size (`.system(size:)` with a number, a custom
+  font's `fixedSize:`); circular corners and the deprecated
+  `cornerRadius(_:antialiased:)`; an accessibility setting or Bold Text
+  written into the environment, which hides the person's choice; a
+  `ButtonStyle` whose file never reads `isPressed`; all-capital text; a
+  context menu, swipe action, swipe to delete, drag to move or drag and
+  drop (invariants 1 and 3); a system alert, confirmation dialog or
+  action sheet (invariants 3 and 4; *Settings is a cover with a fixed
+  safety bar*); a toggle (invariant 10); a view given the button trait,
+  a default accessibility action or "responds to interaction"
+  (invariants 1 and 2); an empty `catch` (invariant 5); the old clocks
+  (`CACurrentMediaTime` and the like; AGENTS.md, *Workflow rules*); a
+  hover effect that lifts. `onTapGesture` and the other gestures were
+  already refused.
+- **Choices made.** Glass is refused in the whole app, not only Home:
+  this decision gives the system's components their own glass and the
+  app none. Repeating is refused on every button, not only the speaking
+  ones, because which control speaks cannot be read from the code and
+  every control can be reached with a held switch or a dwell. Named
+  accessibility actions, escape and magic tap are allowed: they add a
+  way in, not a second meaning for one.
+- **Scope.** The targets that ship: every target that is not a test,
+  except an application target that `project.yml` marks never installed
+  (`SKIP_INSTALL` true for every build), such as the experiments' probe
+  app, which keeps every other rule. A framework or extension ships
+  inside the app whatever its own setting says. If every application
+  target is marked so, the check stops with status 2.
+- **Known exceptions.** Where today's code breaks one of these rules and
+  the fix would change what a person sees, the place is named in
+  `KNOWN_EXCEPTIONS` (rule, file and type) and in docs/HANDOFF.md,
+  *Known gaps*, as an input to the new design. It excuses nothing else,
+  and one the code no longer needs is a finding of its own. There are two,
+  both in Settings: `SettingsRowButtonStyle` and `SettingsPairLabel`.
+  Adding one is an exception, which *Code Review Rules* flags for the
+  owner.
+- **Not guarded, and why.** Each needs judgment, a screenshot or a
+  device, or would raise false alarms: two layers and hierarchy;
+  colour's meaning, placement and four appearances (the colour tokens'
+  own tests hold those); concentric and capsule shapes and sharp
+  corners (geometry); symbol meaning and rendering modes; motion and
+  Reduce Motion; sizes and places (the layout engine's tests hold
+  them); words, branding, the app icon and inactive windows; a setting
+  for appearance inside the app (the only `preferredColorScheme` is the
+  UI tests' launch option); system typefaces (Apple allows a custom
+  headline font that follows Dynamic Type and Bold Text; its fixed size
+  is refused); Heavy and Black weights (Apple prefers Regular to Bold
+  but warns only against the light ones); an error interpolated into a
+  crash message (whether it can hold a person's words is judgment);
+  intervals between `Date`s (right for calendar time people read); caps
+  on Dynamic Type (`textSize` caps on purpose); menus, steppers and
+  sliders (allowed on family screens).
+
 ## Personal details stay out of the repository
 
 *2026-11-06. Default, asked for by the owner through the project's
@@ -6182,6 +6259,7 @@ runs it in seconds. On 2026-11-13 `main` broke none of its rules.
   `docs/DECISIONS.md, "<title>"`; a skip, a `.disabled` or an `.enabled`
   with no reason, which is a string in its own unlabelled message or
   comment, never one in its condition or in `file:`.
+- **Apple's look**, in the app that ships: *Guards for Apple's look*.
 - **`CLAUDE.md`** holds only `@AGENTS.md`.
 - **Changing what it allows.** Every finding names its rule and what to
   do. A file that needs a legacy API gets a row of the frameworks table,

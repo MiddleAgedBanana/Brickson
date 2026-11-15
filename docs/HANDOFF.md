@@ -1100,6 +1100,16 @@ release in docs/ROADMAP.md when no thread has it yet.
   the owner decides between that and changing the test
   ([record](log/2026-11-13-forbidden-code-check.md), *Follow-ups*).
   *(owner)*
+- Two places in Settings break a guard of Apple's look on purpose, each a
+  named known exception in `scripts/forbidden-code.py`
+  (docs/DECISIONS.md, "Guards for Apple's look"), kept as inputs to the
+  new design because changing either changes what a person sees.
+  `SettingsRowButtonStyle` is a `PrimitiveButtonStyle`: only one can wrap
+  the system's bordered prominent style, which it does to redraw the
+  dimmed look at 4.5:1; the system's style still decides when the row
+  fires. `SettingsPairLabel` draws the icons above Hear and Use at a fixed
+  20 points, so they do not grow with the person's text size.
+  *(the new design, programme stage 6)*
 
 ## Next steps, in order
 
@@ -1640,7 +1650,11 @@ settings, date) and summarise it here.
   code breaks a rule of AGENTS.md a script can decide: network code, a
   device check, a package, a workflow given a write token and the rest in
   docs/DECISIONS.md, "A check for code the app must never contain"
-  ([record](log/2026-11-13-forbidden-code-check.md)).
+  ([record](log/2026-11-13-forbidden-code-check.md)), and the rules of
+  Apple's look a script can decide in the app that ships: glass, a
+  `PrimitiveButtonStyle`, a toggle, a system alert, a picture that is not
+  an SF Symbol and the rest in "Guards for Apple's look"
+  ([record](log/2026-11-15-guards-for-apples-look.md)).
   New issues start from the "Something went wrong" form; blank issues are
   off. Record: [`docs/log/2026-10-21-agent-guardrails.md`](log/2026-10-21-agent-guardrails.md).
   The review fixes cover configured and wildcard pushes, alternate Git

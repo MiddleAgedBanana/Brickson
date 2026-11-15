@@ -154,6 +154,12 @@ its Effective date and the in-app copy in the same pull request.
 - Look Apple APIs up, never recall them: Context7, the Xcode MCP's
   `DocumentationSearch`, or developer.apple.com with `.md` appended to the
   page's path (the HTML page is an empty shell). Say when you could not.
+- **Look like Apple made it.** The app adds no glass or material of its
+  own and has no `PrimitiveButtonStyle`, toggle, system alert, context
+  menu, swipe action, repeating button, Light weight, fixed text size or
+  circular corner; every icon is an SF Symbol and every `ButtonStyle`
+  draws `isPressed`. `scripts/forbidden-code.py` checks these
+  (docs/DECISIONS.md, "Guards for Apple's look").
 
 ## Design rules for dwell, switch and pointer input
 
@@ -280,10 +286,10 @@ path from a real input to the failure.
   that kind. Compare with the base branch; the owner decides.
 - A change to `.claude/settings.json`, `.claude/hooks/`, `.githooks/`,
   `scripts/privacy-check.py` or `scripts/forbidden-code.py` that unhooks
-  the guard or a check, drops a deny rule or a rule, or lets through what
-  its tests refuse, or a weakened `scripts/test-hooks.py`,
-  `scripts/test-privacy.py`, `scripts/test-forbidden-code.py` or
-  `scripts/test-docs.py`.
+  the guard or a check, drops a deny rule or a rule, adds a known
+  exception, or lets through what its tests refuse, or a weakened
+  `scripts/test-hooks.py`, `scripts/test-privacy.py`,
+  `scripts/test-forbidden-code.py` or `scripts/test-docs.py`.
 
 ### Not findings
 
