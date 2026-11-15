@@ -65,7 +65,9 @@ final class ProbeLog {
         entries.last(where: { $0.station == station })
     }
 
-    /// The whole log as tab-separated text, oldest first, to share.
+    /// The whole log as tab-separated text, oldest first, to share. A tab
+    /// or line break inside a field becomes a space, so each line keeps
+    /// its four columns.
     var exportText: String {
         var lines = ["seconds\ttime\tstation\tevent"]
         if dropped > 0 {
@@ -75,8 +77,8 @@ final class ProbeLog {
             lines.append([
                 ProbeLogFormat.seconds(entry.elapsed),
                 entry.clockTime.formatted(date: .omitted, time: .standard),
-                entry.station,
-                entry.event,
+                ProbeLogFormat.field(entry.station),
+                ProbeLogFormat.field(entry.event),
             ].joined(separator: "\t"))
         }
         return lines.joined(separator: "\n")
@@ -89,5 +91,12 @@ nonisolated enum ProbeLogFormat {
         let (seconds, attoseconds) = duration.components
         let value = Double(seconds) + Double(attoseconds) / 1e18
         return String(format: "%.2f", value)
+    }
+
+    /// One field of the shared text, with each tab and line break (an
+    /// error's own words can hold one) turned into a space.
+    static func field(_ text: String) -> String {
+        text.split(omittingEmptySubsequences: false, whereSeparator: { $0 == "\t" || $0.isNewline })
+            .joined(separator: " ")
     }
 }

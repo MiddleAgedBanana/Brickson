@@ -77,6 +77,19 @@ struct ProbeLogTests {
         #expect(lines.dropFirst().allSatisfy { $0.split(separator: "\t").count == 4 })
     }
 
+    /// An event with a tab or line break in it (an error's own words) stays
+    /// one line of four columns in the shared text. Fails if the export
+    /// writes either character as it is.
+    @Test func aTabOrLineBreakInAnEventStaysInItsColumn() {
+        let log = ProbeLog()
+        log.record("The audio session could not start:\tbusy\nTry again\r\nlater", station: "Speech")
+        let lines = log.exportText.split(separator: "\n", omittingEmptySubsequences: false).map(String.init)
+
+        #expect(lines.count == 2)
+        #expect(lines[1].split(separator: "\t", omittingEmptySubsequences: false).count == 4)
+        #expect(lines[1].hasSuffix("\tSpeech\tThe audio session could not start: busy Try again later"))
+    }
+
     /// A report that arrives late (a speech report held up while Busy held
     /// the main thread) goes in at the time it happened, after lines at
     /// the same time. Fails if the log appends in arrival order.
@@ -160,6 +173,17 @@ struct ProbeStatusTests {
         #expect(ProbeStatusChanges.lines(from: first, to: first).isEmpty)
         #expect(ProbeStatusChanges.lines(from: first, to: second)
             == ["isAssistiveTouchRunning: false → true", "isApplicationAccessibilityEnabled = true"])
+    }
+
+    /// A value read before and not read now is logged once. Fails if a
+    /// reading can vanish from the log without a line.
+    @Test func aReadingNoLongerReadIsLogged() {
+        let first = [reading("isAssistiveTouchRunning", "false"), reading("isGuidedAccessEnabled", "true")]
+        let second = [reading("isAssistiveTouchRunning", "false")]
+
+        #expect(ProbeStatusChanges.lines(from: first, to: second)
+            == ["isGuidedAccessEnabled: true → no longer read"])
+        #expect(ProbeStatusChanges.lines(from: second, to: second).isEmpty)
     }
 
     /// Power and heat log under Screen, everything else under Status.

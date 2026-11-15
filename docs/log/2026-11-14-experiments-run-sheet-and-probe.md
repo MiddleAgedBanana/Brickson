@@ -115,6 +115,12 @@ structure and documentation lists).
   rest left to the agents as objective coding choices). Its keep-awake
   line had the idle timer backwards; it now says the probe keeps the
   screen on by default and lets the person switch that off.
+- Graphify's review of `958287a`: the Status station now logs a value
+  that is no longer read (`aReadingNoLongerReadIsLogged`: fails if one
+  can vanish without a line), and the shared text turns a tab or line
+  break inside a field into a space, so an error's own words cannot
+  break a line's four columns (`aTabOrLineBreakInAnEventStaysInItsColumn`:
+  fails if the export writes either as it is).
 
 ## Verified
 
@@ -145,11 +151,13 @@ The new tests, and the change that would make each fail:
   D-1 for D-01) or the same ID twice; two stations share a title.
 - `ProbeLogTests`: a line timed from the wrong instant; a full log that
   drops its newest lines, or stops saying it dropped any; an export not
-  oldest first or not tab-separated; Clear leaving lines; seconds
-  printed without two decimals.
+  oldest first or not tab-separated, or a tab or line break inside an
+  event written as it is; Clear leaving lines; seconds printed without
+  two decimals.
 - `ProbeCountdownTests`: seconds left rounded down, or going below zero.
-- `ProbeStatusTests`: an unchanged value logged again; a group logged
-  under the wrong station; a thermal state with no words.
+- `ProbeStatusTests`: an unchanged value logged again, or a value no
+  longer read not logged; a group logged under the wrong station; a
+  thermal state with no words.
 - `ProbeSpeechScriptsTests`: the spoken Voice Control command no longer
   naming the Counter button; the parts no longer making the sentence;
   SSML without its pauses, or with unescaped text.
