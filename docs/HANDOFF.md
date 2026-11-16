@@ -453,21 +453,6 @@ release in docs/ROADMAP.md when no thread has it yet.
   buttons keep the system's size, and the guide's Done sits in Back to
   Talking's frame; the next Settings thread measures them and puts them
   to the owner (docs/ROADMAP.md, *The quality bar*, Q3).
-- Three pairs of nearly equal spacing values were kept as they were when
-  the app moved onto its spacing scale, since changing them changes what
-  people see: a dimmed Settings row's words 14 points in beside Settings'
-  16-point gutter; Eye Tracking's 15-point gap between controls beside
-  the 16-point step; and Home's message field with 6 points around its
-  words against the Library editor's outlined field with 12
-  (docs/DECISIONS.md, "One spacing scale"). *(the design of the app's
-  look)*
-- Nothing yet flags a spacing number written into a view instead of a
-  step of the scale: the check belongs beside the look rules and known
-  exceptions that pull request #114 adds to the forbidden-code check, so
-  it waits for that to merge (docs/DECISIONS.md, "One spacing scale").
-  The rendered equal-gaps check measures touch's sizes only, as the other
-  UI tests ask for them; the engine's gaps are checked in every profile.
-  *(the first pull request on the forbidden-code check after #114)*
   *(device checks, before any build goes to App Review: docs/ROADMAP.md,
   *The quality bar*, Q3 and Q13)* The rest board's late-stage sizes
   (2026-11-01) are proposals too: their 136-point floors and the safety
@@ -506,6 +491,21 @@ release in docs/ROADMAP.md when no thread has it yet.
   where no complete row fits; it changes no code or release boundary.
   *(R0 item 3, before App Review: docs/ROADMAP.md, *The quality bar*,
   Q3; then the owner)*
+- Three pairs of nearly equal spacing values were kept as they were when
+  the app moved onto its spacing scale, since changing them changes what
+  people see: a dimmed Settings row's words 14 points in beside Settings'
+  16-point gutter; Eye Tracking's 15-point gap between controls beside
+  the 16-point step; and Home's message field with 6 points around its
+  words against the Library editor's outlined field with 12
+  (docs/DECISIONS.md, "One spacing scale"). *(the design of the app's
+  look)*
+- Nothing yet flags a spacing number written into a view instead of a
+  step of the scale: the check belongs beside the look rules and known
+  exceptions that pull request #114 adds to the forbidden-code check, so
+  it waits for that to merge (docs/DECISIONS.md, "One spacing scale").
+  The rendered equal-gaps check measures touch's sizes only, as the other
+  UI tests ask for them; the engine's gaps are checked in every profile.
+  *(the first pull request on the forbidden-code check after #114)*
 - The slot plan has no answer yet for more than four everyday categories
   (docs/DECISIONS.md, "Home's slot plan", *Open*), so editing and import
   refuse a fifth (docs/DECISIONS.md, "Three or four everyday
