@@ -38,7 +38,7 @@ nonisolated struct SettingsRowPlace: Equatable, Sendable {
 
     /// The gap between the row and the words beside it: Settings' gap
     /// between its rows (`SettingsMetrics.rowSpacing`).
-    static let columnSpacing: CGFloat = 16
+    static let columnSpacing = Spacing.large
 
     /// Home's controls that speak or sound when a look meets them: Yes, No,
     /// Again, Get Attention, Stop (which ends the alarm) and the phrase

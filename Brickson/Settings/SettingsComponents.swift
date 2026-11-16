@@ -9,8 +9,8 @@ import SwiftUI
 /// secondary gray, grouped-list headers and dimmed buttons are not used:
 /// they measure under 4.5:1 (AGENTS.md, invariant 6).
 enum SettingsMetrics {
-    static let gutter: CGFloat = 16
-    static let rowSpacing: CGFloat = 16
+    static let gutter = Spacing.large
+    static let rowSpacing = Spacing.large
     /// Settings is mostly used by a family member's touch, but the person
     /// may reach it by a stray dwell, so its controls keep Home's size
     /// rather than a list row's.
@@ -77,6 +77,13 @@ struct SettingsRowLabel: View {
 struct SettingsRowButtonStyle: PrimitiveButtonStyle {
     let fill: Color
 
+    /// The room the system's bordered prominent button leaves beside its
+    /// words, measured on CI's captures: the dimmed look draws its words
+    /// there, so they do not move as the row dims. The system's value, so
+    /// not a step of the spacing scale (docs/DECISIONS.md, "One spacing
+    /// scale").
+    static let systemWordsInset: CGFloat = 14
+
     func makeBody(configuration: Configuration) -> some View {
         SettingsRowButton(configuration: configuration, fill: fill)
     }
@@ -98,7 +105,7 @@ private struct SettingsRowButton: View {
                         // The system's own inset for the words (measured on
                         // CI's captures), so they sit where they did.
                         configuration.label
-                            .padding(.horizontal, 14)
+                            .padding(.horizontal, SettingsRowButtonStyle.systemWordsInset)
                     }
                     .accessibilityHidden(true)
                     .allowsHitTesting(false)
@@ -127,7 +134,7 @@ struct SettingsPairLabel: View {
     @Environment(\.isEnabled) private var isEnabled
 
     var body: some View {
-        VStack(spacing: 4) {
+        VStack(spacing: Spacing.xxSmall) {
             Image(systemName: systemImage)
                 .font(.system(size: 20, weight: .semibold))
                 .frame(height: 22)
@@ -226,9 +233,9 @@ struct SettingsSteps: View {
     let steps: [LocalizedStringKey]
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: Spacing.small) {
             ForEach(Array(steps.enumerated()), id: \.offset) { index, step in
-                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                HStack(alignment: .firstTextBaseline, spacing: Spacing.small) {
                     // Read with its step, so the order is clear when
                     // VoiceOver moves backward or straight to one step.
                     Text(verbatim: "\(index + 1).")
@@ -272,10 +279,10 @@ struct SettingsCard<Content: View>: View {
     @ViewBuilder let content: Content
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Spacing.medium) {
             content
         }
-        .padding(16)
+        .padding(Spacing.large)
         .frame(maxWidth: .infinity, alignment: .leading)
         .overlay {
             RoundedRectangle(cornerRadius: 12)
