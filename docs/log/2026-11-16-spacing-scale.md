@@ -63,14 +63,17 @@ these documents.
   changes.
 - `EqualGapsTests`' hand-made cases were worked through in a copy of the
   rule written in Python on this machine: even gaps pass, a tile 4
-  points out, a row 4 points low and rows 12 apart with tiles 8 apart
-  each fail once, half a point passes and 0.6 fails, and empty, single
-  and touching groups fail.
+  points out, a row 4 points low, rows 12 apart with tiles 8 apart and
+  a tile 4 points shorter than its neighbour each fail once, half a
+  point passes and 0.6 fails, empty, single and touching groups fail,
+  and the engine's two-row safety row (Again under Yes and No) passes.
 - What would make the new tests fail: in the app, any spacer or stack in
   Home's grid or safety row that drew a gap other than the engine's; in
   the engine, a column, row or safety-row control placed with a gap other
-  than the profile's; in the rule, a tolerance wider than half a point
-  or a group with nothing to measure counted as a pass.
+  than the profile's; in the rule, a tolerance wider than half a point,
+  a group with nothing to measure counted as a pass, or a gap down
+  measured from a row's lowest edge instead of from each control to the
+  one under it.
 - SwiftUI declares no type named `Spacing` (Apple's documentation index
   has no such page, while it has `ViewSpacing`), so the name cannot clash
   with an import.

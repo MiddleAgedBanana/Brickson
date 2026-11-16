@@ -16,7 +16,11 @@ nonisolated enum EqualGaps {
 
     /// The gaps between neighbouring frames: across each row, from one
     /// frame's trailing edge to the next one's leading edge, and down from
-    /// the bottom of one row to the top of the next.
+    /// each frame to every frame of the next row under it (their spans
+    /// across overlap), so a frame shorter than its neighbours cannot hide
+    /// the wider gap below it. Where no frame of a row is over one of the
+    /// next, the gap down is from the row's lowest edge to the next row's
+    /// highest.
     struct Gaps: Equatable {
         var across: [CGFloat]
         var down: [CGFloat]
@@ -47,7 +51,16 @@ nonisolated enum EqualGaps {
         }
         var down: [CGFloat] = []
         for (upper, lower) in zip(lines, lines.dropFirst()) {
-            down.append((lower.map(\.minY).min() ?? 0) - (upper.map(\.maxY).max() ?? 0))
+            var under: [CGFloat] = []
+            for below in lower {
+                for above in upper where min(above.maxX, below.maxX) > max(above.minX, below.minX) {
+                    under.append(below.minY - above.maxY)
+                }
+            }
+            if under.isEmpty {
+                under.append((lower.map(\.minY).min() ?? 0) - (upper.map(\.maxY).max() ?? 0))
+            }
+            down += under
         }
         return Gaps(across: across, down: down)
     }

@@ -34,7 +34,7 @@ struct EqualGapsTests {
     @Test func evenGapsHaveNoFault() {
         let tiles = Self.grid(count: 8, columns: 3)
         #expect(EqualGaps.faults(in: [(name: "tiles", frames: tiles)]).isEmpty)
-        #expect(EqualGaps.gaps(between: tiles) == EqualGaps.Gaps(across: [8, 8, 8, 8, 8], down: [8, 8]))
+        #expect(EqualGaps.gaps(between: tiles) == EqualGaps.Gaps(across: [8, 8, 8, 8, 8], down: [8, 8, 8, 8, 8]))
     }
 
     /// An uneven grid: one tile 4 points too far across, or a row 4 points
@@ -52,6 +52,18 @@ struct EqualGapsTests {
         let faults = EqualGaps.faults(in: [(name: "tiles", frames: apart)])
         #expect(faults.count == 1)
         #expect(faults.first?.contains("tiles, down 12.0") == true, "\(faults)")
+    }
+
+    /// A tile 4 points shorter than its neighbour leaves 12 points below
+    /// it where the rest of the grid has 8. The row's lowest edge would
+    /// hide that, so gaps down run from each tile to the one under it.
+    @Test func aShortTileCannotHideTheGapBelowIt() {
+        let tiles = [
+            CGRect(x: 0, y: 0, width: 100, height: 76), CGRect(x: 108, y: 0, width: 100, height: 80),
+            CGRect(x: 0, y: 88, width: 100, height: 80), CGRect(x: 108, y: 88, width: 100, height: 80),
+        ]
+        #expect(EqualGaps.gaps(between: tiles) == EqualGaps.Gaps(across: [8, 8], down: [12, 8]))
+        #expect(EqualGaps.faults(in: [(name: "tiles", frames: tiles)]).count == 1)
     }
 
     /// SwiftUI rounds each edge to a pixel, so equal gaps can measure half
