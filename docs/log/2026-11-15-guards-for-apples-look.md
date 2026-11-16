@@ -117,6 +117,15 @@ AGENTS.md gains one line under *Apple's current frameworks first*, and
   It also updates docs/HANDOFF.md: the iPhone's Home order test failed
   again on `e16839d`, in its default-text case, so it failed on two
   pushes in a row with no Swift changed.
+- The last commit, pushed with the owner's word after the final push,
+  answers the two findings made after it. A known exception excused
+  every break of its rule in its type, so a second fixed text size in
+  `SettingsPairLabel` would have passed (Gitar): each now counts its
+  breaks, one more is a finding, and a count higher than the code needs
+  is a stale exception. And `.accessibilityAction() { … } label: { … }`,
+  a named action written with empty parentheses, was reported as a view
+  passed off as a button (CodeRabbit): it is now left alone, like the
+  same call without them.
 
 ## Verified
 

@@ -9,6 +9,7 @@ API, a file the docs/DECISIONS.md table names) and expects silence. So
 dropping a rule or any one of its parts, reading comments or strings as
 code, or letting today's app trip a false alarm fails a test here.
 """
+from collections import Counter
 import contextlib
 import importlib.util
 import io
@@ -1109,7 +1110,8 @@ class AppleLookTests(unittest.TestCase):
             'Text("Yes").accessibilityRespondsToUserInteraction(true)',
             'Text("Yes").accessibilityAction { speak() }',
             'Text("Yes").accessibilityAction(.default) { speak() }',
-            'Text("Yes").accessibilityAction(AccessibilityActionKind.default) { speak() }'],
+            'Text("Yes").accessibilityAction(AccessibilityActionKind.default) { speak() }',
+            'Text("Yes").accessibilityAction() { speak() }'],
         'empty catch': ['do { try save() } catch {}', 'do { try save() } catch {   }',
                         'do { try save() } catch { /* nothing to do */ }'],
         'old clock': ['let t = CACurrentMediaTime()', 'let t = CFAbsoluteTimeGetCurrent()',
@@ -1163,6 +1165,7 @@ class AppleLookTests(unittest.TestCase):
         'Text("Yes").accessibilityAction(.escape) { close() }',
         'Text("Yes").accessibilityAction(.magicTap) { speak() }',
         'Text("Yes").accessibilityAction { speak() } label: { Text("Speak Again") }',
+        'Text("Yes").accessibilityAction() { speak() } label: { Text("Speak Again") }',
         'do { try save() } catch { report(error) }',
         'do { try await Task.sleep(for: .seconds(1)) } catch is CancellationError {}',
         'let t = ContinuousClock.now', 'Text("Yes").hoverEffect(.highlight)',
@@ -1268,8 +1271,9 @@ class AppleLookTests(unittest.TestCase):
 
 
 class KnownExceptionTests(unittest.TestCase):
-    """A known exception excuses one rule in one type of one file, and
-    nothing else; one the code no longer needs is a finding."""
+    """A known exception excuses one rule in one type of one file, as many
+    times as it counts, and nothing else; one the code no longer needs as
+    often is a finding."""
 
     TEXT = ('struct Rows: PrimitiveButtonStyle {\n'
             '    func makeBody(configuration: Configuration) -> some View { Text("A").glassEffect() }\n}\n'
@@ -1278,10 +1282,10 @@ class KnownExceptionTests(unittest.TestCase):
     EXCEPTION = ('primitive button style', 'App/Rows.swift', 'Rows')
 
     def test_it_excuses_only_its_rule_in_its_type(self):
-        excused = set()
-        findings = look_findings(self.TEXT, path='App/Rows.swift', exceptions={self.EXCEPTION},
+        excused = Counter()
+        findings = look_findings(self.TEXT, path='App/Rows.swift', exceptions={self.EXCEPTION: 1},
                                  excused=excused)
-        self.assertEqual(excused, {self.EXCEPTION})
+        self.assertEqual(excused, {self.EXCEPTION: 1})
         self.assertEqual(sorted((finding.line, finding.rule) for finding in findings),
                          [(2, 'glass or material'), (4, 'primitive button style')])
 
@@ -1289,21 +1293,47 @@ class KnownExceptionTests(unittest.TestCase):
         text = ('struct Rows: PrimitiveButtonStyle {\n'
                 '    func makeBody(configuration: Configuration) -> some View {\n'
                 '        Button { configuration.trigger() } label: { configuration.label }\n    }\n}\n')
-        findings = look_findings(text, path='App/Rows.swift', exceptions={self.EXCEPTION})
+        findings = look_findings(text, path='App/Rows.swift', exceptions={self.EXCEPTION: 1})
         self.assertEqual([(finding.line, finding.rule) for finding in findings],
                          [(3, 'button trigger')])
 
     def test_it_excuses_nothing_in_another_file(self):
-        excused = set()
-        findings = look_findings(self.TEXT, path='App/Other.swift', exceptions={self.EXCEPTION},
+        excused = Counter()
+        findings = look_findings(self.TEXT, path='App/Other.swift', exceptions={self.EXCEPTION: 1},
                                  excused=excused)
-        self.assertEqual(excused, set())
+        self.assertEqual(excused, {})
         self.assertEqual(rules(findings).count('primitive button style'), 2)
+
+    PAIR = ('struct Pair: View {\n'
+            '    var body: some View {\n'
+            '        Image(systemName: "ear").font(.system(size: 20))\n'
+            '        Image(systemName: "hand.tap").font(.system(size: 14))\n    }\n}\n')
+    PAIR_EXCEPTION = ('fixed text size', 'App/Pair.swift', 'Pair')
+
+    def test_it_excuses_only_as_many_breaks_as_it_counts(self):
+        # One more break of its rule in its type is a finding, so the
+        # exception never grows past the code it was written for.
+        findings = look_findings(self.PAIR, path='App/Pair.swift',
+                                 exceptions={self.PAIR_EXCEPTION: 1})
+        self.assertEqual([(finding.line, finding.rule) for finding in findings],
+                         [(4, 'fixed text size')])
+        self.assertIn('excuses 1 and no more', findings[0].message)
+        self.assertEqual(look_findings(self.PAIR, path='App/Pair.swift',
+                                       exceptions={self.PAIR_EXCEPTION: 2}), [])
+
+    def test_one_that_counts_more_breaks_than_the_code_has_is_a_finding(self):
+        checkout = fixture_checkout(**{'App/Pair.swift': self.PAIR})
+        self.addCleanup(checkout.close)
+        with unittest.mock.patch.object(forbidden, 'KNOWN_EXCEPTIONS', {self.PAIR_EXCEPTION: 3}):
+            findings = checkout.check()
+        self.assertEqual([(finding.path, finding.rule) for finding in findings],
+                         [('App/Pair.swift', 'stale exception')])
+        self.assertIn('2 times, not 3', findings[0].message)
 
     def test_one_the_code_no_longer_needs_is_a_finding(self):
         checkout = fixture_checkout(**{'App/Rows.swift': 'struct Rows {}\n'})
         self.addCleanup(checkout.close)
-        with unittest.mock.patch.object(forbidden, 'KNOWN_EXCEPTIONS', frozenset({self.EXCEPTION})):
+        with unittest.mock.patch.object(forbidden, 'KNOWN_EXCEPTIONS', {self.EXCEPTION: 1}):
             self.assertEqual([(finding.path, finding.rule) for finding in checkout.check()],
                              [('App/Rows.swift', 'stale exception')])
             checkout.write('App/Rows.swift', self.TEXT.split('struct Other')[0].replace(
@@ -1314,7 +1344,7 @@ class KnownExceptionTests(unittest.TestCase):
         # Moved or removed: the exception excuses nothing any more.
         checkout = fixture_checkout(**{'App/Buttons.swift': 'struct Rows {}\n'})
         self.addCleanup(checkout.close)
-        with unittest.mock.patch.object(forbidden, 'KNOWN_EXCEPTIONS', frozenset({self.EXCEPTION})):
+        with unittest.mock.patch.object(forbidden, 'KNOWN_EXCEPTIONS', {self.EXCEPTION: 1}):
             findings = checkout.check()
         self.assertEqual([(finding.path, finding.rule) for finding in findings],
                          [('App/Rows.swift', 'stale exception')])
@@ -1325,7 +1355,7 @@ class KnownExceptionTests(unittest.TestCase):
         checkout = fixture_checkout(**{'Old/Rows.swift': self.TEXT})
         self.addCleanup(checkout.close)
         with unittest.mock.patch.object(forbidden, 'KNOWN_EXCEPTIONS',
-                                        frozenset({('primitive button style', 'Old/Rows.swift', 'Rows')})):
+                                        {('primitive button style', 'Old/Rows.swift', 'Rows'): 1}):
             findings = checkout.check()
         self.assertEqual([(finding.path, finding.rule) for finding in findings],
                          [('Old/Rows.swift', 'stale exception')])
@@ -1341,7 +1371,7 @@ class KnownExceptionTests(unittest.TestCase):
         checkout = fixture_checkout(**{'project.yml': moved, 'App/HomeView.swift': None,
                                        'Src/HomeView.swift': APP_FILE, 'Src/Rows.swift': self.TEXT})
         self.addCleanup(checkout.close)
-        with unittest.mock.patch.object(forbidden, 'KNOWN_EXCEPTIONS', frozenset({self.EXCEPTION})):
+        with unittest.mock.patch.object(forbidden, 'KNOWN_EXCEPTIONS', {self.EXCEPTION: 1}):
             findings = checkout.check()
         self.assertIn(('Src/Rows.swift', 'primitive button style'),
                       [(finding.path, finding.rule) for finding in findings])

@@ -5777,12 +5777,13 @@ what to do instead. Nothing the app shows or does changed.
   target is marked so, the check stops with status 2.
 - **Known exceptions.** Where today's code breaks one of these rules and
   the fix would change what a person sees, the place is named in
-  `KNOWN_EXCEPTIONS` (rule, file and type) and in docs/HANDOFF.md,
-  *Known gaps*, as an input to the new design. It excuses nothing else
-  (a call to `trigger()` is a rule of its own, so the exception for a
-  `PrimitiveButtonStyle` never excuses one), and one the code no longer
-  needs, or whose file is gone or in no target that ships, is a finding
-  of its own. A file moved with its whole folder is not: the check
+  `KNOWN_EXCEPTIONS` (rule, file and type, with how many times its code
+  breaks the rule) and in docs/HANDOFF.md, *Known gaps*, as an input to
+  the new design. It excuses nothing else, not even one more break of
+  its rule in its type (a call to `trigger()` is a rule of its own, so
+  the exception for a `PrimitiveButtonStyle` never excuses one), and one
+  the code no longer needs as often, or whose file is gone or in no
+  target that ships, is a finding of its own. A file moved with its whole folder is not: the check
   cannot tell that from another repository's checkout, so its tests fail
   instead, and the moved code is checked at its new place. There are two,
   both in Settings: `SettingsRowButtonStyle` and `SettingsPairLabel`.

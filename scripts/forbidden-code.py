@@ -46,8 +46,9 @@ What it checks:
   menu, swipe or drag action; no system alert or dialog; no toggle; no
   view made to pass for a button; no empty catch; no old clock; no
   hover that lifts. Places today's code breaks one on purpose are named
-  in KNOWN_EXCEPTIONS, each with its line in docs/HANDOFF.md, *Known
-  gaps*; one the code no longer needs is a finding of its own.
+  in KNOWN_EXCEPTIONS with how many times, each with its line in
+  docs/HANDOFF.md, *Known gaps*; one more break there is a finding, and
+  so is an exception the code no longer needs as often.
 - project.yml and the files beside it (every .xcconfig, .plist and
   .entitlements file): no third-party packages, SDKs or git submodules;
   no iCloud, push, Sign in with Apple or network capability or Info.plist
@@ -98,6 +99,7 @@ and every rule that needs a person's judgment.
 """
 import argparse
 import bisect
+from collections import Counter
 from dataclasses import dataclass
 import os
 from pathlib import Path
@@ -1221,19 +1223,20 @@ OWNER = re.compile(r'(?<![\w.$])(?:struct|class|enum|actor|extension)\s+'
 
 # Places today's code breaks a rule of Apple's look on purpose, each a line
 # of docs/HANDOFF.md, *Known gaps*, as an input to the new design: the rule,
-# the file, and the type (or extension) whose code may break it. It excuses
-# nothing else, and one the code no longer needs is a finding of its own,
-# so it leaves with the code it excused.
-KNOWN_EXCEPTIONS = frozenset({
+# the file, and the type (or extension) whose code may break it, with how
+# many times. It excuses nothing else, not even one more break of its rule
+# in its type, and one the code no longer needs as often is a finding of
+# its own, so it leaves with the code it excused.
+KNOWN_EXCEPTIONS = {
     # Settings' rows wrap the system's bordered prominent style, which only
     # a PrimitiveButtonStyle can do, to redraw its dimmed look at 4.5:1.
     # The system's style still decides when the button fires.
     ('primitive button style', 'Brickson/Settings/SettingsComponents.swift',
-     'SettingsRowButtonStyle'),
+     'SettingsRowButtonStyle'): 1,
     # Hear and Use's icons are 20 points at every text size, in a slot of
     # their own above the words.
-    ('fixed text size', 'Brickson/Settings/SettingsComponents.swift', 'SettingsPairLabel'),
-})
+    ('fixed text size', 'Brickson/Settings/SettingsComponents.swift', 'SettingsPairLabel'): 1,
+}
 
 
 def owners(source):
@@ -1283,19 +1286,23 @@ def check_apple_look(source, symbols=frozenset(), exceptions=KNOWN_EXCEPTIONS, e
     """What one of the shipped app's Swift files must not contain, so it
     stays made the way Apple makes its own apps. `symbols` names the
     custom symbols in the app's asset catalogues; a finding that one of
-    `exceptions` covers is left out, and the exception added to
-    `excused`."""
+    `exceptions` still covers (it maps a place to how many breaks it
+    excuses) is left out, and every break at an excepted place is counted
+    in `excused`."""
     findings = []
     path = source.path
     code = source.code
     spans = owners(source)
+    excused = Counter() if excused is None else excused
 
     def found(offset, rule, message):
         place = (rule, path, owner(spans, offset))
         if place in exceptions:
-            if excused is not None:
-                excused.add(place)
-            return
+            excused[place] += 1
+            if excused[place] <= exceptions[place]:
+                return
+            message += (f' The known exception for `{place[2]}` excuses '
+                        f'{exceptions[place]} and no more.')
         findings.append(Finding(path, source.line(offset), rule, message))
 
     for rule, why, pattern, shown in LOOK_RULES:
@@ -1322,12 +1329,15 @@ def check_apple_look(source, symbols=frozenset(), exceptions=KNOWN_EXCEPTIONS, e
     for match in ACTION_CALL.finditer(code):
         after = match.end()
         if code[after] == '(':
-            arguments = top_level_arguments(code, after, source.closing(after))
+            closing = source.closing(after)
+            arguments = top_level_arguments(code, after, closing)
             # Named actions (`named:`, a Text, `action:label:`) and the
             # other kinds (`.escape`, `.magicTap`) are not the default one.
             if arguments and not DEFAULT_ACTION.fullmatch(arguments[0]):
                 continue
-        elif re.match(r'\s*label\s*:', code[source.closing(after) + 1:]):
+            if not arguments:  # `()` before trailing closures changes nothing
+                after = closing + 1 + len(code[closing + 1:]) - len(code[closing + 1:].lstrip())
+        if code[after:after + 1] == '{' and re.match(r'\s*label\s*:', code[source.closing(after) + 1:]):
             continue  # accessibilityAction { … } label: { … } is a named action
         found(match.start(), 'fake button', f'`.accessibilityAction`: {FAKE_BUTTON}.')
 
@@ -2321,7 +2331,7 @@ def check(root=ROOT):
 
     symbols = {match.group('name') for path in files if under(path, look_folders)
                for match in [SYMBOL_SET.search(path)] if match}
-    excused = set()
+    excused = Counter()
 
     findings = check_project(entries, files, read, decisions)
     for path, source in swift.items():
@@ -2337,17 +2347,27 @@ def check(root=ROOT):
             findings.append(Finding(path, 0, 'not an SF Symbol',
                                     f'a picture shipped in the app: {SYMBOL}.'))
     listed = set(files)
-    for rule, path, name in sorted(KNOWN_EXCEPTIONS - excused):
+    for place in sorted(KNOWN_EXCEPTIONS):
+        rule, path, name = place
+        if excused[place] >= KNOWN_EXCEPTIONS[place]:
+            continue
         # A file fixed, removed, or no longer in a target that ships leaves
-        # its exception excusing nothing. (One whose file and folder are
-        # both gone is the documentation tests' to find: from here it looks
-        # like another checkout.)
+        # its exception excusing nothing, or less than it counts. (One whose
+        # file and folder are both gone is the documentation tests' to
+        # find: from here it looks like another checkout.)
         if path in listed or under(path, look_folders):
             if path not in listed:
                 what = f'{path} is gone, so the exception for `{name}` excuses nothing'
             elif not under(path, look_folders):
                 what = (f'{path} is no longer in a target that ships, so the exception for '
                         f'`{name}` excuses nothing')
+            elif excused[place]:
+                findings.append(Finding(path, 0, 'stale exception',
+                                        f'`{name}` breaks "{rule}" {excused[place]} times, '
+                                        f'not {KNOWN_EXCEPTIONS[place]}: lower its count in '
+                                        'KNOWN_EXCEPTIONS in scripts/forbidden-code.py to '
+                                        f'{excused[place]} in this pull request.'))
+                continue
             else:
                 what = f'`{name}` no longer breaks "{rule}"'
             findings.append(Finding(path, 0, 'stale exception',
