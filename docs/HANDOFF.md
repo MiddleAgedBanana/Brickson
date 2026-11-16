@@ -23,12 +23,14 @@ end, and tiles from a neutral starter set, every frame from the layout
 engine, from the space the window gives it (docs/DECISIONS.md, "The
 layout engine", *Home on the engine*, and "Get Attention and Stop on
 Home"). Its gaps, margins and insets, and Settings', are steps of one
-spacing scale (`Spacing`; docs/DECISIONS.md, "One spacing scale"); the
-gaps between the tiles and between the safety row's controls measure
-equal on the engine's frames in every profile (`EqualGapsTests`) and in
-the running app on CI's iPad and iPhone at the default and largest text
-sizes (`HomeLayoutTests`). Its sizes follow Family Setup's answer to how the screen is
-reached, switched on when the owner chose the largest sizes that fit
+spacing scale but for two named exceptions, the 15-point gap of Eye
+Tracking and the late stage and a dimmed Settings row's 14-point inset
+(`Spacing`; docs/DECISIONS.md, "One spacing scale"); the gaps between
+the tiles and between the safety row's controls measure equal on the
+engine's frames in every profile (`EqualGapsTests`) and in the running
+app on CI's iPad and iPhone at the default and largest text sizes
+(`HomeLayoutTests`). Its sizes follow Family Setup's answer to how the
+screen is reached, switched on when the owner chose the largest sizes that fit
 (2026-10-30; docs/DECISIONS.md, "Sizes that follow how the screen is
 reached", *Switched on by the owner*): touch's for touch, Voice
 Control and someone helping, larger ones for Switch Control, Head
@@ -494,8 +496,8 @@ release in docs/ROADMAP.md when no thread has it yet.
 - Three pairs of nearly equal spacing values were kept as they were when
   the app moved onto its spacing scale, since changing them changes what
   people see: a dimmed Settings row's words 14 points in beside Settings'
-  16-point gutter; Eye Tracking's 15-point gap between controls beside
-  the 16-point step; and Home's message field with 6 points around its
+  16-point gutter; Eye Tracking's and the late stage's 15-point gap
+  between controls beside the 16-point step; and Home's message field with 6 points around its
   words against the Library editor's outlined field with 12
   (docs/DECISIONS.md, "One spacing scale"). *(the design of the app's
   look)*

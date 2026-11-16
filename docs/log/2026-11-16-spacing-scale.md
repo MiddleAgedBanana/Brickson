@@ -16,9 +16,10 @@ fixed measures, the touch, switch and head gaps between controls, the
 region gaps made from them, Settings' gutter and row gap, and the stacks
 and paddings of Settings, Voice Settings, the Library's editor field, the
 privacy policy, setup and the keyboard probe screen all name a step now.
-Two values stay off the scale on purpose: Eye Tracking's 15-point gap (a
-physical size held at the densest screen, like the floors) and a dimmed
-Settings row's 14-point word inset (the system button's own). The
+Two values stay off the scale on purpose: Eye Tracking's and the late
+stage's 15-point gap (a physical size held at the densest screen, like
+the floors) and a dimmed Settings row's 14-point word inset (the system
+button's own). The
 decision, with what counts as spacing and why steps do not grow with the
 text size, is docs/DECISIONS.md, "One spacing scale".
 
@@ -39,8 +40,8 @@ there is nothing to measure or controls touch:
 
 `SpacingTests` pins the steps, Home's fixed measures and Settings' gaps to
 the scale, and checks that every profile's gap is a step but Eye
-Tracking's, which must be the 12-point gaze gap held at 163 points per
-inch from about 132.
+Tracking's and the late stage's, which must be the 12-point gaze gap held
+at 163 points per inch from about 132.
 
 No check flags a new spacing number written into a view yet. It belongs
 beside the look rules and known exceptions that pull request #114 adds to

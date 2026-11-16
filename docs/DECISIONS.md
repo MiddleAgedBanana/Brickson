@@ -214,9 +214,10 @@ and are not are easy to miss by eye, so a test now measures them
   the system's own.
 - **Nearly equal values, kept for the look to decide** (docs/HANDOFF.md,
   *Known gaps*): 14 beside 16 (the dimmed row's words and Settings'
-  gutter), 15 beside 16 (Eye Tracking's gap and the large step), and
-  Home's message field at 6 against the Library editor's outlined field
-  at 12. Changing any of them changes what people see.
+  gutter), 15 beside 16 (Eye Tracking's and the late stage's gap and the
+  large step), and Home's message field at 6 against the Library
+  editor's outlined field at 12. Changing any of them changes what
+  people see.
 - **Text size.** A step stays the same at every text size: the words and
   the controls that hold them grow (the layout engine measures one line
   of each label at the person's size), while a gap is room for a finger,
@@ -249,7 +250,8 @@ gap a person can see differs by a point or more.
   the accessibility tree. It runs inside the test that already launches
   Home in each of those, so it adds no launch. It is an XCTest UI test
   because only XCTest drives an app (*Apple's current frameworks first*,
-  the XCTest and XCUIAutomation row); it uses no UIKit type of its own.
+  the XCTest and XCUIAutomation row). `EqualGaps` itself uses no UIKit
+  type, so the unit tests run the same rule.
 - What they cannot show: the rendered gaps of profiles other than
   touch's, which the UI tests ask for (the engine's are checked);
   windows with a reserved region, where a fold or camera widens one gap
