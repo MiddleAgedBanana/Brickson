@@ -24,6 +24,8 @@ import UIKit
 /// fill here is opaque, so it changes none of these values. How system
 /// button styles draw under these settings is not something a unit test
 /// can see; the UI tests' accessibility audit and a device check cover it.
+/// What a unit test can see is that every fill is drawn from the colour
+/// set measured here (`everyFillIsDrawnFromItsColourSet`).
 struct PaletteTests {
     private typealias SRGB = ColourArithmetic.SRGB
 
@@ -315,6 +317,29 @@ struct PaletteTests {
             #expect(slots.count == 4, "\(name) has \(slots.count) slots")
             #expect(Set(slots) == expected, "\(name)'s slots: \(slots)")
         }
+    }
+
+    /// Every fill is its colour set, by name, so what this file measures is
+    /// what a person sees. The tests here read the asset catalog, not the
+    /// colour a view draws, so they passed while the phrase tiles, the
+    /// selected category and Back to Talking were filled with
+    /// `Color.accentColor`, which the system draws differently from its
+    /// colour set under Increase Contrast: in the Simulator `#084DAB` in
+    /// light (the black pressed ring 2.66:1 on it) and `#1A7BFF` in dark
+    /// (the white words 3.95:1), against `#0A60D6` in all four slots.
+    /// SwiftUI's environment cannot set Increase Contrast, so no unit test
+    /// can resolve a drawn colour there; this pins the cause instead.
+    /// Fails if one of `Palette`'s fills, or its fill label, is made any
+    /// way but from its colour set by name, `Color.accentColor` included.
+    /// It checks `Palette`, not whether a view draws `Palette`'s colours.
+    @Test func everyFillIsDrawnFromItsColourSet() {
+        for (asset, color) in Palette.fills {
+            #expect(color == Color(asset), "\(asset) is not drawn from its colour set")
+        }
+        #expect(Palette.fillLabel == Color(Palette.fillLabelAssetName))
+        // The comparison tells the system's accent from the colour set the
+        // accent comes from, so a fill drawn with it cannot pass.
+        #expect(Color.accentColor != Color("AccentColor"))
     }
 
     /// The contrast budget (E-02 of the stage 5 foundations): on every
