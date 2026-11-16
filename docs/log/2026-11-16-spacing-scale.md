@@ -50,13 +50,23 @@ building on an open pull request (docs/HANDOFF.md, *Known gaps*).
 
 ## Commits
 
-One commit: the scale, the views and engine moved onto it, the tests and
-these documents.
+1. The scale, the views and engine moved onto it, the tests and these
+   documents.
+2. Review fixes: the new *Known gaps* entries moved out of the middle of
+   another; the late stage named beside Eye Tracking, and the scale's two
+   exceptions named in the handoff; gaps down measured from each control
+   to the one under it, so a short tile cannot hide a wider gap below it,
+   with a test that fails on one.
 
 ## Verified
 
 - Cloud session: Swift was not built or run here. GitHub CI is the build
-  and test evidence; until it passes, the change is untested.
+  and test evidence.
+- CI on the first commit passed: the unit tests, and the UI tests on CI's
+  iPad and iPhone simulators, where the Home test that now holds the
+  rendered equal-gaps check passed at the default and largest text
+  sizes. The review fixes change the rule's gaps down and the documents;
+  CI on the last commit is the evidence for them.
 - No value changed: each replaced number was read beside the step that
   replaced it, and every step equals the number it replaced.
   `SpacingTests` fails if a step, a fixed measure or a profile's gap
@@ -82,10 +92,11 @@ these documents.
 
 ## Not verified
 
-- That the rendered gaps are equal: the new check in `HomeLayoutTests`
-  has not run until CI runs it. Its half-point tolerance assumes SwiftUI
-  rounds the two edges of an integral gap the same way, as it should;
-  a one-pixel difference on a 3x iPhone is a third of a point.
+- That the rendered gaps are equal under the stricter gaps-down rule,
+  until CI passes on the last commit. The check's half-point tolerance
+  assumes SwiftUI rounds the two edges of an integral gap the same way,
+  as it should; a one-pixel difference on a 3x iPhone is a third of a
+  point.
 - Rendered gaps under profiles other than touch's (the UI tests ask for
   touch's), and in windows with a fold or camera region, where one gap is
   wider on purpose. The engine's are checked in every profile.
