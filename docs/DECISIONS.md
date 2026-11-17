@@ -5929,10 +5929,31 @@ request merges only when they pass.
   balanced by measured time, about 18 to 28 minutes of tests each on
   CI; move classes between them when one grows. A part keeps the full
   run's order where a test depends on it, and the check enforces it
-  (`RUNS_AFTER`): `LibraryTests` audits a screen with the keyboard up,
-  and on a simulator whose keyboard has never shown, the empty
-  suggestion bar fails Apple's audit, so `LibraryTests` runs after
-  `KeyboardProbeTests` in the same part, as it always did.
+  (`RUNS_AFTER`): `LibraryTests` runs after `KeyboardProbeTests` in the
+  same part, as it always did. *Corrected 2026-11-17:* the reason first
+  given here, that `KeyboardProbeTests` showing the keyboard first fills
+  its suggestion bar before `LibraryTests` audits New Phrase with the
+  keyboard up, did not hold. On CI that day the bar had its words in
+  `KeyboardProbeTests` and was empty again in `LibraryTests` about two
+  and a half minutes later, and Apple's audit reported its empty
+  buttons. On the Mac, on simulators made new or erased for the check,
+  the keyboard's three suggestion buttons stayed without words, and so
+  without labels, for the whole first showing of the keyboard: 120
+  seconds after typing, and 60 seconds before typing and 20 after, so
+  no wait can fix it. Showing the keyboard again gave the bar its words
+  at once. So `LibraryTests` now waits for the bar's words before that
+  audit and, when the first showing has none, leaves New Phrase and
+  opens it again, then audits once; if the bar is still empty, the test
+  fails saying so (`BricksonUITests/KeyboardSuggestions.swift`). The
+  trade-off: the test no longer audits the empty bar of the keyboard's
+  first showing on a cold simulator. That bar is Apple's keyboard, not
+  Brickson's, and the audit itself is unchanged: no finding is excused
+  or retried. A named exception for the keyboard's suggestion cell was
+  not chosen, because it would let more through the audit. The
+  trade-off is the owner's to accept (AGENTS.md, *Code Review Rules*),
+  by merging the pull request that makes it. The order
+  stays until a change that also edits its check drops it. Record:
+  [`log/2026-11-17-keyboard-suggestion-bar.md`](log/2026-11-17-keyboard-suggestion-bar.md).
   `scripts/test-runner.py` checks that every UI test class runs in
   exactly one part, that each family runs every part, and that the six
   jobs differ only in family and part; "UI tests" passes only when all
