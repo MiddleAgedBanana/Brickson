@@ -26,10 +26,7 @@ final class SlowPressTests: XCTestCase {
         let app = launchedApp(textSize: .ax5)
 
         app.buttons["Yes"].press(forDuration: 0.5)
-        XCTAssertTrue(
-            app.staticTexts["Yes."].waitForExistence(timeout: 5),
-            "a half-second press on Yes said nothing at AX5 text"
-        )
+        waitToAppear(app.staticTexts["Yes."], "a half-second press on Yes said nothing at AX5 text")
 
         // A tile whose words differ from the message already showing.
         let tile = app.buttons.matching(identifier: "phraseTile").allElementsBoundByIndex
@@ -37,10 +34,7 @@ final class SlowPressTests: XCTestCase {
         let phrase = try XCTUnwrap(tile, "no phrase tile can be touched at AX5 text")
         let words = phrase.label
         phrase.press(forDuration: 0.5)
-        XCTAssertTrue(
-            app.staticTexts[words].waitForExistence(timeout: 5),
-            "a half-second press on the phrase \"\(words)\" said nothing at AX5 text"
-        )
+        waitToAppear(app.staticTexts[words], "a half-second press on the phrase \"\(words)\" said nothing at AX5 text")
     }
 
     /// Held long enough for the viewer's large copy, then slid onto No and
@@ -57,7 +51,7 @@ final class SlowPressTests: XCTestCase {
 
         // Wait for what the slide does say, if anything, before checking
         // what it must not.
-        _ = app.staticTexts["Yes."].waitForExistence(timeout: 3)
+        _ = appears(app.staticTexts["Yes."], within: .observation)
         XCTAssertFalse(app.staticTexts["No."].exists, "a touch begun on Yes said No after sliding onto it")
     }
 }

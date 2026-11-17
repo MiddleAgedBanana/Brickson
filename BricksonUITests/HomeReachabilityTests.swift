@@ -68,9 +68,8 @@ final class HomeReachabilityTests: XCTestCase {
         })
 
         app.buttons["Emergency"].tap()
-        XCTAssertTrue(
-            app.buttons.matching(NSPredicate(format: "label == %@", "I need help now.")).firstMatch
-                .waitForExistence(timeout: 10),
+        waitToAppear(
+            app.buttons.matching(NSPredicate(format: "label == %@", "I need help now.")).firstMatch,
             "Emergency did not show the emergency phrases (\(configuration))"
         )
         check(app, state: "emergency phrases showing", configuration: configuration, framesAtLaunch: framesAtLaunch)
@@ -78,11 +77,8 @@ final class HomeReachabilityTests: XCTestCase {
         // Any phrase will do; the first tile of the emergency phrases is
         // the one most surely on screen.
         app.buttons.matching(identifier: "phraseTile").firstMatch.tap()
-        let againTurnsOn = expectation(for: NSPredicate(format: "isEnabled == true"), evaluatedWith: app.buttons["Again"])
-        XCTAssertEqual(
-            XCTWaiter.wait(for: [againTurnsOn], timeout: 15), .completed,
-            "Again was still off 15 s after a phrase was chosen (\(configuration))"
-        )
+        let again = app.buttons["Again"]
+        waitUntil("Again stayed off after a phrase was chosen (\(configuration))") { again.isEnabled }
         check(app, state: "a phrase just spoken", configuration: configuration, framesAtLaunch: framesAtLaunch)
     }
 

@@ -80,18 +80,18 @@ final class KeyboardProbeTests: XCTestCase {
             waitsForHome: false
         )
         let field = app.descendants(matching: .any)["keyboardProbe.field"]
-        XCTAssertTrue(
-            field.waitForExistence(timeout: 60),
+        waitToAppear(
+            field, within: .launch,
             "The probe screen did not open. It exists only in debug builds."
         )
         let window = waitForWindow(of: app, orientation: orientation)
         let allowance = KeyboardAllowance(windowSize: window.size)
         // The screen focuses its field as it opens; tap only if that failed.
-        if !app.keyboards.firstMatch.waitForExistence(timeout: 5) {
+        if !appears(app.keyboards.firstMatch, within: .response) {
             field.tap()
         }
-        XCTAssertTrue(
-            app.keyboards.firstMatch.waitForExistence(timeout: 10),
+        waitToAppear(
+            app.keyboards.firstMatch,
             "The keyboard did not appear. If the simulator shows only the keyboard bar, see AGENTS.md, Gotchas."
         )
         field.typeText("Water")
@@ -102,7 +102,7 @@ final class KeyboardProbeTests: XCTestCase {
         let readout = app.staticTexts["keyboardProbe.readout"]
         let windowHeight = Self.points(window.height)
         let keyboardSeen = NSPredicate(format: "NOT (label CONTAINS %@)", "keyboardTop=\(windowHeight);")
-        _ = XCTWaiter.wait(for: [expectation(for: keyboardSeen, evaluatedWith: readout)], timeout: 10)
+        _ = look(.response) { keyboardSeen.evaluate(with: readout) }
         let swiftUI = settledReadout(readout)
         let keyboardTop = swiftUI["keyboardTop"].flatMap(Double.init)
         let swiftUILeftRoom = keyboardTop.map { $0 < windowHeight } ?? false
@@ -198,22 +198,17 @@ final class KeyboardProbeTests: XCTestCase {
 
     /// The app's window once it has turned to `orientation`: a query
     /// straight after a rotation can read the frame from before the turn.
-    /// Read by the test itself every quarter of a second, like
-    /// `settledReadout`, so the window is only ever read on the main actor:
-    /// XCTest documents main-actor evaluation of a predicate expectation
-    /// only for `fulfillment(of:)`, not for a synchronous wait.
+    /// Read by the test itself (`waitUntil`), so the window is only ever
+    /// read on the main actor: XCTest documents main-actor evaluation of a
+    /// predicate expectation only for `fulfillment(of:)`, not for a
+    /// synchronous wait.
     @MainActor
     private func waitForWindow(of app: XCUIApplication, orientation: UIDeviceOrientation) -> CGRect {
-        let deadline = ContinuousClock.now + .seconds(10)
         var frame = app.windows.firstMatch.frame
-        while !Self.window(frame, hasTurnedTo: orientation), ContinuousClock.now < deadline {
-            _ = XCTWaiter.wait(for: [XCTestExpectation(description: "pause")], timeout: 0.25)
+        waitUntil("the window did not turn to \(orientation.isLandscape ? "landscape" : "portrait")") {
             frame = app.windows.firstMatch.frame
+            return Self.window(frame, hasTurnedTo: orientation)
         }
-        XCTAssertTrue(
-            Self.window(frame, hasTurnedTo: orientation),
-            "the window did not turn to \(orientation.isLandscape ? "landscape" : "portrait")"
-        )
         return frame
     }
 
@@ -231,20 +226,27 @@ final class KeyboardProbeTests: XCTestCase {
     }
 
     /// The readout's values once two reads half a second apart agree, so the
-    /// keyboard has finished moving. Gives up after ten seconds and returns
-    /// the last read, marked unsettled.
+    /// keyboard has finished moving. Gives up after `UIWait.response` and
+    /// returns the last read, marked unsettled.
     @MainActor
     private func settledReadout(_ readout: XCUIElement) -> [String: String] {
-        let deadline = ContinuousClock.now + .seconds(10)
         var last = readout.label
-        while ContinuousClock.now < deadline {
-            _ = XCTWaiter.wait(for: [XCTestExpectation(description: "pause")], timeout: 0.5)
+        var isFirstLook = true
+        let settled = look(.response) {
+            // The first look is the read just made; each later one comes
+            // half a second after the one before (`UIWait.pauseBetweenLooks`).
+            if isFirstLook {
+                isFirstLook = false
+                return false
+            }
             let next = readout.label
-            if next == last { return Self.values(in: next) }
-            last = next
-        }
+            defer { last = next }
+            return next == last
+        }.held
         var values = Self.values(in: last)
-        values["settled"] = "no"
+        if !settled {
+            values["settled"] = "no"
+        }
         return values
     }
 

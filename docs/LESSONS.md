@@ -380,6 +380,9 @@ about 60 seconds, long enough for a real app timeout to fire.
 **Rule.** One simulator per agent, addressed by id. Tests near a timeout
 report elapsed time in their failure message. UI tests get a launch
 argument that shortens app timeouts, and one test keeps the real limit.
+Since 2026-11-17 every UI test wait reports its elapsed time, its limit
+and its slowest look at the app, through `BricksonUITests/Waiting.swift`
+(docs/DECISIONS.md, "Tests").
 
 ### Never open the project in Xcode from an agent
 

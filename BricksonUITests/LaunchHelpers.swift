@@ -60,12 +60,16 @@ extension XCTestCase {
         let clock = ContinuousClock()
         let start = clock.now
         app.launch()
+        let launch = clock.now - start
         guard waitsForHome else { return app }
 
         // A simulator that has just started can take most of a minute to
         // show the first launch on GitHub's busy machines (docs/HANDOFF.md).
-        let homeAppeared = app.buttons["Yes"].waitForExistence(timeout: 60)
-        XCTAssertTrue(homeAppeared, "Home did not appear within \(clock.now - start) of launch", file: file, line: line)
+        waitToAppear(
+            app.buttons["Yes"], within: .launch,
+            "Home did not appear after a launch that took \(UIWaitReport.seconds(launch)) s",
+            file: file, line: line
+        )
         XCTAssertFalse(
             app.descendants(matching: .any)
                 .matching(NSPredicate(format: "label BEGINSWITH %@", "Phrases can't be saved"))
@@ -118,8 +122,7 @@ extension XCTestCase {
         line: UInt = #line
     ) {
         let control = app.buttons[label].firstMatch
-        guard control.waitForExistence(timeout: 5) else {
-            XCTFail("\(label) is missing (\(context))", file: file, line: line)
+        guard waitToAppear(control, "\(label) is missing (\(context))", file: file, line: line) else {
             return
         }
         let identity = SnapshotControlGeometry.Identity(identifier: control.identifier, label: control.label)
@@ -207,21 +210,22 @@ extension XCTestCase {
     /// or the speech watchdog has ended the phrase (invariant 4). Returns
     /// at once when nothing is speaking. Nothing else on Home changes by
     /// itself, so the screen is then still. Fails if "Speaking" still shows
-    /// after `timeout`: speech that never ends is a failure of its own.
+    /// after `UIWait.speechEnd`: speech that never ends is a failure of its
+    /// own. On an overloaded CI Mac the simulator's voice has taken more
+    /// than 30 seconds to say "Yes.", once more than a minute, which is
+    /// why that limit stretches there (`UIWait`).
     @MainActor
     func waitForSpeechToFinish(
         in app: XCUIApplication,
         context: String,
-        timeout: TimeInterval = 30,
         file: StaticString = #filePath,
         line: UInt = #line
     ) {
         // The status line's English words (StatusLines in HomeView). Its
         // hidden copies, which keep the line's height, carry no label.
-        let speaking = app.staticTexts["Speaking"]
-        XCTAssertTrue(
-            speaking.waitForNonExistence(timeout: timeout),
-            "\"Speaking\" still showed \(Int(timeout)) s later (\(context)): the phrase never ended",
+        waitToDisappear(
+            app.staticTexts["Speaking"], within: .speechEnd,
+            "\"Speaking\" still showed (\(context)): the phrase never ended",
             file: file, line: line
         )
     }

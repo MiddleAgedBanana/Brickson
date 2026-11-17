@@ -41,11 +41,11 @@ final class LibraryTests: XCTestCase {
         let app = launchedApp(shortTimeouts: false)
         openLibrary(in: app)
         open("libraryCategory0", leaving: "libraryAddCategory", in: app)
-        XCTAssertTrue(app.navigationBars["Basics"].waitForExistence(timeout: 10), "Basics did not open")
+        waitToAppear(app.navigationBars["Basics"], "Basics did not open")
 
         // Add.
         open("libraryAddPhrase", leaving: "libraryAddPhrase", in: app)
-        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 10), "New Phrase did not open the keyboard")
+        waitToAppear(app.keyboards.firstMatch, "New Phrase did not open the keyboard")
         app.typeText("Please open the door.")
         app.buttons["librarySave"].tap()
         waitForLine("libraryEditorResult", saying: "Added “Please open the door.” to Basics.", in: app)
@@ -53,9 +53,9 @@ final class LibraryTests: XCTestCase {
 
         // Change.
         let added = phraseRow("Please open the door.", in: app)
-        XCTAssertTrue(added.waitForExistence(timeout: 10), "the added phrase has no row in Basics")
+        waitToAppear(added, "the added phrase has no row in Basics")
         added.tap()
-        XCTAssertTrue(app.navigationBars["Edit Phrase"].waitForExistence(timeout: 10), "the phrase's row did not open its editor")
+        waitToAppear(app.navigationBars["Edit Phrase"], "the phrase's row did not open its editor")
         replaceWords(in: field("libraryPhraseField", in: app), with: "Please close the door.", deleting: 21, in: app)
         app.buttons["librarySave"].tap()
         waitForLine("libraryEditorResult", saying: "Saved.", in: app)
@@ -66,25 +66,26 @@ final class LibraryTests: XCTestCase {
         // before the tap was not where it was chosen (2026-11-05).
         back(to: "Basics", in: app)
         phraseRow("Please close the door.", in: app).tap()
-        XCTAssertTrue(app.navigationBars["Edit Phrase"].waitForExistence(timeout: 10), "the changed phrase's row did not open its editor")
+        waitToAppear(app.navigationBars["Edit Phrase"], "the changed phrase's row did not open its editor")
         let moveRow = app.buttons["libraryMovePhrase"]
-        XCTAssertTrue(moveRow.waitForExistence(timeout: 10) && moveRow.isHittable, "Move Phrase does not show as Edit Phrase opens")
+        waitToAppear(moveRow, "Move Phrase does not show as Edit Phrase opens")
+        XCTAssertTrue(moveRow.isHittable, "Move Phrase does not show as Edit Phrase opens")
         let moveFrame = moveRow.frame
         moveRow.tap()
         let wayBack = app.buttons["libraryWayBack"]
-        XCTAssertTrue(wayBack.waitForExistence(timeout: 10), "Move Phrase did not ask")
+        waitToAppear(wayBack, "Move Phrase did not ask")
         expectInRowsPlace(wayBack, row: moveFrame, "Leave It Here is not in Move Phrase's place", in: app)
         app.buttons["libraryMovePlace0"].tap()
         waitForLine("libraryQuestionResult", saying: "Moved.", in: app)
         wayBack.tap()
-        XCTAssertTrue(app.buttons["libraryDeletePhrase"].waitForExistence(timeout: 10), "Leave It Here did not go back")
+        waitToAppear(app.buttons["libraryDeletePhrase"], "Leave It Here did not go back")
 
         // Delete asks, with Keep Phrase in Delete Phrase's place.
         let deleteRow = app.buttons["libraryDeletePhrase"]
         XCTAssertTrue(deleteRow.isHittable, "Delete Phrase does not show under Move Phrase")
         let deleteFrame = deleteRow.frame
         deleteRow.tap()
-        XCTAssertTrue(wayBack.waitForExistence(timeout: 10), "Delete Phrase did not ask")
+        waitToAppear(wayBack, "Delete Phrase did not ask")
         expectInRowsPlace(wayBack, row: deleteFrame, "Keep Phrase is not in Delete Phrase's place", in: app)
         let deleteForGood = app.buttons["libraryDeleteForGood"]
         XCTAssertLessThanOrEqual(
@@ -92,22 +93,22 @@ final class LibraryTests: XCTestCase {
             "Delete for Good at \(deleteForGood.frame) is not a row clear above Keep Phrase at \(wayBack.frame)"
         )
         wayBack.tap()
-        XCTAssertTrue(app.navigationBars["Edit Phrase"].waitForExistence(timeout: 10), "Keep Phrase did not go back")
+        waitToAppear(app.navigationBars["Edit Phrase"], "Keep Phrase did not go back")
 
         // Home shows the change, first.
         closeSettings(in: app)
         app.buttons["Basics"].tap()
         let tile = app.buttons.matching(NSPredicate(format: "label == %@", "Please close the door.")).firstMatch
-        XCTAssertTrue(tile.waitForExistence(timeout: 10), "Home does not show the changed phrase")
+        waitToAppear(tile, "Home does not show the changed phrase")
         XCTAssertEqual(firstTile(in: app), "Please close the door.", "the moved phrase is not Home's first in Basics")
 
         // Delete for Good.
         openLibrary(in: app)
         open("libraryCategory0", leaving: "libraryAddCategory", in: app)
         phraseRow("Please close the door.", in: app).tap()
-        XCTAssertTrue(app.navigationBars["Edit Phrase"].waitForExistence(timeout: 10), "the phrase's row did not open its editor")
+        waitToAppear(app.navigationBars["Edit Phrase"], "the phrase's row did not open its editor")
         app.buttons["libraryDeletePhrase"].tap()
-        XCTAssertTrue(deleteForGood.waitForExistence(timeout: 10), "Delete Phrase did not ask")
+        waitToAppear(deleteForGood, "Delete Phrase did not ask")
         let place = deleteForGood.frame
         deleteForGood.tap()
         waitForLine("libraryQuestionResult", saying: "Deleted “Please close the door.”.", in: app)
@@ -115,13 +116,13 @@ final class LibraryTests: XCTestCase {
         expectSameFrame(deleteForGood.frame, place, "Delete for Good moved after deleting")
         waitUntil(wayBack, "label == 'Done'", "Keep Phrase did not read Done after the delete")
         wayBack.tap()
-        XCTAssertTrue(app.navigationBars["Basics"].waitForExistence(timeout: 10), "Done did not return to Basics")
+        waitToAppear(app.navigationBars["Basics"], "Done did not return to Basics")
         waitForLine("libraryResult", saying: "Deleted “Please close the door.”.", in: app)
         XCTAssertFalse(phraseRow("Please close the door.", in: app).exists, "Basics still has the deleted phrase")
 
         closeSettings(in: app)
         app.buttons["Basics"].tap()
-        XCTAssertTrue(app.buttons["Yes"].waitForExistence(timeout: 10), "Home did not come back")
+        waitToAppear(app.buttons["Yes"], "Home did not come back")
         XCTAssertFalse(
             app.buttons.matching(NSPredicate(format: "label == %@", "Please close the door.")).firstMatch.exists,
             "Home still shows the deleted phrase"
@@ -145,10 +146,10 @@ final class LibraryTests: XCTestCase {
         let app = launchedApp(shortTimeouts: false)
         openLibrary(in: app)
         open("libraryCategory0", leaving: "libraryAddCategory", in: app)
-        XCTAssertTrue(app.navigationBars["Basics"].waitForExistence(timeout: 10), "Basics did not open")
+        waitToAppear(app.navigationBars["Basics"], "Basics did not open")
 
         open("libraryAddPhrase", leaving: "libraryAddPhrase", in: app)
-        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 10), "New Phrase did not open the keyboard")
+        waitToAppear(app.keyboards.firstMatch, "New Phrase did not open the keyboard")
 
         // Get Attention's name stays its own; the keyboard goes so the
         // reason can be read.
@@ -165,12 +166,12 @@ final class LibraryTests: XCTestCase {
         back(to: "Basics", in: app)
 
         let added = phraseRow("Stop.", in: app)
-        XCTAssertTrue(added.waitForExistence(timeout: 10), "the phrase has no row in Basics, as it was typed")
+        waitToAppear(added, "the phrase has no row in Basics, as it was typed")
         added.tap()
-        XCTAssertTrue(app.navigationBars["Edit Phrase"].waitForExistence(timeout: 10), "the phrase's row did not open its editor")
+        waitToAppear(app.navigationBars["Edit Phrase"], "the phrase's row did not open its editor")
         replaceWords(in: field("libraryPhraseField", in: app), with: "Again!", deleting: 5, in: app)
         let moveRow = app.buttons["libraryMovePhrase"]
-        XCTAssertTrue(moveRow.waitForExistence(timeout: 10), "Edit Phrase has no Move Phrase")
+        waitToAppear(moveRow, "Edit Phrase has no Move Phrase")
         let place = moveRow.frame
         app.buttons["librarySave"].tap()
         waitForLine("libraryEditorResult", saying: "Saved. \(note)", in: app)
@@ -180,7 +181,7 @@ final class LibraryTests: XCTestCase {
 
         // A wide word's note puts the keyboard away too.
         open("libraryAddPhrase", leaving: "libraryAddPhrase", in: app)
-        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 10), "New Phrase did not open the keyboard")
+        waitToAppear(app.keyboards.firstMatch, "New Phrase did not open the keyboard")
         app.typeText("I'm uncomfortable.")
         app.buttons["librarySave"].tap()
         waitForLine("libraryEditorResult", saying: "A word in it is wider", in: app)
@@ -193,7 +194,7 @@ final class LibraryTests: XCTestCase {
             app.swipeUp()
         }
         open("libraryRename", leaving: "libraryRename", in: app)
-        XCTAssertTrue(app.navigationBars["Rename Category"].waitForExistence(timeout: 10), "Rename did not open")
+        waitToAppear(app.navigationBars["Rename Category"], "Rename did not open")
         replaceWords(in: field("libraryNameField", in: app), with: "Yes", deleting: 6, in: app)
         app.buttons["librarySave"].tap()
         waitForLine("libraryEditorResult", saying: "A button on Home already has this name", in: app)
@@ -221,23 +222,23 @@ final class LibraryTests: XCTestCase {
 
         // Delete Feelings.
         open("libraryCategory3", leaving: "libraryAddCategory", in: app)
-        XCTAssertTrue(app.navigationBars["Feelings"].waitForExistence(timeout: 10), "Feelings did not open")
+        waitToAppear(app.navigationBars["Feelings"], "Feelings did not open")
         app.buttons["libraryDeleteCategory"].tap()
         let deleteForGood = app.buttons["libraryDeleteForGood"]
-        XCTAssertTrue(deleteForGood.waitForExistence(timeout: 10), "Delete Category did not ask")
+        waitToAppear(deleteForGood, "Delete Category did not ask")
         deleteForGood.tap()
         waitForLine("libraryQuestionResult", saying: "Deleted “Feelings” and every phrase in it.", in: app)
         let wayBack = app.buttons["libraryWayBack"]
         waitUntil(wayBack, "label == 'Done'", "Keep Category did not read Done after the delete")
         wayBack.tap()
-        XCTAssertTrue(app.navigationBars["Phrases and Categories"].waitForExistence(timeout: 10), "Done did not return to the Library")
+        waitToAppear(app.navigationBars["Phrases and Categories"], "Done did not return to the Library")
         waitForLine("libraryResult", saying: "Deleted “Feelings” and every phrase in it.", in: app)
         XCTAssertTrue(app.buttons["libraryAddCategory"].isEnabled, "Add a Category is off with three categories")
 
         // Three is the floor.
         open("libraryCategory0", leaving: "libraryAddCategory", in: app)
         let deleteBasics = app.buttons["libraryDeleteCategory"]
-        XCTAssertTrue(deleteBasics.waitForExistence(timeout: 10), "Basics has no Delete Category")
+        waitToAppear(deleteBasics, "Basics has no Delete Category")
         XCTAssertFalse(deleteBasics.isEnabled, "Delete Category is on with three categories")
         waitForLine("libraryDeleteReason", saying: "Home needs at least three categories besides Emergency", in: app)
         back(to: "Phrases and Categories", in: app)
@@ -245,14 +246,14 @@ final class LibraryTests: XCTestCase {
         // A word too wide for Home's category buttons is refused; a short
         // name opens its new category.
         open("libraryAddCategory", leaving: "libraryAddCategory", in: app)
-        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 10), "New Category did not open the keyboard")
+        waitToAppear(app.keyboards.firstMatch, "New Category did not open the keyboard")
         app.typeText("Entertainment")
         app.buttons["librarySave"].tap()
         waitForLine("libraryEditorResult", saying: "“Entertainment” is too wide for Home's category buttons.", in: app)
         waitUntil(app.keyboards.firstMatch, "exists == false", "the keyboard stayed up with the reason on New Category")
         replaceWords(in: field("libraryNameField", in: app), with: "Outings", deleting: 13, in: app)
         app.buttons["librarySave"].tap()
-        XCTAssertTrue(app.navigationBars["Outings"].waitForExistence(timeout: 10), "a saved category did not open its screen")
+        waitToAppear(app.navigationBars["Outings"], "a saved category did not open its screen")
         waitForLine("libraryResult", saying: "Added “Outings”.", in: app)
         waitForLine("libraryShortNote", saying: "Home shows “Outings” once it has four phrases.", in: app)
         waitForLine("libraryShortNote", saying: "Add 4 more.", in: app)
@@ -260,22 +261,22 @@ final class LibraryTests: XCTestCase {
         // A picture.
         app.buttons["libraryChangePicture"].tap()
         let heart = app.buttons["libraryPicture-heart.fill"]
-        XCTAssertTrue(heart.waitForExistence(timeout: 10), "Change Picture did not ask")
+        waitToAppear(heart, "Change Picture did not ask")
         heart.tap()
         waitUntil(heart, "isSelected == true", "the chosen picture is not marked")
         app.buttons["libraryWayBack"].tap()
-        XCTAssertTrue(app.navigationBars["Outings"].waitForExistence(timeout: 10), "Keep This Picture did not go back")
+        waitToAppear(app.navigationBars["Outings"], "Keep This Picture did not go back")
 
         // A new name.
         open("libraryRename", leaving: "libraryRename", in: app)
-        XCTAssertTrue(app.navigationBars["Rename Category"].waitForExistence(timeout: 10), "Rename did not open")
+        waitToAppear(app.navigationBars["Rename Category"], "Rename did not open")
         replaceWords(in: field("libraryNameField", in: app), with: "Trips", deleting: 7, in: app)
         app.buttons["librarySave"].tap()
         waitForLine("libraryEditorResult", saying: "Saved.", in: app)
         back(to: "Trips", in: app)
 
         closeSettings(in: app)
-        XCTAssertTrue(app.buttons["Trips"].waitForExistence(timeout: 10), "Home has no button for the new category")
+        waitToAppear(app.buttons["Trips"], "Home has no button for the new category")
         XCTAssertFalse(app.buttons["Trips"].isEnabled, "Home offers a category with no phrases")
         XCTAssertFalse(app.buttons["Feelings"].exists, "Home still has the deleted category")
     }
@@ -291,14 +292,14 @@ final class LibraryTests: XCTestCase {
         let app = launchedApp(arguments: ["--restore-sample-backup"], shortTimeouts: false)
         openLibrary(in: app)
         let restore = app.buttons["libraryRestore"]
-        XCTAssertTrue(restore.waitForExistence(timeout: 10), "the Library has no Restore from a Backup")
+        waitToAppear(restore, "the Library has no Restore from a Backup")
         for _ in 0..<4 where !restore.isHittable {
             app.swipeUp()
         }
         let restoreFrame = restore.frame
         restore.tap()
         let wayBack = app.buttons["libraryWayBack"]
-        XCTAssertTrue(wayBack.waitForExistence(timeout: 10), "Restore from a Backup did not ask")
+        waitToAppear(wayBack, "Restore from a Backup did not ask")
         expectSameFrame(wayBack.frame, restoreFrame, "Cancel is not in Restore from a Backup's place")
         let add = app.buttons["libraryRestoreAdd"]
         XCTAssertLessThanOrEqual(add.frame.maxY, wayBack.frame.minY - 64, "Add to My Phrases at \(add.frame) is not a row clear above Cancel at \(wayBack.frame)")
@@ -310,13 +311,13 @@ final class LibraryTests: XCTestCase {
         waitUntil(add, "isEnabled == false", "Add to My Phrases did not dim once it had added")
         waitUntil(wayBack, "label == 'Done'", "Cancel did not read Done after the restore")
         wayBack.tap()
-        XCTAssertTrue(app.navigationBars["Phrases and Categories"].waitForExistence(timeout: 10), "Done did not return to the Library")
+        waitToAppear(app.navigationBars["Phrases and Categories"], "Done did not return to the Library")
         waitForLine("libraryBackupResult", saying: line, in: app)
 
         closeSettings(in: app)
         app.buttons["Basics"].tap()
-        XCTAssertTrue(
-            app.buttons.matching(NSPredicate(format: "label == %@", "Please open the window.")).firstMatch.waitForExistence(timeout: 10),
+        waitToAppear(
+            app.buttons.matching(NSPredicate(format: "label == %@", "Please open the window.")).firstMatch,
             "Home does not show the restored phrase"
         )
     }
@@ -349,23 +350,23 @@ final class LibraryTests: XCTestCase {
         if all {
             try audit(app, "Basics, \(appearance)")
             app.buttons["libraryChangePicture"].tap()
-            XCTAssertTrue(app.buttons["libraryWayBack"].waitForExistence(timeout: 10), "Change Picture did not ask")
+            waitToAppear(app.buttons["libraryWayBack"], "Change Picture did not ask")
             try audit(app, "Change Picture, \(appearance)", oneKindAtATime: true)
             app.buttons["libraryWayBack"].tap()
-            XCTAssertTrue(app.navigationBars["Basics"].waitForExistence(timeout: 10), "Keep This Picture did not go back")
+            waitToAppear(app.navigationBars["Basics"], "Keep This Picture did not go back")
         }
         open("libraryPhrase0", leaving: "libraryAddPhrase", in: app)
-        XCTAssertTrue(app.navigationBars["Edit Phrase"].waitForExistence(timeout: 10), "the phrase's row did not open its editor")
+        waitToAppear(app.navigationBars["Edit Phrase"], "the phrase's row did not open its editor")
         try audit(app, "Edit Phrase, \(appearance)")
         app.buttons["libraryDeletePhrase"].tap()
-        XCTAssertTrue(app.buttons["libraryDeleteForGood"].waitForExistence(timeout: 10), "Delete Phrase did not ask")
+        waitToAppear(app.buttons["libraryDeleteForGood"], "Delete Phrase did not ask")
         try audit(app, "Delete Phrase, \(appearance)")
         if all {
             app.buttons["libraryWayBack"].tap()
             back(to: "Basics", in: app)
             back(to: "Phrases and Categories", in: app)
             app.buttons["libraryRestore"].tap()
-            XCTAssertTrue(app.buttons["libraryRestoreAdd"].waitForExistence(timeout: 10), "Restore from a Backup did not ask")
+            waitToAppear(app.buttons["libraryRestoreAdd"], "Restore from a Backup did not ask")
             try audit(app, "the Restore question, \(appearance)")
         }
     }
@@ -419,26 +420,26 @@ final class LibraryTests: XCTestCase {
         let home = try Self.onScreen(screenControls(in: app), in: window)
 
         app.buttons["settings"].tap()
-        XCTAssertTrue(app.buttons["familySetup"].waitForExistence(timeout: 10), "Settings did not open (\(context))")
+        waitToAppear(app.buttons["familySetup"], "Settings did not open (\(context))")
         let root = try read(app, window: window)
         open("familySetup", leaving: "familySetup", in: app)
-        XCTAssertTrue(app.buttons["library"].waitForExistence(timeout: 10), "Family Setup has no Phrases and Categories (\(context))")
+        waitToAppear(app.buttons["library"], "Family Setup has no Phrases and Categories (\(context))")
         let familySetup = try read(app, window: window)
         open("library", leaving: "library", in: app)
-        XCTAssertTrue(app.navigationBars["Phrases and Categories"].waitForExistence(timeout: 10), "the Library did not open (\(context))")
+        waitToAppear(app.navigationBars["Phrases and Categories"], "the Library did not open (\(context))")
         let library = try read(app, window: window)
         attachCapture(app, name: "library-chains-library-\(context)".replacingOccurrences(of: ", ", with: "-"))
 
         // The last everyday category, the one with fewest phrases.
         open("libraryCategory3", leaving: "libraryAddCategory", in: app)
-        XCTAssertTrue(app.navigationBars["Feelings"].waitForExistence(timeout: 10), "Feelings did not open (\(context))")
+        waitToAppear(app.navigationBars["Feelings"], "Feelings did not open (\(context))")
 
         // Every phrase opens the same editor: the first one's, opened
         // before the screen scrolls. Its field is not a button, so it is
         // read on its own.
         var words: [String: CGRect] = [:]
         open("libraryPhrase0", leaving: "libraryAddPhrase", in: app)
-        XCTAssertTrue(app.navigationBars["Edit Phrase"].waitForExistence(timeout: 10), "a phrase's row did not open its editor (\(context))")
+        waitToAppear(app.navigationBars["Edit Phrase"], "a phrase's row did not open its editor (\(context))")
         let field = app.descendants(matching: .any).matching(identifier: LibraryChains.phraseField).firstMatch
         XCTAssertTrue(field.exists, "Edit Phrase has no field (\(context))")
         let editor = try read(app, window: window)
@@ -561,9 +562,8 @@ final class LibraryTests: XCTestCase {
         let asked = app.buttons[row].isHittable ? screen.first(where: { $0.name == row }) : nil
         app.buttons[row].tap()
         let wayBack = app.buttons["libraryWayBack"]
-        XCTAssertTrue(wayBack.waitForExistence(timeout: 10), "\(row) did not ask (\(context))")
-        let gone = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: app.buttons[returningTo])
-        XCTAssertEqual(XCTWaiter.wait(for: [gone], timeout: 10), .completed, "\(row)'s question did not settle (\(context))")
+        waitToAppear(wayBack, "\(row) did not ask (\(context))")
+        waitToDisappear(app.buttons[returningTo], "\(row)'s question did not settle (\(context))")
         if let asked {
             expectInRowsPlace(wayBack, row: asked.frame, "\(state)'s way back is not in \(row)'s place (\(context))", in: app)
         }
@@ -580,7 +580,7 @@ final class LibraryTests: XCTestCase {
         }
         attachCapture(app, name: "library-chains-\(state)-\(context)".replacingOccurrences(of: ", ", with: "-"))
         wayBack.tap()
-        XCTAssertTrue(app.buttons[returningTo].waitForExistence(timeout: 10), "\(state)'s way back did not go back (\(context))")
+        waitToAppear(app.buttons[returningTo], "\(state)'s way back did not go back (\(context))")
         return Self.named(controls)
     }
 
@@ -612,12 +612,12 @@ final class LibraryTests: XCTestCase {
     @MainActor
     private func openLibrary(in app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
         app.buttons["settings"].tap()
-        XCTAssertTrue(app.buttons["familySetup"].waitForExistence(timeout: 10), "Settings did not open", file: file, line: line)
+        waitToAppear(app.buttons["familySetup"], "Settings did not open", file: file, line: line)
         open("familySetup", leaving: "familySetup", in: app, file: file, line: line)
-        XCTAssertTrue(app.buttons["library"].waitForExistence(timeout: 10), "Family Setup has no Phrases and Categories", file: file, line: line)
+        waitToAppear(app.buttons["library"], "Family Setup has no Phrases and Categories", file: file, line: line)
         open("library", leaving: "library", in: app, file: file, line: line)
-        XCTAssertTrue(
-            app.navigationBars["Phrases and Categories"].waitForExistence(timeout: 10), "the Library did not open", file: file, line: line
+        waitToAppear(
+            app.navigationBars["Phrases and Categories"], "the Library did not open", file: file, line: line
         )
     }
 
@@ -626,23 +626,21 @@ final class LibraryTests: XCTestCase {
     @MainActor
     private func open(_ name: String, leaving: String, in app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
         app.buttons[name].tap()
-        let gone = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: app.buttons[leaving])
-        XCTAssertEqual(XCTWaiter.wait(for: [gone], timeout: 10), .completed, "\(name) did not open its screen", file: file, line: line)
+        waitToDisappear(app.buttons[leaving], "\(name) did not open its screen", file: file, line: line)
     }
 
     /// Goes back with the standard Back button to the screen titled `title`.
     @MainActor
     private func back(to title: String, in app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
         app.buttons["BackButton"].tap()
-        XCTAssertTrue(app.navigationBars[title].waitForExistence(timeout: 10), "Back did not return to \(title)", file: file, line: line)
+        waitToAppear(app.navigationBars[title], "Back did not return to \(title)", file: file, line: line)
     }
 
     @MainActor
     private func closeSettings(in app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
         let backToTalking = app.buttons["backToTalking"]
         backToTalking.tap()
-        let closed = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: backToTalking)
-        XCTAssertEqual(XCTWaiter.wait(for: [closed], timeout: 10), .completed, "Settings did not close", file: file, line: line)
+        waitToDisappear(backToTalking, "Settings did not close", file: file, line: line)
     }
 
     /// A phrase's row in a category, by its words: Home's tile under the
@@ -661,10 +659,10 @@ final class LibraryTests: XCTestCase {
     /// characters, and types `words`.
     @MainActor
     private func replaceWords(in field: XCUIElement, with words: String, deleting: Int, in app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
-        XCTAssertTrue(field.waitForExistence(timeout: 10), "the field is missing", file: file, line: line)
+        waitToAppear(field, "the field is missing", file: file, line: line)
         // Below the words, so the cursor goes after them.
         field.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.9)).tap()
-        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 10), "the field did not open the keyboard", file: file, line: line)
+        waitToAppear(app.keyboards.firstMatch, "the field did not open the keyboard", file: file, line: line)
         app.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: deleting) + words)
     }
 
@@ -676,22 +674,22 @@ final class LibraryTests: XCTestCase {
             .min { ($0.1.minY, $0.1.minX) < ($1.1.minY, $1.1.minX) }?.0
     }
 
-    /// Waits up to 10 s for the line `identifier` to hold `words`.
+    /// Waits up to `UIWait.response` for the line `identifier` to hold
+    /// `words`.
     @MainActor
     private func waitForLine(_ identifier: String, saying words: String, in app: XCUIApplication, file: StaticString = #filePath, line: UInt = #line) {
         let element = app.descendants(matching: .any).matching(identifier: identifier).firstMatch
-        let says = expectation(for: NSPredicate(format: "label CONTAINS %@", words), evaluatedWith: element)
-        XCTAssertEqual(
-            XCTWaiter.wait(for: [says], timeout: 10), .completed,
+        waitUntil(
             "\(identifier) does not say “\(words)”: \(element.exists ? element.label : "missing")", file: file, line: line
-        )
+        ) { element.exists && element.label.contains(words) }
     }
 
-    /// Waits up to 10 s for `element` to match `format`, after a tap.
+    /// Waits up to `UIWait.response` for `element` to match `format`,
+    /// after a tap.
     @MainActor
     private func waitUntil(_ element: XCUIElement, _ format: String, _ message: String, file: StaticString = #filePath, line: UInt = #line) {
-        let changed = XCTNSPredicateExpectation(predicate: NSPredicate(format: format), object: element)
-        XCTAssertEqual(XCTWaiter.wait(for: [changed], timeout: 10), .completed, message, file: file, line: line)
+        let predicate = NSPredicate(format: format)
+        waitUntil(message, file: file, line: line) { predicate.evaluate(with: element) }
     }
 
     /// Settings' gutter round each screen's content

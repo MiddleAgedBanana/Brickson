@@ -39,8 +39,8 @@ final class SettingsTests: XCTestCase {
             file: file,
             line: line
         )
-        XCTAssertTrue(
-            app.buttons["backToTalking"].waitForExistence(timeout: 60),
+        waitToAppear(
+            app.buttons["backToTalking"], within: .launch,
             "Settings did not open at launch",
             file: file, line: line
         )
@@ -50,10 +50,10 @@ final class SettingsTests: XCTestCase {
     @MainActor
     private func open(_ identifier: String, in app: XCUIApplication, waitingFor title: String) {
         let row = app.buttons[identifier].firstMatch
-        XCTAssertTrue(row.waitForExistence(timeout: 10), "\(identifier) is missing")
+        waitToAppear(row, "\(identifier) is missing")
         row.tap()
-        XCTAssertTrue(
-            app.navigationBars[title].waitForExistence(timeout: 10),
+        waitToAppear(
+            app.navigationBars[title],
             "\(title) did not open after \(identifier) was chosen"
         )
     }
@@ -79,7 +79,7 @@ final class SettingsTests: XCTestCase {
         let app = openSettings()
         app.buttons["backToTalking"].tap()
 
-        XCTAssertTrue(app.buttons["Yes"].waitForExistence(timeout: 10), "Home did not come back")
+        waitToAppear(app.buttons["Yes"], "Home did not come back")
         XCTAssertFalse(app.buttons["backToTalking"].exists, "Settings is still open")
     }
 
@@ -116,13 +116,13 @@ final class SettingsTests: XCTestCase {
             let app = openSettings(textSize: textSize)
             let context = "Family Setup, \(textSize.name)"
             let row = app.buttons["familySetup"]
-            XCTAssertTrue(row.waitForExistence(timeout: 10), "familySetup is missing (\(context))")
+            waitToAppear(row, "familySetup is missing (\(context))")
             let rowFrame = row.frame
 
             open("familySetup", in: app, waitingFor: "Family Setup")
             let opening = app.descendants(matching: .any)["familySetupOpening"]
             let guided = app.buttons["guidedSetup"]
-            XCTAssertTrue(guided.waitForExistence(timeout: 10), "guidedSetup is missing (\(context))")
+            waitToAppear(guided, "guidedSetup is missing (\(context))")
             XCTAssertTrue(opening.exists, "the opening words are missing (\(context))")
             attachCapture(app, name: context)
             XCTAssertTrue(
@@ -159,15 +159,14 @@ final class SettingsTests: XCTestCase {
             let context = "Step 1 of 6, \(textSize.name)"
             open("familySetup", in: app, waitingFor: "Family Setup")
             let row = app.buttons["guidedSetup"]
-            XCTAssertTrue(row.waitForExistence(timeout: 10), "guidedSetup is missing (\(context))")
+            waitToAppear(row, "guidedSetup is missing (\(context))")
             let rowFrame = row.frame
 
             open("guidedSetup", in: app, waitingFor: "Step 1 of 6")
             let link = app.buttons["learnAboutEachWay"]
-            XCTAssertTrue(link.waitForExistence(timeout: 10), "learnAboutEachWay is missing (\(context))")
+            waitToAppear(link, "learnAboutEachWay is missing (\(context))")
             // Wait for Family Setup's row to go, so the step is read where it rests.
-            let gone = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: row)
-            XCTAssertEqual(XCTWaiter.wait(for: [gone], timeout: 10), .completed, "Family Setup did not go (\(context))")
+            waitToDisappear(row, "Family Setup did not go (\(context))")
             XCTAssertTrue(app.staticTexts["How is the screen reached?"].exists, "the question is missing (\(context))")
             attachCapture(app, name: context)
             XCTAssertEqual(link.frame.minX, rowFrame.minX, accuracy: 1, "Learn About Each Way's leading edge moved (\(context))")
@@ -254,10 +253,10 @@ final class SettingsTests: XCTestCase {
             let context = "the check-in card, \(textSize.name), \(appearance.rawValue)"
             open("familySetup", in: app, waitingFor: "Family Setup")
             let library = app.buttons["library"]
-            XCTAssertTrue(library.waitForExistence(timeout: 10), "Phrases and Categories is missing (\(context))")
+            waitToAppear(library, "Phrases and Categories is missing (\(context))")
             for (identifier, label) in Self.checkInRows {
                 let row = app.buttons[identifier]
-                XCTAssertTrue(row.waitForExistence(timeout: 10), "\(identifier) is missing (\(context))")
+                waitToAppear(row, "\(identifier) is missing (\(context))")
                 guard row.exists else { continue }
                 scrollIntoView(row, in: app, title: "Family Setup", context: context)
                 XCTAssertGreaterThanOrEqual(row.frame.height, 44, "\(identifier) at \(row.frame) (\(context))")
@@ -298,7 +297,7 @@ final class SettingsTests: XCTestCase {
             open("familySetup", in: app, waitingFor: "Family Setup")
             let goThrough = app.buttons["checkInGoThrough"]
             let guided = app.buttons["guidedSetup"]
-            XCTAssertTrue(goThrough.waitForExistence(timeout: 10), "checkInGoThrough is missing (\(context))")
+            waitToAppear(goThrough, "checkInGoThrough is missing (\(context))")
             guard goThrough.exists, guided.exists else { continue }
             let unscrolled = guided.frame
             dragFamilySetup(in: app, from: 0.6, to: 0.45)
@@ -313,9 +312,8 @@ final class SettingsTests: XCTestCase {
             XCTAssertLessThan(guided.frame.minY, unscrolled.minY - 1, "Family Setup did not scroll (\(context))")
             goThrough.tap()
             let link = app.buttons["learnAboutEachWay"]
-            XCTAssertTrue(link.waitForExistence(timeout: 10), "Go Through Setup Again did not open the first step (\(context))")
-            let gone = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: app.buttons["library"])
-            XCTAssertEqual(XCTWaiter.wait(for: [gone], timeout: 10), .completed, "Family Setup did not go (\(context))")
+            waitToAppear(link, "Go Through Setup Again did not open the first step (\(context))")
+            waitToDisappear(app.buttons["library"], "Family Setup did not go (\(context))")
             attachCapture(app, name: context)
             let frame = link.frame
             XCTAssertEqual(frame.minX, shown.minX, accuracy: 1, "Learn About Each Way at \(frame), the button at \(shown) (\(context))")
@@ -344,13 +342,13 @@ final class SettingsTests: XCTestCase {
             let context = "\(identifier), default text"
             open("familySetup", in: app, waitingFor: "Family Setup")
             let guided = app.buttons["guidedSetup"]
-            XCTAssertTrue(guided.waitForExistence(timeout: 10), "guidedSetup is missing (\(context))")
+            waitToAppear(guided, "guidedSetup is missing (\(context))")
             func offsets() -> [String: CGFloat] {
                 Dictionary(uniqueKeysWithValues: others.map { ($0, app.buttons[$0].frame.minY - guided.frame.minY) })
             }
             let before = offsets()
             app.buttons[identifier].tap()
-            XCTAssertTrue(app.staticTexts[afterword].waitForExistence(timeout: 10), "\(afterword) did not show (\(context))")
+            waitToAppear(app.staticTexts[afterword], "\(afterword) did not show (\(context))")
             attachCapture(app, name: context)
             for (row, _) in Self.checkInRows {
                 XCTAssertFalse(app.buttons[row].exists, "\(row) is still there once the check-in was answered (\(context))")
@@ -363,7 +361,7 @@ final class SettingsTests: XCTestCase {
         // The answer is kept: launched again without making a check-in due.
         let again = openSettings(storage: .kept)
         open("familySetup", in: again, waitingFor: "Family Setup")
-        XCTAssertTrue(again.buttons["library"].waitForExistence(timeout: 10), "Family Setup did not open again")
+        waitToAppear(again.buttons["library"], "Family Setup did not open again")
         XCTAssertFalse(again.buttons["checkInGoThrough"].exists, "the check-in card came back the next launch after Not Now")
         XCTAssertFalse(
             again.staticTexts["Family Setup will ask again in 30 days."].exists, "Not Now's words came back the next launch"
@@ -378,7 +376,7 @@ final class SettingsTests: XCTestCase {
         open("familySetup", in: app, waitingFor: "Family Setup")
         open("privacyPolicy", in: app, waitingFor: "Privacy Policy")
 
-        XCTAssertTrue(app.staticTexts["Who we are"].waitForExistence(timeout: 10), "the policy's text is not showing")
+        waitToAppear(app.staticTexts["Who we are"], "the policy's text is not showing")
         XCTAssertTrue(app.buttons["Open the Web Version"].exists)
         attachCapture(app, name: "Privacy Policy")
     }
@@ -391,10 +389,8 @@ final class SettingsTests: XCTestCase {
         let app = openSettings(shortTimeouts: true)
         open("familySetup", in: app, waitingFor: "Family Setup")
 
-        let root = app.navigationBars["Settings"]
-        XCTAssertEqual(
-            XCTWaiter.wait(for: [expectation(for: NSPredicate(format: "exists == true"), evaluatedWith: root)], timeout: 30),
-            .completed,
+        waitToAppear(
+            app.navigationBars["Settings"], within: .idleReset,
             "Settings did not go back to its first screen when left alone"
         )
         XCTAssertTrue(app.buttons["backToTalking"].exists, "the idle reset closed Settings")
@@ -446,21 +442,21 @@ final class SettingsTests: XCTestCase {
         open("familySetup", in: app, waitingFor: "Family Setup")
         for guide in guides {
             let row = app.buttons[guide.row].firstMatch
-            XCTAssertTrue(row.waitForExistence(timeout: 10), "\(guide.row) is missing")
+            waitToAppear(row, "\(guide.row) is missing")
             row.tap()
             let words = app.descendants(matching: .any)
                 .matching(NSPredicate(format: "label CONTAINS %@", guide.words))
                 .firstMatch
-            XCTAssertTrue(
-                words.waitForExistence(timeout: 10),
+            waitToAppear(
+                words,
                 "\(guide.name) did not open, or no longer says \"\(guide.words)\""
             )
             attachCapture(app, name: guide.name)
             try assertPassesAccessibilityAudit(app, context: "\(guide.name), light")
 
             app.navigationBars.buttons.element(boundBy: 0).tap()
-            XCTAssertTrue(
-                app.navigationBars["Family Setup"].waitForExistence(timeout: 10),
+            waitToAppear(
+                app.navigationBars["Family Setup"],
                 "Back from \(guide.name) did not return to Family Setup"
             )
         }
@@ -478,16 +474,15 @@ final class SettingsTests: XCTestCase {
         // The first step's guide, a cover of its own.
         app.buttons["learnAboutEachWay"].tap()
         let done = app.buttons["eachWayDone"]
-        XCTAssertTrue(done.waitForExistence(timeout: 10), "Learn About Each Way did not open the guide")
+        waitToAppear(done, "Learn About Each Way did not open the guide")
         attachCapture(app, name: "Each Way guide")
         try assertPassesAccessibilityAudit(app, context: "Each Way guide, light")
         done.tap()
-        let closed = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: done)
-        XCTAssertEqual(XCTWaiter.wait(for: [closed], timeout: 10), .completed, "Done did not close the guide")
+        waitToDisappear(done, "Done did not close the guide")
 
         for step in 2...6 {
             app.buttons["guidedSetupNext"].tap()
-            XCTAssertTrue(app.navigationBars["Step \(step) of 6"].waitForExistence(timeout: 10), "step \(step) did not open")
+            waitToAppear(app.navigationBars["Step \(step) of 6"], "step \(step) did not open")
             attachCapture(app, name: "Step \(step) of 6")
             try assertPassesAccessibilityAudit(app, context: "Step \(step) of 6, light")
         }
@@ -503,13 +498,9 @@ final class SettingsTests: XCTestCase {
         open("voiceSettings", in: app, waitingFor: "Voice Settings")
 
         let slower = app.buttons["70% of normal speed"]
-        XCTAssertTrue(slower.waitForExistence(timeout: 10), "the 70% speed is missing")
+        waitToAppear(slower, "the 70% speed is missing")
         slower.tap()
-        XCTAssertEqual(
-            XCTWaiter.wait(for: [expectation(for: NSPredicate(format: "isSelected == true"), evaluatedWith: slower)], timeout: 10),
-            .completed,
-            "choosing 70% did not choose it"
-        )
+        waitUntil("choosing 70% did not choose it") { slower.isSelected }
         slower.tap()
         XCTAssertTrue(slower.isSelected, "choosing 70% again changed the speed")
         XCTAssertFalse(app.buttons["Normal speed"].isSelected, "two speeds show as chosen")
@@ -531,16 +522,12 @@ final class SettingsTests: XCTestCase {
         let heading = app.staticTexts["Speed"]
         let normal = app.buttons["Normal speed"]
         let slowest = app.buttons["60% of normal speed"]
-        XCTAssertTrue(slowest.waitForExistence(timeout: 10), "the 60% speed is missing")
+        waitToAppear(slowest, "the 60% speed is missing")
         XCTAssertTrue(normal.isSelected, "a fresh launch does not speak at normal speed")
         let before = normal.frame.minY - heading.frame.minY
 
         slowest.tap()
-        XCTAssertEqual(
-            XCTWaiter.wait(for: [expectation(for: NSPredicate(format: "isSelected == true"), evaluatedWith: slowest)], timeout: 10),
-            .completed,
-            "choosing 60% did not choose it"
-        )
+        waitUntil("choosing 60% did not choose it") { slowest.isSelected }
         XCTAssertEqual(
             normal.frame.minY - heading.frame.minY, before, accuracy: 0.5,
             "choosing a speed moved the speed choices"
@@ -565,8 +552,7 @@ final class SettingsTests: XCTestCase {
             open("voiceSettings", in: app, waitingFor: "Voice Settings")
 
             let ask = app.buttons["askPersonalVoice"]
-            guard ask.waitForExistence(timeout: 10) else {
-                XCTFail("the Ask button is missing (\(context))")
+            guard waitToAppear(ask, "the Ask button is missing (\(context))") else {
                 continue
             }
             if textSize == .large {
@@ -580,7 +566,7 @@ final class SettingsTests: XCTestCase {
             ask.tap()
 
             let answered = app.descendants(matching: .any)["personalVoiceAsked"]
-            XCTAssertTrue(answered.waitForExistence(timeout: 10), "the Ask button's place does not hold its words after the answer (\(context))")
+            waitToAppear(answered, "the Ask button's place does not hold its words after the answer (\(context))")
             attachCapture(app, name: "\(context), after a refusal")
             XCTAssertFalse(ask.exists, "the Ask button is still offered after the answer (\(context))")
             XCTAssertFalse(
@@ -614,13 +600,13 @@ final class SettingsTests: XCTestCase {
         // The screen's title carries the app's name, which is not final,
         // so the test waits for the step instead.
         let row = app.buttons["keepOpen"]
-        XCTAssertTrue(row.waitForExistence(timeout: 10), "keepOpen is missing")
+        waitToAppear(row, "keepOpen is missing")
         row.tap()
 
         let step = app.descendants(matching: .any)
             .matching(NSPredicate(format: "label CONTAINS %@", "Guided Access and turn it on"))
             .firstMatch
-        XCTAssertTrue(step.waitForExistence(timeout: 10), "Keep Open did not open, or its first Guided Access step is missing")
+        waitToAppear(step, "Keep Open did not open, or its first Guided Access step is missing")
         XCTAssertTrue(step.label.hasPrefix("1"), "the first step is read without its number: \(step.label)")
     }
 
@@ -640,7 +626,7 @@ final class SettingsTests: XCTestCase {
 
         for step in 2...6 {
             app.buttons["guidedSetupNext"].tap()
-            XCTAssertTrue(app.navigationBars["Step \(step) of 6"].waitForExistence(timeout: 10), "step \(step) did not open")
+            waitToAppear(app.navigationBars["Step \(step) of 6"], "step \(step) did not open")
             if step == 2 {
                 // Until a category is chosen, Home shows every category.
                 XCTAssertTrue(app.buttons["restBoardEveryCategory"].isSelected, "Every Category is not chosen before anything is")
@@ -650,6 +636,6 @@ final class SettingsTests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Home shows every category."].exists, "the summary does not say which phrases Home shows")
 
         app.buttons["guidedSetupNext"].tap()
-        XCTAssertTrue(app.navigationBars["Family Setup"].waitForExistence(timeout: 10), "Done did not return to Family Setup")
+        waitToAppear(app.navigationBars["Family Setup"], "Done did not return to Family Setup")
     }
 }

@@ -40,7 +40,7 @@ final class LaunchTests: XCTestCase {
     func testAPhraseSpeaksOnTheFirstTap() {
         let app = launchedApp()
         let phrase = phraseTile("Hello.", in: app)
-        XCTAssertTrue(phrase.waitForExistence(timeout: 5))
+        waitToAppear(phrase, "Home shows no \"Hello.\" tile")
 
         phrase.tap()
 
@@ -50,12 +50,16 @@ final class LaunchTests: XCTestCase {
         // wasn't established; the first test to tap a phrase is also the
         // first to start the audio session and the speech engine. The app
         // still speaks on the first tap; only the test waits.
-        let turnsOn = NSPredicate(format: "isEnabled == true")
-        XCTAssertEqual(
-            XCTWaiter.wait(for: [expectation(for: turnsOn, evaluatedWith: app.buttons["Again"])], timeout: 10),
-            .completed,
-            "Again was still off 10 s after \"Hello.\" was tapped: the tap did not reach the tile, or the phrase did not start"
-        )
+        //
+        // A strict limit, the same on CI: this is the test that a phrase
+        // starts on its first activation, so a delay before it starts (a
+        // load before speaking, say) must fail here on every machine
+        // (`UIWait.strict`).
+        let again = app.buttons["Again"]
+        waitUntil(
+            within: .strict(seconds: 10),
+            "Again stayed off after \"Hello.\" was tapped: the tap did not reach the tile, or the phrase did not start"
+        ) { again.isEnabled }
     }
 
     /// Emergency switches straight to the emergency phrases and says nothing
@@ -67,7 +71,12 @@ final class LaunchTests: XCTestCase {
 
         app.buttons["Emergency"].tap()
 
-        XCTAssertTrue(phraseTile("I need help now.", in: app).waitForExistence(timeout: 5))
+        // A strict limit, the same on CI: this is the test that Emergency
+        // switches straight to its phrases (`UIWait.strict`).
+        waitToAppear(
+            phraseTile("I need help now.", in: app), within: .strict(seconds: 5),
+            "Emergency did not show the emergency phrases"
+        )
         XCTAssertFalse(app.buttons["Again"].isEnabled, "Emergency spoke")
     }
 
@@ -96,7 +105,7 @@ final class LaunchTests: XCTestCase {
     func testTheEmergencyPhrasesPassTheAccessibilityAudit() throws {
         let app = launchedApp()
         app.buttons["Emergency"].tap()
-        XCTAssertTrue(phraseTile("I need help now.", in: app).waitForExistence(timeout: 5))
+        waitToAppear(phraseTile("I need help now.", in: app), "Emergency did not show the emergency phrases")
         continueAfterFailure = true
         try assertPassesAccessibilityAudit(app, context: "Home with the emergency phrases, light")
     }
@@ -113,12 +122,14 @@ final class LaunchTests: XCTestCase {
             for state in ["just opened", "emergency selected", "phrase spoken"] {
                 if state == "emergency selected" {
                     app.buttons["Emergency"].tap()
-                    XCTAssertTrue(phraseTile("I need help now.", in: app).waitForExistence(timeout: 10))
+                    waitToAppear(
+                        phraseTile("I need help now.", in: app),
+                        "Emergency did not show the emergency phrases (AX5, \(appearance.rawValue))"
+                    )
                 } else if state == "phrase spoken" {
                     app.buttons["Yes"].tap()
-                    let againTurnsOn = expectation(for: NSPredicate(format: "isEnabled == true"), evaluatedWith: app.buttons["Again"])
-                    let againResult = await XCTWaiter.fulfillment(of: [againTurnsOn], timeout: 15, enforceOrder: false)
-                    XCTAssertEqual(againResult, .completed)
+                    let again = app.buttons["Again"]
+                    waitUntil("Again stayed off after Yes (AX5, \(appearance.rawValue))") { again.isEnabled }
                     // The audit after this state waits for speech to end
                     // too. Waiting here as well keeps the captures and word
                     // checks below, over a second of work, between the last
@@ -189,8 +200,7 @@ final class LaunchTests: XCTestCase {
     private func placeholderHeight(in app: XCUIApplication) -> Double {
         let hint = "Family: help with setting up is in Settings."
         let text = app.staticTexts[hint]
-        guard text.waitForExistence(timeout: 5) else {
-            XCTFail("Home has no \"\(hint)\" text to measure")
+        guard waitToAppear(text, "Home has no \"\(hint)\" text to measure") else {
             return 0
         }
         return text.frame.height

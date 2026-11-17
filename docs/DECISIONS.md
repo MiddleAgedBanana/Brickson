@@ -5754,6 +5754,45 @@ request merges only when they pass.
   already shut down now counts as cleaned up, and one still running
   still fails the run. Record:
   [`log/2026-11-16-ui-test-parts.md`](log/2026-11-16-ui-test-parts.md).
+- **2026-11-17, default, reversible:** every wait in the UI tests goes
+  through one helper (`BricksonUITests/Waiting.swift`) with a named limit
+  (`BricksonUITests/UIWait.swift`), so a slow machine and a broken app
+  fail differently. Each wait watches a real condition and ends as soon
+  as it holds; the limit only decides when a stuck app fails. On CI
+  `scripts/test.sh` passes a scale of 3 (`BRICKSON_UI_WAIT_SCALE`, at
+  most 5), which stretches every limit but a strict one: a launch 30
+  seconds (90 on CI), one action's response 10 (30), a phrase's speech
+  ending 30 (90), Settings' idle reset 30 (90), and a watch for
+  something that must not happen 3 (9), stretched too because an
+  overloaded Mac gives the app less of each second it is watched. A wait
+  that runs out says how long it waited, against which limit, how many
+  times it looked, how long its slowest look took and when it ended (to
+  find in the simulator-load record); a look over 5 seconds is named as
+  XCTest's own query being slow, a sign of an overloaded machine, and is
+  printed even when the wait ends well. **Safety bounds stay strict**:
+  the tests that prove a phrase speaks on the first tap, Emergency shows
+  its phrases and Get Attention sounds keep the limits they had (10, 5
+  and 10 seconds) on every machine, so a load before speaking still
+  fails there; the person's own bound, a response within half a second,
+  is measured on a device (*Every release passes the quality bar*), and
+  the app's own time limits are unit-tested with injected time. Why: on
+  2026-11-16 and 2026-11-17 UI tests failed on GitHub's Macs while
+  their apps worked: the Mac at 300% of its three processors with a load
+  average of 370 to 650, a single query of the app taking 5 to 12
+  seconds, the simulator's voice taking more than 30 seconds to say
+  "Yes." (once more than a minute), and a failure that could not say whether the app or the
+  machine was slow. Load average was not used in the words: it is in
+  the hundreds on passing runs too. Nothing is retried, skipped or
+  loosened; only the time a stuck app is given changed, and only on CI.
+  `scripts/ui-test-waits.py` (run by `scripts/test-runner.py`) refuses a
+  bare wait anywhere in the UI tests but the two helper files: a number
+  of seconds handed to XCTest's waits, an XCTest waiter or predicate
+  expectation, a sleep, a run loop held for a time or a deadline of the
+  test's own. `HomeAccessibilityOrderTests.swift` keeps its 7 bare waits
+  until the pull request changing it merges, and may not gain one.
+  Revisit if a stretched limit runs out on CI with only quick looks: that
+  is a stuck app, or a limit too short for that step. Record:
+  [`log/2026-11-17-ui-test-waits.md`](log/2026-11-17-ui-test-waits.md).
 
 ## Personal details stay out of the repository
 

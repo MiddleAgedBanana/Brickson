@@ -185,7 +185,7 @@ final class HeldSlideProbeTests: XCTestCase {
     @MainActor
     private func phraseTiles(in app: XCUIApplication) -> [XCUIElement] {
         let query = app.buttons.matching(identifier: "phraseTile")
-        XCTAssertTrue(query.firstMatch.waitForExistence(timeout: 10), "no phrase tiles")
+        waitToAppear(query.firstMatch, "no phrase tiles")
         return query.allElementsBoundByIndex
             .filter(\.isHittable)
             .map { ($0, $0.frame) }
@@ -216,10 +216,10 @@ final class HeldSlideProbeTests: XCTestCase {
     @MainActor
     private func report(_ gesture: String, in app: XCUIApplication, from start: String, to end: String) {
         let candidates = Array(Set(sentences(in: app) + [start, end]))
-        _ = app.staticTexts
-            .matching(NSPredicate(format: "label IN %@", candidates))
-            .firstMatch
-            .waitForExistence(timeout: 3)
+        _ = appears(
+            app.staticTexts.matching(NSPredicate(format: "label IN %@", candidates)).firstMatch,
+            within: .observation
+        )
         let shown = candidates.filter { app.staticTexts[$0].exists }
         keep(gesture, in: app, [
             "began on": start,
@@ -237,7 +237,7 @@ final class HeldSlideProbeTests: XCTestCase {
         endedOn end: String,
         width: CGFloat
     ) {
-        let opened = app.buttons["Back to Talking"].waitForExistence(timeout: 3)
+        let opened = appears(app.buttons["Back to Talking"], within: .observation)
         let after = opened ? (category: "(Settings covers Home)", message: "(Settings covers Home)") : homeState(of: app)
         keep(gesture, in: app, [
             "began on": "Settings",

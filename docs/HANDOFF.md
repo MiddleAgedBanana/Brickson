@@ -1511,7 +1511,19 @@ settings, date) and summarise it here.
   Each result bundle and record now names its part
   (`ui-<family>-part<n>.xcresult`, `simulator-load-<family>-part<n>.txt`).
   A simulator that has already shut down when the run ends counts as
-  cleaned up. On 2026-11-12
+  cleaned up. Since 2026-11-17 every UI test wait goes through
+  `BricksonUITests/Waiting.swift` with a limit from `UIWait.swift`, three
+  times as long on CI except the strict ones that prove a safety
+  control's first response, and a wait that runs out says how long it
+  waited and how long its slowest look at the app took; a look over 5
+  seconds prints a `UI-WAIT` line even when the wait ends well, so search
+  a slow job's log for it (docs/DECISIONS.md, "Tests";
+  [`log/2026-11-17-ui-test-waits.md`](log/2026-11-17-ui-test-waits.md)).
+  `scripts/ui-test-waits.py` refuses any other wait.
+  `HomeAccessibilityOrderTests.swift` still holds 7 bare waits, because
+  pull request #119 was changing it: once #119 merges, the next pull
+  request to touch the UI tests moves them onto the helpers and takes
+  the file off the script's `NOT_YET_CONVERTED` list. On 2026-11-12
   the iPad job took 87 of its 90 minutes (pull request #103: about five
   minutes of new check-in tests, and one Home typing test whose taps
   each waited 120 seconds for the app to go idle), and the same day it
