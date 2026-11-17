@@ -162,8 +162,8 @@ from the result bundles and the simulator-load records:
   three minutes while the simulator installed assets. The relaunched app
   spoke at once. This shows an app gap: an utterance that never starts
   shows "Speaking" with no failure text, because the missed-finish
-  watchdog only catches a synthesizer that goes quiet. That needs its own
-  change to the speech service.
+  watchdog only catches a synthesizer that goes quiet. Pull request #123
+  gives an utterance a limit on how long it may take to start.
 - **iPad and iPhone, part 1:** `HomeAccessibilityOrderTests` at AX5 read
   Home in plain screen order in "just opened" only, under a second after
   Yes appeared, then read the right order in every later state. This is
@@ -182,14 +182,15 @@ from the result bundles and the simulator-load records:
 - **The UI tests were not compiled or run here.** `Waiting.swift`, the
   converted tests and the changes to `LaunchHelpers.swift` need XCTest's
   UI automation, which only a Mac has. CI built and ran them on the
-  first push (*CI on the first push*), but not on the later commits, and
-  `UIWaitTests` is untested on Apple's toolchain until the unit job
-  passes.
+  first push (*CI on the first push*), but not on the later commits.
+  The unit job passed on the first push, so that version of
+  `UIWaitTests` compiled and passed on Apple's toolchain; the later
+  commits change it and are untested there until CI runs them.
 - Whether 90 seconds covers the simulator's slowest speech on CI: one
   phrase above still showed "Speaking" after 64 seconds, and its end was
-  not seen. On the first push's run (below), "Speaking" outlasted 90
-  seconds because the speech service did not answer at all, which no
-  limit should cover.
+  not seen. On the first push's run (*CI on the first push*),
+  "Speaking" outlasted 90 seconds because the speech service did not
+  answer at all, which no limit should cover.
 - XCTest's own query timeout ("Timed out while evaluating UI query")
   is not ours to lengthen; a wait now only reports the slow look around
   it.
@@ -206,8 +207,7 @@ from the result bundles and the simulator-load records:
   changing the limit.
 - The speech service: give an utterance a limit on how long it may take
   to start, so one the system never starts shows a failure instead of
-  "Speaking" (*CI on the first push*). It needs a test first and care not to
-  cut off a slow first utterance. Owner: a new thread.
+  "Speaking" (*CI on the first push*). Pull request #123 adds it.
 - `LibraryTests`' chain sweep reads each screen with many queries; reading
   each screen once in a snapshot would keep a starved machine inside
   Settings' idle limit. Owner: a new thread with a Mac.
