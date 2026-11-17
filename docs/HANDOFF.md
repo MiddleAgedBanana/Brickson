@@ -872,16 +872,16 @@ release in docs/ROADMAP.md when no thread has it yet.
   first state, "just opened", on the iPhone and the iPad, at both text
   sizes, reading Home in screen order (Phrases and Type first). The
   cause, found 2026-11-17 in the app's own log in CI's result bundles:
-  until SwiftUI has applied `accessibilitySortPriority`, it offers a
-  container's elements in the order they are declared, and Home declared
-  its regions and the safety row's controls top to bottom. On one run
-  (#125's, 44135506925) the first tree read was in that order in 9 of 39
-  iPhone launches and 2 of 39 iPad ones, for 0.35 s to at least 3.9 s
-  on a drawn, still Home; only the order test checks it. Home now
-  declares them in the order they are reached (`HomeRegion.allCases`,
-  `HomeRegion.safetyRowOrder`), so the order is the same before and
-  after the sort, with every frame unchanged (docs/DECISIONS.md, "Home's
-  scan order and names";
+  until SwiftUI had applied `accessibilitySortPriority`, the tree XCTest
+  read listed a container's elements in the order they are declared, and
+  Home declared its regions and the safety row's controls top to bottom.
+  On one run (#125's, 44135506925) the first tree read was in that order
+  in 9 of 39 iPhone launches and 2 of 39 iPad ones, for 0.35 s to at
+  least 3.9 s on a drawn, still Home; only the order test checks it. Home
+  now declares them in the order they are reached (`HomeRegion.allCases`,
+  `HomeRegion.safetyRowOrder`), so the order is the same before and after
+  the sort, with every control's, region's and text's frame unchanged
+  (docs/DECISIONS.md, "Home's scan order and names";
   [`log/2026-11-17-home-order-before-sorting.md`](log/2026-11-17-home-order-before-sorting.md)).
   Not known: whether a person's VoiceOver or Switch Control ever met the
   old order on a device; the window was seen only on CI's simulators. The

@@ -1,14 +1,17 @@
-# Home is reached in the right order before SwiftUI sorts it
+# Home's accessibility tree is in order before SwiftUI sorts it
 
-*2026-11-17. Pull request #PR (`claude/home-order-before-sorting`). A
+*2026-11-17. Pull request #126 (`claude/home-order-before-sorting`). A
 Claude Code thread on the owner's Mac.*
 
 ## What changed and why
 
-Nothing a person sees changes. What VoiceOver, Switch Control and Full
-Keyboard Access are offered first on Home is now Yes, No, Emergency and
-Get Attention from the first moment Home can be read, not only once
-SwiftUI has sorted Home's controls.
+Nothing a person sees changes. In the accessibility tree the app
+publishes, as XCTest reads it, Home's first controls are now Yes, No,
+Emergency and Get Attention from the first read, not only once SwiftUI
+has sorted them. VoiceOver, Switch Control and Full Keyboard Access read
+that same tree; that each steps through it in this order is still the
+device check it was (docs/HANDOFF.md, *Checks that need a real
+device*).
 
 `HomeAccessibilityOrderTests` had been failing now and then on CI, always
 in its first state, "just opened", on the iPhone and, since 2026-11-17,
@@ -42,10 +45,11 @@ it prints each tree XCTest reads ("Current tree"). Read side by side:
   makes SwiftUI late is not known; Apple's documentation of
   `accessibilitySortPriority` says nothing about when it applies.
 
-So the app itself handed this order to an accessibility client, the way
-VoiceOver and Switch Control read it, for seconds at a time: not a test
-reading in the middle of a layout pass. A person whose first scan started
-in that window would have been offered Phrases and Type first.
+So the app itself published this order in its accessibility tree, for
+seconds at a time with nothing moving: not a test reading in the middle
+of a layout pass. Assistive technologies read the same tree, so a person
+whose first scan started in that window could have been offered Phrases
+and Type first; no device has shown that it happened.
 
 **The fix.** Make the declared order the reached order, so it is the
 same before and after the sort:
@@ -70,7 +74,12 @@ records it (*2026-11-17*).
 
 ## Commits
 
-- `<hash>`: the fix, its unit tests and these documents.
+- `e5fad34`: the fix, its unit tests and these documents.
+- The commit after it: the first review round. This record's results
+  filled in (they had been left as placeholders), its claims and the
+  ones in docs/DECISIONS.md, docs/HANDOFF.md, docs/ACCESSIBILITY.md and
+  the code's comments narrowed to the tree XCTest reads (cubic), and
+  `SafetyRowLayout`'s unused parameters named `_` (SonarCloud).
 
 ## Verified
 
@@ -100,7 +109,35 @@ The owner's Mac, Xcode 27.2 (27B52), simulators made for this work
   lower at the default text size, just opened and with the alarm
   sounding (not while typing, not at the largest text). The grid's own
   frame did not change.
-- RESULTS-PLACEHOLDER
+- **Unit tests** (`scripts/test.sh`, iPad Pro 13-inch simulator): 1,055
+  tests, 1,042 passed, 0 failed, 1 known skip, 12 known expected
+  failures; String Catalog unchanged.
+- **`HomeAccessibilityOrderTests`, both cases**, through `scripts/test.sh
+  ui`, each run on a freshly erased simulator: 6 runs on the iPhone 17
+  and 6 on the iPad Pro, 24 of 24 passed. It passed here before the
+  change too, so these runs show the fix keeps the order, not that it
+  cures a failure seen here.
+- **The whole UI suite** on a freshly erased iPhone 17: 81 tests, 70
+  passed, 7 skipped, 4 failed, none on Home. `LaunchTests.
+  testLargestTextKeepsQuickControlWordsVisible` ("Speaking" still showed
+  30 s after Yes was spoken, at AX5) fails the same way on `main` on this
+  Mac, and on CI on #122's run 44124581091, which does not change Home.
+  Three audits of Library and Settings screens (contrast of a line near
+  the bottom edge) passed on `main` and on this branch when run alone.
+- **On CI, against the failing baseline.** #125's run 44135506925 read
+  its first tree in declared order in 9 of 39 iPhone launches and 2 of 39
+  iPad ones, each with Phrases and Type first. This pull request's run
+  44165072974, all six parts: 220 launches (107 iPhone, 113 iPad), 27 of
+  them read before SwiftUI sorted (23 iPhone, 4 iPad; the script below),
+  and all 220 with Yes, No, Emergency, Get Attention, Again, Phrases,
+  Type first. Its two red parts failed elsewhere: iPhone part 3 on the
+  `LaunchTests` speech stall above, and iPhone part 2 on Apple's keyboard
+  suggestion cell with no description in a Library audit
+  (`LibraryTests.testAPhraseNamedLikeAControlIsSavedWithANote`), which
+  #125 addresses.
+- `codex review` on this Mac: no findings. The Python checks in AGENTS.md,
+  *Build and test*, and `scripts/forbidden-code.py`: all pass. A trial
+  merge (`git merge-tree`) with #122, #123 and #125: no conflicts.
 
 ## Not verified
 
@@ -110,10 +147,8 @@ The owner's Mac, Xcode 27.2 (27B52), simulators made for this work
   the scan order's device check).
 - The failure was never reproduced on the Mac, here or before (61
   launches on 2026-11-16, 22 more here, some with CI's two-second wait
-  before the first read): its baseline is CI's own logs. The local runs
-  below show the fix does not break the order; CI's runs on this pull
-  request are where the declared-order reads show up, and the method
-  below finds them.
+  before the first read): its baseline is CI's own logs, and the proof
+  of the fix is CI's declared-order reads above.
 - Why the scroll bar's accessibility frame on the iPad moved 2 points.
 - Landscape, Bold Text, dark mode, rest boards, the late stage's sizes and
   iPhone Duo's windows were not compared frame by frame; the engine's

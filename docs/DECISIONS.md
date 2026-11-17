@@ -2748,10 +2748,11 @@ R0 item 3's accessibility work (docs/ACCESSIBILITY.md, sections 1 and 3;
   B, after the categories (*Settings on Home*). Get Attention is in C,
   after Emergency and before Again; Stop, while it shows, is reached
   first in B (*Get Attention and Stop on Home*). *2026-11-17:* the
-  priorities alone were not enough. Until SwiftUI applies them, it offers
-  elements in the order they are declared, and on CI's simulators that
-  was Home's screen order, Phrases and Type before Yes, No and Emergency,
-  for up to four seconds on a still Home. So Home also declares its
+  priorities alone were not enough. Until SwiftUI had applied them, the
+  accessibility tree XCTest read on CI's simulators listed elements in the
+  order they are declared, which was Home's screen order, Phrases and
+  Type before Yes, No and Emergency, for up to four seconds on a still
+  Home. So Home also declares its
   regions, and the safety row its controls, in the order they are
   reached (`HomeRegion.allCases`, `HomeRegion.safetyRowOrder`), each
   placed at the engine's frame; nothing moves

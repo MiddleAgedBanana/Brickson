@@ -121,8 +121,8 @@ struct HomeView: View {
 
             // The regions are declared in the order assistive technologies
             // reach them (`HomeRegion`), each under the regions and gaps
-            // above it on screen: SwiftUI offers them in the order they are
-            // declared until it has applied their sort priorities.
+            // above it on screen: until SwiftUI has applied their sort
+            // priorities, the accessibility tree lists them as declared.
             ZStack(alignment: .topLeading) {
                 ForEach(HomeRegion.allCases, id: \.self) { region in
                     VStack(alignment: .leading, spacing: 0) {
@@ -759,8 +759,9 @@ private struct SafetyRow: View {
     let showEmergency: () -> Void
 
     /// The controls are declared in the order they are reached
-    /// (`HomeRegion.safetyRowOrder`), which SwiftUI offers until it has
-    /// applied their sort priorities, and each stands at its own frame
+    /// (`HomeRegion.safetyRowOrder`), the order the accessibility tree
+    /// lists them in until SwiftUI has applied their sort priorities, and
+    /// each stands at its own frame
     /// from the engine: in one row on regular widths, Emergency first, and
     /// in two on compact ones.
     var body: some View {
@@ -1289,11 +1290,11 @@ private nonisolated struct SafetyRowLayout: Layout {
     /// The controls' slots, in the order the controls are declared.
     let slots: [HomeLayout.Slot]
 
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+    func sizeThatFits(proposal _: ProposedViewSize, subviews _: Subviews, cache _: inout ()) -> CGSize {
         layout.allocationBounds(of: slots).size
     }
 
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+    func placeSubviews(in bounds: CGRect, proposal _: ProposedViewSize, subviews: Subviews, cache _: inout ()) {
         let row = layout.allocationBounds(of: slots)
         for (subview, slot) in zip(subviews, slots) {
             let frame = layout.allocation(slot)

@@ -39,7 +39,7 @@ struct HomeRegionTests {
 
     /// Fails if Home declares its regions in an order other than the one
     /// their priorities give. Until SwiftUI has applied
-    /// `accessibilitySortPriority`, it hands assistive technologies a
+    /// `accessibilitySortPriority`, the accessibility tree lists a
     /// container's elements in the order they are declared; Home declares
     /// its regions in `allCases` order, so that order must already be the
     /// one they are reached in. Declaring them top to bottom, as Home did,
@@ -56,7 +56,7 @@ struct HomeRegionTests {
     /// by where they are, top to bottom, then leading to trailing. Home
     /// once declared the row as it stands on screen: Emergency first on
     /// regular widths, and Again before Get Attention on compact ones,
-    /// which assistive technologies were offered before the sort applied.
+    /// which the tree listed before the sort applied.
     @Test func theSafetyRowIsDeclaredInTheOrderItIsReached() {
         var wrong: [String] = []
         for (layout, _, context) in HomeLayoutEngineTests.everyLayout {

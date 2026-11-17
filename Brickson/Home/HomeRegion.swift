@@ -14,11 +14,11 @@
 ///
 /// The cases are in that order, and Home declares its regions in it, as it
 /// does the safety row's controls (`safetyRowOrder`): until SwiftUI has
-/// applied the sort priorities below, it hands assistive technologies the
-/// elements in the order they are declared, and on CI that lasted up to
-/// four seconds after Home appeared, with nothing touched
-/// (docs/log/2026-11-17-home-order-before-sorting.md). Declared in this
-/// order, Home is reached the same way before and after the sort.
+/// applied the sort priorities below, the accessibility tree lists the
+/// elements in the order they are declared. On CI's simulators the tree
+/// XCTest read stayed that way for up to four seconds after Home appeared,
+/// with nothing touched (docs/log/2026-11-17-home-order-before-sorting.md).
+/// Declared in this order, the tree is the same before and after the sort.
 nonisolated enum HomeRegion: CaseIterable, Sendable {
     /// C: Yes, No, Emergency, Get Attention and Again.
     case safety
