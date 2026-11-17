@@ -57,6 +57,7 @@ building on an open pull request (docs/HANDOFF.md, *Known gaps*).
    exceptions named in the handoff; gaps down measured from each control
    to the one under it, so a short tile cannot hide a wider gap below it,
    with a test that fails on one.
+3. A merge of `main`, so the UI tests run in their new parts (#118).
 
 ## Verified
 
@@ -65,8 +66,11 @@ building on an open pull request (docs/HANDOFF.md, *Known gaps*).
 - CI on the first commit passed: the unit tests, and the UI tests on CI's
   iPad and iPhone simulators, where the Home test that now holds the
   rendered equal-gaps check passed at the default and largest text
-  sizes. The review fixes change the rule's gaps down and the documents;
-  CI on the last commit is the evidence for them.
+  sizes. CI on the review fixes (632d793) passed too, after re-runs for
+  three faults of the machines that no test caused: a simulator already
+  shut down at clean-up, the iPhone simulator losing contact in the
+  middle of a test, and a slow machine that stopped the iPhone job at its
+  time limit with no test failing.
 - No value changed: each replaced number was read beside the step that
   replaced it, and every step equals the number it replaced.
   `SpacingTests` fails if a step, a fixed measure or a profile's gap
@@ -92,11 +96,10 @@ building on an open pull request (docs/HANDOFF.md, *Known gaps*).
 
 ## Not verified
 
-- That the rendered gaps are equal under the stricter gaps-down rule,
-  until CI passes on the last commit. The check's half-point tolerance
-  assumes SwiftUI rounds the two edges of an integral gap the same way,
-  as it should; a one-pixel difference on a 3x iPhone is a third of a
-  point.
+- That SwiftUI rounds the two edges of an integral gap the same way on
+  every screen, which the check's half-point tolerance assumes. It did on
+  CI's iPad and iPhone simulators; a one-pixel difference on a 3x iPhone
+  is a third of a point.
 - Rendered gaps under profiles other than touch's (the UI tests ask for
   touch's), and in windows with a fold or camera region, where one gap is
   wider on purpose. The engine's are checked in every profile.
@@ -110,6 +113,6 @@ building on an open pull request (docs/HANDOFF.md, *Known gaps*).
   AGENTS.md naming the scale. *(coordinator)*
 - The three nearly equal pairs in docs/HANDOFF.md, *Known gaps*, for the
   design of the app's look. *(owner, with the design)*
-- Merge order: this touches none of #114's, #115's or #116's files but
-  docs/DECISIONS.md and docs/HANDOFF.md, at lines none of them change,
-  so any order is safe.
+- Merge order: this changes no file the other open pull requests change
+  but docs/DECISIONS.md and docs/HANDOFF.md, and git merges each of them
+  with this one cleanly, so any order is safe.
