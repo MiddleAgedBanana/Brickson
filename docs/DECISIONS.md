@@ -1017,8 +1017,19 @@ as for a synthesizer gone quiet:
 - when the audio session never activated, "Audio failed" stays, as in
   "A phrase the system cuts off" (code audit L3).
 
-A phrase that began is never stopped by the limit, however long it then
-speaks.
+A phrase that began in time is never stopped by the limit, however long
+it then speaks.
+
+**When the watchdog cannot look.** A slow audio activation or voice
+lookup holds the main thread, where the watchdog runs; on CI a voice
+lookup took almost three minutes. So the limit is also checked outside
+the watchdog, against the start limit and its half-second second look
+(`SpeechService.latestStart`, 15.5 seconds): a phrase held up that long
+before the synthesizer has it is never handed over, and one whose first
+start or word report is stamped that late is stopped as it begins. Both
+show the same warning as above. Without this, a phrase held up past the
+limit could begin before the watchdog's next look and be kept, sounding
+minutes after it was chosen (a review on the pull request found it).
 
 **Why it is stopped, not left to sound later.** A phrase heard minutes
 after it was chosen can answer a question nobody is asking any more (Yes
@@ -1081,8 +1092,10 @@ passed to the main queue in arrival order, so the two can differ by at
 most the moments it takes to pass one along, against a log threshold of
 one second and a limit of 15.
 
-**What it does not catch.** A start report sent for speech that is never
-heard, and a phrase that began and then stays "speaking" with no finish
+**What it does not catch.** A phrase the synthesizer begins after
+`latestStart`, while its own voice lookup held the main thread, can be
+heard for the moment it takes to stop it. A start report sent for speech
+that is never heard, and a phrase that began and then stays "speaking" with no finish
 (the 2026-10-25 diagnostic) still show "Speaking": the first is not
 known to happen, and the second is the open gap the diagnostic records.
 

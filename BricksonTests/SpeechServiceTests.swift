@@ -496,6 +496,59 @@ struct SpeechServiceTests {
         #expect(harness.synthesizer.stopCount == 1)
     }
 
+    /// A slow audio activation or voice lookup holds the main thread, where
+    /// the watchdog cannot look, and can last past the limit (on CI a voice
+    /// lookup took almost three minutes). The phrase is then too late to be
+    /// heard in turn, so it is never handed to the synthesizer, and Home
+    /// names Again at once. Fails if it is handed over regardless, where it
+    /// could begin minutes after it was chosen.
+    @Test func aPhraseHeldUpPastTheLimitIsNeverHandedToTheSynthesizer() async {
+        let harness = AudioHarness()
+        let clock = harness.clock
+        harness.audioSession.onActivate = { clock.advance(by: SpeechService.latestStart) }
+        harness.speech.speak("Yes.")
+        harness.audioSession.onActivate = nil
+
+        #expect(harness.synthesizer.requests.isEmpty)
+        #expect(!harness.speech.isSpeaking)
+        #expect(harness.issue == .speechStopped)
+        #expect(!harness.coordinator.isHeld(by: .speech))
+    }
+
+    /// A phrase handed over just before the main thread is held can begin
+    /// after the limit, before the watchdog gets to look. A start reported
+    /// that late stops it as it begins, and Home names Again. Fails if a
+    /// late start is kept, where the phrase would sound out of turn.
+    @Test func aStartReportedPastTheLimitStopsThePhraseAsItBegins() async {
+        let harness = AudioHarness()
+        harness.speech.speak("Yes.")
+        #expect(await waitUntil { harness.speechSleeper.isAnyoneSleeping })
+
+        harness.clock.advance(by: SpeechService.latestStart)
+        harness.synthesizer.reportStart()
+
+        #expect(!harness.speech.isSpeaking)
+        #expect(harness.issue == .speechStopped)
+        #expect(harness.synthesizer.stopCount == 1)
+        #expect(!harness.coordinator.isHeld(by: .speech))
+        #expect(await harness.speechSleeper.wakeAll())
+        #expect(!harness.speechSleeper.isAnyoneSleeping)
+    }
+
+    /// A voice that sends no start report shows its start with its first
+    /// word, so a first word reported past the limit stops the phrase too.
+    /// Fails if only the start report is checked against the limit.
+    @Test func aFirstWordReportedPastTheLimitStopsThePhraseToo() async {
+        let harness = AudioHarness()
+        harness.speech.speak("Yes, please.")
+        harness.clock.advance(by: SpeechService.latestStart)
+        harness.synthesizer.reportProgress(through: 3)
+
+        #expect(!harness.speech.isSpeaking)
+        #expect(harness.issue == .speechStopped)
+        #expect(harness.synthesizer.stopCount == 1)
+    }
+
     /// A slow first phrase is not cut off: on CI a healthy first phrase took
     /// about five seconds to begin. Fails if the limit acts before it is
     /// reached, or ever stops a phrase that began.

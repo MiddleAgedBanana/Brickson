@@ -24,8 +24,12 @@ word report by then is stopped, after a second look half a second later,
 and treated as cut off: Home shows the existing "Stopped — Again" (or
 "Stopped: Phrases" while typing, "Stopped — Back" under a screen), a
 voice sample only clears "Speaking", and "Audio failed" stays when the
-session never activated. A phrase that began is never stopped by the
-limit. Again, or the same tile, then speaks at once: before this change
+session never activated. A phrase that began in time is never stopped
+by the limit. Because a slow audio activation or voice lookup holds the
+main thread, where the watchdog runs, the limit is also checked outside
+it: a phrase held up past 15.5 seconds (the limit and its second look)
+is never handed to the synthesizer, and one that reports its start that
+late is stopped as it begins. Again, or the same tile, then speaks at once: before this change
 the same tile was absorbed, for up to 20 seconds, as a repeat of the
 phrase still "speaking".
 
@@ -91,6 +95,10 @@ is now measured too. The limit did not change.)
   activation count; the start-log thresholds worded as the code measures
   them (one second or more); a review's proposal to order reports by
   their stamps declined, with the reason, in docs/DECISIONS.md.
+- The third review's commit: the limit checked outside the watchdog, so
+  a phrase held up past it on the main thread is never handed over and
+  one that begins that late is stopped as it begins (docs/DECISIONS.md,
+  "A phrase that does not start"), with three tests.
 
 ## Verified
 
@@ -100,7 +108,7 @@ is now measured too. The limit did not change.)
   with stand-ins for AVFoundation and `Logger`) compiled with no
   warnings in a throwaway package outside the repository, with Swift 6
   language mode, main-actor default isolation and the project's upcoming
-  features. 121 tests passed: every test in `SpokenUtteranceTrackerTests`
+  features. 124 tests passed: every test in `SpokenUtteranceTrackerTests`
   and `SpeechServiceTests` (except one about launch storage, which needs
   `LaunchOptions`) and the speech test from `OffMainThreadCallbackTests`.
 - **Each new test fails without the change it covers** (run on the same
@@ -130,7 +138,17 @@ is now measured too. The limit did not change.)
   - a word report never returning the start measurement, and every report
     returning it: `aWordReportThatComesFirstSaysHowLongThePhraseTookToBegin`;
   - the count starting after the audio session activates:
-    `aSlowAudioActivationCountsAgainstTheStartLimit`.
+    `aSlowAudioActivationCountsAgainstTheStartLimit`;
+  - a phrase handed to the synthesizer however long it was held up, and
+    the check written `<=` at its boundary:
+    `aPhraseHeldUpPastTheLimitIsNeverHandedToTheSynthesizer`;
+  - a late start or word kept, and `>` in place of `>=` at the boundary:
+    `aStartReportedPastTheLimitStopsThePhraseAsItBegins` and
+    `aFirstWordReportedPastTheLimitStopsThePhraseToo`;
+  - only the start report checked against the limit:
+    `aFirstWordReportedPastTheLimitStopsThePhraseToo`;
+  - no second look in that check (15 seconds, not 15.5):
+    `aStartThatLandsDuringTheGraceKeepsThePhrase`.
 - **The repository's Python checks**, on Linux in this cloud session,
   all passed: `scripts/test-docs.py`, `test-hooks.py`, `test-privacy.py`,
   `test-forbidden-code.py`, `forbidden-code.py`, `test-runner.py`,

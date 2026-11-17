@@ -312,9 +312,9 @@ final class SpeechService {
     private func receive(_ event: SpeechSynthesisEvent, for token: UtteranceToken) {
         switch event {
         case let .started(at: instant):
-            logStartIfSlow(utterances.recordStart(token, at: instant))
+            noteBeginning(utterances.recordStart(token, at: instant), of: token)
         case let .willSpeak(through: offset, at: instant):
-            logStartIfSlow(utterances.recordProgress(token, reaching: offset, at: instant))
+            noteBeginning(utterances.recordProgress(token, reaching: offset, at: instant), of: token)
         case let .finished(at: instant):
             if utterances.ended(token, at: instant) == .endedBeforeItsFinalWord {
                 // Not shown on its own: some voices skip reporting the last
@@ -427,12 +427,21 @@ final class SpeechService {
         lastToken &+= 1
         let token = UtteranceToken(rawValue: lastToken)
         utterances.began(token, source: source ?? .phrase(trimmed), at: askedAt)
+        let voiceIdentifier = resolveVoiceIdentifier(chosenID: voiceChoice(for: source))
+        // A slow audio activation or voice lookup holds the main thread,
+        // where the watchdog cannot look. A phrase held up past
+        // `latestStart` would sound out of turn, so it is never handed to
+        // the synthesizer, and Home names Again at once.
+        guard now() - askedAt < Self.latestStart else {
+            recover(from: .neverBegan, of: token)
+            return trimmed
+        }
         synthesizer.speak(
             SpeechRequest(
                 token: token,
                 text: trimmed,
                 rate: speechRate,
-                voiceIdentifier: resolveVoiceIdentifier(chosenID: voiceChoice(for: source))
+                voiceIdentifier: voiceIdentifier
             )
         )
         watch(token)
@@ -453,6 +462,14 @@ final class SpeechService {
     static let watchdogInterval: Duration = .seconds(1)
     static let watchdogGrace: Duration = .milliseconds(500)
 
+    /// The latest a phrase may begin, from the moment it was asked for, and
+    /// still be kept: the start limit and the watchdog's second look. Later
+    /// than that it would sound out of turn (docs/DECISIONS.md, "A phrase
+    /// that does not start").
+    static var latestStart: Duration {
+        SpokenUtteranceTracker<UtteranceToken>.startLimit + watchdogGrace
+    }
+
     /// A start this slow is logged (`logStartIfSlow`).
     static let slowStartWorthLogging: Duration = .seconds(1)
 
@@ -466,14 +483,26 @@ final class SpeechService {
         logger.notice("Speech began \(delayMilliseconds) ms after it was asked for")
     }
 
+    /// Logs a slow start, and stops a phrase that began after
+    /// `latestStart`. The watchdog cannot look while the main thread is
+    /// held (by the synthesizer's own voice lookup, say), so a phrase can
+    /// begin after the limit; stopped as it begins, it is not heard out of
+    /// turn, and Home names Again.
+    private func noteBeginning(_ delay: Duration?, of token: UtteranceToken) {
+        logStartIfSlow(delay)
+        guard let delay, delay >= Self.latestStart else { return }
+        recover(from: .neverBegan, of: token)
+    }
+
     /// What the watchdog can find wrong with the current utterance.
     private enum WatchdogFinding {
         /// The synthesizer stopped, or was left paused, without a finish or
         /// cancel report.
         case wentQuiet
         /// No start or word report by `SpokenUtteranceTracker.startLimit`,
-        /// though the synthesizer may still say it is speaking
-        /// (docs/DECISIONS.md, "A phrase that does not start").
+        /// though the synthesizer may still say it is speaking; or, found
+        /// outside the watchdog, a phrase held up or begun after
+        /// `latestStart` (docs/DECISIONS.md, "A phrase that does not start").
         case neverBegan
     }
 
