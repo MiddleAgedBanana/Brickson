@@ -172,8 +172,17 @@ wallpaper extensions, which iOS otherwise starts a few minutes after the
 simulator boots and which slowed GitHub's machines until tests failed.
 
 GitHub Actions runs unit and UI tests for pull requests and pushes to
-`main`, with the iPad's and the iPhone's UI tests on two machines at the
-same time. Passing tests are required before merging. Physical-device checks
+`main`. The UI tests run in three parts on the iPad and three on the
+iPhone, six jobs that run at the same time as machines are free (GitHub
+runs at most five Mac jobs at once, so some wait for one);
+`scripts/ui-test-parts.py` says
+which tests each part runs, and every test runs in one part. To run one
+part as CI does:
+
+```sh
+UI_TEST_PART=2 SIMULATOR_FAMILY=ipad scripts/test.sh ui
+```
+ Passing tests are required before merging. Physical-device checks
 are still necessary for audio, dwell, Eye Tracking and other access methods.
 
 ## Repository structure
