@@ -295,7 +295,17 @@ On the owner's Mac, Xcode 27.2:
 - `xcodebuild -enumerate-tests` with each part's arguments, on an iPad
   Pro 13-inch (M5) and an iPhone 17 simulator (iOS 27.2): parts of 29,
   15 and 37 tests, 81 in all on each, every test exactly once.
-- LOCALRUN
+- `UI_TEST_PART=3 SIMULATOR_FAMILY=iphone scripts/test.sh ui` on an
+  iPhone 17 simulator (iOS 27.2), portrait, the full software
+  keyboard: 37 tests ran, as the enumeration said (31 passed, 5 skipped
+  as on CI, 1 failed), in 12.5 minutes of tests; it wrote
+  `ui-iphone-part3.xcresult` and `simulator-load-iphone-part3.txt` and
+  shut its simulator down. The failure,
+  `LaunchTests.testLargestTextKeepsQuickControlWordsVisible` ("Speaking"
+  still showing 30 seconds later: the phrase never ended), is this
+  Mac's simulator speech, not the parts: the same test run alone with
+  no part (`scripts/test.sh ui` with its `-only-testing`) failed the
+  same way, and it passes on every CI run above.
 
 ## Not verified
 
