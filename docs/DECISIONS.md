@@ -5717,6 +5717,37 @@ request merges only when they pass.
   over adding a weekly CI run with animations on, or leaving them on
   and raising the iPad job's time limit (2026-11-13). Record:
   [`log/2026-11-13-ipad-ui-test-stall.md`](log/2026-11-13-ipad-ui-test-stall.md).
+- **2026-11-16, default, reversible:** the UI tests run in three parts
+  per device family, six jobs at the same time, each with 90 minutes;
+  this replaces one job per family (2026-11-03). That morning both
+  families' jobs ran past 90 minutes, on `main` and on pull requests,
+  so nothing could merge: each job spent 10 to 19 minutes starting the
+  simulator and building, then ran all 81 tests one after another, 48
+  to 70 minutes and more on a slow machine. `scripts/ui-test-parts.py`
+  names the test classes of every part but the last; the last runs
+  every other class, so a new class always runs somewhere and no class
+  can be left out of every part. `scripts/test.sh` runs one part when
+  `UI_TEST_PART` names it and everything without it. The parts are
+  balanced by measured time, about 16 to 24 minutes of tests each;
+  move classes between them when one grows.
+  `scripts/test-runner.py` checks that every UI test class runs in
+  exactly one part, that each family runs every part, and that the six
+  jobs differ only in family and part; "UI tests" passes only when all
+  six passed. Nothing is dropped: every test still runs on both
+  families on every pull request. The cost: each part starts its own
+  simulator and builds the app, so a run uses about a third more Mac
+  time, and GitHub runs at most five Mac jobs at once, so with the unit
+  job two parts wait for a free machine. Running two simulators in one
+  job was not chosen: GitHub's Mac has three processors, and the
+  simulator-load records show one simulator and its tests already
+  keeping them almost fully busy. Revisit when a part's job
+  takes more than about 45 minutes on a normal day (rebalance, or add
+  a part), or when GitHub's Macs get more processors (fewer parts). The
+  same day, a run whose tests all passed failed because its simulator
+  had already shut down when `scripts/test.sh` asked it to: a simulator
+  already shut down now counts as cleaned up, and one still running
+  still fails the run. Record:
+  [`log/2026-11-16-ui-test-parts.md`](log/2026-11-16-ui-test-parts.md).
 
 ## Personal details stay out of the repository
 
