@@ -7232,6 +7232,71 @@ turns AI Scan back on, when it stops reading Swift or leaves the
 preview with new terms; or when a Swift error appears on the Tool
 status page again.
 
+### SonarQube Cloud's alerts
+
+*2026-11-17, default, reversible.* SonarQube Cloud analyses `main` and
+every pull request by itself (its automatic analysis, set up on its
+website; the repository holds no settings file for it), Swift included,
+and sends its security findings to GitHub's code scanning page beside
+CodeQL's. On a pull request they arrive as review comments, so each one
+needs an answer before a merge (*`main` ruleset*, below). They do not
+block a merge otherwise: the ruleset's code scanning rule names CodeQL
+only.
+
+On 2026-11-17 four of its findings stood open on `main`, all of one
+kind: a value from outside a Python helper script (an argument, or a
+file's text) handed to another program, which could read it as an
+option of its own ("argument injection"). None is in the app. Each was
+checked against the code:
+
+- **Alert 7, `scripts/privacy-check.py`: fixed.** The path it named, the
+  folder after `git -C`, was safe: git reads the word after `-C` as a
+  folder even when it starts with a dash. The same call had a gap it did
+  not name: a `--commits` range went to `git log` as given, so
+  `--commits=--output=<file>` emptied that file before the check
+  stopped. A range that starts with a dash is now refused before git
+  runs, and the folder is resolved to an absolute path first, which
+  never reads as an option whatever git does. Tests:
+  `test_a_range_that_starts_with_a_dash_is_refused_before_git_reads_it`
+  and `test_git_is_given_the_repository_as_an_absolute_folder`.
+- **Alert 4, `scripts/forbidden-code.py`: hardened.** The same safe
+  path; the folder is now resolved first too
+  (`test_git_is_given_the_checkout_as_an_absolute_folder`).
+- **Alert 6, `scripts/agent-bridge.py`, the brief's text: declined, a
+  false positive.** The brief reaches `codex exec` and `agy -p` as the
+  prompt only after the bridge's fixed preamble ("You are working on
+  Brickson…"), so that argument never starts with a dash.
+- **Alert 5, `scripts/agent-bridge.py`, `--background`: declined, a
+  false positive.** The bridge starts itself again with the arguments its
+  own parser already accepted, minus `--background`. They reach no other
+  program and allow nothing its user could not type.
+
+The owner dismisses alerts 5 and 6 on GitHub as false positives with
+these reasons; SonarQube Cloud's documentation says a status changed on
+GitHub reaches it too. An agent's dismissal through the owner's `gh` on
+the Mac was refused by Claude Code's permission check there, so
+dismissing stays with the owner. If alert 4 or 7 is still open after
+this change reaches `main`, SonarQube Cloud does not count a resolved
+path as safe; it is then dismissed with the reason above.
+
+**How a script hands a value to another program**, so the finding does
+not return: a folder or file goes as an absolute path
+(`Path(...).resolve()`); any other value from outside (an argument, a
+file's text, an environment variable) is refused if it starts with a
+dash, after any prefix the script strips, or goes after `--` where the
+program reads that as the end of its options; and no script builds a
+shell command from it. The repeated answers to this finding on pull
+request #119 came from new measuring scripts that took their arguments
+from the command line.
+
+**Answering one on a pull request.** Check it like any reviewer's
+finding (AGENTS.md, *Code Review Rules*). Where the code follows the rule
+above, answer once, naming this section, and ask the owner to dismiss
+the alert on GitHub as a false positive with that reason, in the
+thread's report rather than in a comment. An alert reported again after a fix
+means the fix missed a path: look again before answering it a second
+time.
+
 ### Security review context
 
 *2026-11-08, approved by the owner in the security-policy chat.* The root
@@ -7256,7 +7321,7 @@ through its API on 2026-10-15:
 | Require a pull request before merging | 0 approvals; merge commits only | Nobody pushes to `main`. The owner cannot approve pull requests that show them as author, so any approval count would block every merge. Merge commits keep the commit hashes HANDOFF cites on `main`. |
 | Require status checks to pass | "Unit tests" and "UI tests" | The job names in `tests.yml`. Renaming a job blocks every pull request until the ruleset is changed to match. |
 | Require branches to be up to date | Off | Each update reruns the Mac tests; `main` is tested again after every merge anyway. |
-| Require conversation resolution | On | Every reviewer's comment (Codex, CodeRabbit, Greptile, cubic, Copilot), and every CodeQL alert posted on the pull request, gets an answer before a merge. AI Scan findings were answered too, by practice, while it was on (until 2026-11-08, *Code scanning* above). |
+| Require conversation resolution | On | Every reviewer's comment (Codex, CodeRabbit, Greptile, cubic, Copilot), and every CodeQL or SonarQube Cloud alert posted on the pull request, gets an answer before a merge. AI Scan findings were answered too, by practice, while it was on (until 2026-11-08, *Code scanning* above). |
 | Require code scanning results | CodeQL: errors, high or higher | A workflow change that CodeQL flags as an error, or as a high or critical security problem, cannot merge. It did not cover Dependabot's first pull request, which got no CodeQL analysis before merging (*Code scanning* above). |
 | Automatically request Copilot code review | Off since 2026-11-03 (on before, with new pushes and drafts off) | The agent asks for Copilot's review once per code pull request, after Codex's review is answered (since 2026-11-08, *Code review* above). |
 | Block force pushes, restrict deletions | On | History on `main` never changes. |

@@ -1639,6 +1639,13 @@ settings, date) and summarise it here.
 - CodeQL scans the workflow files and the Python scripts, not the Swift
   code, on purpose (docs/DECISIONS.md, *Code scanning*); the failed Swift
   attempt of 2026-10-10 was deleted from the Tool status page on 2026-11-08.
+  SonarQube Cloud also analyses every push and pull request, Swift
+  included, and sends its security findings to the same code scanning
+  page. Its four open alerts of 2026-11-17, all in the helper scripts,
+  were answered: in two, git is now given the folder as an absolute
+  path and a real gap beside one of them is closed; the other two are
+  false positives for the owner to dismiss (docs/DECISIONS.md,
+  "SonarQube Cloud's alerts").
   The root [SECURITY.md](../SECURITY.md) gives Codex Security context for
   the app, tooling and website from the existing rules and decisions;
   [.github/SECURITY.md](../.github/SECURITY.md) remains the private-reporting

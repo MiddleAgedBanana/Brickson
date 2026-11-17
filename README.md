@@ -216,7 +216,9 @@ commit; changes made without Xcode remain untested until CI or a Mac run
 passes. The maintainer merges pull requests after review and passing CI.
 
 CodeQL scans the GitHub workflow files and the Python scripts in
-`scripts/`, not Swift. AI reviewers read pull-request changes, Swift
+`scripts/`, not Swift. SonarQube Cloud analyses every push and pull
+request, Swift included, and reports its security findings on the same
+code scanning page. AI reviewers read pull-request changes, Swift
 included, and their findings are answered during review; they do not
 enforce a merge gate. See
 [Code scanning](docs/DECISIONS.md#code-scanning) for the coverage,
