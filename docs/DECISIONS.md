@@ -2503,7 +2503,11 @@ docs/work/layout-engine.md; the record is
   over the swept windows now also runs on each window of the table with
   its own safe areas. By the engine: the iPhone Air holds the starter
   library through AX3, Bold Text on or off, as the iPhone 16e does, and
-  every new iPad window at every text size; the safety row ends above
+  every new iPad window at every text size. Without Phrases and Type
+  (`HomeLayout.Modes.phrasesOnly`, the arrangement kept for comparison,
+  not Home's), the iPad mini (A20 Pro) in landscape holds it through AX3
+  only, 28 points short at AX5, as the other iPad mini in landscape (40
+  points short there). The safety row ends above
   the keyboard's room on each at every size but the 820 by 1180 iPad in
   landscape at AX5 and the iPad mini (A20 Pro) in landscape from AX3,
   as on the other iPad mini, where Home does not offer typing

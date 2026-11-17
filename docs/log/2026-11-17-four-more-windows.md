@@ -80,11 +80,21 @@ tables have the rows):
 - **iPad mini (A20 Pro), landscape:** as the older iPad mini in
   landscape: the safety row clears the keyboard's room through AX1;
   touch's sizes (head tracking's leave the starter library 18 to 46
-  points short).
+  points short). Home fits the starter library at every size. Without
+  Phrases and Type (`HomeLayout.Modes.phrasesOnly`, the arrangement the
+  engine keeps for comparison; Home never shows it), it fits through
+  AX3 only, 28 points short at AX5, as on the older iPad mini in
+  landscape (40 points short).
 
 No check failed on any of the new windows, so no layout changed. Nothing
 in the app's code changed, and no window already in the list takes other
 sizes or frames.
+
+The fit table's comment in `HomeLayoutEngineTests` called its `home`
+column "Home as it is today, without typing". Home has shown Phrases and
+Type since 2026-10-24 (docs/DECISIONS.md, "The layout engine", *Where
+the starter library fits*), so the column is the comparison arrangement,
+and the comment now says so; the table did not change.
 
 ## Commits
 

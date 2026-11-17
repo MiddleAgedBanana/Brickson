@@ -1392,9 +1392,10 @@ struct HomeLayoutEngineTests {
     // MARK: The windows people use
 
     /// A full-screen window and how far up the text sizes it holds the
-    /// starter library without scrolling, with Bold Text off and on, as
-    /// Home is today (`home`, without typing) and in the slot plan's own
-    /// arrangement (`slotPlan`), and how far up the slot plan keeps the
+    /// starter library without scrolling, with Bold Text off and on,
+    /// without Phrases and Type (`home`: `HomeLayout.Modes.phrasesOnly`,
+    /// kept for comparison) and in the slot plan's own arrangement, which
+    /// is Home's (`slotPlan`), and how far up the slot plan keeps the
     /// safety row above the keyboard's room: an index into `textSizes`, or
     /// nil for none.
     struct Window: Sendable {
