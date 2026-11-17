@@ -46,8 +46,9 @@ README now say that SonarQube Cloud scans the repository too.
   `main` or on pull requests #122 and #123. SonarQube Cloud's own API
   showed the same four as its only open vulnerabilities on `main`.
 - On `main` before the fix, in a throwaway repository on Linux,
-  `privacy-check.py --no-list --commits=--output=<file>` created the
-  file and then stopped with exit status 2; git 2.43 also showed that
+  `python3 scripts/privacy-check.py --no-list '--commits=--output=written.txt'`
+  created `written.txt` and then stopped with exit status 2; git 2.43
+  also showed that
   `git -C --version status` treats `--version` as a folder.
 - New tests, each run first against `main`'s code and seen to fail:
   - `test_a_range_that_starts_with_a_dash_is_refused_before_git_reads_it`
