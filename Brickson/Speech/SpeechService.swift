@@ -429,9 +429,9 @@ final class SpeechService {
         utterances.began(token, source: source ?? .phrase(trimmed), at: askedAt)
         let voiceIdentifier = resolveVoiceIdentifier(chosenID: voiceChoice(for: source))
         // A slow audio activation or voice lookup holds the main thread,
-        // where the watchdog cannot look. A phrase held up past
-        // `latestStart` would sound out of turn, so it is never handed to
-        // the synthesizer, and Home names Again at once.
+        // where the watchdog cannot look. A phrase held up for
+        // `latestStart` or longer would sound out of turn, so it is never
+        // handed to the synthesizer, and Home names Again at once.
         guard now() - askedAt < Self.latestStart else {
             recover(from: .neverBegan, of: token)
             return trimmed
@@ -483,11 +483,12 @@ final class SpeechService {
         logger.notice("Speech began \(delayMilliseconds) ms after it was asked for")
     }
 
-    /// Logs a slow start, and stops a phrase that began after
-    /// `latestStart`. The watchdog cannot look while the main thread is
-    /// held (by the synthesizer's own voice lookup, say), so a phrase can
-    /// begin after the limit; stopped as it begins, it is not heard out of
-    /// turn, and Home names Again.
+    /// Logs a slow start, and stops a phrase that began `latestStart` or
+    /// more after it was asked for. The watchdog cannot look while the
+    /// main thread is held (by the synthesizer's own voice lookup, say), so
+    /// a phrase can begin after the limit. It is stopped as soon as its
+    /// start reaches the main thread, so at most its first moment is heard
+    /// out of turn, and Home names Again.
     private func noteBeginning(_ delay: Duration?, of token: UtteranceToken) {
         logStartIfSlow(delay)
         guard let delay, delay >= Self.latestStart else { return }

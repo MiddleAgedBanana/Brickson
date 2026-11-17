@@ -27,9 +27,10 @@ voice sample only clears "Speaking", and "Audio failed" stays when the
 session never activated. A phrase that began in time is never stopped
 by the limit. Because a slow audio activation or voice lookup holds the
 main thread, where the watchdog runs, the limit is also checked outside
-it: a phrase held up past 15.5 seconds (the limit and its second look)
-is never handed to the synthesizer, and one that reports its start that
-late is stopped as it begins. Again, or the same tile, then speaks at once: before this change
+it: a phrase held up for 15.5 seconds or more (the limit and its second
+look) is never handed to the synthesizer, and one that reports its start
+that late is stopped as soon as the report arrives, so at most its first
+moment is heard. Again, or the same tile, then speaks at once: before this change
 the same tile was absorbed, for up to 20 seconds, as a repeat of the
 phrase still "speaking".
 

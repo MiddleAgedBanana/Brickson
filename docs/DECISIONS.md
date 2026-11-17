@@ -1025,8 +1025,9 @@ lookup holds the main thread, where the watchdog runs; on CI a voice
 lookup took almost three minutes. So the limit is also checked outside
 the watchdog, against the start limit and its half-second second look
 (`SpeechService.latestStart`, 15.5 seconds): a phrase held up that long
-before the synthesizer has it is never handed over, and one whose first
-start or word report is stamped that late is stopped as it begins. Both
+or longer before the synthesizer has it is never handed over, and one
+whose first start or word report is stamped that late is stopped as soon
+as the report reaches the main thread. Both
 show the same warning as above. Without this, a phrase held up past the
 limit could begin before the watchdog's next look and be kept, sounding
 minutes after it was chosen (a review on the pull request found it).
