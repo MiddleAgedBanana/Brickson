@@ -3394,7 +3394,15 @@ def status(root, entries, counts, no_list=False):
 
 
 def run(options, environ, stdin):
-    root = top_level(options.root or ROOT)
+    # git log would read a range that starts with a dash as an option of
+    # its own (--output=<file> writes over that file), so one is refused
+    # before git sees anything, and never repeated.
+    if any(revision.startswith('-') for revision in options.commits):
+        raise SetupError('A --commits range cannot start with a dash: git would read it as '
+                         'an option. Give a range such as origin/main..HEAD.')
+    # An absolute folder can never read as an option, whatever git does
+    # with the word after -C (docs/DECISIONS.md, "SonarQube Cloud's alerts").
+    root = top_level(Path(options.root).resolve() if options.root else ROOT)
     entries, counts, warnings = ([], [], []) if options.no_list else load_list(environ)
     for warning in warnings:
         print(f'privacy check: {warning}', file=sys.stderr)
