@@ -85,6 +85,8 @@ final class SpeechService {
     @ObservationIgnored private let settings: UserDefaults
     @ObservationIgnored private let notificationCenter: NotificationCenter
     @ObservationIgnored private let sleep: @MainActor @Sendable (Duration) async -> Void
+    /// Reads `ContinuousClock`; tests move it by hand.
+    @ObservationIgnored private let now: @MainActor () -> ContinuousClock.Instant
     @ObservationIgnored private var voicesObserver: (any NSObjectProtocol)?
     /// True while a read of the voice list is out (`refreshVoices()`).
     @ObservationIgnored private var isReadingVoices = false
@@ -102,7 +104,8 @@ final class SpeechService {
     /// UI tests (`LaunchOptions`). `notificationCenter` carries the system's
     /// "voices changed" notice; `personalVoice` is the Personal Voice
     /// permission, asked for at launch when `personalVoiceAskPolicy` says
-    /// so; `sleep` paces the missed-finish watchdog.
+    /// so; `sleep` paces the watchdog, and `now` is the time it judges a
+    /// phrase's start by (`ContinuousClock`, never `Date`).
     init(
         audioSession: AudioSessionCoordinator,
         events: AudioSessionEvents,
@@ -112,7 +115,8 @@ final class SpeechService {
         notificationCenter: NotificationCenter,
         personalVoice: any PersonalVoiceAuthorizing,
         personalVoiceAskPolicy: PersonalVoiceAskPolicy,
-        sleep: @escaping @MainActor @Sendable (Duration) async -> Void
+        sleep: @escaping @MainActor @Sendable (Duration) async -> Void,
+        now: @escaping @MainActor () -> ContinuousClock.Instant
     ) {
         self.audioSession = audioSession
         self.makeSynthesizer = makeSynthesizer
@@ -122,6 +126,7 @@ final class SpeechService {
         self.settings = settings
         self.notificationCenter = notificationCenter
         self.sleep = sleep
+        self.now = now
         synthesizer = makeSynthesizer()
 
         selectedVoiceID = settings.string(forKey: Self.voiceIDKey)
@@ -306,6 +311,14 @@ final class SpeechService {
 
     private func receive(_ event: SpeechSynthesisEvent, for token: UtteranceToken) {
         switch event {
+        case let .started(at: instant):
+            // Logged when slow, so a CI result bundle or a device's log
+            // shows how close real starts come to the start limit. Numbers
+            // only, never the words.
+            if let delay = utterances.recordStart(token, at: instant), delay >= Self.slowStartWorthLogging {
+                let delayMilliseconds = Self.milliseconds(delay)
+                logger.notice("Speech began \(delayMilliseconds) ms after it was asked for")
+            }
         case let .willSpeak(through: offset, at: instant):
             utterances.recordProgress(token, reaching: offset, at: instant)
         case let .finished(at: instant):
@@ -338,7 +351,7 @@ final class SpeechService {
             // Never resume by itself (invariant 4). On iOS 27 this arrives
             // twice, from the old and the new notice; the second finds
             // nothing to record.
-            let cutOff = utterances.interruptionCutOffAPhrase(at: .now)
+            let cutOff = utterances.interruptionCutOffAPhrase(at: now())
             stop()
             recordCutOff(cutOff)
         case .mediaServicesReset:
@@ -348,7 +361,7 @@ final class SpeechService {
             // phrase cut off by the reset is recorded so Home names Again;
             // the old synthesizer's cancel may never come. Nothing speaks
             // until the person's next activation (invariant 4).
-            let cutOff = utterances.interruptionCutOffAPhrase(at: .now)
+            let cutOff = utterances.interruptionCutOffAPhrase(at: now())
             synthesizer.onEvent = nil
             synthesizer = makeSynthesizer()
             listen(to: synthesizer)
@@ -360,7 +373,7 @@ final class SpeechService {
             // Headphones unplugged or a Bluetooth speaker switched off. A
             // phrase still speaking carries on through the new output; one
             // the system ended early as the output vanished needs Again.
-            recordCutOff(utterances.outputLossCutOffAPhrase(at: .now))
+            recordCutOff(utterances.outputLossCutOffAPhrase(at: now()))
         case .routeChanged, .mediaServicesLost:
             break
         }
@@ -385,7 +398,7 @@ final class SpeechService {
         utterances.absorbsRepeat(
             of: source,
             synthesizerIsSpeaking: synthesizerIsAudible,
-            now: .now
+            now: now()
         )
     }
 
@@ -415,7 +428,7 @@ final class SpeechService {
 
         lastToken &+= 1
         let token = UtteranceToken(rawValue: lastToken)
-        utterances.began(token, source: source ?? .phrase(trimmed), at: .now)
+        utterances.began(token, source: source ?? .phrase(trimmed), at: now())
         synthesizer.speak(
             SpeechRequest(
                 token: token,
@@ -424,7 +437,7 @@ final class SpeechService {
                 voiceIdentifier: resolveVoiceIdentifier(chosenID: voiceChoice(for: source))
             )
         )
-        watchForMissedFinish(of: token)
+        watch(token)
         return trimmed
     }
 
@@ -437,47 +450,84 @@ final class SpeechService {
     }
 
     /// The watchdog's pace: a check every second while an utterance is
-    /// current, and a second look half a second after one finds it quiet.
+    /// current, and a second look half a second after one finds it quiet
+    /// or not yet begun.
     static let watchdogInterval: Duration = .seconds(1)
     static let watchdogGrace: Duration = .milliseconds(500)
 
-    /// Backstop for a synthesizer that stops, or is left paused, without a
-    /// finish or cancel report. Without it, Home would show "Speaking"
-    /// forever, and a phrase that may never have been heard would fail
-    /// silently. Holds the service only weakly between checks.
-    private func watchForMissedFinish(of token: UtteranceToken) {
+    /// A start this slow is logged (`receive(_:for:)`).
+    static let slowStartWorthLogging: Duration = .seconds(1)
+
+    /// What the watchdog can find wrong with the current utterance.
+    private enum WatchdogFinding {
+        /// The synthesizer stopped, or was left paused, without a finish or
+        /// cancel report.
+        case wentQuiet
+        /// No start or word report by `SpokenUtteranceTracker.startLimit`,
+        /// though the synthesizer may still say it is speaking
+        /// (docs/DECISIONS.md, "A phrase that does not start").
+        case neverBegan
+    }
+
+    /// Backstop for an utterance that will not be heard to its end: a
+    /// synthesizer that stops, or is left paused, without a finish or cancel
+    /// report, and one that never begins. Without it, Home would show
+    /// "Speaking" over silence, and a phrase that may never have been heard
+    /// would fail silently. Holds the service only weakly between checks.
+    private func watch(_ token: UtteranceToken) {
         let sleep = self.sleep
         Task { @MainActor [weak self] in
-            var quietChecks = 0
+            var suspectLooks = 0
             while true {
-                await sleep(quietChecks == 0 ? SpeechService.watchdogInterval : SpeechService.watchdogGrace)
+                await sleep(suspectLooks == 0 ? SpeechService.watchdogInterval : SpeechService.watchdogGrace)
                 guard let self, self.utterances.activeID == token else { return }
-                guard !self.synthesizerIsAudible else {
-                    quietChecks = 0
+                guard let finding = self.watchdogFinding(for: token) else {
+                    suspectLooks = 0
                     continue
                 }
-                // Quiet with no report. Look once more, so a report already
-                // on its way can land and a phrase that simply finished is
-                // not called cut off.
-                quietChecks += 1
-                guard quietChecks >= 2 else { continue }
-                self.recoverFromMissedFinish(of: token)
+                // Look once more, so a report already on its way can land:
+                // a phrase that simply finished is not called cut off, and
+                // one that began just now is not stopped.
+                suspectLooks += 1
+                guard suspectLooks >= 2 else { continue }
+                self.recover(from: finding, of: token)
                 return
             }
         }
     }
 
+    private func watchdogFinding(for token: UtteranceToken) -> WatchdogFinding? {
+        if utterances.hasFailedToStart(token, at: now()) {
+            return .neverBegan
+        }
+        return synthesizerIsAudible ? nil : .wentQuiet
+    }
+
     /// Treats the utterance as cut off, so Home names Again (invariants 4
     /// and 5). A voice sample is not repeatable and only clears the
-    /// indicator. A synthesizer left paused is stopped, so the next phrase
-    /// starts clean.
-    private func recoverFromMissedFinish(of token: UtteranceToken) {
-        logger.error("The synthesizer went quiet without reporting the end of an utterance")
+    /// indicator. The synthesizer is stopped if it still holds the
+    /// utterance, so a paused one does not linger and one that never began
+    /// cannot sound minutes later, out of turn; the next phrase starts
+    /// clean.
+    private func recover(from finding: WatchdogFinding, of token: UtteranceToken) {
+        switch finding {
+        case .wentQuiet:
+            logger.error("The synthesizer went quiet without reporting the end of an utterance")
+        case .neverBegan:
+            let limit = Self.milliseconds(SpokenUtteranceTracker<UtteranceToken>.startLimit)
+            logger.error("An utterance did not begin within \(limit) ms and was stopped")
+        }
         recordCutOff(utterances.cancelled(token))
         if synthesizer.isSpeaking {
             synthesizer.stopSpeakingImmediately()
         }
         releaseSessionIfIdle()
+    }
+
+    /// Whole milliseconds, for log lines.
+    private nonisolated static func milliseconds(_ duration: Duration) -> Int64 {
+        let (seconds, attoseconds) = duration.components
+        return seconds * 1_000 + attoseconds / 1_000_000_000_000_000
     }
 
     // MARK: - Voices
