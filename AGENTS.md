@@ -382,7 +382,8 @@ scripts/test.sh device   # a build for a real device (needs DEVELOPMENT_TEAM)
 scripts/test.sh unit '-only-testing:BricksonTests/PaletteTests/theContrastFormulaMatchesWCAG()'  # one test; keep the ()
 SIMULATOR_FAMILY=iphone scripts/test.sh ui                         # one family
 DESTINATION='platform=iOS Simulator,id=<udid>' scripts/test.sh ui  # one simulator
-# Results: build/TestResults/<mode>-<family>.xcresult
+UI_TEST_PART=2 SIMULATOR_FAMILY=ipad scripts/test.sh ui  # one part, as CI runs it (scripts/ui-test-parts.py)
+# Results: build/TestResults/<mode>-<family>[-part<n>].xcresult
 ```
 
 - On a Mac the unit suite is 100% green before any commit; CI is green
@@ -552,7 +553,7 @@ Apple's skills again after each new Xcode release.
   recordings, attachments and the app's own log; read them before blaming
   the machine (`docs/log/2026-11-01-voice-list-off-launch.md`). Before
   lengthening a wait for a slow CI UI test, read
-  `simulator-load-<family>.txt`.
+  `simulator-load-<family>[-part<n>].txt`.
 - Simulator audio is unreliable: sound checks need a real device.
 - A Remote Control session stops after about 60 idle minutes: run long
   jobs detached, with a check that ends within 45 minutes.
