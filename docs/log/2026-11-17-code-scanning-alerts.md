@@ -19,8 +19,8 @@ the app. Each was checked against the code (docs/DECISIONS.md,
   absolute path first.
 - `scripts/forbidden-code.py` (alert 4): the same safe folder path,
   now resolved to an absolute path too.
-- `scripts/agent-bridge.py` (alerts 5 and 6): false positives, for the
-  owner to dismiss on GitHub with their reasons. An agent's dismissal
+- `scripts/agent-bridge.py` (alerts 5 and 6): false positives, which the
+  owner dismissed on GitHub with their reasons. An agent's dismissal
   through the owner's `gh` on the Mac was refused by Claude Code's
   permission check there, and was not tried another way. The bridge is
   not changed here: draft pull requests #108 and #109 rewrite it, and
@@ -65,6 +65,9 @@ README now say that SonarQube Cloud scans the repository too.
   `test-site.py`, `test-select-xcode.py`, `forbidden-code.py` over the
   repository, and `privacy-check.py --outgoing --no-list` (no private
   list here, so the built-in patterns only).
+- After the owner dismissed alerts 5 and 6 on GitHub, SonarQube Cloud's
+  API showed both issues as resolved false positives: a dismissal on
+  GitHub reaches it.
 
 ## Not verified
 
@@ -74,12 +77,9 @@ README now say that SonarQube Cloud scans the repository too.
   dismissed with the reason in docs/DECISIONS.md.
 - The app was not built: this changes no Swift. CI runs the Python
   checks on a Mac.
-- That a dismissal on GitHub reaches SonarQube Cloud: its documentation
-  says so; read the two issues' status there after the owner dismisses.
 
 ## Follow-ups
 
-- The owner dismisses alerts 5 and 6 (owner).
-- After the merge, read alerts 4 and 7 again; dismiss either that is
-  still open, with the reason in docs/DECISIONS.md (this thread, or the
-  next thread that touches code scanning).
+- After the merge, read alerts 4 and 7 again (this thread, or the next
+  thread that touches code scanning); the owner dismisses either that is
+  still open, with the reason in docs/DECISIONS.md.

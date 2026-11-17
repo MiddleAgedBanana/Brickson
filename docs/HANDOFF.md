@@ -1644,7 +1644,7 @@ settings, date) and summarise it here.
   page. Its four open alerts of 2026-11-17, all in the helper scripts,
   were answered: in two, git is now given the folder as an absolute
   path and a real gap beside one of them is closed; the other two are
-  false positives for the owner to dismiss (docs/DECISIONS.md,
+  false positives, dismissed by the owner (docs/DECISIONS.md,
   "SonarQube Cloud's alerts").
   The root [SECURITY.md](../SECURITY.md) gives Codex Security context for
   the app, tooling and website from the existing rules and decisions;

@@ -7272,13 +7272,14 @@ checked against the code:
   own parser already accepted, minus `--background`. They reach no other
   program and allow nothing its user could not type.
 
-The owner dismisses alerts 5 and 6 on GitHub as false positives with
-these reasons; SonarQube Cloud's documentation says a status changed on
-GitHub reaches it too. An agent's dismissal through the owner's `gh` on
-the Mac was refused by Claude Code's permission check there, so
-dismissing stays with the owner. If alert 4 or 7 is still open after
-this change reaches `main`, SonarQube Cloud does not count a resolved
-path as safe; it is then dismissed with the reason above.
+The owner dismissed alerts 5 and 6 on GitHub as false positives with
+these reasons on 2026-11-17, and SonarQube Cloud's own API then showed
+both as resolved false positives, so a dismissal on GitHub reaches it.
+An agent's dismissal through the owner's `gh` on the Mac was refused by
+Claude Code's permission check there, so dismissing stays with the
+owner. If alert 4 or 7 is still open after this change reaches `main`,
+SonarQube Cloud does not count a resolved path as safe; the owner then
+dismisses it with the reason above.
 
 **How a script hands a value to another program**, so the finding does
 not return: a folder or file goes as an absolute path
