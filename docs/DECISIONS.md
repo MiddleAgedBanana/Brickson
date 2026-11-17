@@ -5729,8 +5729,13 @@ request merges only when they pass.
   every other class, so a new class always runs somewhere and no class
   can be left out of every part. `scripts/test.sh` runs one part when
   `UI_TEST_PART` names it and everything without it. The parts are
-  balanced by measured time, about 16 to 24 minutes of tests each;
-  move classes between them when one grows.
+  balanced by measured time, about 18 to 28 minutes of tests each on
+  CI; move classes between them when one grows. A part keeps the full
+  run's order where a test depends on it, and the check enforces it
+  (`RUNS_AFTER`): `LibraryTests` audits a screen with the keyboard up,
+  and on a simulator whose keyboard has never shown, the empty
+  suggestion bar fails Apple's audit, so `LibraryTests` runs after
+  `KeyboardProbeTests` in the same part, as it always did.
   `scripts/test-runner.py` checks that every UI test class runs in
   exactly one part, that each family runs every part, and that the six
   jobs differ only in family and part; "UI tests" passes only when all

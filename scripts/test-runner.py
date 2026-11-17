@@ -812,6 +812,28 @@ class UITestPartTests(unittest.TestCase):
                 found = parts.problems(named)
                 self.assertTrue(any(words in line for line in found), found)
 
+    # LibraryTests audits a screen with the keyboard up and must run after
+    # KeyboardProbeTests, in the same part, as in the full run (the
+    # keyboard's suggestion bar is empty the first time it shows, and the
+    # audit fails on it). Parting them, or a rule whose earlier class sorts
+    # after the later one, fails this test unless it is reported.
+    def test_a_class_parted_from_the_class_it_runs_after_is_reported(self):
+        parts = self.parts_module()
+        self.assertEqual(parts.RUNS_AFTER, {"LibraryTests": "KeyboardProbeTests"})
+        cases = {
+            "parted": ((("LibraryTests",),), None),
+            "parted the other way": ((("KeyboardProbeTests",),), None),
+            "earlier sorts after": ((("LibraryTests", "KeyboardProbeTests"),),
+                                    {"KeyboardProbeTests": "LibraryTests"}),
+        }
+        for case, (named, rule) in cases.items():
+            with self.subTest(case=case):
+                found = parts.problems(named, runs_after=rule)
+                self.assertTrue(any("must run after" in line for line in found), found)
+        self.assertFalse([line for line in
+                          parts.problems((("LibraryTests", "KeyboardProbeTests"),))
+                          if "must run after" in line])
+
     # project.yml builds every Swift file under BricksonUITests, folders
     # inside it too; reading only the top folder fails this test (a class
     # in a folder would be missing from the last part's description, and

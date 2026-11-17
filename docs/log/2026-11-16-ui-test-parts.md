@@ -70,7 +70,10 @@ need their own fix (*Follow-ups*).
    `scripts/ui-test-parts.py` names the test classes of parts 1 and 2;
    part 3 runs every other class, so a class added later runs there
    until someone places it, and no class can be left out. The parts
-   are balanced by the measured times below. `scripts/test.sh` runs one
+   are balanced by the measured times below. Where a test depends on
+   what ran before it in the full run, its part keeps that order, and
+   the check enforces it (`RUNS_AFTER`): `LibraryTests` runs after
+   `KeyboardProbeTests` (*Verified*, the first CI run). `scripts/test.sh` runs one
    part when `UI_TEST_PART` names it, with the part's classes passed to
    the test run only (the build builds them all), and writes
    `ui-<family>-part<n>.xcresult` and
@@ -84,10 +87,14 @@ need their own fix (*Follow-ups*).
    reads the simulator's state; a simulator already shut down counts as
    cleaned up, and one still running fails the run as before.
 
-**What to expect.** About 16 to 24 minutes of tests per part (table
-below) after the same 9 to 19 minutes of starting and building: about
-30 minutes on a normal day and about 40 to 45 on a day like this one,
-against a 90-minute limit. The cost: each part starts its own simulator
+**What to expect.** The first CI run of the parts (*Verified*) took 27
+to 38 minutes per part job, about 8 to 10 of them starting and
+building; the tests ran a fifth to a third slower than the same classes
+in the full runs, as a part spends more of its time on a machine that is
+still settling. So expect about 30 to 40 minutes per job on a normal
+day, and perhaps 45 to 50 on a day like 2026-11-16, against a 90-minute
+limit. If a part's job passes 45 minutes on a normal day, add a fourth
+part (*Follow-ups*). The cost: each part starts its own simulator
 and builds the app, so a run uses about a third more Mac time (about
 230 Mac minutes against 175), and GitHub runs at most five Mac jobs at
 once, so with the unit job two parts wait for a free machine.
@@ -146,7 +153,7 @@ result bundles (`xcresulttool get test-results tests` and
 | `TypingOnHomeTests/testSpeakAndReturnSayTheMessageAndKeepIt()` | 39 | 33 | 41 | 1 | 3 |
 | `SettingsTests/testSettingsOpensOnTheWayBackAndFamilySetup()` | 39 | 28 | 23 | 2 | 1 |
 | `TypingOnHomeTests/testTheMessageSurvivesARelaunch()` | 39 | 32 | 54 | 2 | 3 |
-| `KeyboardProbeTests/testLandscapeAtDefaultTextSize()` | 37 | skipped | skipped | 2 | 1 |
+| `KeyboardProbeTests/testLandscapeAtDefaultTextSize()` | 37 | skipped | skipped | 2 | 2 |
 | `GetAttentionOnHomeTests/testTheAlarmStartsAndStopsAtDefaultText()` | 32 | 35 | 53 | 1 | 3 |
 | `GetAttentionOnHomeTests/testTheAlarmStartsAndStopsInLandscape()` | 33 | skipped | skipped | 1 | 3 |
 | `SettingsTests/testTheStepByStepSetupWalksToTheEnd()` | 32 | 28 | 32 | 1 | 1 |
@@ -154,12 +161,12 @@ result bundles (`xcresulttool get test-results tests` and
 | `TypingOnHomeTests/testClearAndPutBack()` | 30 | 21 | 25 | 1 | 3 |
 | `GetAttentionOnHomeTests/testTheAlarmStartsAndStopsAtTheLargestText()` | 28 | 30 | 46 | 1 | 3 |
 | `HomeAccessibilityOrderTests/testQuickControlsComeFirstInEveryStateAtDefaultText()` | 28 | 28 | 38 | 1 | 1 |
-| `KeyboardProbeTests/testPortraitAtDefaultTextSize()` | 27 | 27 | 64 | 2 | 1 |
+| `KeyboardProbeTests/testPortraitAtDefaultTextSize()` | 27 | 27 | 64 | 2 | 2 |
 | `HomeAccessibilityOrderTests/testQuickControlsComeFirstInEveryStateAtTheLargestText()` | 26 | 24 | 38 | 1 | 1 |
 | `FoldOffsetUITests/testTheFirstRowClearsATopDivisionInLightMode()` | 26 | 23 | 33 | 2 | 3 |
-| `KeyboardProbeTests/testLandscapeAtLargestTextSize()` | 26 | skipped | skipped | 2 | 1 |
+| `KeyboardProbeTests/testLandscapeAtLargestTextSize()` | 26 | skipped | skipped | 2 | 2 |
 | `SettingsTests/testChoosingASpeedMovesNoSpeedChoice()` | 24 | 26 | 25 | 1 | 1 |
-| `KeyboardProbeTests/testPortraitAtLargestTextSize()` | 25 | 26 | 39 | 2 | 1 |
+| `KeyboardProbeTests/testPortraitAtLargestTextSize()` | 25 | 26 | 39 | 2 | 2 |
 | `SlowPressTests/testASlideFromYesOntoNoNeverSaysNo()` | 24 | 13 | 22 | 1 | 1 |
 | `TypingOnHomeTests/testTypeOpensTheKeyboardAndMovesNothing()` | 23 | 15 | 20 | 1 | 3 |
 | `SettingsTests/testTheWayBackKeepsItsFrameOnEveryScreen()` | 23 | 20 | 23 | 1 | 1 |
@@ -196,7 +203,7 @@ result bundles (`xcresulttool get test-results tests` and
 | `TypingOnHomeTests` | 2.9 | 2.3 | 3.0 | 3 |
 | `LaunchTests` | 2.7 | 2.4 | 4.2 | 3 |
 | `HomeSizesTests` | 1.9 | 1.8 | 3.0 | 1 |
-| `KeyboardProbeTests` | 1.9 | 0.9 | 1.7 | 1 |
+| `KeyboardProbeTests` | 1.9 | 0.9 | 1.7 | 2 |
 | `HomeLayoutTests` | 1.9 | 0.9 | 1.7 | 3 |
 | `GetAttentionOnHomeTests` | 1.5 | 1.1 | 1.7 | 3 |
 | `FoldOffsetUITests` | 1.1 | 1.0 | 1.6 | 3 |
@@ -208,8 +215,8 @@ result bundles (`xcresulttool get test-results tests` and
 
 | Part | iPad, min | iPhone, min | iPhone, slow day, min |
 | --- | ---: | ---: | ---: |
-| 1 | 20.3 | 20.3 | 23.4 |
-| 2 | 17.0 | 18.9 | 23.7 |
+| 1 | 18.4 | 19.4 | 21.7 |
+| 2 | 18.9 | 19.8 | 25.5 |
 | 3 | 20.8 | 15.7 | 21.2 |
 
 ## UI tests a unit test might replace
@@ -270,7 +277,10 @@ The biggest savings in app launches, if the clean-up goes ahead:
 
 - `8dfaebe` Count a simulator that already shut down as cleaned up
 - `923a4f3` Run the UI tests in three parts per family, each on its own machine
-- This record and the documents.
+- `f51ce23`, `3ad40e2` This record and the documents.
+- `727285e` Answer the first review of the UI test parts
+- The keyboard probe moved into part 2, and this record of the first
+  CI run.
 
 ## Verified
 
@@ -294,7 +304,9 @@ On the owner's Mac, Xcode 27.2:
   `if: always()`.
 - `xcodebuild -enumerate-tests` with each part's arguments, on an iPad
   Pro 13-inch (M5) and an iPhone 17 simulator (iOS 27.2): parts of 29,
-  15 and 37 tests, 81 in all on each, every test exactly once.
+  15 and 37 tests, 81 in all on each, every test exactly once; after
+  the keyboard probe moved into part 2, 25, 19 and 37, again 81 on the
+  iPad, every test once.
 - `UI_TEST_PART=3 SIMULATOR_FAMILY=iphone scripts/test.sh ui` on an
   iPhone 17 simulator (iOS 27.2), portrait, the full software
   keyboard: 37 tests ran, as the enumeration said (31 passed, 5 skipped
@@ -306,6 +318,39 @@ On the owner's Mac, Xcode 27.2:
   Mac's simulator speech, not the parts: the same test run alone with
   no part (`scripts/test.sh ui` with its `-only-testing`) failed the
   same way, and it passes on every CI run above.
+
+The first CI run of the parts (run 43990204768, on `3ad40e2`, GitHub's
+image 20261104.0337.1, Xcode 27.2, iOS 27.2):
+
+| Job | Start, keyboard | Build | Warm-up | Tests | Job | Result |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| iPad, part 1 | 3.1 | 5.0 | 1.1 | 27.8 | 38.0 | 29 passed |
+| iPhone, part 1 | 4.2 | 3.1 | 0.9 | 28.5 | 38.1 | 27 passed, 2 skipped |
+| iPhone, part 2 | 4.6 | 1.6 | 0.8 | 21.6 | 29.6 | 14 passed, 1 failed |
+| iPhone, part 3 | 4.7 | 2.1 | 0.8 | 18.3 | 26.9 | 32 passed, 5 skipped |
+| iPad, parts 2 and 3 | | | | | 15, 12 | stopped by GitHub |
+| Unit tests | | | | | 33.9 | passed |
+
+Minutes. GitHub stopped the iPad's parts 2 and 3 ("The operation was
+canceled") 12 and 15 minutes in, while their simulators were still
+starting and before any test ran; GitHub offers no way to cancel one
+job of a run by hand, and nothing in the run asked for it.
+
+The failure was the parts' doing:
+`LibraryTests.testAPhraseNamedLikeAControlIsSavedWithANote` audits the
+New Phrase screen with "Help" typed and the keyboard up, and Apple's
+audit reported an element with no description: an empty cell of the
+keyboard's suggestion bar (`TUIPredictionViewCell`). The result
+bundle's picture shows the bar empty; on the last full run's iPhone the
+same screen showed suggestions. In the full run `KeyboardProbeTests`,
+which sorts just before it, always raised the keyboard first; in part 2
+`LibraryTests` was the first test on that simulator to raise it. On the
+Mac, on a simulator made new for the check (iPhone 17, iOS 27.2), the
+test alone failed the same way, on the same cell; on a second new one,
+`KeyboardProbeTests` then the test passed. So `KeyboardProbeTests` moved
+into part 2, where it runs first, and `scripts/ui-test-parts.py`'s
+`RUNS_AFTER` makes the check refuse any split that parts them; the test
+for it fails without the rule.
 
 ## Not verified
 
@@ -323,7 +368,17 @@ On the owner's Mac, Xcode 27.2:
 - If a part's job takes more than about 45 minutes on a normal day,
   move classes between parts or add one (docs/DECISIONS.md, "Tests").
   `SettingsTests` alone is about 15 minutes, the floor for its part
-  until it is split. Owner: the agent whose pull request first sees it.
+  until it is split; a fourth part (`SettingsTests` alone) would bring
+  each job to about 25 to 32 minutes, at the cost of two more jobs and
+  more waiting for GitHub's five Macs. Owner: the agent whose pull
+  request first sees it; the workflow change needs the owner's review.
+- `LibraryTests.testAPhraseNamedLikeAControlIsSavedWithANote` audits
+  with the keyboard up, and passes only once the keyboard's suggestion
+  bar has loaded on that simulator. The parts keep the order that
+  loads it first; the test could instead wait for the suggestion bar to
+  settle before its audit (AGENTS.md: audit only a still screen), which
+  would end the dependence on order. Owner: an agent thread, with the
+  owner's review, since it touches an accessibility test.
 - The tests that a unit test might replace (above) are the start of a
   later clean-up that cuts app launches; each move needs its own pull
   request and keeps the screen check where only the screen can show it.

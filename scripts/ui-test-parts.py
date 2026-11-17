@@ -31,14 +31,25 @@ TARGET = "BricksonUITests"
 FOLDER = Path(__file__).resolve().parent.parent / TARGET
 
 PARTS = (
-    # About 14 minutes of Settings and 4 of Home's sizes and order on a
-    # normal day.
+    # About 14 minutes of Settings and 3 of Home's sizes and order in the
+    # full run of 2026-11-15; 26 to 28 minutes of tests in a part on CI.
     ("SettingsTests", "HomeSizesTests", "HomeAccessibilityOrderTests",
-     "KeyboardProbeTests", "SlowPressTests"),
-    # About 10 minutes of the Library and 8 of Home's board and reach.
-    ("LibraryTests", "HomeRestBoardTests", "HomeReachabilityTests"),
+     "SlowPressTests"),
+    # About 10 minutes of the Library, 8 of Home's board and reach and 1
+    # to 2 of the keyboard probe.
+    ("LibraryTests", "HomeRestBoardTests", "HomeReachabilityTests",
+     "KeyboardProbeTests"),
     # The last part runs every class not named above.
 )
+
+# Classes that must run after another class in the same part, as they do
+# in the full run (XCTest runs a target's classes in name order).
+# LibraryTests audits the New Phrase screen with the keyboard up. On a
+# simulator whose keyboard has never shown, the keyboard's suggestion bar
+# is still empty, and Apple's audit reports its empty cells as elements
+# with no description (CI, iPhone, 2026-11-17). In the full run
+# KeyboardProbeTests always raised the keyboard first.
+RUNS_AFTER = {"LibraryTests": "KeyboardProbeTests"}
 
 CLASS = re.compile(r"^\s*(?:final\s+)?class\s+(\w+)\s*:\s*XCTestCase\b", re.M)
 
@@ -52,10 +63,21 @@ def test_classes(folder=FOLDER):
     return found
 
 
-def problems(parts=PARTS, folder=FOLDER):
-    """What is wrong with the parts: a class that is no UI test class, or
-    one named twice. Empty when they are sound."""
+def problems(parts=PARTS, folder=FOLDER, runs_after=None):
+    """What is wrong with the parts: a class that is no UI test class, one
+    named twice, or one parted from the class it must run after
+    (RUNS_AFTER). Empty when they are sound."""
+    runs_after = RUNS_AFTER if runs_after is None else runs_after
     found, seen, wrong = test_classes(folder), set(), []
+
+    def part_of(name):
+        return next((number for number, part in enumerate(parts, 1) if name in part),
+                    len(parts) + 1)
+
+    for later, earlier in runs_after.items():
+        if part_of(later) != part_of(earlier) or not earlier < later:
+            wrong.append(f"{later} must run after {earlier}, in the same part: "
+                         "see RUNS_AFTER.")
     if not found:
         wrong.append(f"No XCTestCase class was found in {folder}.")
     for number, part in enumerate(parts, 1):
