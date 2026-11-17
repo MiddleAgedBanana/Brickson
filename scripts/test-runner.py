@@ -999,6 +999,14 @@ class UITestWaitTests(unittest.TestCase):
             """})
         self.assertEqual(over_lines, ["SomeTests.swift:2: XCTest's waiter; wait with Waiting.swift "
                                       "and a UIWait limit"])
+        split_call = self.problems_in({"SomeTests.swift": """\
+            func test() {
+                _ = button.waitForExistence
+                    (timeout: limit)
+            }
+            """})
+        self.assertEqual(split_call, ["SomeTests.swift:2: XCTest's own wait for an element; wait with "
+                                      "Waiting.swift and a UIWait limit"])
         both = "XCTAssertTrue(a.waitForExistence(timeout: 1) && b.waitForExistence(timeout: 1))\n"
         self.assertEqual(len(self.problems_in({"SomeTests.swift": both})), 2)
         grown = self.problems_in({"OldTests.swift": both}, {"OldTests.swift": 1})
