@@ -181,7 +181,13 @@ session does next*, below, has the commands.
   cannot run Assistive Access, DEV-12 does (c) on a device. Brickson
   keeps its full-screen key whatever this shows (docs/DECISIONS.md,
   "Accessibility API coverage").
-
+- **Found, 2026-11-15.** Part (a) is answered: the iOS 27.2 Simulator
+  offers no Assistive Access (nor Guided Access, Switch Control, Voice
+  Control, Touch, Eye or Head Tracking) on iPhone or iPad; no iOS 26
+  runtime was installed. Part (b) needs the project open in Xcode, which
+  AGENTS.md keeps from agents: not done, so the pictures of Apple's
+  dressing wait for the owner in Xcode or DEV-12. Part (c) moves to
+  DEV-12. ([record](log/2026-11-15-experiments-simulator.md))
 ### SIM-2. Control sizes — D-01
 
 - **Asks.** Does `.controlSize(.extraLarge)` draw larger than `.large`
@@ -198,7 +204,11 @@ session does next*, below, has the commands.
 - **What it means.** Equal: settled, as stage 2 expected; family
   screens may use `.extraLarge` with no gain. Larger: record the sizes
   for stage 5, and check whether any reaches a profile's floor.
-
+- **Found, 2026-11-15.** `.extraLarge` is exactly as tall as `.large` on
+  iPhone and iPad (54 points at the default text size, 96 at AX5; drawn
+  fills measured too). At the default text size no system size reaches
+  the switch, head or eye floors.
+  ([record](log/2026-11-15-experiments-simulator.md))
 ### SIM-3. Shapes, text sizes and the segmented picker — D-24
 
 - **Asks.** Does `buttonBorderShape` shape the glass button styles? How
@@ -214,6 +224,11 @@ session does next*, below, has the commands.
 - **What it means.** A segmented picker that cannot reach a profile's
   floor cannot be the joined control without a custom style, which
   stage 5 would then have to justify; one that can is a candidate.
+- **Found, 2026-11-15.** Glass buttons take every border shape. A
+  segmented picker is 31 or 48 points tall and does not grow with
+  Dynamic Type (its words stayed small at AX5): it reaches touch's
+  44-point floor for Phrases and Type, not 88 or 109.
+  ([record](log/2026-11-15-experiments-simulator.md))
 
 ### SIM-4. Brickson's edit sheets against Apple's sheet guidance — D-22
 
@@ -227,7 +242,12 @@ session does next*, below, has the commands.
 - **Record.** Each difference, with the page's words.
 - **What it means.** A difference becomes a roadmap item for the family
   screens. Nothing changes in this stage.
-
+- **Found, 2026-11-15.** Brickson's library edits use no sheets: they
+  are screens pushed inside Settings' full-screen cover, with standard
+  Back; the only sheet is the privacy policy's web page, and there is no
+  confirmation dialog or alert. No roadmap item; Back to Talking sits at
+  the trailing edge, where a sheet would put Done.
+  ([record](log/2026-11-15-experiments-simulator.md))
 ### SIM-5. What the system says about each element — A-1a, A3-U8 (Simulator part)
 
 - **Asks.** What does the accessibility tree report for a dimmed
@@ -246,6 +266,12 @@ session does next*, below, has the commands.
   each input method can treat differently; the device steps say how.
   Nothing reported: assistive technologies see a dimmed button as a
   normal one, and A-1's result must be read in that light.
+- **Found, 2026-11-15.** A dimmed Button is reported as a button that is
+  not enabled by AXe, the UI test's tree and VoiceOver ("dimmed").
+  `accessibilityHidden(true)` hides a button from VoiceOver but not from
+  either automation tree; the responds-to-interaction modifiers show no
+  difference in any tool.
+  ([record](log/2026-11-15-experiments-simulator.md))
 
 ### SIM-6. The speaking indicator and Reduce Motion — D-07
 
@@ -262,7 +288,12 @@ session does next*, below, has the commands.
 - **What it means.** An effect that still moves under Reduce Motion, or
   repeats close to the rate Apple warns about, cannot be the indicator
   as it is (E-08); one that stops is a candidate.
-
+- **Found, 2026-11-15.** with Reduce Motion on, Variable colour, Pulse
+  and Breathe all kept animating in the Simulator: Breathe still
+  changing size (74 to 88 points wide), the other two changing
+  brightness only; all under three repeats a second. Breathe cannot be
+  the indicator as it is; DEV-10 checks a device.
+  ([record](log/2026-11-15-experiments-simulator.md))
 ### SIM-7. Smart Invert on Home — D-14
 
 - **Asks.** What does a person using Smart Invert see on Brickson's
@@ -276,6 +307,9 @@ session does next*, below, has the commands.
 - **Record.** Each pair and its ratio.
 - **What it means.** A pair under 4.5:1 for text or 3:1 for an edge is
   an invariant 6 failure to fix, with the pair pinned in `PaletteTests`.
+- **Found, 2026-11-15.** Could not test: the probe is told Smart Invert
+  is on, but Simulator screenshots do not show it. Moves to DEV-12.
+  ([record](log/2026-11-15-experiments-simulator.md))
 
 ### SIM-8. Text under the scroll edge — D-17
 
@@ -291,7 +325,12 @@ session does next*, below, has the commands.
 - **Record.** Each sample and its ratio.
 - **What it means.** Below 4.5:1 at rest: every scrolling surface under
   a glass bar needs a fix before it ships (invariant 6).
-
+- **Found, 2026-11-15.** Partly. The probe's Styles rows never pass
+  under its bar; Brickson's library list does. Over a scrolled row the
+  bar's title stays at least 10.6:1 and its Back chevron at least 15.5:1
+  in light, dark, Increase Contrast and Reduce Transparency. The rows'
+  own words under the bar, faded by design, were not measured.
+  ([record](log/2026-11-15-experiments-simulator.md))
 ### SIM-9. An inactive iPad window — D-20
 
 - **Asks.** On iPadOS 27, with Brickson beside another app and not the
@@ -309,7 +348,10 @@ session does next*, below, has the commands.
   its ratio, that is an invariant 6 failure in a state Brickson does not
   test today, and needs a pinned pair or a style that keeps its
   contrast.
-
+- **Found, 2026-11-15.** an inactive Brickson window beside Settings
+  kept Home's fills and words at their contrast (5.02 to 5.98:1; a few
+  tile pixels drawn slightly darker). The probe's system styles were not
+  run inactive. ([record](log/2026-11-15-experiments-simulator.md))
 ### SIM-10. Apple's own components in every appearance — D-21, D-02, A-33 (Simulator part: A4-U17, L1-U22)
 
 - **Asks.** Do standard controls, `Material`, toolbars, sheets and
@@ -325,6 +367,17 @@ session does next*, below, has the commands.
 - **Record.** Each component, appearance and pair, with its ratio.
 - **What it means.** Any pair below its bar that Brickson shows fails
   invariant 6, and is replaced or fixed and pinned in `PaletteTests`.
+- **Found, 2026-11-15.** Apple's `.borderedProminent` and
+  `.glassProminent` with the default tint keep under 4.5:1 for their
+  white words (3.52 light, 3.23 dark, 2.15 dark with Increase Contrast;
+  pressed 2.59 and 2.05), `.bordered` fills stand 1.21 to 1.60:1 from
+  the page, and `.glass` stands 1.3:1 in dark. Brickson's fills hold
+  except one shipped defect: with Increase Contrast in dark,
+  `Color.accentColor` is drawn #1A7BFF and the white words on phrase
+  tiles, the selected category and Back to Talking are 3.95:1
+  (docs/HANDOFF.md, *Known gaps*). The Simulator offers no Clear or
+  Tinted Liquid Glass; opacity 0 and 1 measured the same.
+  ([record](log/2026-11-15-experiments-simulator.md))
 
 ### SIM-11. The trees each tool sees — A-45 (Simulator part: B3-U8), A2-U13, A3-U17
 
@@ -348,7 +401,15 @@ session does next*, below, has the commands.
   device shows otherwise (DEV-7). Different: note each difference;
   reachability claims then need a device check (AGENTS.md, *Workflow
   rules*).
-
+- **Found, 2026-11-15.** AXe and the UI test agree on elements, order
+  and frames. On the probe, VoiceOver skips an `accessibilityHidden`
+  button both trees list, and `accessibilitySortPriority` on two
+  side-by-side regions changed VoiceOver's order but not the trees' or
+  Full Keyboard Access's. On Brickson's Home the tree and VoiceOver both
+  follow its sort priority; Full Keyboard Access on Home was not
+  measured (DEV-9). On iPad VoiceOver also reaches the window's resize
+  handle; `XCUIDevice.voiceOverService` runs in the Simulator.
+  ([record](log/2026-11-15-experiments-simulator.md))
 ### SIM-12. Window sizes and safe areas — B2-U4, B2-U6
 
 - **Asks.** What window size, safe areas and corner radius does the
@@ -360,7 +421,13 @@ session does next*, below, has the commands.
 - **Record.** Per device and runtime: window size and each inset.
 - **What it means.** A window the layout engine's tests do not hold is
   added to them; a device with no simulator moves to HW-6.
-
+- **Found, 2026-11-15.** Window sizes and insets for all twelve
+  simulators; four window sizes (five simulators) are not among the
+  layout engine's tested windows (iPhone Air 420 by 912; iPad Air
+  13-inch 1024 by 1366; the 820 by 1180 iPads; the new iPad mini 756 by
+  1158, whose insets are 32 and 20). Corner radius has no public API;
+  iOS 26 not installed.
+  ([record](log/2026-11-15-experiments-simulator.md))
 ### SIM-13. Checks that need only the compiler — B1-U10, B2-U10, L1-U4
 
 - **Asks.** Does `pointerStyle(_:)` compile for an iPadOS target, and
@@ -380,6 +447,13 @@ session does next*, below, has the commands.
   dialog's harmful item lands nearest the spot just activated, Brickson
   must never use a system confirmation dialog on a dwell path (it does
   not today; docs/DECISIONS.md, "Editing the library").
+- **Found, 2026-11-15.** `pointerStyle(_:)` does not exist for iOS or
+  iPadOS in the iOS 27.2 SDK; SwiftUI has no `.adjustable` trait
+  (`accessibilityAdjustableAction` is the way); the haptics check
+  compiles. A system confirmation dialog opens as a popover with its
+  destructive first item nearest the spot just activated, on the iPhone
+  directly under it: never on a dwell path.
+  ([record](log/2026-11-15-experiments-simulator.md))
 
 ### SIM-14. Analysis on the Mac — G-40, G-30 and D-25 (Simulator part)
 
@@ -402,7 +476,13 @@ session does next*, below, has the commands.
   (G-30) Continuous reports: a message can be shaped into parts without
   losing word lighting; gaps: shaping and lighting conflict, and DEV-10
   checks it with a Personal Voice.
-
+- **Found, 2026-11-15.** (G-40) on every tested window, profile and mode
+  Home has no free place of 120 by 24 points outside its slots, and the
+  message slot's nearest controls include Yes and No; places inside
+  non-control slots (empty grid cells, Stop's well, the status line)
+  were not scored. (G-30, D-25) could not test: the Simulator's
+  synthesizer drops word reports and never finishes an utterance.
+  ([record](log/2026-11-15-experiments-simulator.md))
 ---
 
 ## Group 2. On a device, with a person
