@@ -139,6 +139,10 @@ final class LibraryTests: XCTestCase {
     /// (docs/DECISIONS.md, "Phrases named like Home's controls"). The room
     /// the line keeps is checked by
     /// `LibraryNameCollisionTests.editPhrasesLineKeepsRoomForBothNotes`.
+    /// The audit with the field focused waits for the keyboard's suggestion
+    /// bar to show its words, opening New Phrase again once if the first
+    /// showing has none, and the test fails if it still has none
+    /// (docs/DECISIONS.md, "Tests", 2026-11-17).
     @MainActor
     func testAPhraseNamedLikeAControlIsSavedWithANote() throws {
         let note = "Another button on Home answers to these words too, so Voice Control may ask which one is meant."
@@ -149,6 +153,15 @@ final class LibraryTests: XCTestCase {
 
         open("libraryAddPhrase", leaving: "libraryAddPhrase", in: app)
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 10), "New Phrase did not open the keyboard")
+
+        // The audit below meets Apple's suggestion bar with its words: on a
+        // simulator whose keyboard has never shown, the bar can stay empty
+        // for the whole first showing, and only showing it again fills it.
+        waitForKeyboardSuggestions(in: app, context: "New Phrase") {
+            back(to: "Basics", in: app)
+            open("libraryAddPhrase", leaving: "libraryAddPhrase", in: app)
+            XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 10), "New Phrase did not open the keyboard again")
+        }
 
         // Get Attention's name stays its own; the keyboard goes so the
         // reason can be read.
