@@ -59,20 +59,45 @@ fi
 """
 
 # The simulator list, the selected Xcode's simulator SDK, the result
-# summary and the coverage report come from the fixture; every simulator
+# summary and the coverage report come from the fixture, a device's state
+# from its last boot or shutdown (a failed shutdown leaves the state
+# FIXTURE_SHUTDOWN_LEAVES names, or none changed); every simulator
 # and String Catalog command is recorded. Syncing the catalog writes the
 # fixture's catalog over the copy it is given, or leaves the copy as it was.
 FAKE_XCRUN = """\
 case "$*" in
-    "simctl list devices available --json") cat "$FIXTURE_DEVICES" ;;
+    "simctl list devices available --json")
+        # The fixture's devices, each in the state its last boot or
+        # shutdown left it.
+        /usr/bin/python3 -c '
+import json, os
+devices = json.load(open(os.environ["FIXTURE_DEVICES"]))
+states = {}
+if os.path.exists(os.environ["RUNNER_STATES"]):
+    for line in open(os.environ["RUNNER_STATES"]):
+        udid, state = line.split()
+        states[udid] = state
+for runtime in devices["devices"].values():
+    for device in runtime:
+        device["state"] = states.get(device["udid"], device["state"])
+print(json.dumps(devices))
+' ;;
     "--sdk iphonesimulator --show-sdk-version") echo "$FIXTURE_SDK" ;;
     "simctl boot "* | "simctl bootstatus "*" -b" | "simctl shutdown "* | "simctl spawn "* | "simctl install "* | \\
         "simctl terminate "*)
         echo "$*" >> "$RUNNER_SIMCTL"
         case "$2" in
-            boot) exit "$FIXTURE_BOOT_STATUS" ;;
+            boot)
+                [ "$FIXTURE_BOOT_STATUS" != 0 ] || echo "$3 Booted" >> "$RUNNER_STATES"
+                exit "$FIXTURE_BOOT_STATUS" ;;
             bootstatus) exit "$FIXTURE_BOOTSTATUS_STATUS" ;;
-            shutdown) exit "$FIXTURE_SHUTDOWN_STATUS" ;;
+            shutdown)
+                if [ "$FIXTURE_SHUTDOWN_STATUS" = 0 ]; then
+                    echo "$3 Shutdown" >> "$RUNNER_STATES"
+                elif [ -n "$FIXTURE_SHUTDOWN_LEAVES" ]; then
+                    echo "$3 $FIXTURE_SHUTDOWN_LEAVES" >> "$RUNNER_STATES"
+                fi
+                exit "$FIXTURE_SHUTDOWN_STATUS" ;;
         esac ;;
     "simctl launch "*)
         echo "$*" >> "$RUNNER_SIMCTL"
@@ -152,7 +177,8 @@ def run_script(build_body, mode="ui", destination="id=fixture-simulator",
                test_summary=summary(3), family=None, arguments=(),
                coverage=COVERAGE, strings=True, synced_catalog=None,
                sync_status=0, on_ci=True, boot_status=0,
-               bootstatus_status=0, shutdown_status=0, docs_status=0, hooks_status=0,
+               bootstatus_status=0, shutdown_status=0, shutdown_leaves="",
+               docs_status=0, hooks_status=0,
                privacy_status=0, bridge_status=0, forbidden_status=0):
     with tempfile.TemporaryDirectory() as directory:
         # Exercise the exact checked-in runner and selector in an isolated
@@ -206,6 +232,8 @@ def run_script(build_body, mode="ui", destination="id=fixture-simulator",
                            FIXTURE_BOOT_STATUS=str(boot_status),
                            FIXTURE_BOOTSTATUS_STATUS=str(bootstatus_status),
                            FIXTURE_SHUTDOWN_STATUS=str(shutdown_status),
+                           FIXTURE_SHUTDOWN_LEAVES=shutdown_leaves,
+                           RUNNER_STATES=f"{directory}/states",
                            CI="true" if on_ci else "",
                            STRING_CATALOG=str(catalog_path),
                            DERIVED_DATA_DIR=f"{directory}/DerivedData",
@@ -692,6 +720,25 @@ class SimulatorLifecycleTests(unittest.TestCase):
                 self.assertNotIn(("build-for-testing", "id=PHONE"), actions(result))
                 self.assertIn("Could not shut down simulator PAD", result.stderr)
                 self.assertNotIn("All UI tests passed.", result.stdout)
+
+
+    # simctl refuses to shut down a simulator that has already stopped
+    # (CoreSimulator error 405, "Unable to shutdown device in current
+    # state: Shutdown"). On GitHub's iPhone on 2026-11-16 a run passed
+    # every test and then failed there. Counting that refusal as a failed
+    # clean-up, or no longer trying to shut the simulator down, fails this
+    # test; a simulator still running after a failed shutdown fails the
+    # run (above).
+    def test_a_simulator_that_already_shut_down_counts_as_cleaned_up(self):
+        result = run_script("exit 0", destination=None, devices=IPAD_AND_IPHONE,
+                            shutdown_status=149, shutdown_leaves="Shutdown")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.simctl.count("simctl shutdown PAD"), 1)
+        self.assertEqual(result.simctl.count("simctl shutdown PHONE"), 1)
+        self.assertIn("simctl boot PHONE", result.simctl)
+        self.assertIn("Simulator PAD had already shut down.", result.stdout)
+        self.assertNotIn("Could not shut down", result.stderr)
+        self.assertIn("All UI tests passed.", result.stdout)
 
 
 class WatcherTests(unittest.TestCase):

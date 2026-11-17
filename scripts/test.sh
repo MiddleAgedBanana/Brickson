@@ -158,16 +158,23 @@ sys.exit("Could not read simulator state for " + sys.argv[1])
 }
 
 cleanup_simulator() {
-    local udid="$owned_simulator"
+    local udid="$owned_simulator" state
     [ -n "$udid" ] || return 0
     # A failed shutdown is reported once; don't retry it in the exit trap.
     owned_simulator=""
     echo "Shutting down simulator $udid (booted by this test run)"
-    if ! xcrun simctl shutdown "$udid"; then
-        simulator_cleanup_failed=1
-        echo "Could not shut down simulator $udid; stopping before another family starts." >&2
-        return 1
+    xcrun simctl shutdown "$udid" && return 0
+    # simctl refuses to shut down a simulator that has already stopped
+    # (CoreSimulator error 405, "Unable to shutdown device in current
+    # state: Shutdown"). It is cleaned up, so a run whose tests all passed
+    # is not failed for it; one still running is (docs/log/2026-11-16-ui-test-parts.md).
+    if state="$(simulator_state "$udid")" && [ "$state" = Shutdown ]; then
+        echo "Simulator $udid had already shut down."
+        return 0
     fi
+    simulator_cleanup_failed=1
+    echo "Could not shut down simulator $udid; stopping before another family starts." >&2
+    return 1
 }
 
 # Five or more minutes after a simulator starts, iOS prewarms its
