@@ -375,7 +375,7 @@ private struct MessageField: View {
     @State private var text = ""
 
     /// The room between the field's edge and its words.
-    static let inset: CGFloat = 6
+    static let inset = Spacing.xSmall
 
     var body: some View {
         TextField(text: $text, prompt: Text(verbatim: ""), axis: .vertical) {
@@ -544,7 +544,7 @@ private struct StatusLines: View {
     private static let soundingImage = "bell.and.waves.left.and.right.fill"
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: Spacing.xxSmall) {
             ZStack(alignment: .topLeading) {
                 FittedLine(text: Self.speaking, systemImage: Self.speakingImage, font: .status, width: width)
                     .hidden()
@@ -658,7 +658,7 @@ private struct LibraryWarnings: View {
 
     var body: some View {
         if isVolatileStore || phraseLibraryIssue != nil {
-            VStack(alignment: .leading, spacing: 4) {
+            VStack(alignment: .leading, spacing: Spacing.xxSmall) {
                 if isVolatileStore {
                     warning(
                         String(localized: "Phrases can't be saved right now. Changes will be lost when the app closes."),

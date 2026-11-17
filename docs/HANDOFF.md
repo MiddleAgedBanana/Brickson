@@ -22,8 +22,15 @@ with Stop's well at their leading top and Settings at their trailing
 end, and tiles from a neutral starter set, every frame from the layout
 engine, from the space the window gives it (docs/DECISIONS.md, "The
 layout engine", *Home on the engine*, and "Get Attention and Stop on
-Home"). Its sizes follow Family Setup's answer to how the screen is
-reached, switched on when the owner chose the largest sizes that fit
+Home"). Its gaps, margins and insets, and Settings', are steps of one
+spacing scale but for two named exceptions, the 15-point gap of Eye
+Tracking and the late stage and a dimmed Settings row's 14-point inset
+(`Spacing`; docs/DECISIONS.md, "One spacing scale"); the gaps between
+the tiles and between the safety row's controls measure equal on the
+engine's frames in every profile (`EqualGapsTests`) and in the running
+app on CI's iPad and iPhone at the default and largest text sizes
+(`HomeLayoutTests`). Its sizes follow Family Setup's answer to how the
+screen is reached, switched on when the owner chose the largest sizes that fit
 (2026-10-30; docs/DECISIONS.md, "Sizes that follow how the screen is
 reached", *Switched on by the owner*): touch's for touch, Voice
 Control and someone helping, larger ones for Switch Control, Head
@@ -486,6 +493,21 @@ release in docs/ROADMAP.md when no thread has it yet.
   where no complete row fits; it changes no code or release boundary.
   *(R0 item 3, before App Review: docs/ROADMAP.md, *The quality bar*,
   Q3; then the owner)*
+- Three pairs of nearly equal spacing values were kept as they were when
+  the app moved onto its spacing scale, since changing them changes what
+  people see: a dimmed Settings row's words 14 points in beside Settings'
+  16-point gutter; Eye Tracking's and the late stage's 15-point gap
+  between controls beside the 16-point step; and Home's message field with 6 points around its
+  words against the Library editor's outlined field with 12
+  (docs/DECISIONS.md, "One spacing scale"). *(the design of the app's
+  look)*
+- Nothing yet flags a spacing number written into a view instead of a
+  step of the scale: the check belongs beside the look rules and known
+  exceptions that pull request #114 adds to the forbidden-code check, so
+  it waits for that to merge (docs/DECISIONS.md, "One spacing scale").
+  The rendered equal-gaps check measures touch's sizes only, as the other
+  UI tests ask for them; the engine's gaps are checked in every profile.
+  *(the first pull request on the forbidden-code check after #114)*
 - The slot plan has no answer yet for more than four everyday categories
   (docs/DECISIONS.md, "Home's slot plan", *Open*), so editing and import
   refuse a fifth (docs/DECISIONS.md, "Three or four everyday

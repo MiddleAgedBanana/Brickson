@@ -170,6 +170,102 @@ containers, "instead of building device-specific interfaces" (AGENTS.md,
   entry. Before: AGENTS.md said floors were "computed in physical size per
   device".
 
+## One spacing scale
+
+*Default, adopted 2026-11-16 (pull request #117): an objective call left
+to the project, reversible. Nothing a person sees changed.*
+
+The room between views, and the margins and insets around them, come
+from one scale, `Spacing` (`Brickson/Layout/Spacing.swift`), instead of
+numbers written into each view. A step has one name everywhere, so the
+same kind of room is the same number on every screen, and the app's
+coming look can change a step in one place. Gaps that should be equal
+and are not are easy to miss by eye, so a test now measures them
+(below).
+
+- **The steps** are the values the app already drew, on a two-point grid:
+  `xxxSmall` 2, `xxSmall` 4, `xSmall` 6, `small` 8, `medium` 12, `large`
+  16 and `xLarge` 24 points. Every number that moved onto the scale moved
+  onto the step of its own value, so no frame changed: Home's margins (16
+  and 8), its labels' inset (4 and 6), the message's status gap (4) and
+  its field's inset (6); touch's gap between controls (8), and the switch
+  and head gap (12); Settings' gutter and gap between rows (16), the gap
+  beside its first row (16) and under its safety bar (8); and the stacks
+  and paddings of Settings, Voice Settings, the Library's editor field,
+  the privacy policy, setup and the keyboard probe screen.
+- **Made from steps.** Each profile's smallest gap between regions is its
+  gap between controls plus `xxxSmall`, and its gap between regions where
+  there is room plus `xxSmall` (10 and 12 for touch, as before).
+  `HomeLayout.controlSpacing`, `regionSpacing` and `minimumRegionSpacing`
+  are touch's, read from the profile instead of written again.
+- **Off the scale on purpose.** Eye Tracking's and the late stage's gap
+  between controls, 15 points, is the reference app's 12-point gaze gap
+  held at the densest supported screen like the profiles' floors
+  (*Layouts from the space available*), so it changes only with them.
+  A dimmed Settings row draws its words 14 points in
+  (`SettingsRowButtonStyle.systemWordsInset`), the system button's own
+  inset measured on CI, so the words do not move as the row dims.
+- **Not spacing, so not steps:** the distances the dwell checks keep
+  between a look and a control (`SettingsRowPlace.margin`,
+  `HomeLayout.wellClearance`, the half point counted as a tie), measuring
+  slack (`WordFit.widthSlack`), the widths and insets of borders and
+  rings, corner radii, sizes and floors; `spacing: 0` in stacks whose
+  frames the layout engine sets; and `.padding()` with no value, which is
+  the system's own.
+- **Nearly equal values, kept for the look to decide** (docs/HANDOFF.md,
+  *Known gaps*): 14 beside 16 (the dimmed row's words and Settings'
+  gutter), 15 beside 16 (Eye Tracking's and the late stage's gap and the
+  large step), and Home's message field at 6 against the Library
+  editor's outlined field at 12. Changing any of them changes what
+  people see.
+- **Text size.** A step stays the same at every text size: the words and
+  the controls that hold them grow (the layout engine measures one line
+  of each label at the person's size), while a gap is room for a finger,
+  a pointer or a look between two targets, which does not depend on the
+  words. Growing gaps with `@ScaledMetric` would also take room from the
+  targets at the largest sizes, where Home needs it most. The one
+  spacing that grows with the words is a label's gap between its icon
+  and its words, a share of the font (`LabelFont.iconSpacing(at:)`).
+  Nothing in the scale names a device, a window or an orientation.
+
+**Equal gaps measure equal.** Where the layout promises one gap, between
+every two phrase tiles across and down and between the safety row's
+controls, one rule judges it: `EqualGaps` (`BricksonUITests/EqualGaps.swift`,
+compiled into the unit tests too) groups frames into rows, measures every
+gap, and fails when two differ by more than half a point, or when there
+is nothing to measure or controls touch. Half a point is the tie the
+chain checks use and one pixel on a 2x screen: SwiftUI rounds each edge
+to a pixel, so equal gaps can come out one pixel apart, while an uneven
+gap a person can see differs by a point or more.
+
+- `EqualGapsTests` (Swift Testing) applies it to frames made by hand,
+  even and uneven, and to the layout engine's frames in
+  every window `HomeLayoutEngineTests` sweeps and in every profile in a
+  phone's and an iPad's windows, at the default and largest text sizes;
+  each gap must also be the profile's gap between controls.
+- `HomeLayoutTests` applies it to the running app on CI's iPad and iPhone
+  simulators, at the default and the largest accessibility text size, in
+  portrait and, on the iPad, landscape: the eight tiles of the starter
+  library's largest category and the five safety-row controls, read from
+  the accessibility tree. It runs inside the test that already launches
+  Home in each of those, so it adds no launch. It is an XCTest UI test
+  because only XCTest drives an app (*Apple's current frameworks first*,
+  the XCTest and XCUIAutomation row). `EqualGaps` itself uses no UIKit
+  type, so the unit tests run the same rule.
+- What they cannot show: the rendered gaps of profiles other than
+  touch's, which the UI tests ask for (the engine's are checked);
+  windows with a reserved region, where a fold or camera widens one gap
+  on purpose (`HomeReservedRegionTests`); the gaps of Settings and setup,
+  which only the steps hold; and the drawn fill, since an accessibility
+  frame is the button's, which Home's fills fill.
+- A check that flags a new spacing number written into a view belongs
+  with the look rules the forbidden-code check is gaining in pull request
+  #114, beside its list of known exceptions; it is added once that merges
+  (docs/HANDOFF.md, *Known gaps*).
+
+Before: each view wrote its own numbers, with the same values repeated
+in about thirty-five places.
+
 ## App identity
 
 *2026-10-10. Name: owner. Other values: default.*
