@@ -245,6 +245,8 @@ grid's rows).
 | iPhone 17 Pro Max | AX5 | touch | 79 | 131×86 | head tracking | 93 | 128×110 | 2, from 3 |
 | iPhone 16e | default | touch | 64 | 114×106 | touch | 114 | 114×113 | 2, from 3 |
 | iPhone 16e | AX5 | touch | 79 | 114×78, scrolls | touch | 83 | 114×83 | 2, from 3 |
+| iPhone Air | default | touch | 64 | 124×122 | touch | 126 | 124×125 | 2, from 3 |
+| iPhone Air | AX5 | touch | 79 | 124×78, scrolls | touch | 95 | 124×95 | 2, from 3 |
 | 375×667 phone | default | touch | 44 | 109×99, scrolls | touch | 97 | 109×99 | 2, from 3 |
 | 375×667 phone | AX5 | touch | 79 | 109×99, scrolls | touch | 79 | 109×99, scrolls | 2, from 3 |
 | 375×667 phone, zoomed | both | touch | 64, 79 | 140×78, scrolls | touch | 64, 79 | 140×78, scrolls | 3, from 4 |
@@ -252,11 +254,27 @@ grid's rows).
 | 13-inch iPad, landscape | both | Eye Tracking | 109 | 325×178 | late stage | 155 | 325×155 | 2 |
 | 13-inch iPad, landscape, zoomed | default | touch | 88 | 244×143 | touch | 88 | 244×143 | 2 |
 | 13-inch iPad, landscape, zoomed | AX5 | touch | 79 | 244×110 | touch | 79 | 244×110 | 2 |
+| 13-inch iPad Air | both | Eye Tracking | 109 | 237×345 | late stage | 206 | 237×297 | 2 |
+| 13-inch iPad Air, landscape | both | Eye Tracking | 109 | 322×174 | late stage | 153 | 322×152 | 2 |
 | 11-inch iPad | both | Eye Tracking | 109 | 189×267 | late stage | 206 | 189×219 | 2 |
 | 11-inch iPad, landscape | default | head tracking | 88 | 286×137 | head tracking | 92 | 286×135 | 2 |
 | 11-inch iPad, landscape | AX5 | touch | 79 | 288×139 | touch | 79 | 288×139 | 2 |
+| 820×1180 iPad | both | Eye Tracking | 109 | 186×252 | late stage | 205 | 186×204 | 2 |
+| 820×1180 iPad, landscape | default | touch | 88 | 281×143 | touch | 88 | 281×143 | 2 |
+| 820×1180 iPad, landscape | AX5 | head tracking | 88 | 278×119 | head tracking | 88 | 278×119 | 2 |
 | iPad mini | both | Eye Tracking | 109 | 167×229 | Eye Tracking | 189 | 167×189 | 2 |
 | iPad mini, landscape | both | touch | 88, 79 | 269×143, 269×95 | touch | 88, 79 | 269×143, 269×95 | 2 |
+| iPad mini (A20 Pro) | both | Eye Tracking | 109 | 170×241 | Eye Tracking | 197 | 170×197 | 2 |
+| iPad mini (A20 Pro), landscape | both | touch | 88, 79 | 276×143, 276×101 | touch | 88, 79 | 276×143, 276×101 | 2 |
+
+*Added 2026-11-17:* the rows for the iPhone Air, the 13-inch iPad Air,
+the 820×1180 iPads and the iPad mini (A20 Pro) were measured the same way
+when those windows joined the table, and both boards take the same sizes
+on each. They follow what the table shows below, with two differences:
+the iPad mini (A20 Pro) in portrait keeps Eye Tracking's with Bold Text
+too, and the 820×1180 iPad in landscape takes touch's through AX3 and
+head tracking's at AX5, the one size where head tracking's cost no
+typing that touch's keep.
 
 What it shows:
 

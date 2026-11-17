@@ -32,8 +32,8 @@ Tracking's until anyone answers, wherever the window holds them
 without scrolling, else smaller ones, touch's last; nothing changes
 place, and new sizes show as Settings closes. By the engine, every
 phone tested keeps touch's sizes at every text size, and every iPad in
-portrait takes Eye Tracking's (head tracking's on the iPad mini with
-Bold Text). `HomeSizesTests` checks a person's first launch at those
+portrait takes Eye Tracking's (head tracking's on the 744-by-1133-point
+iPad mini with Bold Text). `HomeSizesTests` checks a person's first launch at those
 sizes, with Apple's audit and the drawn words (passed on CI's iPad and
 iPhone simulators, #70); the other UI tests ask for touch's. A family
 can choose a rest board in Set Up Step by Step's second step, "Which
