@@ -147,18 +147,49 @@ the probes' first reads inside their waits.
   ended past the limit, or pausing past the limit, fails them. That is
   not the app's toolchain: Xcode and iOS Foundation can still differ.
 
+## CI on the first push
+
+Run 44037184309, on the pull request's first commit. The UI tests on
+the iPhone, parts 2 and 3, passed. The scale reaches the tests: a
+failure message read "limit 90 s: 30 s times a scale of 3". Each of the
+other four UI jobs failed one test, and none of the four failures comes
+from this change. Each is explained in a comment on the pull request,
+from the result bundles and the simulator-load records:
+
+- **iPad, part 3:** `LaunchTests.testLargestTextKeepsQuickControlWordsVisible`
+  showed "Speaking" for over 90 seconds after Yes, with every look quick.
+  The app's log shows the system speech service did not answer for about
+  three minutes while the simulator installed assets. The relaunched app
+  spoke at once. This shows an app gap: an utterance that never starts
+  shows "Speaking" with no failure text, because the missed-finish
+  watchdog only catches a synthesizer that goes quiet. That needs its own
+  change to the speech service.
+- **iPad and iPhone, part 1:** `HomeAccessibilityOrderTests` at AX5 read
+  Home in plain screen order in "just opened" only, under a second after
+  Yes appeared, then read the right order in every later state. This is
+  the order failure recorded in docs/HANDOFF.md, *Known gaps*, seen on
+  the iPad and at AX5 for the first time. #119 adds the re-read that
+  tells a too-early read from a wrong order.
+- **iPad, part 2:** `LibraryTests.testNoHeldLookChangesTheLibraryAtDefaultText`
+  only read screens for 90 seconds after its last touch, while the
+  simulator's `chronod` and `BackgroundShortcutRunner` took nearly all
+  of the processor. Single queries took up to 27 seconds. Settings' real
+  90-second idle reset then returned it to its first screen, as
+  designed. The code in that window is not changed here.
+
 ## Not verified
 
-- **The UI tests were not compiled or run.** `Waiting.swift`, the
+- **The UI tests were not compiled or run here.** `Waiting.swift`, the
   converted tests and the changes to `LaunchHelpers.swift` need XCTest's
-  UI automation, which only a Mac has: they are untested until CI's UI
-  jobs pass, and `UIWaitTests` until the unit job does.
-- That xcodebuild hands `TEST_RUNNER_BRICKSON_UI_WAIT_SCALE` to the UI
-  test runner on a simulator is Apple's documented behaviour, not seen
-  here: a CI failure message reading "times a scale of 3" shows it.
+  UI automation, which only a Mac has. CI built and ran them on the
+  first push (*CI on the first push*), but not on the later commits, and
+  `UIWaitTests` is untested on Apple's toolchain until the unit job
+  passes.
 - Whether 90 seconds covers the simulator's slowest speech on CI: one
   phrase above still showed "Speaking" after 64 seconds, and its end was
-  not seen.
+  not seen. On the first push's run (below), "Speaking" outlasted 90
+  seconds because the speech service did not answer at all, which no
+  limit should cover.
 - XCTest's own query timeout ("Timed out while evaluating UI query")
   is not ours to lengthen; a wait now only reports the slow look around
   it.
@@ -173,3 +204,10 @@ the probes' first reads inside their waits.
 - If a stretched limit runs out on CI with only quick looks, that is a
   stuck app or a step whose limit is too short; read the step before
   changing the limit.
+- The speech service: give an utterance a limit on how long it may take
+  to start, so one the system never starts shows a failure instead of
+  "Speaking" (*CI on the first push*). It needs a test first and care not to
+  cut off a slow first utterance. Owner: a new thread.
+- `LibraryTests`' chain sweep reads each screen with many queries; reading
+  each screen once in a snapshot would keep a starved machine inside
+  Settings' idle limit. Owner: a new thread with a Mac.
