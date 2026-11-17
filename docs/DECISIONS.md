@@ -5515,7 +5515,7 @@ containers", with SwiftUI's `ConcentricRectangle` and
 corner shares its container's centre, as a sheet's corners follow the
 screen's; a grid of tiles that all share one fixed radius, whatever the
 window around them, is the plainest way a screen looks unlike Apple's
-own. Brickson's controls draw one fixed 12-point corner today
+own. Home's controls draw one fixed 12-point corner today
 (`HomeButtonStyle.cornerRadius`). This entry adds the rule and the
 shapes the app's coming look is built from; which kind each control
 takes is that look's to decide, the owner's.
@@ -5564,8 +5564,9 @@ takes is that look's to decide, the owner's.
   rounded rectangle of nearby radii, with either curve, that matches its
   pixels best: a concentric shape 10 points in must measure 30, one 32
   or 56 points in the minimum, a ring 6 points inside a tile the tile's
-  less 6, and a fixed corner its own radius, each to half a point. It
-  also pins the minimum to Home's corner.
+  less 6, a fixed corner its own radius and a capsule half its shorter
+  side, each to half a point. It also pins the minimum to Home's
+  corner.
 - **Not done here, for the change that adopts it:** which controls take
   which kind (for example capsules for a row of controls, which Apple's
   guidelines favour for a horizontal row, or tiles concentric with the

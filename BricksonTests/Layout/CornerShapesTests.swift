@@ -139,6 +139,18 @@ struct CornerShapesTests {
         try Self.expectDrawnRadius(of: .fixed(20), inset: 10, "a fixed 20-point corner 10 points in")
     }
 
+    /// A capsule draws half its shorter side, whatever its container: 30
+    /// points on a shape 140 by 60. Every rounded rectangle rounder than
+    /// that draws the same as it, and a tie goes to the smaller radius, so
+    /// the measure finds 30. Fails if the capsule kind draws any other
+    /// shape, such as a fixed corner.
+    @Test func aCapsuleDrawsHalfItsShorterSide() throws {
+        #expect(CornerRule.radius(
+            of: .capsule, size: CGSize(width: 140, height: 60), containerRadius: Self.containerRadius, inset: 50
+        ) == 30)
+        try Self.expectDrawnRadius(of: .capsule, inset: 50, "a capsule 50 points in")
+    }
+
     /// The minimum is the corner Home's controls draw today, so a control
     /// that takes the concentric shape is never sharper than it is now.
     /// Fails if either changes without the other: a decision for the look,

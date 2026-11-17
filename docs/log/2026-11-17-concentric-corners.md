@@ -9,7 +9,7 @@ Nothing a person sees. Apple's current design nests rounded shapes
 concentrically: a shape inside another takes the outer corner's radius
 less the room between them, so the curves share a centre, as a sheet's
 corners follow the screen's (WWDC25, *Get to know the new design
-system*; *Adopting Liquid Glass*). Brickson's controls draw one fixed
+system*; *Adopting Liquid Glass*). Home's controls draw one fixed
 12-point corner whatever their window. This adds the foundation the
 app's coming look is built from, and leaves every screen as it is
 (docs/DECISIONS.md, "Concentric corners"):

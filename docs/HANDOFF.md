@@ -731,9 +731,10 @@ release in docs/ROADMAP.md when no thread has it yet.
     words at 4.5:1 on a fill, the fill can stand at most 3.78:1 from the
     lifted gray and 4.67:1 from black, the "contrast budget".
   *(the owner's design of the app's look)*
-- Every rounded control draws a fixed 12-point corner, whatever the
-  window around it, where Apple's current design nests corners
-  concentrically. The concentric shapes and their rule exist since
+- Home's controls and message field, Settings' cards and the Library
+  editor's field draw a fixed 12-point corner, whatever the window
+  around them, where Apple's current design nests corners concentrically
+  (Settings' rows keep the system button's own shape). The concentric shapes and their rule exist since
   2026-11-17 (docs/DECISIONS.md, "Concentric corners"), tested in numbers
   and on rendered pixels, but no screen uses them: which control takes
   which kind of corner is the look's. The change that adopts them checks
