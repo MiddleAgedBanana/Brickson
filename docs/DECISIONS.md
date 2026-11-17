@@ -2747,7 +2747,15 @@ R0 item 3's accessibility work (docs/ACCESSIBILITY.md, sections 1 and 3;
   *2026-10-23:* Again is in C, reached after Emergency, and Settings in
   B, after the categories (*Settings on Home*). Get Attention is in C,
   after Emergency and before Again; Stop, while it shows, is reached
-  first in B (*Get Attention and Stop on Home*).
+  first in B (*Get Attention and Stop on Home*). *2026-11-17:* the
+  priorities alone were not enough. Until SwiftUI applies them, it offers
+  elements in the order they are declared, and on CI's simulators that
+  was Home's screen order, Phrases and Type before Yes, No and Emergency,
+  for up to four seconds on a still Home. So Home also declares its
+  regions, and the safety row its controls, in the order they are
+  reached (`HomeRegion.allCases`, `HomeRegion.safetyRowOrder`), each
+  placed at the engine's frame; nothing moves
+  ([`log/2026-11-17-home-order-before-sorting.md`](log/2026-11-17-home-order-before-sorting.md)).
 - **Each region is an accessibility container** (`.contain`), so its
   controls are reached together and Switch Control can offer it as a
   group when Group Items is on. The regions carry identifiers for tests
