@@ -852,10 +852,11 @@ release in docs/ROADMAP.md when no thread has it yet.
   Not yet known: whether the order comes right with no input, which
   would make it a read taken before the order settled, or stays wrong
   until something on Home changes, which a person's first switch scan
-  would meet: an app defect. Since 2026-11-16 the test, after a wrong
+  could meet: an app defect. Since 2026-11-16 the test, after a wrong
   read, reads again for five seconds without touching anything, still
   fails, and says and attaches what it saw, so the next failure answers
-  it. Accepting an order that comes right within a few seconds would
+  it, as long as those reads of the tree succeed (if none does, it says
+  the answer is unknown). Accepting an order that comes right within a few seconds would
   weaken the test, so it is the owner's call, proposed in that log.
   *(the next thread whose CI shows it)*
 - `SettingsTests.testAnIdleSettingsReturnsToItsFirstScreenAndStaysOpen`

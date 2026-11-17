@@ -164,6 +164,11 @@ final class HomeAccessibilityOrderTests: XCTestCase {
         var failedReads = 0
         var rightAfter: Duration?
         while rightAfter == nil, clock.now - start < .seconds(5) {
+            if reads + failedReads > 0 {
+                // A pause between reads, as KeyboardProbeTests does, so the
+                // reading itself does not keep the app busy.
+                _ = XCTWaiter.wait(for: [XCTestExpectation(description: "pause")], timeout: 0.25)
+            }
             let buttons: [OrderedButton]
             do {
                 buttons = try orderedButtons(in: app)

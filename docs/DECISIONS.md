@@ -5485,10 +5485,10 @@ view draws.
   views: a view that drew a colour of its own instead of `Palette`'s
   would still pass it. SwiftUI's environment cannot set Increase
   Contrast, so no unit test can resolve the drawn colour there; the
-  test pins the cause, and a measurement of the rendered pixels
-  confirms the result: the Simulator's, above, and a real device's
-  (docs/HANDOFF.md, *Checks that need a real device*, its row on
-  buttons under Increase Contrast and Reduce Transparency).
+  test pins the cause. The Simulator's measurement of the rendered
+  pixels, above, confirms the result there; a real device's is still
+  pending (docs/HANDOFF.md, *Checks that need a real device*, its row
+  on buttons under Increase Contrast and Reduce Transparency).
 - Why not new Increase Contrast values instead: the system's change
   comes after the slot is read, so no slot value fixes a fill drawn with
   `Color.accentColor`. And in dark mode, with white words and a black

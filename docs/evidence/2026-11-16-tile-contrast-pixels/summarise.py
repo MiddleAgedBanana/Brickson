@@ -1,7 +1,8 @@
-"""Gather every measured JSON into one summary for docs/evidence."""
-import json, os, re, sys
+"""Gather every measured JSON in this clone's build/pixel and
+build/pixel-control into measurements.json beside this script."""
+import json, os, re
 
-root = sys.argv[1]  # the clone
+root = os.path.realpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", ".."))
 rows = []
 want = re.compile(r"^(tile:|pressed:|Basics$|Back to Talking$|Touch$|Next$|Normal speed$|Save$)")
 name = re.compile(r"(iphone|ipad)-(light|dark)-ic-(on|off)-(.*)-measured\.json$")

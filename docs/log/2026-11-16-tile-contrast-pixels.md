@@ -57,10 +57,12 @@ read the setting back as `enabled` once, after the iPhone's last "on"
 capture; it was not read back for each capture.
 
 **2. The Home order test that fails now and then on CI's iPhone.**
-`HomeAccessibilityOrderTests` checks the order in which VoiceOver, Switch
-Control and Full Keyboard Access reach Home's controls: Yes, No,
-Emergency, Get Attention, Again, then Phrases and Type, then the
-categories (docs/DECISIONS.md, "Home's scan order and names"). It has
+`HomeAccessibilityOrderTests` checks the order of Home's controls in the
+accessibility tree the app hands to VoiceOver, Switch Control and Full
+Keyboard Access, as XCTest reads it: Yes, No, Emergency, Get Attention,
+Again, then Phrases and Type, then the categories (docs/DECISIONS.md,
+"Home's scan order and names"). Whether each of them steps through it
+in that order needs a device, as the test's own comment says. It has
 failed three times on CI's iPhone: once on pull request #82's run
 (2026-11-06) and twice on 2026-11-15, on pull request #114's branch,
 which changes no app code. All three failed in the same place and the
@@ -97,12 +99,13 @@ Whether this is a weakness of the test or a defect in the app turns on
 one thing the CI runs cannot show, because the next read always came
 after a tap: whether the order comes right by itself, or stays wrong
 until something on Home changes. If it comes right by itself, the test
-read the tree before SwiftUI had settled it, which a person would not
-meet in practice. If it stays wrong, a person whose first Switch Control
-scan starts before they touch anything would be offered Phrases and Type
-before Yes and No: an app defect, and a safety one, since the scan order
-puts Yes, No, Emergency and Get Attention first so no step is spent
-waiting before them.
+read the tree before it had settled; a person could still meet that
+order only if their assistive technology read Home in that same moment,
+which no test here shows either way. If it stays wrong, a person whose
+first Switch Control scan starts before they touch anything could be
+offered Phrases and Type before Yes and No: an app defect, and a safety
+one, since the scan order puts Yes, No, Emergency and Get Attention
+first so no step is spent waiting before them.
 
 So the test now finds out. When a read finds the order wrong, it reads
 again for up to five seconds without touching anything, attaches each
@@ -124,16 +127,24 @@ defect to fix, with this test as its reproduction.
 
 ## Commits
 
-- The measurement record: this file, `docs/evidence/2026-11-16-tile-contrast-pixels/`,
-  and the in-place lines in docs/DECISIONS.md ("Colour tokens in four
-  appearances") and docs/ACCESSIBILITY.md (the Increase Contrast row).
-- The order test's second read, and its line in docs/HANDOFF.md,
-  *Known gaps*.
-- Codex's review of that commit, before the pull request opened: a
-  failed re-read is counted and never reported as "stayed wrong".
-- The first review round: this record's claims narrowed to what was
-  measured, after the report-only verifier compared them with the raw
-  results, and `starve.sh` added to the evidence.
+- `539491b`: the measurement record: this file,
+  `docs/evidence/2026-11-16-tile-contrast-pixels/`, and the in-place
+  lines in docs/DECISIONS.md ("Colour tokens in four appearances") and
+  docs/ACCESSIBILITY.md (the Increase Contrast row).
+- `bf96a0c`: the order test's second read, and its line in
+  docs/HANDOFF.md, *Known gaps*.
+- `6d448ac`: Codex's review of that commit, before the pull request
+  opened: a failed re-read is counted and never reported as "stayed
+  wrong".
+- `7b67a4e`: this record's claims narrowed to what was measured, after
+  the report-only verifier compared them with the raw results, and
+  `starve.sh` added to the evidence.
+- The first review round (cubic, Gitar, SonarQube): the re-reads paced
+  a quarter of a second apart; the evidence scripts check their
+  arguments, keep their output inside `build/`, create it, save the
+  pressed tree, stop when a screen was not reached, and tell Home's
+  buttons from a cover's by frame; the wording on what the test reads
+  and what is still unconfirmed narrowed.
 
 ## Verified
 
@@ -171,11 +182,14 @@ defect to fix, with this test as its reproduction.
 - **The order test:** the changed test passed both of its cases on the
   iPhone 17 simulator. With its expected order deliberately wrong (Again
   before Get Attention, never committed) it failed in all nine states,
-  each saying "read again with no input for 5 s, it stayed wrong in"
-  about 300 reads, with nine `order-read-again-without-input`
-  attachments, so the new path runs and reports. That change to the
-  expectation is what makes it fail. The path for a tree that cannot be
-  read again was not forced.
+  each saying "read again with no input for 5 s, it stayed wrong in 19
+  reads" (a quarter of a second apart), with nine
+  `order-read-again-without-input` attachments, so the new path runs
+  and reports. That change to the expectation is what makes it fail.
+  The path for a tree that cannot be read again was not forced. The
+  scripts' changes in the first review round were checked by running
+  `capture.py` and `nav.py` once each from their committed place (the
+  same numbers), and by giving each a bad argument (refused).
 - The unit suite and the Python checks in AGENTS.md, *Build and test*,
   ran on this Mac before the commit (see the pull request).
 

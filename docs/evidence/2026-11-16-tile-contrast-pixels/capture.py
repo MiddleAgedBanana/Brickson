@@ -8,10 +8,20 @@ fresh test storage at touch's sizes and the default text size, then:
   settings - Settings' first screen: Back to Talking
 Each screen: a PNG, the accessibility tree (AXe), and measure's JSON.
 """
-import json, subprocess, sys, time, os
+import json, os, re, subprocess, sys, time
 
-udid, scale, family, appearance, contrast, outdir = sys.argv[1:7]
+USAGE = "usage: capture.py <udid> <scale> <iphone|ipad> <light|dark> <on|off> <outdir inside this clone's build/>"
 here = os.path.dirname(os.path.abspath(__file__))
+build = os.path.realpath(os.path.join(here, "..", "..", "..", "build"))
+if len(sys.argv) != 7:
+    sys.exit(USAGE)
+udid, scale, family, appearance, contrast, outdir = sys.argv[1:7]
+if not (re.fullmatch(r"[0-9A-F]{8}(-[0-9A-F]{4}){3}-[0-9A-F]{12}", udid) and scale in ("1", "2", "3")
+        and family in ("iphone", "ipad") and appearance in ("light", "dark") and contrast in ("on", "off")):
+    sys.exit(USAGE)
+outdir = os.path.realpath(outdir)
+if not outdir.startswith(build + os.sep):
+    sys.exit("outdir must be inside " + build)
 os.makedirs(outdir, exist_ok=True)
 tag = f"{family}-{appearance}-ic-{contrast}"
 BUNDLE = "family.avery.brickson"
@@ -75,6 +85,8 @@ f = ts[1]["frame"]
 cx, cy = f["x"] + f["width"] / 2, f["y"] + f["height"] / 2
 run("axe", "touch", "-x", str(cx), "-y", str(cy), "--down", "--udid", udid)
 time.sleep(1.0)
+with open(os.path.join(outdir, f"{tag}-pressed-tree.json"), "w") as handle:
+    json.dump(tree(), handle)
 results["pressed"] = shoot("pressed", [target(f"pressed:{ts[1]['AXLabel']}", f)])
 run("axe", "touch", "-x", str(cx), "-y", str(cy), "--up", "--udid", udid)
 time.sleep(3)
@@ -84,7 +96,9 @@ time.sleep(3)
 t = tree()
 json.dump(t, open(os.path.join(outdir, f"{tag}-settings-tree.json"), "w"))
 f = find(t, "Back to Talking")
-results["settings"] = shoot("settings", [target("Back to Talking", f)] if f else [])
+if not f:
+    sys.exit(f"{tag}: Settings did not open (no Back to Talking), so nothing was measured there")
+results["settings"] = shoot("settings", [target("Back to Talking", f)])
 
 for screen, res in results.items():
     for m in res["targets"]:
