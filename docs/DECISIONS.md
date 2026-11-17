@@ -5851,6 +5851,109 @@ request merges only when they pass.
   still fails the run. Record:
   [`log/2026-11-16-ui-test-parts.md`](log/2026-11-16-ui-test-parts.md).
 
+## Guards for Apple's look
+
+*2026-11-15. Default, under the owner's standing word of 2026-11-15 that
+objective engineering is the threads' to decide; reversible if the owner
+objects ([record](log/2026-11-15-guards-for-apples-look.md)).*
+
+The owner wants Brickson to read as an app Apple made. Some of what
+that takes, from Apple's Human Interface Guidelines and API pages and
+from AGENTS.md, can be decided from the code alone.
+`scripts/forbidden-code.py` checks those rules in the same run as *A
+check for code the app must never contain*, so a review can no longer
+miss such a regression. Each finding names its rule, why it matters to the person using the app, and
+what to do instead. Nothing the app shows or does changed.
+
+- **What it refuses**, in the Swift of the targets that ship: Liquid
+  Glass or a see-through material added by the app (`glassEffect`, the
+  glass button styles, `Material`; invariant 6 and *Solid fills on Home,
+  system glass elsewhere*, whose system bars keep their glass with no
+  code); a `PrimitiveButtonStyle` or a call to its `trigger()`, which
+  decide themselves when a button fires (invariants 1 and 9); a button
+  that repeats while held (invariant 10); a picture that is not an SF
+  Symbol, in code or as a file, the app icon and custom symbols
+  (`.symbolset`, named by a literal) apart; Ultralight, Thin and Light
+  weights; a fixed text size (`.system(size:)` or UIKit's system font
+  with a number, bare or in `CGFloat(…)` or `Double(…)`; a custom font's
+  `fixedSize:`; `UIFont(name:size:)` with a number in a file that never
+  scales a font with `UIFontMetrics`); circular corners and the deprecated
+  `cornerRadius(_:antialiased:)`; an accessibility setting or Bold Text
+  written into the environment, which hides the person's choice; a
+  `ButtonStyle` that never reads `configuration.isPressed` or another
+  value's `isPressed`, in its own code or in a view of its file that it
+  names (another style's press state, or a property of its own called
+  `isPressed`, does not count); `.textCase(.uppercase)`; a context menu, swipe action, swipe to delete, drag to move or drag and
+  drop (invariants 1 and 3); a system alert, confirmation dialog or
+  action sheet (invariants 3, 4 and 10; *Settings is a cover with a fixed
+  safety bar*), since the system places its buttons itself: measured in
+  the iOS 27.2 Simulator, a confirmation dialog opens with its first,
+  destructive item nearest the spot just activated, and on the iPhone
+  directly under it, so a repeated activation by Dwell, Snap to Item or
+  a switch's auto-select meets that item next (docs/EXPERIMENTS.md,
+  SIM-13, measured in pull request #115); a toggle (invariant 10); a view given the button trait,
+  a default accessibility action or "responds to interaction"
+  (invariants 1 and 2); an empty `catch` (invariant 5); the old clocks
+  (`CACurrentMediaTime` and the like; AGENTS.md, *Workflow rules*); a
+  hover effect that lifts. `onTapGesture` and the other gestures were
+  already refused.
+- **Choices made.** Glass is refused in the whole app, not only Home:
+  this decision gives the system's components their own glass and the
+  app none. Repeating is refused on every button, not only the speaking
+  ones, because which control speaks cannot be read from the code and
+  every control can be reached with a held switch or a dwell. Named
+  accessibility actions, escape and magic tap are allowed: they add a
+  way in, not a second meaning for one.
+- **Scope.** The targets that ship: every target that is not a test,
+  except an application target that `project.yml` leaves out of every
+  archive, so it is never uploaded (`SKIP_INSTALL` true for every build, where XcodeGen reads it: under
+  `base`, or straight under `settings` only when it has no `base`,
+  `configs` or `groups`) and naming no settings group, which could turn
+  it back off, such as the experiments' probe app, which keeps every
+  other rule. A framework or extension ships
+  inside the app whatever its own setting says. If every application
+  target is marked so, the check stops with status 2.
+- **Known exceptions.** Where today's code breaks one of these rules and
+  the fix would change what a person sees, the place is named in
+  `KNOWN_EXCEPTIONS` (rule, file and type, with how many times its code
+  breaks the rule) and in docs/HANDOFF.md, *Known gaps*, as an input to
+  the new design. It excuses nothing else, not even one more break of
+  its rule in its type (a call to `trigger()` is a rule of its own, so
+  the exception for a `PrimitiveButtonStyle` never excuses one), and one
+  the code no longer needs as often, or whose file is gone or in no
+  target that ships, is a finding of its own. A file moved with its whole folder is not: the check
+  cannot tell that from another repository's checkout, so its tests fail
+  instead, and the moved code is checked at its new place. There are two,
+  both in Settings: `SettingsRowButtonStyle` and `SettingsPairLabel`.
+  Adding one is an exception, which *Code Review Rules* flags for the
+  owner. These two were proposed in pull request #114, not accepted by
+  it: the owner's merge accepts them until the new design replaces
+  both places, and declining them means that design
+  comes first, since fixing either now changes what a person sees.
+- **Not guarded, and why.** Each needs judgment, a screenshot or a
+  device, or would raise false alarms: two layers and hierarchy;
+  colour's meaning, placement and four appearances (the colour tokens'
+  own tests hold those); concentric and capsule shapes and sharp
+  corners (geometry); symbol meaning and rendering modes; motion and
+  Reduce Motion; sizes and places (the layout engine's tests hold
+  them); words, branding, the app icon and inactive windows; a setting
+  for appearance inside the app (the only `preferredColorScheme` is the
+  UI tests' launch option); system typefaces (Apple allows a custom
+  headline font that follows Dynamic Type and Bold Text; its fixed size
+  is refused); Heavy and Black weights (Apple prefers Regular to Bold
+  but warns only against the light ones); an error interpolated into a
+  crash message (whether it can hold a person's words is judgment);
+  intervals between `Date`s (right for calendar time people read); caps
+  on Dynamic Type (`textSize` caps on purpose); menus, steppers and
+  sliders (allowed on family screens); an empty handler for one kind of
+  error (`catch is SomeError {}`), which can be the recovery, as where
+  removing a draft finds the file already gone and every other error is
+  thrown on (only a bare `catch {}` is refused); words typed in capitals
+  (`Text("DELETE")`), which a script cannot tell from an acronym such as
+  "OK" or "SOS"; a custom UIKit font with a fixed size in a file that
+  scales another font, since `UIFontMetrics` often scales a font in
+  another statement and a script cannot follow which.
+
 ## Personal details stay out of the repository
 
 *2026-11-06. Default, asked for by the owner through the project's
@@ -6480,6 +6583,7 @@ runs it in seconds. On 2026-11-13 `main` broke none of its rules.
   `docs/DECISIONS.md, "<title>"`; a skip, a `.disabled` or an `.enabled`
   with no reason, which is a string in its own unlabelled message or
   comment, never one in its condition or in `file:`.
+- **Apple's look**, in the app that ships: *Guards for Apple's look*.
 - **`CLAUDE.md`** holds only `@AGENTS.md`.
 - **Changing what it allows.** Every finding names its rule and what to
   do. A file that needs a legacy API gets a row of the frameworks table,
@@ -7090,6 +7194,17 @@ reasons behind its rules stay here and in docs/LESSONS.md. The order
 below still holds, and `scripts/test-docs.py` now also fails when the
 whole file passes the 32 KiB Codex reads by default (31,985 bytes and
 556 lines on 2026-11-12).
+
+**2026-11-17: room kept.** With the guards' line for Apple's look and the
+UI test parts' commands, AGENTS.md reached 32,883 bytes, past the limit.
+Its introduction, *Build and test* and *Gotchas* were tightened to 32,349
+bytes, keeping every rule: padding and repeated words went, the two
+bullets on cloud agents and the owner's Mac became one, the Swift Testing
+filter's example is the one in *Build and test*, and the gotcha that
+simulator audio is unreliable went, since *Workflow rules* already says
+simulators prove nothing about sound. The introduction now says the check
+fails when the whole file passes 32 KiB, not only when the sections Codex
+must read end past it.
 
 Its length is deliberate. Claude Code's guidance is under about 200 lines
 per file, but this project's safety, privacy, review and guard rules do
