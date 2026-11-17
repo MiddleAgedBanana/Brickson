@@ -33,10 +33,11 @@ FOLDER = Path(__file__).resolve().parent.parent / "BricksonUITests"
 HELPERS = frozenset({"UIWait.swift", "Waiting.swift"})
 
 # Files whose bare waits are not converted yet, and how many they hold. A
-# file may hold fewer, never more. HomeAccessibilityOrderTests.swift is
-# being changed by another pull request (#119); its waits move onto the
-# helpers once that one has merged (docs/HANDOFF.md).
-NOT_YET_CONVERTED = {"HomeAccessibilityOrderTests.swift": 7}
+# file may hold fewer, never more. HomeAccessibilityOrderTests.swift holds
+# the 7 it had before the helpers and the 2 that pull request #119's
+# re-read added (a five-second deadline and a quarter-second pause); they
+# move onto the helpers in a later pull request (docs/HANDOFF.md).
+NOT_YET_CONVERTED = {"HomeAccessibilityOrderTests.swift": 9}
 
 # The words a report gives for each kind of bare wait.
 SECONDS = "a number of seconds as a timeout"

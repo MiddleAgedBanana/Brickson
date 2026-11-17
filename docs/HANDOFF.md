@@ -1583,10 +1583,11 @@ settings, date) and summarise it here.
   a slow job's log for it (docs/DECISIONS.md, "Tests";
   [`log/2026-11-17-ui-test-waits.md`](log/2026-11-17-ui-test-waits.md)).
   `scripts/ui-test-waits.py` refuses any other wait.
-  `HomeAccessibilityOrderTests.swift` still holds 7 bare waits, because
-  pull request #119 was changing it: once #119 merges, the next pull
-  request to touch the UI tests moves them onto the helpers and takes
-  the file off the script's `NOT_YET_CONVERTED` list. On 2026-11-12
+  `HomeAccessibilityOrderTests.swift` still holds 9 bare waits: the 7 it
+  had before the helpers and the 2 that pull request #119's re-read
+  added (a five-second deadline and a quarter-second pause). The next
+  pull request to touch the UI tests moves them onto the helpers and
+  takes the file off the script's `NOT_YET_CONVERTED` list. On 2026-11-12
   the iPad job took 87 of its 90 minutes (pull request #103: about five
   minutes of new check-in tests, and one Home typing test whose taps
   each waited 120 seconds for the app to go idle), and the same day it

@@ -105,8 +105,9 @@ the first 35 minutes of a saturated job
    (`UITestWaitTests`), so the "Unit tests" check fails on a new bare
    wait. A gesture's own length (`press(forDuration:)`) is not a wait.
    `HomeAccessibilityOrderTests.swift` was left as it is because pull
-   request #119 is changing it; the check allows its 7 bare waits and
-   no more.
+   request #119 was changing it. #119's re-read added 2 bare waits (a
+   five-second deadline and a quarter-second pause) to the 7 it had, so
+   after merging `main` the check allows 9 and no more.
 
 Nothing is retried, skipped or loosened: every assertion is the one it
 was, and only the time a stuck app is given changed: longer on CI, the
@@ -123,8 +124,8 @@ the probes' first reads inside their waits.
 ## Verified
 
 - On this cloud machine (Linux, no Xcode): `scripts/ui-test-waits.py`
-  finds no bare wait outside the helpers and exactly 7 in
-  `HomeAccessibilityOrderTests.swift`; `scripts/test-runner.py` passes,
+  finds no bare wait outside the helpers and, after merging #119,
+  exactly 9 in `HomeAccessibilityOrderTests.swift`; `scripts/test-runner.py` passes,
   with the new `UITestWaitTests`. Each new Python test was seen to fail
   with a pattern removed from the check, with `scripts/test.sh` giving
   CI a scale of 1, or with the check reading one line at a time,
@@ -177,15 +178,28 @@ from the result bundles and the simulator-load records:
   90-second idle reset then returned it to its first screen, as
   designed. The code in that window is not changed here.
 
+## CI on the second push
+
+Run 44084318373, on the review fixes and the first merge of `main`.
+The unit tests passed, so the reviewed `UIWaitTests` compiled and
+passed on Apple's toolchain. The UI tests on the iPad, parts 2 and 3,
+and the iPhone, part 3, passed. Three jobs failed one test each, none
+because of this change:
+
+- **iPhone, part 2:** the accessibility audit of New Phrase reported the
+  keyboard's own suggestion cell, a failure seen on `main` too and being
+  fixed separately.
+- **iPad and iPhone, part 1:** `HomeAccessibilityOrderTests` at default
+  text read Home in plain screen order, the same gap as on the first
+  push. #119's re-read, merged since, is the answer to it.
+
 ## Not verified
 
 - **The UI tests were not compiled or run here.** `Waiting.swift`, the
   converted tests and the changes to `LaunchHelpers.swift` need XCTest's
   UI automation, which only a Mac has. CI built and ran them on the
-  first push (*CI on the first push*), but not on the later commits.
-  The unit job passed on the first push, so that version of
-  `UIWaitTests` compiled and passed on Apple's toolchain; the later
-  commits change it and are untested there until CI runs them.
+  first two pushes (*CI on the first push*, *CI on the second push*);
+  the merge of #119 after them is untested until CI runs it.
 - Whether 90 seconds covers the simulator's slowest speech on CI: one
   phrase above still showed "Speaking" after 64 seconds, and its end was
   not seen. On the first push's run (*CI on the first push*),
@@ -197,8 +211,8 @@ from the result bundles and the simulator-load records:
 
 ## Follow-ups
 
-- After #119 merges, the next pull request to touch the UI tests moves
-  `HomeAccessibilityOrderTests.swift`'s 7 waits onto the helpers and
+- Now that #119 has merged, the next pull request to touch the UI tests moves
+  `HomeAccessibilityOrderTests.swift`'s 9 waits onto the helpers and
   removes it from `NOT_YET_CONVERTED` in `scripts/ui-test-waits.py`
   (docs/HANDOFF.md, *Repository, CI and website*). Owner: whichever
   thread takes it.

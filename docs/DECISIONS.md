@@ -5995,8 +5995,10 @@ request merges only when they pass.
   file below, wherever its arguments break across lines: a number
   of seconds handed to XCTest's waits, an XCTest waiter or predicate
   expectation, a sleep, a run loop held for a time or a deadline of the
-  test's own. `HomeAccessibilityOrderTests.swift` keeps its 7 bare waits
-  until the pull request changing it merges, and may not gain one.
+  test's own. `HomeAccessibilityOrderTests.swift` keeps its 9 bare waits
+  (7 from before the helpers, 2 that pull request #119's re-read added)
+  until a later pull request moves them onto the helpers, and may not
+  gain one.
   Revisit if a stretched limit runs out on CI with only quick looks: that
   is a stuck app, or a limit too short for that step. Record:
   [`log/2026-11-17-ui-test-waits.md`](log/2026-11-17-ui-test-waits.md).
