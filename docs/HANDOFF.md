@@ -56,7 +56,10 @@ speaks at once, in the person's Personal Voice when one exists and is
 allowed (in the system's voice while the voice list is being read,
 which nothing waits for: docs/DECISIONS.md, "The voice list never holds
 up launch"); the sentence stays on screen in the message's reserved lines,
-and a longer message scrolls inside them. The phrase grid keeps native
+and a longer message scrolls inside them. A phrase the system's speech
+service has not begun 15 seconds after it was chosen is stopped, and Home
+shows "Stopped — Again" in place of "Speaking" (docs/DECISIONS.md, "A
+phrase that does not start"). The phrase grid keeps native
 pan cancellation even when its tiles fit, so a deliberate vertical drag
 can bounce only its content rather than speak. Static Home controls stay
 fixed, and fitting tiles must return to their frames when the drag
@@ -1145,6 +1148,16 @@ release in docs/ROADMAP.md when no thread has it yet.
   the owner decides between that and changing the test
   ([record](log/2026-11-13-forbidden-code-check.md), *Follow-ups*).
   *(owner)*
+- A phrase the speech service never begins is stopped after 15 seconds
+  and shows "Stopped — Again", whose sentence says speech "stopped
+  unexpectedly". A plainer warning for a phrase that never began, such as
+  "Not spoken — Again", would be new words on Home and is not built
+  (docs/DECISIONS.md, "A phrase that does not start", *The words on
+  screen*). The limit also cannot catch a start report sent for speech
+  that is never heard, and a phrase that began and then stays "speaking"
+  with no finish still shows "Speaking" (*Verification*, the 2026-10-25
+  diagnostic). *(owner, for the words; the limit is checked against real
+  starts in device check P3)*
 
 ## Next steps, in order
 
@@ -1444,7 +1457,7 @@ settings, date) and summarise it here.
 | D1: with no question at launch, a Personal Voice allowed after a phrase has been spoken speaks in the next phrase, after a voice-list refresh, a rebuilt synthesizer or only a relaunch (docs/recon/2026-10-15/directions/onboarding-and-settings.md, 2.5). Run from Xcode with `--personal-voice=ask-from-settings` added to the scheme's arguments (Product > Scheme > Edit Scheme > Run > Arguments), and ask with Voice Settings' Ask to Use Personal Voice | Whether the app may switch to `PersonalVoiceAskPolicy.fromSettings` (docs/DECISIONS.md, "Personal Voice permission is asked at launch, for now") |
 | In the same run: iOS's question appears over Voice Settings, which is still there after a wait of over 90 seconds; after Allow or Don't Allow the card shows the answer, "Answered. …" sits where the button was, nothing below the card moved, and Open Personal Voice Settings appears only after leaving and reopening Voice Settings; and, under Dwell or Head Tracking, a look kept where iOS's answer button was meets nothing that speaks, changes the voice or leaves Brickson | "Asking for Personal Voice from Voice Settings", "Voice Settings, reached with a held look" |
 | D4: Personal Voice access turned off in the Settings app while Brickson waits in the background; on return a phrase speaks in another voice, and turning access back on brings the Personal Voice back | "A Personal Voice is used only while it is allowed" |
-| Restart the device, then open Brickson at once: Home appears without waiting; a phrase chosen straight away speaks at once (in the system's voice if the voice list has not arrived); how long the list takes; the first phrase after it is in the chosen voice or Personal Voice; whether that first phrase itself waits | "The voice list never holds up launch" |
+| Restart the device, then open Brickson at once: Home appears without waiting; a phrase chosen straight away speaks at once (in the system's voice if the voice list has not arrived); how long the list takes; the first phrase after it is in the chosen voice or Personal Voice; whether that first phrase itself waits, and how long phrases take to begin against the 15-second start limit | "The voice list never holds up launch", "A phrase that does not start" |
 | D5: with two Personal Voices, the order the system lists them in, and whether each keeps its identifier across a relaunch, a restore and Share Across Devices | "Automatic keeps the person's Personal Voice" |
 | Personal Voice appears and is chosen once permission is given, and keeps speaking after the screen locks | Voice choice and when to ask |
 | Opening Settings by a stray dwell, and leaving it by Back to Talking, lands on nothing that speaks or alarms (`SettingsOnHomeTests` scores it on the simulator's frames); Voice Settings opened by a stray dwell, from Family Setup scrolled or not, lands on Back to Family Setup and changes nothing; the idle reset under real dwell. Physical iPad and iPhone checks remain unverified; use the [2026-10-26 mounted-device procedure](log/2026-10-26-settings-simulator-checks.md#environment-and-settings-for-the-physical-run), including the phone at AX5. | Settings' safety bar and root (docs/DECISIONS.md, "Settings is a cover with a fixed safety bar") |
