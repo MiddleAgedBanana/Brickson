@@ -34,6 +34,21 @@ What it checks:
     around it says, Self( in an extension, or none at all), and
     notification observers on the main queue inside
     MainActor.assumeIsolated (never with a selector).
+- The Swift files and pictures of the targets that ship (every one but an
+  app target left out of every archive, `SKIP_INSTALL: YES`, such as a
+  test app), for Apple's look (docs/DECISIONS.md, "Guards for Apple's look"):
+  no Liquid Glass or material of the app's own; no PrimitiveButtonStyle
+  and no trigger(); no button that repeats while held; every icon an SF
+  Symbol, and no picture files but the app icon and custom symbols; no
+  Ultralight, Thin or Light weight; no fixed text size; no circular
+  corners; no accessibility setting written into the environment; a
+  press state in every ButtonStyle; no all-capital text; no context
+  menu, swipe or drag action; no system alert or dialog; no toggle; no
+  view made to pass for a button; no empty catch; no old clock; no
+  hover that lifts. Places today's code breaks one on purpose are named
+  in KNOWN_EXCEPTIONS with how many times, each with its line in
+  docs/HANDOFF.md, *Known gaps*; one more break there is a finding, and
+  so is an exception the code no longer needs as often.
 - project.yml and the files beside it (every .xcconfig, .plist and
   .entitlements file): no third-party packages, SDKs or git submodules;
   no iCloud, push, Sign in with Apple or network capability or Info.plist
@@ -78,11 +93,13 @@ SwiftData's types and used where neither declaration's scope reaches), a
 Combine operator or a UIKit- or
 SiriKit-style name used in one app file when another app file declares
 the same name, Swift or YAML written in a form its small readers have
-never seen, code written to get past it, and every rule that needs a
-person's judgment.
+never seen, a text size or corner style held in a constant, a picture
+named at run time, which control speaks, code written to get past it,
+and every rule that needs a person's judgment.
 """
 import argparse
 import bisect
+from collections import Counter
 from dataclasses import dataclass
 import os
 from pathlib import Path
@@ -1040,6 +1057,350 @@ def swiftdata_calls(source):
     return calls
 
 
+# ── Apple's look, in the app that ships ──────────────────────────────────────
+#
+# The rules of Apple's look that a script can decide
+# (docs/DECISIONS.md, "Guards for Apple's look"). Each message says which
+# rule, why it matters to the person using the app, and what to do
+# instead. They hold every target that ships, never an app target left
+# out of every archive (`SKIP_INSTALL: YES`, such as a test app).
+
+LOOK_SECTION = "Guards for Apple's look"
+GLASS = ('the app adds no Liquid Glass or see-through material of its own: glass and materials '
+         'take their colour from whatever lies beneath, so no contrast can be measured once and '
+         'promised to a person who needs every word and edge to read (invariant 6; '
+         'docs/DECISIONS.md, "Solid fills on Home, system glass elsewhere"). Use a solid fill '
+         'that PaletteTests pins; system bars and sheets keep their own glass with no code')
+PRIMITIVE = ('a PrimitiveButtonStyle decides for itself when a button fires, which is custom '
+             'input: Switch Control, Voice Control, Full Keyboard Access and dwell rely on the '
+             'standard behaviour a ButtonStyle keeps (invariants 1 and 9). Draw the look with a '
+             'ButtonStyle, or use the system\'s style as it is')
+TRIGGER = ('calling a button style\'s trigger() fires the button on the app\'s own terms, which is '
+           'custom input (invariants 1 and 9). Let the standard Button fire itself and draw its '
+           'look with a ButtonStyle')
+REPEAT = ('a button that repeats while held fires again and again under a resting look, a held '
+          'switch or a long press, so a phrase could be said over and over or a setting walked '
+          'past its mark (invariant 10). Leave repeating off (`.disabled`) and offer fixed '
+          'choices, as Speed does (docs/DECISIONS.md, "Speed is a set of fixed choices")')
+SYMBOL = ('every icon is an SF Symbol: symbols grow with the person\'s text size and Bold Text, '
+          'match the weight of the words beside them, and follow light, dark and Increase '
+          'Contrast by themselves (Apple\'s Human Interface Guidelines, SF Symbols). Use '
+          '`Image(systemName:)` or `Label(_:systemImage:)`; a custom symbol drawn on Apple\'s '
+          'template goes in the asset catalogue as a .symbolset and is named by a literal')
+LIGHT_WEIGHT = ('text weighs Regular to Bold: Apple\'s guidelines say to avoid Ultralight, Thin '
+                'and Light, whose thin strokes are hard to read at a distance or with low vision '
+                '(Human Interface Guidelines, Typography). Use `.regular` or heavier')
+FIXED_SIZE = ('text and symbols follow the person\'s text size: a fixed point size never grows, '
+              'so a person who needs larger text cannot read it (AGENTS.md, '
+              '*Layout on every device and window*; Human Interface Guidelines, Typography). Use a '
+              'text style (`.body`, `.title2`) with a weight, or a size from `@ScaledMetric`')
+CORNERS = ('corners use the smooth continuous curve of Apple\'s own controls, SwiftUI\'s default '
+           '(`RoundedCornerStyle.continuous`); the circular style\'s corners read as not Apple\'s, '
+           'and `cornerRadius(_:antialiased:)` is deprecated (AGENTS.md, '
+           '*Apple\'s current frameworks first*). Use `RoundedRectangle(cornerRadius:)` and leave '
+           'its style alone')
+SETTING = ('the person\'s own display settings win: writing Bold Text, Reduce Motion, Reduce '
+           'Transparency, Differentiate Without Color, Show Borders or any other accessibility '
+           'value into the environment hides the person\'s choice from every view below '
+           '(Human Interface Guidelines, Accessibility). Read the value with `@Environment` and '
+           'draw a designed answer for each setting instead')
+PRESS = ('every custom ButtonStyle draws a press state from `configuration.isPressed`: without '
+         'one, a tap, a switch or a dwell shows no sign that it landed, and the person may try '
+         'again (Human Interface Guidelines, Buttons). Read `configuration.isPressed` in the '
+         'style, or in a view of the same file that its body draws, and change the look '
+         'without moving anything')
+UPPERCASE = ('words keep the capitals they are written with: all-capital labels are slower to '
+             'read and are not Apple\'s style, which uses title-style capitals on buttons (Human '
+             'Interface Guidelines, Buttons). Write the words in the String Catalog as people '
+             'should see them')
+GESTURE_ONLY = ('a context menu, swipe action, swipe to delete, drag to move or drag and drop is '
+                'reached only by a gesture the person may be unable to make, and a swipe can '
+                'delete with no question (invariants 1 and 3). Give each action its own Button, '
+                'behind edit mode if it changes the person\'s words')
+DIALOG = ('no system alert or confirmation dialog: the system places its buttons itself, so a '
+          'repeated activation can land on the confirmation, and it adds a dismiss control '
+          '(invariants 3 and 4; docs/DECISIONS.md, '
+          '"Settings is a cover with a fixed safety bar"). Ask in the app\'s own controls, with '
+          'Keep in the asking control\'s place')
+TOGGLE = ('no toggles: a toggle turns into its opposite in place, so a second dwell or switch '
+          'activation on the same spot undoes the first (invariant 10; docs/DECISIONS.md, '
+          '"Settings is a cover with a fixed safety bar"). Give each choice its own Button, '
+          'with the opposite somewhere else')
+FAKE_BUTTON = ('only a standard Button is a control: a view given the button trait, a default '
+               'accessibility action or "responds to interaction" can be activated by '
+               'VoiceOver, Switch Control or Voice Control without the Button that touch uses, '
+               'so input methods do different things (invariants 1 and 2). Make it a Button')
+SILENT_CATCH = ('a catch that does nothing hides a failure from the person and the family '
+                '(invariant 5). Recover, show the person something, or both')
+OLD_CLOCK = ('elapsed time uses ContinuousClock, which keeps counting through sleep and never '
+             'jumps (AGENTS.md, *Workflow rules*). Use `ContinuousClock.now` and pass `now:` '
+             'into pure types')
+LIFT = ('a hover effect that lifts scales the control and casts a shadow where a pointer rests, '
+        'which for a person using eyes or a head pointer can cover the neighbour they meant to '
+        'reach (Human Interface Guidelines, Pointing devices: tint, not scale and shadow, where '
+        'an element has little space around it). Use `.highlight`')
+
+# A size written as a number, bare or wrapped in a conversion.
+FIXED_NUMBER = r'(?=[\d.]|(?:CGFloat|Double)\s*\(\s*[\d.])'
+
+# Each: the rule's name, why, the pattern, and what to print for a match
+# (None: the match itself, its spacing tidied).
+LOOK_RULES = [
+    ('glass or material', GLASS, word(
+        r'glassEffect\w*|GlassEffectContainer|GlassButtonStyle|GlassProminentButtonStyle'
+        r'|glassBackgroundEffect|Glass|Material|(?:ultraThin|thin|regular|thick|ultraThick)Material'
+        r'|UIBlurEffect|UIVisualEffectView|UIGlass\w*|(?<=\.)glass(?:Prominent)?'), None),
+    ('primitive button style', PRIMITIVE, word(r'PrimitiveButtonStyle'), None),
+    ('button trigger', TRIGGER, re.compile(r'\.\s*trigger\b(?!\s*:)'), '.trigger'),
+    ('repeating button', REPEAT, re.compile(r'\bButtonRepeatBehavior\s*\.\s*enabled\b'),
+     'buttonRepeatBehavior'),
+    ('light font weight', LIGHT_WEIGHT, re.compile(
+        r'(?:(?<![\w.$])weight\s*:|\bfontWeight\s*\(|\.\s*weight\s*\(|\b(?:Font|UIFont)\s*\.\s*'
+        r'Weight|\bSymbolWeight)\s*\.\s*(?:ultraLight|thin|light)\b'), None),
+    ('fixed text size', FIXED_SIZE, re.compile(
+        r'\.\s*(?:system|(?:bold|italic|monospaced|monospacedDigit)?[sS]ystemFont)\s*\(\s*'
+        r'(?:size|ofSize)\s*:\s*' + FIXED_NUMBER), None),
+    ('fixed text size', FIXED_SIZE, re.compile(r'\bcustom\s*\([^()]*\bfixedSize\s*:'),
+     'Font.custom(_:fixedSize:)'),
+    ('circular corners', CORNERS, re.compile(
+        r'(?:(?<![\w.$])style\s*:\s*|\bRoundedCornerStyle\s*)\.\s*circular\b'), None),
+    ('circular corners', CORNERS, re.compile(r'\.\s*cornerRadius\s*\('), '.cornerRadius('),
+    ('display setting overridden', SETTING, re.compile(
+        r'\b(?:environment|transformEnvironment)\s*\(\s*\\\s*(?:EnvironmentValues\s*)?\.\s*'
+        r'(?:legibilityWeight|accessibility\w+)\b'), None),
+    ('all capitals', UPPERCASE, re.compile(
+        r'\.\s*textCase\s*\(\s*(?:Text\s*\.\s*Case\s*)?\.\s*uppercase\b'
+        r'|\bText\s*\.\s*Case\s*\.\s*uppercase\b'), None),
+    ('gesture-only control', GESTURE_ONLY, re.compile(
+        r'\.\s*(?:contextMenu|swipeActions)\s*(?=[({])'
+        r'|\.\s*(?:onDelete|onMove|onInsert)\s*(?:\([^()]*\)\s*)?(?=\{)'
+        r'|\.\s*(?:onDelete|onMove|onInsert)\s*\((?=[^()]*\bperform\s*:)'
+        r'|\.\s*(?:onDrag|onDrop|draggable|dropDestination)\s*(?=[({])'), None),
+    ('system dialog', DIALOG, word(r'Alert|ActionSheet|UIAlertController'), None),
+    ('toggle', TOGGLE, word(r'Toggle|ToggleStyle\w*|toggleStyle'), None),
+    ('fake button', FAKE_BUTTON, re.compile(
+        r'(?:\baccessibilityAddTraits\s*\(|\baddTraits\s*:)(?:[^()]|\([^()]*\))*\bisButton\b'),
+     '.isButton'),
+    ('fake button', FAKE_BUTTON, word(r'accessibilityRespondsToUserInteraction'), None),
+    # Only a catch with no pattern: an empty handler for one error, such
+    # as a file already gone when removing it, can be the recovery.
+    ('empty catch', SILENT_CATCH, re.compile(r'(?<![\w.$])catch\s*\{\s*\}'), 'catch {}'),
+    ('old clock', OLD_CLOCK, word(
+        r'CACurrentMediaTime|CFAbsoluteTimeGetCurrent|mach_absolute_time|mach_continuous_time'
+        r'|systemUptime'), None),
+    ('lifting hover', LIFT, re.compile(
+        r'(?:\bhoverEffect\s*\(|\bdefaultHoverEffect\s*\(|\bHoverEffect)\s*'
+        r'(?:HoverEffect\s*)?\.\s*lift\b'), None),
+]
+REPEAT_CALL = re.compile(r'\bbuttonRepeatBehavior\s*\(')
+REPEAT_OFF = re.compile(r'\s*(?:ButtonRepeatBehavior\s*)?\.\s*(?:disabled|automatic)\s*')
+DIALOG_CALL = re.compile(r'\.\s*(?P<name>alert|confirmationDialog|actionSheet)\s*\(')
+DIALOG_LABELS = {'isPresented', 'item', 'presenting', 'error'}
+ACTION_CALL = re.compile(r'\.\s*accessibilityAction\s*(?=[({])')
+DEFAULT_ACTION = re.compile(r'\s*(?:AccessibilityActionKind\s*)?\.\s*default\s*')
+# A type that conforms to ButtonStyle (never PrimitiveButtonStyle, whose
+# name only ends with it).
+BUTTON_STYLE = re.compile(r'(?<![\w.$])(?:struct|class|enum|actor|extension)\s+'
+                          r'(?P<name>[A-Za-z_]\w*)[^{;]*?(?<![\w$])ButtonStyle(?!\w)[^{;]*\{')
+# A read of another value's isPressed (`configuration.isPressed`, `$0.isPressed`),
+# never the style's own property.
+PRESS_READ = re.compile(r'(?<![\w$])(?!self\b)[\w$]+\s*\.\s*isPressed\b')
+NAMED_UI_FONT = re.compile(r'\bUIFont\s*\(\s*name\s*:[^()]*\bsize\s*:\s*' + FIXED_NUMBER)
+UI_FONT_METRICS = re.compile(r'\bUIFontMetrics\b')
+IMAGE_CALL = re.compile(r'(?<![\w.$])(?:SwiftUI\s*\.\s*)?(?P<type>UIImage|Image|Label)\s*'
+                        r'(?:\.\s*init\s*)?\(')
+SYMBOL_LITERAL = re.compile(r'"(?P<name>[^"\\]*)"')
+LABEL_ONLY = re.compile(r'\s*(?:(?:decorative|named|image)\s*:\s*)?')
+IMAGE_SUFFIXES = ('.png', '.jpg', '.jpeg', '.heic', '.heif', '.gif', '.pdf', '.svg', '.tif',
+                  '.tiff', '.webp', '.bmp')
+# Folders whose pictures are not icons in the interface: the app icon, and
+# custom symbols drawn on Apple's template.
+PICTURE_FOLDERS = re.compile(r'\.(?:appiconset|icon|symbolset)/', re.I)
+SYMBOL_SET = re.compile(r'(?:^|/)(?P<name>[^/]+)\.symbolset/', re.I)
+# The type or extension a place is in, by name.
+OWNER = re.compile(r'(?<![\w.$])(?:struct|class|enum|actor|extension)\s+'
+                   r'(?!(?:func|var|let|subscript|init)\b)(?P<name>[A-Za-z_]\w*)[^{;]*\{')
+
+# Places today's code breaks a rule of Apple's look on purpose, each a line
+# of docs/HANDOFF.md, *Known gaps*, as an input to the new design: the rule,
+# the file, and the type (or extension) whose code may break it, with how
+# many times. It excuses nothing else, not even one more break of its rule
+# in its type, and one the code no longer needs as often is a finding of
+# its own, so it leaves with the code it excused.
+KNOWN_EXCEPTIONS = {
+    # Settings' rows wrap the system's bordered prominent style, which only
+    # a PrimitiveButtonStyle can do, to redraw its dimmed look at 4.5:1.
+    # The system's style still decides when the button fires.
+    ('primitive button style', 'Brickson/Settings/SettingsComponents.swift',
+     'SettingsRowButtonStyle'): 1,
+    # Hear and Use's icons are 20 points at every text size, in a slot of
+    # their own above the words.
+    ('fixed text size', 'Brickson/Settings/SettingsComponents.swift', 'SettingsPairLabel'): 1,
+}
+
+
+def owners(source):
+    """Each type or extension's (start, end, name), from its keyword to
+    its closing brace."""
+    pairs = source.pairs()
+    return [(match.start(), pairs.get(match.end() - 1, len(source.code)), match.group('name'))
+            for match in OWNER.finditer(source.code)]
+
+
+def owner(spans, offset):
+    """The name of the innermost type or extension around offset, or ''."""
+    inside = [(start, name) for start, end, name in spans if start <= offset <= end]
+    return max(inside)[1] if inside else ''
+
+
+def reads_press_state(code, spans, name):
+    """Whether the ButtonStyle `name` reads `isPressed` in its own code
+    (every declaration and extension of that name in the file, nested
+    types included) or in a type of the same file that its code names,
+    such as the view its `makeBody` returns. Another style's press state
+    in the same file is not this one's, and neither is a property of its
+    own called `isPressed`: only a read of another value's `isPressed`,
+    such as `configuration.isPressed`, counts."""
+    own = [code[start:end] for start, end, owner_name in spans if owner_name == name]
+    named = {name} | ({word for text in own for word in re.findall(r'[A-Za-z_]\w*', text)}
+                      & {owner_name for _, _, owner_name in spans})
+    return any(PRESS_READ.search(code[start:end])
+               for start, end, owner_name in spans if owner_name in named)
+
+
+def lone_literal(source, start, end):
+    """The words of the one plain string literal that the argument from
+    start to end holds, its label and any comments aside, or None."""
+    inside = [(first, last) for first, last in source.strings if start <= first and last <= end]
+    if len(inside) != 1 or not LABEL_ONLY.fullmatch(source.code[start:end]):
+        return None
+    literal = SYMBOL_LITERAL.fullmatch(source.text[inside[0][0]:inside[0][1]])
+    return literal.group('name') if literal else None
+
+
+def declares_function(code, offset):
+    return re.search(r'\bfunc\s*$', code[max(0, offset - 12):offset]) is not None
+
+
+def check_apple_look(source, symbols=frozenset(), exceptions=KNOWN_EXCEPTIONS, excused=None):
+    """What one of the shipped app's Swift files must not contain, so it
+    stays made the way Apple makes its own apps. `symbols` names the
+    custom symbols in the app's asset catalogues; a finding that one of
+    `exceptions` still covers (it maps a place to how many breaks it
+    excuses) is left out, and every break at an excepted place is counted
+    in `excused`."""
+    findings = []
+    path = source.path
+    code = source.code
+    spans = owners(source)
+    excused = Counter() if excused is None else excused
+
+    def found(offset, rule, message):
+        place = (rule, path, owner(spans, offset))
+        if place in exceptions:
+            excused[place] += 1
+            if excused[place] <= exceptions[place]:
+                return
+            message += (f' The known exception for `{place[2]}` excuses '
+                        f'{exceptions[place]} and no more.')
+        findings.append(Finding(path, source.line(offset), rule, message))
+
+    for rule, why, pattern, shown in LOOK_RULES:
+        for match in pattern.finditer(code):
+            if declares_function(code, match.start()):
+                continue
+            name = shown or ' '.join(match.group().split()).rstrip('({ ')
+            found(match.start(), rule, f'`{name}`: {why}.')
+
+    for match in REPEAT_CALL.finditer(code):
+        if declares_function(code, match.start()):
+            continue
+        opening = match.end() - 1
+        arguments = top_level_arguments(code, opening, source.closing(opening))
+        if not arguments or not REPEAT_OFF.fullmatch(arguments[0]):
+            found(match.start(), 'repeating button', f'`buttonRepeatBehavior`: {REPEAT}.')
+
+    for match in DIALOG_CALL.finditer(code):
+        opening = match.end() - 1
+        arguments = top_level_arguments(code, opening, source.closing(opening))
+        if {label(argument) for argument in arguments} & DIALOG_LABELS:
+            found(match.start(), 'system dialog', f'`.{match.group("name")}(`: {DIALOG}.')
+
+    for match in ACTION_CALL.finditer(code):
+        after = match.end()
+        if code[after] == '(':
+            closing = source.closing(after)
+            arguments = top_level_arguments(code, after, closing)
+            # Named actions (`named:`, a Text, `action:label:`) and the
+            # other kinds (`.escape`, `.magicTap`) are not the default one.
+            if arguments and not DEFAULT_ACTION.fullmatch(arguments[0]):
+                continue
+            if not arguments:  # `()` before trailing closures changes nothing
+                after = closing + 1 + len(code[closing + 1:]) - len(code[closing + 1:].lstrip())
+        if code[after:after + 1] == '{' and re.match(r'\s*label\s*:', code[source.closing(after) + 1:]):
+            continue  # accessibilityAction { … } label: { … } is a named action
+        found(match.start(), 'fake button', f'`.accessibilityAction`: {FAKE_BUTTON}.')
+
+    for match in BUTTON_STYLE.finditer(code):
+        name = match.group('name')
+        if not reads_press_state(code, spans, name):
+            found(match.start('name'), 'no press state', f'`{name}`: {PRESS}.')
+
+    # A custom UIKit font scales only through UIFontMetrics, often in
+    # another statement, so a number is a fixed size only in a file that
+    # never scales a font.
+    if not UI_FONT_METRICS.search(code):
+        for match in NAMED_UI_FONT.finditer(code):
+            found(match.start(), 'fixed text size', f'`UIFont(name:size:)`: {FIXED_SIZE}.')
+
+    for match in IMAGE_CALL.finditer(code):
+        if declares_function(code, match.start()):
+            continue
+        kind = match.group('type')
+        opening = match.end() - 1
+        closing = source.closing(opening)
+        # A lone string argument is blank in the code, so it splits to nothing.
+        spans_of = argument_spans(code, opening, closing) or (
+            [(opening + 1, closing)] if source.text[opening + 1:closing].strip() else [])
+        if kind == 'Label':
+            pictures = [(start, end) for start, end in spans_of
+                        if label(code[start:end]) == 'image']
+        else:
+            pictures = spans_of[:1]
+            if pictures and label(code[pictures[0][0]:pictures[0][1]]) == 'systemName':
+                continue
+        for start, end in pictures:
+            if lone_literal(source, start, end) in symbols:
+                continue
+            which = label(code[start:end])
+            name = f'{kind}({which}:)' if which else f'{kind}(_:)'
+            found(match.start(), 'not an SF Symbol', f'`{name}`: {SYMBOL}.')
+    return findings
+
+
+def never_shipped(entries, name):
+    """Whether project.yml keeps the target out of every archive: its
+    settings give `SKIP_INSTALL` a true value for every build, and no
+    build turns it off. An archive of such an app holds no app, so it is
+    never uploaded, though Xcode can still run it on a device."""
+    settings = ('targets', name, 'settings')
+    # A settings group, read from the project's `settingGroups`, can turn
+    # it back on for a build, so a target that names one stays checked.
+    if any(entry.path[:3] == settings and 'groups' in entry.path[3:] for entry in entries):
+        return False
+    values = [entry for entry in entries
+              if len(entry.path) >= 4 and entry.path[:3] == settings
+              and setting_name(entry.key) == 'SKIP_INSTALL']
+    # XcodeGen reads keys written straight under `settings` only when it
+    # has no `base`, `configs` or `groups`; otherwise only `base` holds
+    # the setting for every build.
+    advanced = any(entry.path in {settings + (key,) for key in ('base', 'configs', 'groups')}
+                   for entry in entries)
+    every_build = ('base', 'SKIP_INSTALL') if advanced else ('SKIP_INSTALL',)
+    return bool(values) and all(truthy(entry.value) for entry in values) and any(
+        entry.path[3:] == every_build for entry in values)
+
+
 def check_app_file(source, allowed, declared):
     """What one of the app's Swift files must not contain."""
     findings = []
@@ -1942,6 +2303,14 @@ def check(root=ROOT):
     # Everything that ships: the app, and any extension or framework in it.
     apps = [name for name, kind in kinds.items() if 'test' not in kind]
     app_folders = [source for name in apps for source in sources.get(name, [])]
+    # Apple's look holds what reaches people: not an app target left out
+    # of every archive, such as a test app.
+    shipped = [name for name in apps
+               if not (kinds[name] == 'application' and never_shipped(entries, name))]
+    if not any(kinds[name] == 'application' for name in shipped):
+        raise SetupError('project.yml gives every application target `SKIP_INSTALL: YES`, so '
+                         'no app ships and this check cannot tell which code people use.')
+    look_folders = [source for name in shipped for source in sources.get(name, [])]
     test_folders = [source for name, kind in kinds.items() if 'test' in kind
                     for source in sources.get(name, [])]
     allowed = allowed_files(decisions)
@@ -1960,12 +2329,52 @@ def check(root=ROOT):
     declared = declared_names(source for path, source in swift.items()
                               if under(path, app_folders))
 
+    symbols = {match.group('name') for path in files if under(path, look_folders)
+               for match in [SYMBOL_SET.search(path)] if match}
+    excused = Counter()
+
     findings = check_project(entries, files, read, decisions)
     for path, source in swift.items():
         if under(path, app_folders):
             findings += check_app_file(source, allowed, declared)
+            if under(path, look_folders):
+                findings += check_apple_look(source, symbols, KNOWN_EXCEPTIONS, excused)
         else:
             findings += check_test_file(source)
+    for path in files:
+        if under(path, look_folders) and path.lower().endswith(IMAGE_SUFFIXES) and not (
+                PICTURE_FOLDERS.search(path)):
+            findings.append(Finding(path, 0, 'not an SF Symbol',
+                                    f'a picture shipped in the app: {SYMBOL}.'))
+    listed = set(files)
+    for place in sorted(KNOWN_EXCEPTIONS):
+        rule, path, name = place
+        if excused[place] >= KNOWN_EXCEPTIONS[place]:
+            continue
+        # A file fixed, removed, or no longer in a target that ships leaves
+        # its exception excusing nothing, or less than it counts. (One whose
+        # file and folder are both gone is the documentation tests' to
+        # find: from here it looks like another checkout.)
+        if path in listed or under(path, look_folders):
+            if path not in listed:
+                what = f'{path} is gone, so the exception for `{name}` excuses nothing'
+            elif not under(path, look_folders):
+                what = (f'{path} is no longer in a target that ships, so the exception for '
+                        f'`{name}` excuses nothing')
+            elif excused[place]:
+                findings.append(Finding(path, 0, 'stale exception',
+                                        f'`{name}` breaks "{rule}" {excused[place]} times, '
+                                        f'not {KNOWN_EXCEPTIONS[place]}: lower its count in '
+                                        'KNOWN_EXCEPTIONS in scripts/forbidden-code.py to '
+                                        f'{excused[place]} in this pull request.'))
+                continue
+            else:
+                what = f'`{name}` no longer breaks "{rule}"'
+            findings.append(Finding(path, 0, 'stale exception',
+                                    f'{what}: remove its known '
+                                    'exception from KNOWN_EXCEPTIONS in '
+                                    'scripts/forbidden-code.py, and its line from '
+                                    'docs/HANDOFF.md, *Known gaps*, in this pull request.'))
     for path in files:
         # The workflows, and every action the repository holds, wherever
         # it is (a step may use any of them as `./path`).

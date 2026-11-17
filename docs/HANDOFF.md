@@ -22,8 +22,15 @@ with Stop's well at their leading top and Settings at their trailing
 end, and tiles from a neutral starter set, every frame from the layout
 engine, from the space the window gives it (docs/DECISIONS.md, "The
 layout engine", *Home on the engine*, and "Get Attention and Stop on
-Home"). Its sizes follow Family Setup's answer to how the screen is
-reached, switched on when the owner chose the largest sizes that fit
+Home"). Its gaps, margins and insets, and Settings', are steps of one
+spacing scale but for two named exceptions, the 15-point gap of Eye
+Tracking and the late stage and a dimmed Settings row's 14-point inset
+(`Spacing`; docs/DECISIONS.md, "One spacing scale"); the gaps between
+the tiles and between the safety row's controls measure equal on the
+engine's frames in every profile (`EqualGapsTests`) and in the running
+app on CI's iPad and iPhone at the default and largest text sizes
+(`HomeLayoutTests`). Its sizes follow Family Setup's answer to how the
+screen is reached, switched on when the owner chose the largest sizes that fit
 (2026-10-30; docs/DECISIONS.md, "Sizes that follow how the screen is
 reached", *Switched on by the owner*): touch's for touch, Voice
 Control and someone helping, larger ones for Switch Control, Head
@@ -486,6 +493,21 @@ release in docs/ROADMAP.md when no thread has it yet.
   where no complete row fits; it changes no code or release boundary.
   *(R0 item 3, before App Review: docs/ROADMAP.md, *The quality bar*,
   Q3; then the owner)*
+- Three pairs of nearly equal spacing values were kept as they were when
+  the app moved onto its spacing scale, since changing them changes what
+  people see: a dimmed Settings row's words 14 points in beside Settings'
+  16-point gutter; Eye Tracking's and the late stage's 15-point gap
+  between controls beside the 16-point step; and Home's message field with 6 points around its
+  words against the Library editor's outlined field with 12
+  (docs/DECISIONS.md, "One spacing scale"). *(the design of the app's
+  look)*
+- Nothing yet flags a spacing number written into a view instead of a
+  step of the scale: the check belongs beside the look rules and known
+  exceptions that pull request #114 adds to the forbidden-code check, so
+  it waits for that to merge (docs/DECISIONS.md, "One spacing scale").
+  The rendered equal-gaps check measures touch's sizes only, as the other
+  UI tests ask for them; the engine's gaps are checked in every profile.
+  *(the first pull request on the forbidden-code check after #114)*
 - The slot plan has no answer yet for more than four everyday categories
   (docs/DECISIONS.md, "Home's slot plan", *Open*), so editing and import
   refuse a fifth (docs/DECISIONS.md, "Three or four everyday
@@ -731,6 +753,16 @@ release in docs/ROADMAP.md when no thread has it yet.
     words at 4.5:1 on a fill, the fill can stand at most 3.78:1 from the
     lifted gray and 4.67:1 from black, the "contrast budget".
   *(the owner's design of the app's look)*
+- Home's controls and message field, Settings' cards and the Library
+  editor's field draw a fixed 12-point corner, whatever the window
+  around them, where Apple's current design nests corners concentrically
+  (Settings' rows keep the system button's own shape). The concentric shapes and their rule exist since
+  2026-11-17 (docs/DECISIONS.md, "Concentric corners"), tested in numbers
+  and on rendered pixels, but no screen uses them: which control takes
+  which kind of corner is the look's. The change that adopts them checks
+  that every label stays clear of a larger curve and that each target
+  floor holds at a rounder corner.
+  *(the owner's design of the app's look)*
 - iPad windows the person can resize have two gaps besides being
   untested (*Verification*). No scene has a minimum window size, though
   docs/LESSONS.md, "Windows need a minimum size", asks for one derived
@@ -836,29 +868,34 @@ release in docs/ROADMAP.md when no thread has it yet.
   took 27.1 with iOS 27.0. Nothing is pinned, on purpose
   (docs/DECISIONS.md, "Build with Apple's current Xcode"), and nothing
   needs changing: it ends when GitHub finishes the rollout.
-- `HomeAccessibilityOrderTests` fails now and then on CI's iPhone, always
-  in its first state, "just opened": once on PR #82's run (2026-11-06,
-  default text) and twice on 2026-11-15 on PR #114's branch, which
-  changes no app code (default text once, AX5 once). Each time that one
-  read lists Home's controls in plain screen order, top to bottom and
-  leading to trailing (Phrases, Type, Yes, No, Emergency, Again, Get
-  Attention), as if no `accessibilitySortPriority` had taken effect at
-  either level, though every region was there. Every later state in the
-  same run read the right order, and the run's recording shows Home drawn
-  and still, so nothing moved on screen. On the Mac's iPhone 17
-  simulator (iOS 27.2) 61 launches never read it wrong: idle, with every
-  processor busy, and with the app paused three quarters of the time
+- `HomeAccessibilityOrderTests` fails now and then on CI, always in its
+  first state, "just opened": on the iPhone once on PR #82's run
+  (2026-11-06, default text) and twice on 2026-11-15 on two pushes in a
+  row of PR #114, which changes no Swift (AX5 first, then default text;
+  the app was `main`'s at `7cb0299`, where the test had passed an hour
+  before), and on the iPad once on 2026-11-17 on PR #122's run
+  44037184309 (AX5, read 0.8 s after Yes first existed). Each time that
+  one read lists Home's controls in plain screen order, top to bottom
+  and leading to trailing (on the iPhone: Phrases, Type, Yes, No,
+  Emergency, Again, Get Attention), as if no `accessibilitySortPriority`
+  had taken effect at either level, though every region was there.
+  Every later state in the same run read the right order, and the run's
+  recording shows Home drawn and still, so nothing moved on screen. On
+  the Mac's iPhone 17 simulator (iOS 27.2) 61 launches never read it
+  wrong: idle, with every processor busy, and with the app paused three
+  quarters of the time
   ([`log/2026-11-16-tile-contrast-pixels.md`](log/2026-11-16-tile-contrast-pixels.md)).
-  Not yet known: whether the order comes right with no input, which
-  would make it a read taken before the order settled, or stays wrong
-  until something on Home changes, which a person's first switch scan
-  could meet: an app defect. Since 2026-11-16 the test, after a wrong
-  read, reads again for five seconds without touching anything, still
-  fails, and says and attaches what it saw, so the next failure answers
-  it, as long as those reads of the tree succeed (if none does, it says
-  the answer is unknown). Accepting an order that comes right within a few seconds would
-  weaken the test, so it is the owner's call, proposed in that log.
-  *(the next thread whose CI shows it)*
+  So a pull request's CI can fail on it with no change to the app. Not
+  yet known: whether the order comes right with no input, which would
+  make it a read taken before the order settled, or stays wrong until
+  something on Home changes, which a person's first switch scan could
+  meet: an app defect. Since 2026-11-16 the test, after a wrong read,
+  reads again for five seconds without touching anything, still fails,
+  and says and attaches what it saw, so the next failure answers it, as
+  long as those reads of the tree succeed (if none does, it says the
+  answer is unknown). Accepting an order that comes right within a few
+  seconds would weaken the test, so it is the owner's call, proposed in
+  that log. *(the next thread whose CI shows it)*
 - `SettingsTests.testAnIdleSettingsReturnsToItsFirstScreenAndStaysOpen`
   has failed once each on 2026-10-22, 2026-11-08 and 2026-11-12, on
   branches that did not touch it, and passed on each re-run: Family
@@ -1161,6 +1198,16 @@ release in docs/ROADMAP.md when no thread has it yet.
   the owner decides between that and changing the test
   ([record](log/2026-11-13-forbidden-code-check.md), *Follow-ups*).
   *(owner)*
+- Two places in Settings break a guard of Apple's look on purpose, each a
+  named known exception in `scripts/forbidden-code.py`
+  (docs/DECISIONS.md, "Guards for Apple's look"), kept as inputs to the
+  new design because changing either changes what a person sees.
+  `SettingsRowButtonStyle` is a `PrimitiveButtonStyle`: only one can wrap
+  the system's bordered prominent style, which it does to redraw the
+  dimmed look at 4.5:1; the system's style still decides when the row
+  fires. `SettingsPairLabel` draws the icons above Hear and Use at a fixed
+  20 points, so they do not grow with the person's text size.
+  *(the new design)*
 
 ## Next steps, in order
 
@@ -1718,7 +1765,11 @@ settings, date) and summarise it here.
   code breaks a rule of AGENTS.md a script can decide: network code, a
   device check, a package, a workflow given a write token and the rest in
   docs/DECISIONS.md, "A check for code the app must never contain"
-  ([record](log/2026-11-13-forbidden-code-check.md)).
+  ([record](log/2026-11-13-forbidden-code-check.md)), and the rules of
+  Apple's look a script can decide in the app that ships: glass, a
+  `PrimitiveButtonStyle`, a toggle, a system alert, a picture that is not
+  an SF Symbol and the rest in "Guards for Apple's look"
+  ([record](log/2026-11-15-guards-for-apples-look.md)).
   New issues start from the "Something went wrong" form; blank issues are
   off. Record: [`docs/log/2026-10-21-agent-guardrails.md`](log/2026-10-21-agent-guardrails.md).
   The review fixes cover configured and wildcard pushes, alternate Git

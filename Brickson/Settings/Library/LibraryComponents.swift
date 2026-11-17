@@ -110,7 +110,7 @@ struct LibraryTextField: View {
         .lineLimit(lines, reservesSpace: true)
         .focused(isFocused)
         .accessibilityLabel(Text(label))
-        .padding(12)
+        .padding(Spacing.medium)
         .frame(maxWidth: .infinity, alignment: .topLeading)
         .overlay {
             RoundedRectangle(cornerRadius: 12, style: .continuous)

@@ -45,7 +45,7 @@ struct KeyboardProbeScreen: View {
             Color.clear
                 .ignoresSafeArea(.container)
                 .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { aboveKeyboard = $0 }
-            VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: Spacing.large) {
                 TextField(Self.prompt, text: $text, axis: .vertical)
                     .typingFieldTraits()
                     .textFieldStyle(.roundedBorder)

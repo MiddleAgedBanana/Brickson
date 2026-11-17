@@ -170,6 +170,102 @@ containers, "instead of building device-specific interfaces" (AGENTS.md,
   entry. Before: AGENTS.md said floors were "computed in physical size per
   device".
 
+## One spacing scale
+
+*Default, adopted 2026-11-16 (pull request #117): an objective call left
+to the project, reversible. Nothing a person sees changed.*
+
+The room between views, and the margins and insets around them, come
+from one scale, `Spacing` (`Brickson/Layout/Spacing.swift`), instead of
+numbers written into each view. A step has one name everywhere, so the
+same kind of room is the same number on every screen, and the app's
+coming look can change a step in one place. Gaps that should be equal
+and are not are easy to miss by eye, so a test now measures them
+(below).
+
+- **The steps** are the values the app already drew, on a two-point grid:
+  `xxxSmall` 2, `xxSmall` 4, `xSmall` 6, `small` 8, `medium` 12, `large`
+  16 and `xLarge` 24 points. Every number that moved onto the scale moved
+  onto the step of its own value, so no frame changed: Home's margins (16
+  and 8), its labels' inset (4 and 6), the message's status gap (4) and
+  its field's inset (6); touch's gap between controls (8), and the switch
+  and head gap (12); Settings' gutter and gap between rows (16), the gap
+  beside its first row (16) and under its safety bar (8); and the stacks
+  and paddings of Settings, Voice Settings, the Library's editor field,
+  the privacy policy, setup and the keyboard probe screen.
+- **Made from steps.** Each profile's smallest gap between regions is its
+  gap between controls plus `xxxSmall`, and its gap between regions where
+  there is room plus `xxSmall` (10 and 12 for touch, as before).
+  `HomeLayout.controlSpacing`, `regionSpacing` and `minimumRegionSpacing`
+  are touch's, read from the profile instead of written again.
+- **Off the scale on purpose.** Eye Tracking's and the late stage's gap
+  between controls, 15 points, is the reference app's 12-point gaze gap
+  held at the densest supported screen like the profiles' floors
+  (*Layouts from the space available*), so it changes only with them.
+  A dimmed Settings row draws its words 14 points in
+  (`SettingsRowButtonStyle.systemWordsInset`), the system button's own
+  inset measured on CI, so the words do not move as the row dims.
+- **Not spacing, so not steps:** the distances the dwell checks keep
+  between a look and a control (`SettingsRowPlace.margin`,
+  `HomeLayout.wellClearance`, the half point counted as a tie), measuring
+  slack (`WordFit.widthSlack`), the widths and insets of borders and
+  rings, corner radii, sizes and floors; `spacing: 0` in stacks whose
+  frames the layout engine sets; and `.padding()` with no value, which is
+  the system's own.
+- **Nearly equal values, kept for the look to decide** (docs/HANDOFF.md,
+  *Known gaps*): 14 beside 16 (the dimmed row's words and Settings'
+  gutter), 15 beside 16 (Eye Tracking's and the late stage's gap and the
+  large step), and Home's message field at 6 against the Library
+  editor's outlined field at 12. Changing any of them changes what
+  people see.
+- **Text size.** A step stays the same at every text size: the words and
+  the controls that hold them grow (the layout engine measures one line
+  of each label at the person's size), while a gap is room for a finger,
+  a pointer or a look between two targets, which does not depend on the
+  words. Growing gaps with `@ScaledMetric` would also take room from the
+  targets at the largest sizes, where Home needs it most. The one
+  spacing that grows with the words is a label's gap between its icon
+  and its words, a share of the font (`LabelFont.iconSpacing(at:)`).
+  Nothing in the scale names a device, a window or an orientation.
+
+**Equal gaps measure equal.** Where the layout promises one gap, between
+every two phrase tiles across and down and between the safety row's
+controls, one rule judges it: `EqualGaps` (`BricksonUITests/EqualGaps.swift`,
+compiled into the unit tests too) groups frames into rows, measures every
+gap, and fails when two differ by more than half a point, or when there
+is nothing to measure or controls touch. Half a point is the tie the
+chain checks use and one pixel on a 2x screen: SwiftUI rounds each edge
+to a pixel, so equal gaps can come out one pixel apart, while an uneven
+gap a person can see differs by a point or more.
+
+- `EqualGapsTests` (Swift Testing) applies it to frames made by hand,
+  even and uneven, and to the layout engine's frames in
+  every window `HomeLayoutEngineTests` sweeps and in every profile in a
+  phone's and an iPad's windows, at the default and largest text sizes;
+  each gap must also be the profile's gap between controls.
+- `HomeLayoutTests` applies it to the running app on CI's iPad and iPhone
+  simulators, at the default and the largest accessibility text size, in
+  portrait and, on the iPad, landscape: the eight tiles of the starter
+  library's largest category and the five safety-row controls, read from
+  the accessibility tree. It runs inside the test that already launches
+  Home in each of those, so it adds no launch. It is an XCTest UI test
+  because only XCTest drives an app (*Apple's current frameworks first*,
+  the XCTest and XCUIAutomation row). `EqualGaps` itself uses no UIKit
+  type, so the unit tests run the same rule.
+- What they cannot show: the rendered gaps of profiles other than
+  touch's, which the UI tests ask for (the engine's are checked);
+  windows with a reserved region, where a fold or camera widens one gap
+  on purpose (`HomeReservedRegionTests`); the gaps of Settings and setup,
+  which only the steps hold; and the drawn fill, since an accessibility
+  frame is the button's, which Home's fills fill.
+- A check that flags a new spacing number written into a view belongs
+  with the look rules the forbidden-code check is gaining in pull request
+  #114, beside its list of known exceptions; it is added once that merges
+  (docs/HANDOFF.md, *Known gaps*).
+
+Before: each view wrote its own numbers, with the same values repeated
+in about thirty-five places.
+
 ## App identity
 
 *2026-10-10. Name: owner. Other values: default.*
@@ -5504,6 +5600,91 @@ Before: each colour set had one value for every appearance, and
 `PaletteTests` measured that value in the four appearances against the
 base screen; the words on fills were `Color.white`.
 
+## Concentric corners
+
+*Default, adopted 2026-11-17 (pull request #121): an objective call left
+to the project, reversible. Nothing a person sees changed: no screen uses
+it yet.*
+
+Apple's current design builds rounded shapes from three kinds of corner,
+in its own words: "fixed shapes have a constant corner radius. Capsules
+use a radius that's half the height of the container. And concentric
+shapes calculate their radius by subtracting padding from the parent's"
+(WWDC25, *Get to know the new design system*, read 2026-11-17). Its
+guide to the new design asks apps to keep "a sense of visual continuity
+in your interface by using rounded shapes that are concentric to their
+containers", with SwiftUI's `ConcentricRectangle` and
+`rect(corners:isUniform:)` (*Adopting Liquid Glass*). A concentric
+corner shares its container's centre, as a sheet's corners follow the
+screen's; a grid of tiles that all share one fixed radius, whatever the
+window around them, is the plainest way a screen looks unlike Apple's
+own. Home's controls draw one fixed 12-point corner today
+(`HomeButtonStyle.cornerRadius`). This entry adds the rule and the
+shapes the app's coming look is built from; which kind each control
+takes is that look's to decide, the owner's.
+
+- **The rule, as numbers:** `CornerRule` (`Brickson/Layout/CornerRule.swift`,
+  plain Foundation, no device). Its `Kind` holds the three kinds; a
+  concentric corner's radius is its container's less the room between
+  them, never less than its minimum and never negative; a capsule's is
+  half its shorter side; no corner is rounder than a capsule. The layout
+  engine and the tests can know a corner's radius without drawing it.
+- **The shapes, drawn by SwiftUI:** `CornerRule.Kind.shape`
+  (`Brickson/Home/CornerShapes.swift`) gives a `RoundedRectangle` with
+  the continuous curve for a fixed corner, a `Capsule` for a capsule,
+  and SwiftUI's own `ConcentricRectangle` with
+  `.concentric(minimum:)` for a concentric one, which takes its radius
+  from the nearest container shape: the window's corners, or a view's
+  `concentricContainer(radius:)`, which sets `containerShape(_:)` to a
+  continuous rounded rectangle. Brickson computes no window radius:
+  SwiftUI knows it, and no code names a device.
+- **Always a minimum.** "When the system calculates a zero radius, the
+  corner is square" (`concentric(minimum:)`, Apple's documentation), as
+  it does for a tile deep in a grid, far from any rounded corner.
+  Interactive shapes are never sharp, so Brickson's concentric corners
+  have no form without a minimum. `CornerRule.minimum` is 12 points, the
+  corner Home draws today, so a control that adopts the concentric shape
+  is never sharper than it is now; the look may change it, in one place.
+- **Rings inside a tile.** SwiftUI measures every concentric corner from
+  the nearest container shape, never from the shape around it, and
+  `ConcentricRectangle` cannot itself be a container shape. A ring drawn
+  inside a concentric tile therefore uses `CornerRule.minimum(_:insetBy:)`,
+  the tile's minimum less the ring's inset, and stays concentric with the
+  tile both where the tile follows the container and where it has fallen
+  back to its minimum. Every ring a Home control draws today ends less
+  deep than the minimum, so each keeps a round corner.
+- **Room across and down alike.** The rule is written for a shape set
+  the same distance in from its container across and down, as an even
+  padding sets it. What SwiftUI does when the two differ is not measured
+  yet; the change that first pads a concentric shape unevenly measures
+  it with the test below and adds it to the rule.
+- **Tested both ways.** `CornerRuleTests` (Swift Testing, plain numbers;
+  also run on Linux while this was written) pins the rule: the
+  subtraction, the minimum, a ring's concentricity across a sweep of
+  containers, tiles and rings, the capsule, and that no kind is square.
+  `CornerShapesTests` draws each kind with `ImageRenderer` at 2x inside a
+  40-point container and measures the corner SwiftUI drew, as the
+  rounded rectangle of nearby radii, with either curve, that matches its
+  pixels best: a concentric shape 10 points in must measure 30, one 32
+  or 56 points in the minimum, a ring 6 points inside a tile the tile's
+  less 6, a fixed corner its own radius and a capsule half its shorter
+  side, each to half a point. It also pins the minimum to Home's
+  corner.
+- **Not done here, for the change that adopts it:** which controls take
+  which kind (for example capsules for a row of controls, which Apple's
+  guidelines favour for a horizontal row, or tiles concentric with the
+  window), all the owner's look; that a larger corner keeps every label
+  clear of its curve, since a label fits a rectangle (`HomeButtonStyle`
+  keeps its words inside a 12-point curve today); and that a rounder
+  hit shape (`contentShape`) still meets each profile's target floor at
+  its corners. The adopting change measures each of these on CI's
+  simulators before it ships.
+
+Before: one fixed 12-point radius written into Home's button style and
+reused by its message field, the same number written again in Settings'
+card and the Library editor's field, and a capsule drawn round a dimmed
+Settings row. They stay as they are until the look adopts the shapes.
+
 ## Show Borders and the Large Content Viewer on Home
 
 *2026-10-23. Default, adopted 2026-10-23: the owner left these choices to
@@ -5761,6 +5942,109 @@ request merges only when they pass.
   already shut down now counts as cleaned up, and one still running
   still fails the run. Record:
   [`log/2026-11-16-ui-test-parts.md`](log/2026-11-16-ui-test-parts.md).
+
+## Guards for Apple's look
+
+*2026-11-15. Default, under the owner's standing word of 2026-11-15 that
+objective engineering is the threads' to decide; reversible if the owner
+objects ([record](log/2026-11-15-guards-for-apples-look.md)).*
+
+The owner wants Brickson to read as an app Apple made. Some of what
+that takes, from Apple's Human Interface Guidelines and API pages and
+from AGENTS.md, can be decided from the code alone.
+`scripts/forbidden-code.py` checks those rules in the same run as *A
+check for code the app must never contain*, so a review can no longer
+miss such a regression. Each finding names its rule, why it matters to the person using the app, and
+what to do instead. Nothing the app shows or does changed.
+
+- **What it refuses**, in the Swift of the targets that ship: Liquid
+  Glass or a see-through material added by the app (`glassEffect`, the
+  glass button styles, `Material`; invariant 6 and *Solid fills on Home,
+  system glass elsewhere*, whose system bars keep their glass with no
+  code); a `PrimitiveButtonStyle` or a call to its `trigger()`, which
+  decide themselves when a button fires (invariants 1 and 9); a button
+  that repeats while held (invariant 10); a picture that is not an SF
+  Symbol, in code or as a file, the app icon and custom symbols
+  (`.symbolset`, named by a literal) apart; Ultralight, Thin and Light
+  weights; a fixed text size (`.system(size:)` or UIKit's system font
+  with a number, bare or in `CGFloat(…)` or `Double(…)`; a custom font's
+  `fixedSize:`; `UIFont(name:size:)` with a number in a file that never
+  scales a font with `UIFontMetrics`); circular corners and the deprecated
+  `cornerRadius(_:antialiased:)`; an accessibility setting or Bold Text
+  written into the environment, which hides the person's choice; a
+  `ButtonStyle` that never reads `configuration.isPressed` or another
+  value's `isPressed`, in its own code or in a view of its file that it
+  names (another style's press state, or a property of its own called
+  `isPressed`, does not count); `.textCase(.uppercase)`; a context menu, swipe action, swipe to delete, drag to move or drag and
+  drop (invariants 1 and 3); a system alert, confirmation dialog or
+  action sheet (invariants 3, 4 and 10; *Settings is a cover with a fixed
+  safety bar*), since the system places its buttons itself: measured in
+  the iOS 27.2 Simulator, a confirmation dialog opens with its first,
+  destructive item nearest the spot just activated, and on the iPhone
+  directly under it, so a repeated activation by Dwell, Snap to Item or
+  a switch's auto-select meets that item next (docs/EXPERIMENTS.md,
+  SIM-13, measured in pull request #115); a toggle (invariant 10); a view given the button trait,
+  a default accessibility action or "responds to interaction"
+  (invariants 1 and 2); an empty `catch` (invariant 5); the old clocks
+  (`CACurrentMediaTime` and the like; AGENTS.md, *Workflow rules*); a
+  hover effect that lifts. `onTapGesture` and the other gestures were
+  already refused.
+- **Choices made.** Glass is refused in the whole app, not only Home:
+  this decision gives the system's components their own glass and the
+  app none. Repeating is refused on every button, not only the speaking
+  ones, because which control speaks cannot be read from the code and
+  every control can be reached with a held switch or a dwell. Named
+  accessibility actions, escape and magic tap are allowed: they add a
+  way in, not a second meaning for one.
+- **Scope.** The targets that ship: every target that is not a test,
+  except an application target that `project.yml` leaves out of every
+  archive, so it is never uploaded (`SKIP_INSTALL` true for every build, where XcodeGen reads it: under
+  `base`, or straight under `settings` only when it has no `base`,
+  `configs` or `groups`) and naming no settings group, which could turn
+  it back off, such as the experiments' probe app, which keeps every
+  other rule. A framework or extension ships
+  inside the app whatever its own setting says. If every application
+  target is marked so, the check stops with status 2.
+- **Known exceptions.** Where today's code breaks one of these rules and
+  the fix would change what a person sees, the place is named in
+  `KNOWN_EXCEPTIONS` (rule, file and type, with how many times its code
+  breaks the rule) and in docs/HANDOFF.md, *Known gaps*, as an input to
+  the new design. It excuses nothing else, not even one more break of
+  its rule in its type (a call to `trigger()` is a rule of its own, so
+  the exception for a `PrimitiveButtonStyle` never excuses one), and one
+  the code no longer needs as often, or whose file is gone or in no
+  target that ships, is a finding of its own. A file moved with its whole folder is not: the check
+  cannot tell that from another repository's checkout, so its tests fail
+  instead, and the moved code is checked at its new place. There are two,
+  both in Settings: `SettingsRowButtonStyle` and `SettingsPairLabel`.
+  Adding one is an exception, which *Code Review Rules* flags for the
+  owner. These two were proposed in pull request #114, not accepted by
+  it: the owner's merge accepts them until the new design replaces
+  both places, and declining them means that design
+  comes first, since fixing either now changes what a person sees.
+- **Not guarded, and why.** Each needs judgment, a screenshot or a
+  device, or would raise false alarms: two layers and hierarchy;
+  colour's meaning, placement and four appearances (the colour tokens'
+  own tests hold those); concentric and capsule shapes and sharp
+  corners (geometry); symbol meaning and rendering modes; motion and
+  Reduce Motion; sizes and places (the layout engine's tests hold
+  them); words, branding, the app icon and inactive windows; a setting
+  for appearance inside the app (the only `preferredColorScheme` is the
+  UI tests' launch option); system typefaces (Apple allows a custom
+  headline font that follows Dynamic Type and Bold Text; its fixed size
+  is refused); Heavy and Black weights (Apple prefers Regular to Bold
+  but warns only against the light ones); an error interpolated into a
+  crash message (whether it can hold a person's words is judgment);
+  intervals between `Date`s (right for calendar time people read); caps
+  on Dynamic Type (`textSize` caps on purpose); menus, steppers and
+  sliders (allowed on family screens); an empty handler for one kind of
+  error (`catch is SomeError {}`), which can be the recovery, as where
+  removing a draft finds the file already gone and every other error is
+  thrown on (only a bare `catch {}` is refused); words typed in capitals
+  (`Text("DELETE")`), which a script cannot tell from an acronym such as
+  "OK" or "SOS"; a custom UIKit font with a fixed size in a file that
+  scales another font, since `UIFontMetrics` often scales a font in
+  another statement and a script cannot follow which.
 
 ## Personal details stay out of the repository
 
@@ -6391,6 +6675,7 @@ runs it in seconds. On 2026-11-13 `main` broke none of its rules.
   `docs/DECISIONS.md, "<title>"`; a skip, a `.disabled` or an `.enabled`
   with no reason, which is a string in its own unlabelled message or
   comment, never one in its condition or in `file:`.
+- **Apple's look**, in the app that ships: *Guards for Apple's look*.
 - **`CLAUDE.md`** holds only `@AGENTS.md`.
 - **Changing what it allows.** Every finding names its rule and what to
   do. A file that needs a legacy API gets a row of the frameworks table,
@@ -7001,6 +7286,17 @@ reasons behind its rules stay here and in docs/LESSONS.md. The order
 below still holds, and `scripts/test-docs.py` now also fails when the
 whole file passes the 32 KiB Codex reads by default (31,985 bytes and
 556 lines on 2026-11-12).
+
+**2026-11-17: room kept.** With the guards' line for Apple's look and the
+UI test parts' commands, AGENTS.md reached 32,883 bytes, past the limit.
+Its introduction, *Build and test* and *Gotchas* were tightened to 32,349
+bytes, keeping every rule: padding and repeated words went, the two
+bullets on cloud agents and the owner's Mac became one, the Swift Testing
+filter's example is the one in *Build and test*, and the gotcha that
+simulator audio is unreliable went, since *Workflow rules* already says
+simulators prove nothing about sound. The introduction now says the check
+fails when the whole file passes 32 KiB, not only when the sections Codex
+must read end past it.
 
 Its length is deliberate. Claude Code's guidance is under about 200 lines
 per file, but this project's safety, privacy, review and guard rules do
