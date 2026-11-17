@@ -87,6 +87,11 @@ records it (*2026-11-17*).
   sort" became "the controls' order"; the test-first claims say what the
   tests cannot catch; the iPad's two moved scroll-bar elements, and the
   simulators the frames were compared on, are named.
+- A merge of #125's branch (`f98e705`): #126 failed on the keyboard
+  audit #125 fixes and #125 on the Home order this fixes, and neither
+  failure may be retried, so this pull request carries both. #125's
+  change and its trade-off are in its own record,
+  [`2026-11-17-keyboard-suggestion-bar.md`](2026-11-17-keyboard-suggestion-bar.md).
 
 ## Verified
 
@@ -216,7 +221,11 @@ for i, line in enumerate(lines):
 - A deterministic check that `HomeView` and `SafetyRow` declare in
   `HomeRegion.allCases` and `safetyRowOrder`, which no test makes today.
   *(unowned)*
-- Pull request #122 changes the UI tests' waits; this one changes no UI
-  test and neither touches `HomeAccessibilityOrderTests.swift`. Both edit
-  `docs/HANDOFF.md` and `docs/DECISIONS.md` in different places.
-  *(whichever lands second: merge `main` and recheck those two files)*
+- Pull request #122 changes the UI tests' waits. This one changes no UI
+  test of its own, but carries #125's `KeyboardSuggestions.swift` and
+  `LibraryTests.swift` lines, whose plain XCTest waits #122's
+  `scripts/ui-test-waits.py` will report; neither touches
+  `HomeAccessibilityOrderTests.swift`. Both edit `docs/HANDOFF.md` and
+  `docs/DECISIONS.md` in different places. *(whichever lands second:
+  merge `main`, move those waits onto #122's helpers, and recheck the two
+  documents)*
