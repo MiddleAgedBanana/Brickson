@@ -7283,9 +7283,12 @@ path as safe; it is then dismissed with the reason above.
 not return: a folder or file goes as an absolute path
 (`Path(...).resolve()`); any other value from outside (an argument, a
 file's text, an environment variable) is refused if it starts with a
-dash, after any prefix the script strips, or goes after `--` where the
-program reads that as the end of its options; and no script builds a
-shell command from it. The repeated answers to this finding on pull
+dash, or with any other character the receiving program reads
+specially (some programs read `@name` as a file of more arguments),
+checked after any prefix the script strips; a dash may instead be
+answered by putting the value after `--` where the program reads that
+as the end of its options; and no script builds a shell command from
+it. The repeated answers to this finding on pull
 request #119 came from new measuring scripts that took their arguments
 from the command line.
 

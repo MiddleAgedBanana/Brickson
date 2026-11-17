@@ -1639,7 +1639,7 @@ settings, date) and summarise it here.
 - CodeQL scans the workflow files and the Python scripts, not the Swift
   code, on purpose (docs/DECISIONS.md, *Code scanning*); the failed Swift
   attempt of 2026-10-10 was deleted from the Tool status page on 2026-11-08.
-  SonarQube Cloud also analyses every push and pull request, Swift
+  SonarQube Cloud also analyses every pull request and `main`, Swift
   included, and sends its security findings to the same code scanning
   page. Its four open alerts of 2026-11-17, all in the helper scripts,
   were answered: in two, git is now given the folder as an absolute
