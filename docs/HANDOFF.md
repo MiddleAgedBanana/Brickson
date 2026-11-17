@@ -879,15 +879,19 @@ release in docs/ROADMAP.md when no thread has it yet.
   in 9 of 39 iPhone launches and 2 of 39 iPad ones, for 0.35 s to at
   least 3.9 s on a drawn, still Home; only the order test checks it. Home
   now declares them in the order they are reached (`HomeRegion.allCases`,
-  `HomeRegion.safetyRowOrder`), so the order is the same before and after
-  the sort, with every control's, region's and text's frame unchanged
-  (docs/DECISIONS.md, "Home's scan order and names";
+  `HomeRegion.safetyRowOrder`), so the controls' order is the same before
+  and after the sort, with every control's, region's and text's frame
+  unchanged on the iPhone 17 and iPad Pro 13-inch simulators in portrait
+  and light (docs/DECISIONS.md, "Home's scan order and names";
   [`log/2026-11-17-home-order-before-sorting.md`](log/2026-11-17-home-order-before-sorting.md)).
   Not known: whether a person's VoiceOver or Switch Control ever met the
   old order on a device; the window was seen only on CI's simulators. The
   test still reads again after a wrong first read and says what it saw,
-  so a failure of another kind would show. *(closed 2026-11-17; the next
-  thread whose CI shows it reopens it)*
+  so a failure of another kind would show. No unit test notices if
+  `HomeView` goes back to declaring them in screen order: only this
+  test, when SwiftUI sorts late, and the log's script on CI's result
+  bundles. *(closed 2026-11-17; the next thread whose CI shows it reopens
+  it)*
 - `SettingsTests.testAnIdleSettingsReturnsToItsFirstScreenAndStaysOpen`
   has failed once each on 2026-10-22, 2026-11-08 and 2026-11-12, on
   branches that did not touch it, and passed on each re-run: Family

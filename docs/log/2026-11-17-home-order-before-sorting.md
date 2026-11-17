@@ -24,8 +24,8 @@ later. Pull request #119 made the test read again after a wrong read, and
 **The cause.** The app's own log is in every CI result bundle, and on CI
 it prints each tree XCTest reads ("Current tree"). Read side by side:
 
-- The wrong order is not the screen order. It is the order Home's views
-  are *declared* in: the regions as `HomeView` stacked them (message,
+- The wrong order only matched the screen order. It is the order Home's
+  views are *declared* in: the regions as `HomeView` stacked them (message,
   safety row, categories, phrases), the compact safety row as its rows
   listed it (Yes, No, Emergency, then Again, Get Attention), and on the
   iPad's one row Emergency, Yes, No, Again, Get Attention. Inside the
@@ -51,8 +51,10 @@ of a layout pass. Assistive technologies read the same tree, so a person
 whose first scan started in that window could have been offered Phrases
 and Type first; no device has shown that it happened.
 
-**The fix.** Make the declared order the reached order, so it is the
-same before and after the sort:
+**The fix.** Make the declared order the reached order, so Home's
+controls are in the same order before and after the sort (the message
+region's unlabelled parts still move, which is how the script below
+tells the two apart):
 
 - `HomeView` declares its regions in `HomeRegion.allCases` order (safety
   row, message, categories, phrases), each in a stack of its own under
@@ -80,6 +82,11 @@ records it (*2026-11-17*).
   ones in docs/DECISIONS.md, docs/HANDOFF.md, docs/ACCESSIBILITY.md and
   the code's comments narrowed to the tree XCTest reads (cubic), and
   `SafetyRowLayout`'s unused parameters named `_` (SonarCloud).
+- The commit after that: the report-only verifier's corrections. "Up to
+  four seconds" became "at least 3.9 s"; "the same before and after the
+  sort" became "the controls' order"; the test-first claims say what the
+  tests cannot catch; the iPad's two moved scroll-bar elements, and the
+  simulators the frames were compared on, are named.
 
 ## Verified
 
@@ -92,9 +99,14 @@ The owner's Mac, Xcode 27.2 (27B52), simulators made for this work
   trailing, in every layout `HomeLayoutEngineTests.everyLayout` makes, and
   requires `safetyRowOrder`; with the row declared as before (Again before
   Get Attention) it failed, with this change it passes.
-  `homeDeclaresItsRegionsInTheOrderTheyAreReached` fails if
-  `HomeRegion`'s cases are put back in screen order.
+  `homeDeclaresItsRegionsInTheOrderTheyAreReached` pins `HomeRegion`'s
+  cases, which `HomeView` now iterates, to the priorities' order; the
+  cases were already in that order, so it passed before this change too.
   `theQuickControlsComeBeforeAgainInTheSafetyRow` pins the first four.
+  None of them notices if `HomeView` or `SafetyRow` go back to declaring
+  in screen order: only `HomeAccessibilityOrderTests` does, when SwiftUI
+  sorts late, and the script below on CI's result bundles (the
+  report-only verifier's finding).
 - **Nothing moved.** A probe (never committed) read every element's type,
   label, identifier and frame, and took a screenshot, on Home just opened,
   typing and with the alarm sounding, at the default and the largest text
@@ -104,11 +116,11 @@ The owner's Mac, Xcode 27.2 (27B52), simulators made for this work
   for the clock; while typing, identical above the keyboard. iPad: every
   control, region and text identical; screenshots identical but for the
   clock and, while typing at the largest text, the field's blinking
-  cursor. One accessibility element differed: the phrase grid's scroll
-  bar, which the starter library never shows ("1 page"), ended 2 points
-  lower at the default text size, just opened and with the alarm
-  sounding (not while typing, not at the largest text). The grid's own
-  frame did not change.
+  cursor. Two accessibility elements differed: the phrase grid's scroll
+  bar, which the starter library never shows ("1 page"), and the 3-point
+  element beside it ended 2 points lower at the default text size, just
+  opened and with the alarm sounding (not while typing, not at the
+  largest text). The grid's own frame did not change.
 - **Unit tests** (`scripts/test.sh`, iPad Pro 13-inch simulator): 1,055
   tests, 1,042 passed, 0 failed, 1 known skip, 12 known expected
   failures; String Catalog unchanged.
@@ -118,12 +130,14 @@ The owner's Mac, Xcode 27.2 (27B52), simulators made for this work
   change too, so these runs show the fix keeps the order, not that it
   cures a failure seen here.
 - **The whole UI suite** on a freshly erased iPhone 17: 81 tests, 70
-  passed, 7 skipped, 4 failed, none on Home. `LaunchTests.
+  passed, 7 skipped, 4 failed. One is a Home test failing on its wait
+  for speech to end: `LaunchTests.
   testLargestTextKeepsQuickControlWordsVisible` ("Speaking" still showed
   30 s after Yes was spoken, at AX5) fails the same way on `main` on this
   Mac, and on CI on #122's run 44124581091, which does not change Home.
   Three audits of Library and Settings screens (contrast of a line near
-  the bottom edge) passed on `main` and on this branch when run alone.
+  the bottom edge) passed on CI, and here when run alone, on `main` and
+  on this branch.
 - **On CI, against the failing baseline.** #125's run 44135506925 read
   its first tree in declared order in 9 of 39 iPhone launches and 2 of 39
   iPad ones, each with Phrases and Type first. This pull request's run
@@ -149,7 +163,7 @@ The owner's Mac, Xcode 27.2 (27B52), simulators made for this work
   launches on 2026-11-16, 22 more here, some with CI's two-second wait
   before the first read): its baseline is CI's own logs, and the proof
   of the fix is CI's declared-order reads above.
-- Why the scroll bar's accessibility frame on the iPad moved 2 points.
+- Why the scroll bar's accessibility frames on the iPad moved 2 points.
 - Landscape, Bold Text, dark mode, rest boards, the late stage's sizes and
   iPhone Duo's windows were not compared frame by frame; the engine's
   frames and the layout tests on CI cover them.
@@ -199,9 +213,9 @@ for i, line in enumerate(lines):
 
 ## Follow-ups
 
-- When this pull request's CI has run, count its declared-order first
-  reads with the script above and check the controls were in order in
-  each. *(this thread)*
+- A deterministic check that `HomeView` and `SafetyRow` declare in
+  `HomeRegion.allCases` and `safetyRowOrder`, which no test makes today.
+  *(unowned)*
 - Pull request #122 changes the UI tests' waits; this one changes no UI
   test and neither touches `HomeAccessibilityOrderTests.swift`. Both edit
   `docs/HANDOFF.md` and `docs/DECISIONS.md` in different places.
