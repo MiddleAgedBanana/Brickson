@@ -145,6 +145,14 @@ defect to fix, with this test as its reproduction.
   pressed tree, stop when a screen was not reached, and tell Home's
   buttons from a cover's by frame; the wording on what the test reads
   and what is still unconfirmed narrowed.
+- The second review round: SonarCloud's "command argument injection"
+  finding on `nav.py`, first declined, was right. The dash check ran on
+  the whole step, but an `@type:` step lost its prefix after it, so
+  `@type:--udid=X` handed AXe `--udid=X` as an option. Typed text now
+  goes to AXe's standard input (`axe type --stdin`), never its
+  arguments; `valid_step` also refuses a prefix with nothing after it;
+  and `test_nav.py` checks that no step puts anything in AXe's
+  arguments but the value of `--label=`, `--id=` or `--until-label=`.
 
 ## Verified
 
@@ -190,6 +198,11 @@ defect to fix, with this test as its reproduction.
   scripts' changes in the first review round were checked by running
   `capture.py` and `nav.py` once each from their committed place (the
   same numbers), and by giving each a bad argument (refused).
+- `test_nav.py` (`python3 -I docs/evidence/2026-11-16-tile-contrast-pixels/test_nav.py`)
+  passes, and fails in two of its four tests with typed text passed as
+  an argument again. `nav.py` typed "Open the window" into the phrase
+  editor through standard input on the iPhone 17 simulator (the field
+  read it back) and measured its Save as before: `#0A60D6`, 5.74:1.
 - The unit suite and the Python checks in AGENTS.md, *Build and test*,
   ran on this Mac before the commit (see the pull request).
 
