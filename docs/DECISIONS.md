@@ -7190,8 +7190,9 @@ itself once `scripts/test-site.py` landed; checks "Analyze (actions)" and
   `autobuild` and `manual` build modes; no mode that skips the build has
   been announced. It probably meant AI Scan, below.
 - **Since 2026-11-08 AI Scan is off** (the owner: it used most of the
-  month's AI credits and found nothing; *Code review* above), so no scan
-  reads the Swift code; Copilot's review of each code pull request and
+  month's AI credits and found nothing; *Code review* above), so no
+  GitHub scan reads the Swift code (SonarQube Cloud does:
+  *SonarQube Cloud's alerts*, below); Copilot's review of each code pull request and
   Copilot Autofix's suggestions for CodeQL alerts remain. Before, in
   the bullet below:
 - *Until 2026-11-08.* GitHub's **AI Scan for pull requests** (a public
