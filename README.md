@@ -173,7 +173,9 @@ simulator boots and which slowed GitHub's machines until tests failed.
 
 GitHub Actions runs unit and UI tests for pull requests and pushes to
 `main`. The UI tests run in three parts on the iPad and three on the
-iPhone, six machines at the same time; `scripts/ui-test-parts.py` says
+iPhone, six jobs that run at the same time as machines are free (GitHub
+runs at most five Mac jobs at once, so some wait for one);
+`scripts/ui-test-parts.py` says
 which tests each part runs, and every test runs in one part. To run one
 part as CI does:
 

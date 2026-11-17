@@ -193,8 +193,10 @@ def run_script(build_body, mode="ui", destination="id=fixture-simulator",
         # The UI tests' own classes, which scripts/ui-test-parts.py reads.
         fixture_ui_tests = Path(directory, "repo", "BricksonUITests")
         fixture_ui_tests.mkdir()
-        for path in UI_TESTS.glob("*.swift"):
-            (fixture_ui_tests / path.name).write_bytes(path.read_bytes())
+        for path in UI_TESTS.rglob("*.swift"):
+            copy = fixture_ui_tests / path.relative_to(UI_TESTS)
+            copy.parent.mkdir(parents=True, exist_ok=True)
+            copy.write_bytes(path.read_bytes())
         (fixture_scripts / "simulator-load.py").write_text(FAKE_SIMULATOR_LOAD)
         for name, status in (("docs", docs_status), ("hooks", hooks_status),
                              ("privacy", privacy_status), ("agent-bridge", bridge_status),
@@ -809,6 +811,22 @@ class UITestPartTests(unittest.TestCase):
             with self.subTest(case=case):
                 found = parts.problems(named)
                 self.assertTrue(any(words in line for line in found), found)
+
+    # project.yml builds every Swift file under BricksonUITests, folders
+    # inside it too; reading only the top folder fails this test (a class
+    # in a folder would be missing from the last part's description, and
+    # naming it in a part would be refused).
+    def test_classes_in_folders_inside_the_ui_tests_count(self):
+        parts = self.parts_module()
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            (folder / "Home").mkdir()
+            (folder / "TopTests.swift").write_text("final class TopTests: XCTestCase {}\n")
+            (folder / "Home" / "InnerTests.swift").write_text(
+                "final class InnerTests: XCTestCase {}\n")
+            self.assertEqual(parts.test_classes(folder), {"TopTests", "InnerTests"})
+            self.assertEqual(parts.problems((("InnerTests",),), folder), [])
+            self.assertIn("InnerTests", parts.describe(2, (("TopTests",),), folder))
 
     # Passing a part's classes to the build, or none to the test run,
     # fails this test; so does a part that keeps the full run's bundle.

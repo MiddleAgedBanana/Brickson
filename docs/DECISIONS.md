@@ -5718,10 +5718,11 @@ request merges only when they pass.
   and raising the iPad job's time limit (2026-11-13). Record:
   [`log/2026-11-13-ipad-ui-test-stall.md`](log/2026-11-13-ipad-ui-test-stall.md).
 - **2026-11-16, default, reversible:** the UI tests run in three parts
-  per device family, six jobs at the same time, each with 90 minutes;
-  this replaces one job per family (2026-11-03). That morning both
-  families' jobs ran past 90 minutes, on `main` and on pull requests,
-  so nothing could merge: each job spent 10 to 19 minutes starting the
+  per device family, six jobs that run at the same time as GitHub has
+  Macs free, each with 90 minutes; this replaces one job per family
+  (2026-11-03). That morning the iPad's job ran past 90 minutes, on
+  `main` and on pull requests, and the iPhone's took up to 89, so
+  nothing could merge: each job spent 9 to 19 minutes starting the
   simulator and building, then ran all 81 tests one after another, 48
   to 70 minutes and more on a slow machine. `scripts/ui-test-parts.py`
   names the test classes of every part but the last; the last runs

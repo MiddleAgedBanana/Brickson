@@ -44,9 +44,10 @@ CLASS = re.compile(r"^\s*(?:final\s+)?class\s+(\w+)\s*:\s*XCTestCase\b", re.M)
 
 
 def test_classes(folder=FOLDER):
-    """The XCTestCase classes declared in the UI tests' Swift files."""
+    """The XCTestCase classes declared in the UI tests' Swift files, in the
+    folder and every folder inside it, as project.yml builds them."""
     found = set()
-    for path in sorted(folder.glob("*.swift")):
+    for path in sorted(folder.rglob("*.swift")):
         found.update(CLASS.findall(path.read_text(encoding="utf-8")))
     return found
 
@@ -96,35 +97,36 @@ def describe(number, parts=PARTS, folder=FOLDER):
     return f"UI tests, part {number} of {count}: " + ", ".join(names)
 
 
+def unsound():
+    """Prints what is wrong with the parts; whether anything was."""
+    wrong = problems()
+    for line in wrong:
+        print(line, file=sys.stderr)
+    return bool(wrong)
+
+
 def main(argv):
-    if argv[:1] == ["count"] and len(argv) == 1:
+    command = argv[0] if argv else ""
+    if command == "count" and len(argv) == 1:
         print(len(PARTS) + 1)
         return 0
-    if argv[:1] == ["check"] and len(argv) == 1:
-        wrong = problems()
-        for line in wrong:
-            print(line, file=sys.stderr)
-        if not wrong:
-            print(f"The UI tests' {len(PARTS) + 1} parts are sound.")
-        return 1 if wrong else 0
-    if argv[:1] in (["arguments"], ["describe"]) and len(argv) == 2:
-        wrong = problems()
-        if wrong:
-            for line in wrong:
-                print(line, file=sys.stderr)
+    if command == "check" and len(argv) == 1:
+        if unsound():
             return 1
-        try:
-            number = part_number(argv[1])
-        except ValueError as error:
-            print(error, file=sys.stderr)
-            return 2
-        if argv[0] == "arguments":
-            print("\n".join(arguments(number)))
-        else:
-            print(describe(number))
+        print(f"The UI tests' {len(PARTS) + 1} parts are sound.")
         return 0
-    print(__doc__, file=sys.stderr)
-    return 2
+    if command not in ("arguments", "describe") or len(argv) != 2:
+        print(__doc__, file=sys.stderr)
+        return 2
+    if unsound():
+        return 1
+    try:
+        number = part_number(argv[1])
+    except ValueError as error:
+        print(error, file=sys.stderr)
+        return 2
+    print("\n".join(arguments(number)) if command == "arguments" else describe(number))
+    return 0
 
 
 if __name__ == "__main__":

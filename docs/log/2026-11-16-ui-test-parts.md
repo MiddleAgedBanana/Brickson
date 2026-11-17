@@ -1,6 +1,6 @@
 # UI tests in three parts per family, and a clean-up that a stopped simulator cannot fail
 
-*2026-11-16. The pull request from `claude/project-thread-wdyl8w`. A
+*2026-11-16. Pull request #118 (`claude/project-thread-wdyl8w`). A
 Claude thread on the owner's Mac (Xcode 27.2).*
 
 ## What changed and why
@@ -18,7 +18,7 @@ pass, so nothing could merge:
 - The same app code had passed the night before in 72 minutes (pull
   request #116's run 43770804978).
 
-**Where the time went.** Every UI job spent 10 to 19 minutes before its
+**Where the time went.** Every UI job spent 9 to 19 minutes before its
 first test, then ran all 81 tests one after another:
 
 | Run | Job | Start simulator, keyboard | Build | Warm-up | Tests | Job |
@@ -85,7 +85,7 @@ need their own fix (*Follow-ups*).
    cleaned up, and one still running fails the run as before.
 
 **What to expect.** About 16 to 24 minutes of tests per part (table
-below) after the same 10 to 19 minutes of starting and building: about
+below) after the same 9 to 19 minutes of starting and building: about
 30 minutes on a normal day and about 40 to 45 on a day like this one,
 against a 90-minute limit. The cost: each part starts its own simulator
 and builds the app, so a run uses about a third more Mac time (about
@@ -323,11 +323,13 @@ On the owner's Mac, Xcode 27.2:
 - If a part's job takes more than about 45 minutes on a normal day,
   move classes between parts or add one (docs/DECISIONS.md, "Tests").
   `SettingsTests` alone is about 15 minutes, the floor for its part
-  until it is split.
+  until it is split. Owner: the agent whose pull request first sees it.
 - The tests that a unit test might replace (above) are the start of a
   later clean-up that cuts app launches; each move needs its own pull
   request and keeps the screen check where only the screen can show it.
+  Owner: the owner decides when; an agent thread does the work.
 - The three iPad failures on slow machines: if they recur on the parts,
-  a thread looks at each one's wait.
+  a thread looks at each one's wait. Owner: the agent whose pull
+  request meets one.
 - The unit job takes 34 to 43 of its 60 minutes; it is not changed
-  here.
+  here. Owner: an agent thread, if it nears its limit.
