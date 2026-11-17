@@ -5471,17 +5471,23 @@ view draws.
   appearances, words 5.74:1 and the pressed ring 3.66:1, as the budget
   measures. Without Increase Contrast nothing changes; with it, these
   controls should keep the blue they show without it (in light, a
-  little lighter than the system drew them). Not yet measured on the
-  rendered pixels: the next point says what confirms it.
+  little lighter than the system drew them). Measured on the rendered
+  pixels in the iOS 27.2 Simulator on 2026-11-16: `#0A60D6` with its
+  white words at 5.74:1 in all four appearances, on an iPhone 17 and a
+  13-inch iPad Pro, on every control this fill draws, and the pressed
+  ring at 3.66:1 in light; the same run with `Color.accentColor` put
+  back measured `#1A7BFF` and 3.95:1 again
+  ([`log/2026-11-16-tile-contrast-pixels.md`](log/2026-11-16-tile-contrast-pixels.md)).
+  A real screen is still the device check the next point names.
 - `everyFillIsDrawnFromItsColourSet` fails if any of `Palette`'s fills,
   or its fill label, is made any other way. It checks `Palette`, not the
   views: a view that drew a colour of its own instead of `Palette`'s
   would still pass it. SwiftUI's environment cannot set Increase
   Contrast, so no unit test can resolve the drawn colour there; the
-  test pins the cause, and a Simulator or device measurement of the
-  rendered pixels (docs/HANDOFF.md, *Checks that need a real device*,
-  its row on buttons under Increase Contrast and Reduce Transparency)
-  confirms the result.
+  test pins the cause, and a measurement of the rendered pixels
+  confirms the result: the Simulator's, above, and a real device's
+  (docs/HANDOFF.md, *Checks that need a real device*, its row on
+  buttons under Increase Contrast and Reduce Transparency).
 - Why not new Increase Contrast values instead: the system's change
   comes after the slot is read, so no slot value fixes a fill drawn with
   `Color.accentColor`. And in dark mode, with white words and a black
