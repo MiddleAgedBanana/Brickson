@@ -5593,6 +5593,91 @@ Before: each colour set had one value for every appearance, and
 `PaletteTests` measured that value in the four appearances against the
 base screen; the words on fills were `Color.white`.
 
+## Concentric corners
+
+*Default, adopted 2026-11-17 (pull request #121): an objective call left
+to the project, reversible. Nothing a person sees changed: no screen uses
+it yet.*
+
+Apple's current design builds rounded shapes from three kinds of corner,
+in its own words: "fixed shapes have a constant corner radius. Capsules
+use a radius that's half the height of the container. And concentric
+shapes calculate their radius by subtracting padding from the parent's"
+(WWDC25, *Get to know the new design system*, read 2026-11-17). Its
+guide to the new design asks apps to keep "a sense of visual continuity
+in your interface by using rounded shapes that are concentric to their
+containers", with SwiftUI's `ConcentricRectangle` and
+`rect(corners:isUniform:)` (*Adopting Liquid Glass*). A concentric
+corner shares its container's centre, as a sheet's corners follow the
+screen's; a grid of tiles that all share one fixed radius, whatever the
+window around them, is the plainest way a screen looks unlike Apple's
+own. Home's controls draw one fixed 12-point corner today
+(`HomeButtonStyle.cornerRadius`). This entry adds the rule and the
+shapes the app's coming look is built from; which kind each control
+takes is that look's to decide, the owner's.
+
+- **The rule, as numbers:** `CornerRule` (`Brickson/Layout/CornerRule.swift`,
+  plain Foundation, no device). Its `Kind` holds the three kinds; a
+  concentric corner's radius is its container's less the room between
+  them, never less than its minimum and never negative; a capsule's is
+  half its shorter side; no corner is rounder than a capsule. The layout
+  engine and the tests can know a corner's radius without drawing it.
+- **The shapes, drawn by SwiftUI:** `CornerRule.Kind.shape`
+  (`Brickson/Home/CornerShapes.swift`) gives a `RoundedRectangle` with
+  the continuous curve for a fixed corner, a `Capsule` for a capsule,
+  and SwiftUI's own `ConcentricRectangle` with
+  `.concentric(minimum:)` for a concentric one, which takes its radius
+  from the nearest container shape: the window's corners, or a view's
+  `concentricContainer(radius:)`, which sets `containerShape(_:)` to a
+  continuous rounded rectangle. Brickson computes no window radius:
+  SwiftUI knows it, and no code names a device.
+- **Always a minimum.** "When the system calculates a zero radius, the
+  corner is square" (`concentric(minimum:)`, Apple's documentation), as
+  it does for a tile deep in a grid, far from any rounded corner.
+  Interactive shapes are never sharp, so Brickson's concentric corners
+  have no form without a minimum. `CornerRule.minimum` is 12 points, the
+  corner Home draws today, so a control that adopts the concentric shape
+  is never sharper than it is now; the look may change it, in one place.
+- **Rings inside a tile.** SwiftUI measures every concentric corner from
+  the nearest container shape, never from the shape around it, and
+  `ConcentricRectangle` cannot itself be a container shape. A ring drawn
+  inside a concentric tile therefore uses `CornerRule.minimum(_:insetBy:)`,
+  the tile's minimum less the ring's inset, and stays concentric with the
+  tile both where the tile follows the container and where it has fallen
+  back to its minimum. Every ring a Home control draws today ends less
+  deep than the minimum, so each keeps a round corner.
+- **Room across and down alike.** The rule is written for a shape set
+  the same distance in from its container across and down, as an even
+  padding sets it. What SwiftUI does when the two differ is not measured
+  yet; the change that first pads a concentric shape unevenly measures
+  it with the test below and adds it to the rule.
+- **Tested both ways.** `CornerRuleTests` (Swift Testing, plain numbers;
+  also run on Linux while this was written) pins the rule: the
+  subtraction, the minimum, a ring's concentricity across a sweep of
+  containers, tiles and rings, the capsule, and that no kind is square.
+  `CornerShapesTests` draws each kind with `ImageRenderer` at 2x inside a
+  40-point container and measures the corner SwiftUI drew, as the
+  rounded rectangle of nearby radii, with either curve, that matches its
+  pixels best: a concentric shape 10 points in must measure 30, one 32
+  or 56 points in the minimum, a ring 6 points inside a tile the tile's
+  less 6, a fixed corner its own radius and a capsule half its shorter
+  side, each to half a point. It also pins the minimum to Home's
+  corner.
+- **Not done here, for the change that adopts it:** which controls take
+  which kind (for example capsules for a row of controls, which Apple's
+  guidelines favour for a horizontal row, or tiles concentric with the
+  window), all the owner's look; that a larger corner keeps every label
+  clear of its curve, since a label fits a rectangle (`HomeButtonStyle`
+  keeps its words inside a 12-point curve today); and that a rounder
+  hit shape (`contentShape`) still meets each profile's target floor at
+  its corners. The adopting change measures each of these on CI's
+  simulators before it ships.
+
+Before: one fixed 12-point radius written into Home's button style and
+reused by its message field, the same number written again in Settings'
+card and the Library editor's field, and a capsule drawn round a dimmed
+Settings row. They stay as they are until the look adopts the shapes.
+
 ## Show Borders and the Large Content Viewer on Home
 
 *2026-10-23. Default, adopted 2026-10-23: the owner left these choices to
