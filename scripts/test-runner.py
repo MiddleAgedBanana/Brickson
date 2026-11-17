@@ -25,6 +25,7 @@ SCRIPT = Path(__file__).resolve().with_name("test.sh")
 WORKFLOW = SCRIPT.parent.parent / ".github" / "workflows" / "tests.yml"
 WORKFLOWS = WORKFLOW.parent
 VERIFY_LOCKFILE = WORKFLOWS / "verify-lockfile.yml"
+UI_TESTS = SCRIPT.parent.parent / "BricksonUITests"
 
 # Answers the version and build-settings queries from the fixture, and
 # records every other xcodebuild run, one line of tab-separated arguments
@@ -176,7 +177,7 @@ def run_script(build_body, mode="ui", destination="id=fixture-simulator",
                target="26.0", sdk="27.1", devices=None, team="",
                test_summary=summary(3), family=None, arguments=(),
                coverage=COVERAGE, strings=True, synced_catalog=None,
-               sync_status=0, on_ci=True, boot_status=0,
+               sync_status=0, on_ci=True, boot_status=0, part=None,
                bootstatus_status=0, shutdown_status=0, shutdown_leaves="",
                docs_status=0, hooks_status=0,
                privacy_status=0, bridge_status=0, forbidden_status=0):
@@ -187,8 +188,13 @@ def run_script(build_body, mode="ui", destination="id=fixture-simulator",
         # the unit gate, with its normal PATH (including gh for alias reads).
         fixture_scripts = Path(directory, "repo", "scripts")
         fixture_scripts.mkdir(parents=True)
-        for name in ("test.sh", "choose-simulator.py"):
+        for name in ("test.sh", "choose-simulator.py", "ui-test-parts.py"):
             (fixture_scripts / name).write_bytes((SCRIPT.parent / name).read_bytes())
+        # The UI tests' own classes, which scripts/ui-test-parts.py reads.
+        fixture_ui_tests = Path(directory, "repo", "BricksonUITests")
+        fixture_ui_tests.mkdir()
+        for path in UI_TESTS.glob("*.swift"):
+            (fixture_ui_tests / path.name).write_bytes(path.read_bytes())
         (fixture_scripts / "simulator-load.py").write_text(FAKE_SIMULATOR_LOAD)
         for name, status in (("docs", docs_status), ("hooks", hooks_status),
                              ("privacy", privacy_status), ("agent-bridge", bridge_status),
@@ -238,8 +244,10 @@ def run_script(build_body, mode="ui", destination="id=fixture-simulator",
                            STRING_CATALOG=str(catalog_path),
                            DERIVED_DATA_DIR=f"{directory}/DerivedData",
                            TEST_RESULTS_DIR=f"{directory}/TestResults")
-        for name in ("DESTINATION", "SIMULATOR_FAMILY"):
+        for name in ("DESTINATION", "SIMULATOR_FAMILY", "UI_TEST_PART"):
             environment.pop(name, None)
+        if part is not None:
+            environment["UI_TEST_PART"] = part
         if destination is not None:
             environment["DESTINATION"] = destination
         if family is not None:
@@ -739,6 +747,121 @@ class SimulatorLifecycleTests(unittest.TestCase):
         self.assertIn("Simulator PAD had already shut down.", result.stdout)
         self.assertNotIn("Could not shut down", result.stderr)
         self.assertIn("All UI tests passed.", result.stdout)
+
+
+class UITestPartTests(unittest.TestCase):
+    """CI runs the UI tests in parts, each on a machine of its own
+    (scripts/ui-test-parts.py; docs/DECISIONS.md, "Tests"). Every UI test
+    class runs in exactly one part, and a part changes only which classes
+    the test run runs."""
+
+    def ipad_run(self, part=None, mode="ui", **options):
+        return run_script("exit 0", mode=mode, destination=None, family="ipad",
+                          devices={runtime("27.1"): [device("iPad Pro 13-inch (M5)", "PAD")]},
+                          part=part, **options)
+
+    @staticmethod
+    def parts_module():
+        spec = importlib.util.spec_from_file_location(
+            "ui_test_parts", SCRIPT.with_name("ui-test-parts.py"))
+        module = importlib.util.module_from_spec(spec)
+        writes, sys.dont_write_bytecode = sys.dont_write_bytecode, True
+        try:
+            spec.loader.exec_module(module)
+        finally:
+            sys.dont_write_bytecode = writes
+        return module
+
+    # Leaving a class out of every part, naming it in two, or a part that
+    # names no class, fails this test: the parts together are every UI test
+    # class, each once.
+    def test_every_ui_test_class_runs_in_exactly_one_part(self):
+        parts = self.parts_module()
+        self.assertEqual(parts.problems(), [])
+        classes = parts.test_classes()
+        self.assertGreaterEqual(len(classes), 10, classes)
+        count = len(parts.PARTS) + 1
+        runs = {name: 0 for name in classes}
+        for number in range(1, count + 1):
+            words = parts.arguments(number)
+            only = {w.split("/", 1)[1] for w in words if w.startswith("-only-testing:")}
+            skip = {w.split("/", 1)[1] for w in words if w.startswith("-skip-testing:")}
+            self.assertFalse(only and skip, words)
+            ran = only if only else classes - skip
+            self.assertTrue(ran, f"Part {number} runs nothing.")
+            for name in ran:
+                runs[name] += 1
+        self.assertEqual({name: n for name, n in runs.items() if n != 1}, {})
+
+    # A misspelled class (which would run in no part), a class named
+    # twice, or naming every class (leaving the last part empty) is
+    # reported; accepting any of them fails this test.
+    def test_unsound_parts_are_reported(self):
+        parts = self.parts_module()
+        classes = sorted(parts.test_classes())
+        cases = {
+            "misspelled": ((("SettingTests",),), "not a UI test class"),
+            "twice": (((classes[0],), (classes[0],)), "more than one part"),
+            "empty": (((),), "names no class"),
+            "all named": ((tuple(classes),), "would run nothing"),
+        }
+        for case, (named, words) in cases.items():
+            with self.subTest(case=case):
+                found = parts.problems(named)
+                self.assertTrue(any(words in line for line in found), found)
+
+    # Passing a part's classes to the build, or none to the test run,
+    # fails this test; so does a part that keeps the full run's bundle.
+    def test_a_named_part_runs_only_its_classes(self):
+        parts = self.parts_module()
+        result = self.ipad_run(part="1")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        build, test = (arguments_of(call) for call in result.calls)
+        self.assertEqual(build[-1], "build-for-testing")
+        self.assertFalse([w for w in build if w.startswith(("-only-testing", "-skip-testing"))])
+        expected = [f"-only-testing:BricksonUITests/{name}" for name in parts.PARTS[0]]
+        self.assertEqual([w for w in test if w.startswith(("-only-testing", "-skip-testing"))],
+                         expected)
+        bundle = test[test.index("-resultBundlePath") + 1]
+        self.assertTrue(bundle.endswith("TestResults/ui-ipad-part1.xcresult"), bundle)
+        self.assertIn("load start PAD pausing simulator-load-ipad-part1.txt", result.simctl)
+        self.assertIn("UI tests, part 1 of", result.stdout)
+        self.assertIn("All UI tests in part 1 passed.", result.stdout)
+
+    # The last part runs every class the others do not name: dropping one
+    # of their names from its skips, or running it by name, fails this test.
+    def test_the_last_part_runs_every_class_the_others_do_not_name(self):
+        parts = self.parts_module()
+        last = str(len(parts.PARTS) + 1)
+        result = self.ipad_run(part=last)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        test = arguments_of(result.calls[-1])
+        expected = [f"-skip-testing:BricksonUITests/{name}"
+                    for part in parts.PARTS for name in part]
+        self.assertEqual([w for w in test if w.startswith(("-only-testing", "-skip-testing"))],
+                         expected)
+
+    # Without a part every class runs: a filter there fails this test.
+    def test_without_a_part_every_class_runs(self):
+        result = self.ipad_run()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        for call in result.calls:
+            self.assertFalse([w for w in arguments_of(call)
+                              if w.startswith(("-only-testing", "-skip-testing"))], call)
+        test = arguments_of(result.calls[-1])
+        self.assertTrue(test[test.index("-resultBundlePath") + 1].endswith("ui-ipad.xcresult"))
+        self.assertIn("All UI tests passed.", result.stdout)
+
+    # A part that does not exist, or a part of the unit tests, stops the
+    # run before anything is built or started; running anything fails
+    # this test.
+    def test_an_unknown_part_or_a_part_of_the_unit_tests_is_refused(self):
+        for part, mode in (("0", "ui"), ("9", "ui"), ("two", "ui"), ("1", "unit")):
+            with self.subTest(part=part, mode=mode):
+                result = self.ipad_run(part=part, mode=mode)
+                self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+                self.assertEqual(result.invocations, 0)
+                self.assertEqual(result.simctl, [])
 
 
 class WatcherTests(unittest.TestCase):
@@ -1630,6 +1753,15 @@ class MacProcessesTests(unittest.TestCase):
             self.assertNotIn("could not read", text)
 
 
+def ui_test_part_count():
+    """How many parts scripts/ui-test-parts.py splits the UI tests into."""
+    ran = subprocess.run([sys.executable, "-I", str(SCRIPT.with_name("ui-test-parts.py")), "count"],
+                         capture_output=True, text=True, timeout=60)
+    if ran.returncode != 0:
+        raise AssertionError(ran.stderr)
+    return int(ran.stdout)
+
+
 def workflow_jobs(text):
     """Each job's id and its lines, without comments. Reads the layout
     tests.yml uses: job ids two spaces in, under a top-level `jobs:`."""
@@ -1936,14 +2068,16 @@ class WorkflowTests(unittest.TestCase):
     # or making "UI tests" a check that can pass while a family's UI tests
     # failed, were cancelled or never ran, fails this test. "UI tests" is
     # either one job that tests both families, or a job that waits for the
-    # family jobs, runs however they ended, and fails unless they passed
-    # (docs/DECISIONS.md, "Tests").
+    # jobs that test each family (or each part of the UI tests on each
+    # family, scripts/ui-test-parts.py), runs however they ended, and fails
+    # unless they all passed (docs/DECISIONS.md, "Tests").
     # Renaming a required job, a "UI tests" job without `if: always()`, a
-    # family missing, the families run as a matrix (whose one summary
-    # result was reported as success with a family that never got a
-    # machine), the gate not reading each family's own result or not
-    # failing, or the two families' jobs differing in anything but the
-    # family fails this test.
+    # family or a part missing on either family, a part named twice, a job
+    # name that miscounts the parts, the jobs run as a matrix (whose one
+    # summary result was reported as success with a family that never got
+    # a machine), the gate not reading each job's own result or not
+    # failing, or the jobs differing in anything but the family and the
+    # part fails this test.
     def test_the_required_checks_stay_and_ui_tests_needs_both_families(self):
         jobs = {job: "\n".join(lines) for job, lines in workflow_jobs(WORKFLOW.read_text()).items()}
 
@@ -1964,7 +2098,8 @@ class WorkflowTests(unittest.TestCase):
         self.assertRegex(result, r"(?m)^    if: *(\$\{\{ *)?always\(\)( *\}\})? *$",
                          "Without `if: always()`, a failed family skips the UI tests job, "
                          "and a skipped required check reads as passed.")
-        families, steps, variables = {}, set(), []
+        count = ui_test_part_count()
+        tested, steps, variables = [], set(), []
         for job in needed:
             with self.subTest(job=job):
                 body = jobs[job]
@@ -1973,24 +2108,48 @@ class WorkflowTests(unittest.TestCase):
                                     "A matrix reports one result for every family together.")
                 family = re.search(r"SIMULATOR_FAMILY: *(\w+) *$", body, re.M)
                 self.assertIsNotNone(family, body)
-                families[family.group(1)] = job
+                part = re.search(r'UI_TEST_PART: *"?(\d+)"? *$', body, re.M)
                 variable = re.search(r"(?m)^ +(\w+): *\$\{\{ *needs\." + re.escape(job)
                                      + r"\.result *\}\} *$", result)
                 self.assertIsNotNone(variable, f"The UI tests job does not read {job}'s result.")
                 self.assertRegex(result, r'"\$' + variable.group(1) + r'" *!= *"?success"?')
                 variables.append(variable.group(1))
                 display = {"ipad": "iPad", "iphone": "iPhone"}.get(family.group(1), family.group(1))
-                steps.add(body.replace(display, "FAMILY").replace(family.group(1), "family"))
-        self.assertEqual(set(families), {"ipad", "iphone"})
-        self.assertEqual(len(steps), 1, "The families' jobs differ in more than the family.")
-        # Run the check itself with every pair of results: it passes only
-        # when every family passed, so `&&` for `||`, or one family left
-        # out, fails here.
+                shape = body.replace(display, "FAMILY").replace(family.group(1), "family")
+                if part:
+                    number = part.group(1)
+                    self.assertRegex(body, rf"(?m)^    name: .*, part {number} of {count} *$",
+                                     "A part's job name miscounts the parts.")
+                    for spelling in (f"part {number} of", f'UI_TEST_PART: "{number}"',
+                                     f"-part{number}"):
+                        self.assertIn(spelling, shape)
+                        shape = shape.replace(spelling, spelling.replace(number, "N"))
+                tested.append((family.group(1), int(part.group(1)) if part else None))
+                steps.add(shape)
+        parts = {number for _, number in tested}
+        expected = ({(family, number) for family in ("ipad", "iphone")
+                     for number in range(1, count + 1)} if parts != {None}
+                    else {("ipad", None), ("iphone", None)})
+        self.assertEqual(sorted(tested, key=str), sorted(expected, key=str),
+                         "Each family runs every part of the UI tests, each part once.")
+        self.assertEqual(len(steps), 1,
+                         "The UI test jobs differ in more than the family and the part.")
+        # Run the check itself: it passes only when every job passed, so
+        # `&&` for `||`, or one job left out, fails here. With two jobs,
+        # every pair of results; with more, every job alone failing,
+        # cancelled or skipped while the rest passed, and all alike.
         script = re.search(r"(?m)^( +)run: *\|\n((?:\1 +.*(?:\n|$))+)", result)
         self.assertIsNotNone(script, "The UI tests job has no script to check the results.")
         script = textwrap.dedent(script.group(2))
         outcomes = ["success", "failure", "cancelled", "skipped"]
-        for chosen in itertools.product(outcomes, repeat=len(variables)):
+        if len(variables) <= 2:
+            combinations = list(itertools.product(outcomes, repeat=len(variables)))
+        else:
+            combinations = [tuple(outcome for _ in variables) for outcome in outcomes]
+            combinations += [tuple(outcome if index == odd else "success"
+                                   for index in range(len(variables)))
+                             for odd in range(len(variables)) for outcome in outcomes[1:]]
+        for chosen in combinations:
             with self.subTest(results=chosen):
                 environment = dict(os.environ, **dict(zip(variables, chosen)))
                 ran = subprocess.run(["bash", "-c", script], env=environment,

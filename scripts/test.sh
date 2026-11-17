@@ -22,6 +22,12 @@
 #   SIMULATOR_FAMILY=iphone scripts/test.sh ui     the newest standard iPhone
 #   DESTINATION='platform=iOS Simulator,id=<udid>' scripts/test.sh
 #
+# One part of the UI tests. CI runs the UI tests in parts, each on a machine
+# of its own at the same time; scripts/ui-test-parts.py says which test
+# classes each part runs, and every class runs in one part:
+#
+#   UI_TEST_PART=2 SIMULATOR_FAMILY=ipad scripts/test.sh ui
+#
 # The script says which simulator it chose, starts it and waits until it has
 # finished starting (a DESTINATION's simulator too). A device this script
 # boots is shut down after its run, before the next family starts; a device
@@ -31,7 +37,8 @@
 # once so the first test doesn't pay for a cold simulator.
 #
 # Every test run keeps its results, with a screenshot of each UI test
-# failure, in build/TestResults/<mode>-<family>.xcresult (open it in Xcode),
+# failure, in build/TestResults/<mode>-<family>.xcresult (open it in Xcode;
+# one part of the UI tests writes ui-<family>-part<n>.xcresult),
 # and prints how many tests ran. A run in which no test ran fails. Beside
 # it, simulator-load-<family>.txt records which of the simulator's
 # processes used the Mac's processors while it was tested; on a simulator
@@ -401,8 +408,8 @@ run_xcodebuild() {
 # every step returns its own failure.
 run_tests_on_simulator() {
     local family="$1" udid destination state status=0 catalog_status=0
-    local results="$results_dir/$mode-$family.xcresult"
-    watcher_record="$results_dir/simulator-load-$family.txt"
+    local results="$results_dir/$mode-$family$part_suffix.xcresult"
+    watcher_record="$results_dir/simulator-load-$family$part_suffix.txt"
     # Remove the last run's bundle and record first, so a run that stops
     # before testing never leaves old ones that look like its own.
     # (xcodebuild also will not write over a bundle.)
@@ -467,6 +474,7 @@ run_tests_on_simulator() {
         -derivedDataPath "$derived_data" \
         -resultBundlePath "$results" \
         -collect-test-diagnostics never \
+        "${part_arguments[@]+"${part_arguments[@]}"}" \
         "${extra_arguments[@]+"${extra_arguments[@]}"}" \
         test-without-building || status=$?
     echo "Test results, with screenshots of any UI test failure: $results"
@@ -498,6 +506,24 @@ case "$mode" in
         scheme=Brickson
         [ "$mode" = ui ] && scheme=Brickson-UI
         extra_arguments=("$@")
+        # One part of the UI tests: its classes, as -only-testing or
+        # -skip-testing arguments for the test run (not the build, which
+        # builds them all), and a result bundle and record of its own.
+        part_arguments=()
+        part_suffix=""
+        if [ -n "${UI_TEST_PART:-}" ]; then
+            if [ "$mode" != ui ]; then
+                echo "UI_TEST_PART chooses a part of the UI tests; use it with scripts/test.sh ui." >&2
+                exit 2
+            fi
+            part_listing="$(/usr/bin/python3 -I scripts/ui-test-parts.py arguments "$UI_TEST_PART")" ||
+                exit 2
+            while IFS= read -r argument; do
+                part_arguments+=("$argument")
+            done <<< "$part_listing"
+            /usr/bin/python3 -I scripts/ui-test-parts.py describe "$UI_TEST_PART" || exit 2
+            part_suffix="-part$UI_TEST_PART"
+        fi
         if [ -n "${DESTINATION:-}" ]; then
             families=destination
         elif [ -n "${SIMULATOR_FAMILY:-}" ]; then
@@ -527,7 +553,9 @@ case "$mode" in
             [ "$simulator_cleanup_failed" -eq 0 ] || break
         done
         [ "$status" -eq 0 ] || exit "$status"
-        if [ "$mode" = ui ]; then
+        if [ -n "$part_suffix" ]; then
+            echo "All UI tests in part $UI_TEST_PART passed."
+        elif [ "$mode" = ui ]; then
             echo "All UI tests passed."
         else
             echo "All unit tests passed."
