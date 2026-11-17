@@ -37,6 +37,11 @@ them yet.
   naming which controls draw a fixed corner today.
 - A merge of `main`, so the UI tests run in their new parts.
 - The commit that records CI's first result here.
+- From review: every drawing test fails on a blank drawing. Before, the
+  capsule's could pass one, since a blank drawing is closest to the
+  roundest candidate and every candidate from the capsule's radius up
+  draws the capsule. The check compiled without warnings in a Linux
+  probe and failed a blank drawing there with its message.
 
 ## Verified
 

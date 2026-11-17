@@ -9,9 +9,9 @@ import Testing
 /// a concentric corner's radius from the container shape as it draws, and
 /// gives no way to read it back, so each test draws the shape black on
 /// white, draws rounded rectangles of nearby radii the same way, and takes
-/// the radius whose drawing matches it best. A drawing that came out blank,
-/// square or at another radius matches a radius at the edge of the search,
-/// and the test fails.
+/// the radius whose drawing matches it best. A blank drawing fails at
+/// once; one that came out square or at another radius matches a radius at
+/// the edge of the search, and the test fails.
 struct CornerShapesTests {
     private typealias Kind = CornerRule.Kind
 
@@ -90,6 +90,10 @@ struct CornerShapesTests {
         let size = CGSize(width: canvas.width - 2 * inset, height: canvas.height - 2 * inset)
         let expected = CornerRule.radius(of: kind, size: size, containerRadius: containerRadius, inset: inset)
         let drawn = try #require(drawing(of: kind.shape, inset: inset), "\(note): nothing drawn", sourceLocation: sourceLocation)
+        // A blank drawing is closest to the roundest candidate, and for a
+        // capsule every candidate from its own radius up draws the capsule,
+        // so a blank drawing would match it: it fails here instead.
+        try #require(drawn.contains(where: { $0 < 128 }), "\(note): the drawing is blank", sourceLocation: sourceLocation)
         let match = try #require(
             closestRoundedRectangle(to: drawn, inset: inset, near: expected),
             "\(note): nothing to compare", sourceLocation: sourceLocation
