@@ -98,11 +98,13 @@ waiting before them.
 So the test now finds out. When a read finds the order wrong, it reads
 again for up to five seconds without touching anything, attaches each
 order it saw with the time it first saw it
-(`order-read-again-without-input-…`), and still fails, saying either
-"read again with no input, it was right … later" or "read again with no
-input for 5 s, it stayed wrong". Nothing about what passes changed: the
-first read must still be right. The next CI failure answers the
-question.
+(`order-read-again-without-input-…`), and still fails, saying "read
+again with no input, it was right … later", "read again with no input
+for 5 s, it stayed wrong in … reads", or, if the tree could not be read
+again at all, that whether it comes right is unknown; each failed read
+is kept with its error and counted (Codex's review of this pull request,
+before it opened). Nothing about what passes changed: the first read
+must still be right. The next CI failure answers the question.
 
 **Proposal for the owner, not made here.** If the next failure says the
 order came right with no input, the test could accept an order that
@@ -153,9 +155,11 @@ defect to fix, with this test as its reproduction.
 - **The order test:** the changed test passed both of its cases on the
   iPhone 17 simulator. With its expected order deliberately wrong (Again
   before Get Attention, never committed) it failed in all nine states,
-  each saying "read again with no input for 5 s, it stayed wrong", with
-  nine `order-read-again-without-input` attachments, so the new path
-  runs and reports. That change to the expectation is what makes it fail.
+  each saying "read again with no input for 5 s, it stayed wrong in"
+  about 300 reads, with nine `order-read-again-without-input`
+  attachments, so the new path runs and reports. That change to the
+  expectation is what makes it fail. The path for a tree that cannot be
+  read again was not forced.
 - The unit suite and the Python checks in AGENTS.md, *Build and test*,
   ran on this Mac before the commit (see the pull request).
 

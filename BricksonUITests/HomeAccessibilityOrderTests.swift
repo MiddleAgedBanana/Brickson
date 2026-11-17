@@ -151,16 +151,29 @@ final class HomeAccessibilityOrderTests: XCTestCase {
     /// taken before the order settled from an order that stays wrong until
     /// something on Home changes, which a person scanning would meet. On
     /// CI's iPhone the "just opened" read has now and then listed Home in
-    /// plain screen order (docs/HANDOFF.md, *Known gaps*).
+    /// plain screen order (docs/HANDOFF.md, *Known gaps*). A read that
+    /// fails is kept with its error and counted, and if none succeeds the
+    /// answer is that nobody knows, never that the order stayed wrong.
     @MainActor
     private func orderWithoutInput(in app: XCUIApplication, expected: [String], context: String) -> String {
         let clock = ContinuousClock()
         let start = clock.now
         var seen: [String] = []
         var last: [String] = []
+        var reads = 0
+        var failedReads = 0
         var rightAfter: Duration?
         while rightAfter == nil, clock.now - start < .seconds(5) {
-            guard let buttons = try? orderedButtons(in: app) else { continue }
+            let buttons: [OrderedButton]
+            do {
+                buttons = try orderedButtons(in: app)
+            } catch {
+                failedReads += 1
+                seen.append("\(clock.now - start): could not read the tree: \(error)")
+                last = []
+                continue
+            }
+            reads += 1
             let labels = Array(buttons.filter { $0.region != nil }.prefix(expected.count).map(\.label))
             if labels != last {
                 seen.append("\(clock.now - start): \(labels.joined(separator: ", "))")
@@ -174,10 +187,14 @@ final class HomeAccessibilityOrderTests: XCTestCase {
         attachment.name = "order-read-again-without-input-\(context)"
         attachment.lifetime = .keepAlways
         add(attachment)
+        let failures = failedReads == 0 ? "" : " (\(failedReads) reads failed)"
         if let rightAfter {
-            return "; read again with no input, it was right \(rightAfter) later"
+            return "; read again with no input, it was right \(rightAfter) later\(failures)"
         }
-        return "; read again with no input for 5 s, it stayed wrong"
+        if reads == 0 {
+            return "; read again with no input for 5 s, the tree could not be read\(failures), so whether the order comes right is unknown"
+        }
+        return "; read again with no input for 5 s, it stayed wrong in \(reads) reads\(failures)"
     }
 
     /// A button as the accessibility tree lists it, and the Home region
