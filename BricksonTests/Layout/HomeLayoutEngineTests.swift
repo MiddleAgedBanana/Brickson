@@ -42,7 +42,8 @@ struct HomeLayoutEngineTests {
     nonisolated static let bothModes: [HomeLayout.Modes] = [.phrasesOnly, .phrasesAndTyping]
 
     /// Every window from 320pt wide to 1432pt, every 4pt, at heights from
-    /// a 568pt phone to a 13-inch iPad in portrait, with no safe areas, at
+    /// a 568pt phone to a 13-inch iPad in portrait, with no safe areas, and
+    /// every window people use (`windows`) with its own safe areas, at
     /// three text sizes, with Bold Text off and on, in both modes.
     static let everyLayout: [(layout: HomeLayout, text: HomeLayout.Text, context: String)] = {
         var layouts: [(HomeLayout, HomeLayout.Text, String)] = []
@@ -55,6 +56,10 @@ struct HomeLayoutEngineTests {
                             let layout = HomeLayout(space: .init(size: CGSize(width: width, height: height)), text: text, modes: modes)
                             layouts.append((layout, text, "\(width)×\(height), \(name), Bold Text \(boldText), \(modes)"))
                         }
+                    }
+                    for window in windows {
+                        let layout = HomeLayout(space: window.space, text: text, modes: modes)
+                        layouts.append((layout, text, "\(window.name), \(name), Bold Text \(boldText), \(modes)"))
                     }
                 }
             }
@@ -914,7 +919,7 @@ struct HomeLayoutEngineTests {
             "375×667 phone, xxxLarge, Bold Text true, phrasesAndTyping": 4,
         ]
         for window in Self.windows {
-            let space = HomeLayout.Space(size: window.size, safeArea: .init(top: window.top, leading: 0, bottom: window.bottom, trailing: 0))
+            let space = window.space
             for (name, plain) in Self.textSizes {
                 for boldText in [false, true] {
                     for modes in Self.bothModes {
@@ -1400,28 +1405,45 @@ struct HomeLayoutEngineTests {
         let home: (plain: Int?, bold: Int?)
         let slotPlan: (plain: Int?, bold: Int?)
         let keyboardClearThrough: Int?
+
+        /// The window with its safe areas, at the top and the bottom.
+        var space: HomeLayout.Space {
+            HomeLayout.Space(size: size, safeArea: .init(top: top, leading: 0, bottom: bottom, trailing: 0))
+        }
     }
 
     /// Phones in portrait (the only orientation an iPhone runs Brickson
     /// in), from the largest to Display Zoom's Larger Text on a 375×667
     /// phone, and iPads in both orientations, with Display Zoom's Larger
     /// Text on the 13-inch in landscape. Safe areas: CI's iPhone 17 and
-    /// 13-inch iPad frames, Apple's for the other phones.
+    /// 13-inch iPad frames, Apple's for the other phones; the iPhone Air,
+    /// the 13-inch iPad Air, the 820×1180 iPads (iPad Air 11-inch and
+    /// iPad (A16)) and the iPad mini (A20 Pro), window and safe areas as
+    /// the iOS 27.2 simulators gave them in portrait, turned for landscape
+    /// with the insets every iPad here has
+    /// (docs/log/2026-11-17-four-more-windows.md).
     /// docs/DECISIONS.md, "The layout engine", *Where the starter library
     /// fits*, has the table this pins.
     nonisolated static let windows: [Window] = [
         Window(name: "iPhone 17", size: CGSize(width: 402, height: 874), top: 62, bottom: 34, home: (3, 2), slotPlan: (3, 2), keyboardClearThrough: 4),
         Window(name: "iPhone 17 Pro Max", size: CGSize(width: 440, height: 956), top: 62, bottom: 34, home: (4, 4), slotPlan: (4, 4), keyboardClearThrough: 4),
         Window(name: "iPhone 16e", size: CGSize(width: 390, height: 844), top: 47, bottom: 34, home: (3, 3), slotPlan: (3, 3), keyboardClearThrough: 4),
+        Window(name: "iPhone Air", size: CGSize(width: 420, height: 912), top: 68, bottom: 34, home: (3, 3), slotPlan: (3, 3), keyboardClearThrough: 4),
         Window(name: "375×667 phone", size: CGSize(width: 375, height: 667), top: 20, bottom: 0, home: (0, nil), slotPlan: (nil, nil), keyboardClearThrough: 2),
         Window(name: "375×667 phone, zoomed", size: CGSize(width: 320, height: 568), top: 20, bottom: 0, home: (nil, nil), slotPlan: (nil, nil), keyboardClearThrough: nil),
         Window(name: "13-inch iPad", size: CGSize(width: 1032, height: 1376), top: 32, bottom: 20, home: (4, 4), slotPlan: (4, 4), keyboardClearThrough: 4),
         Window(name: "13-inch iPad, landscape", size: CGSize(width: 1376, height: 1032), top: 32, bottom: 20, home: (4, 4), slotPlan: (4, 4), keyboardClearThrough: 4),
         Window(name: "13-inch iPad, landscape, zoomed", size: CGSize(width: 1032, height: 774), top: 32, bottom: 20, home: (3, 3), slotPlan: (4, 4), keyboardClearThrough: 2),
+        Window(name: "13-inch iPad Air", size: CGSize(width: 1024, height: 1366), top: 32, bottom: 20, home: (4, 4), slotPlan: (4, 4), keyboardClearThrough: 4),
+        Window(name: "13-inch iPad Air, landscape", size: CGSize(width: 1366, height: 1024), top: 32, bottom: 20, home: (4, 4), slotPlan: (4, 4), keyboardClearThrough: 4),
         Window(name: "11-inch iPad", size: CGSize(width: 834, height: 1210), top: 32, bottom: 20, home: (4, 4), slotPlan: (4, 4), keyboardClearThrough: 4),
         Window(name: "11-inch iPad, landscape", size: CGSize(width: 1210, height: 834), top: 32, bottom: 20, home: (4, 4), slotPlan: (4, 4), keyboardClearThrough: 4),
+        Window(name: "820×1180 iPad", size: CGSize(width: 820, height: 1180), top: 32, bottom: 20, home: (4, 4), slotPlan: (4, 4), keyboardClearThrough: 4),
+        Window(name: "820×1180 iPad, landscape", size: CGSize(width: 1180, height: 820), top: 32, bottom: 20, home: (4, 4), slotPlan: (4, 4), keyboardClearThrough: 3),
         Window(name: "iPad mini", size: CGSize(width: 744, height: 1133), top: 32, bottom: 20, home: (4, 4), slotPlan: (4, 4), keyboardClearThrough: 4),
         Window(name: "iPad mini, landscape", size: CGSize(width: 1133, height: 744), top: 32, bottom: 20, home: (3, 3), slotPlan: (4, 4), keyboardClearThrough: 2),
+        Window(name: "iPad mini (A20 Pro)", size: CGSize(width: 756, height: 1158), top: 32, bottom: 20, home: (4, 4), slotPlan: (4, 4), keyboardClearThrough: 4),
+        Window(name: "iPad mini (A20 Pro), landscape", size: CGSize(width: 1158, height: 756), top: 32, bottom: 20, home: (3, 3), slotPlan: (4, 4), keyboardClearThrough: 2),
     ]
 
     /// Where the starter library fits without scrolling on each window at
@@ -1433,7 +1455,7 @@ struct HomeLayoutEngineTests {
     @Test(arguments: windows.indices)
     func theStarterLibraryFitsWhereTheTableSays(window index: Int) {
         let window = Self.windows[index]
-        let space = HomeLayout.Space(size: window.size, safeArea: .init(top: window.top, leading: 0, bottom: window.bottom, trailing: 0))
+        let space = window.space
         for (sizeIndex, (name, plain)) in Self.textSizes.enumerated() {
             for boldText in [false, true] {
                 let text = boldText ? Self.bold(plain) : plain

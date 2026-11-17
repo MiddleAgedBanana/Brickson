@@ -307,6 +307,9 @@ struct LateStageProfileTests {
         // The board's two rows leave room for head tracking's sizes.
         "iPhone 17 Pro Max": Array(repeating: .headTracking, count: 5),
         "iPhone 16e": Array(repeating: .touch, count: 5),
+        // Head tracking's leave the board 12 points short at the default
+        // size and 40 at AX5.
+        "iPhone Air": Array(repeating: .touch, count: 5),
         "375×667 phone": Array(repeating: .touch, count: 5),
         "375×667 phone, zoomed": Array(repeating: .touch, count: 5),
         "13-inch iPad": Array(repeating: .lateStage, count: 5),
@@ -314,14 +317,23 @@ struct LateStageProfileTests {
         // As with every category: head tracking's leave no room for typing
         // until touch's leave none either, at AX3; at AX5 they scroll.
         "13-inch iPad, landscape, zoomed": [.touch, .touch, .touch, .headTracking, .touch],
+        "13-inch iPad Air": Array(repeating: .lateStage, count: 5),
+        "13-inch iPad Air, landscape": Array(repeating: .lateStage, count: 5),
         "11-inch iPad": Array(repeating: .lateStage, count: 5),
         // The late stage's and Eye Tracking's scroll even with the board's
         // two rows, which every category has on four columns too.
         "11-inch iPad, landscape": [.headTracking, .headTracking, .headTracking, .headTracking, .touch],
+        "820×1180 iPad": Array(repeating: .lateStage, count: 5),
+        // As with every category: head tracking's leave no room for typing
+        // until touch's leave none either, at AX5.
+        "820×1180 iPad, landscape": [.touch, .touch, .touch, .touch, .headTracking],
         // Five columns 130.4 points wide hold Eye Tracking's 109-point
         // controls but not the late stage's 136.
         "iPad mini": Array(repeating: .eyeTracking, count: 5),
         "iPad mini, landscape": Array(repeating: .touch, count: 5),
+        // As the other iPad mini, but with Bold Text too.
+        "iPad mini (A20 Pro)": Array(repeating: .eyeTracking, count: 5),
+        "iPad mini (A20 Pro), landscape": Array(repeating: .touch, count: 5),
     ]
 
     /// The same with a board of eight phrases. It takes a phone's three
@@ -347,7 +359,7 @@ struct LateStageProfileTests {
     @Test(arguments: HomeLayoutEngineTests.windows.indices)
     func theRestBoardTakesTheSizesTheTableSays(window index: Int) {
         let window = HomeLayoutEngineTests.windows[index]
-        let space = HomeLayout.Space(size: window.size, safeArea: .init(top: window.top, leading: 0, bottom: window.bottom, trailing: 0))
+        let space = window.space
         for (phrases, boardTable) in [(6, Self.boardTable), (8, Self.boardTableForEight)] {
             #expect(boardTable[window.name]?.count == HomeLayoutEngineTests.textSizes.count, "\(window.name)")
             for (size, (name, plain)) in HomeLayoutEngineTests.textSizes.enumerated() {
@@ -370,9 +382,11 @@ struct LateStageProfileTests {
 
     /// Windows from 320 to 1432 points wide, every `step`, at a small
     /// phone's, a large phone's and every iPad's height in both
-    /// orientations, at three text sizes, Bold Text off, with the layout
-    /// `ProfileChoice` gives a board of `phrases` when the late stage's
-    /// sizes are asked for, where it is `profile`'s.
+    /// orientations, and every window people use
+    /// (`HomeLayoutEngineTests.windows`) with its own safe areas, at three
+    /// text sizes, Bold Text off, with the layout `ProfileChoice` gives a
+    /// board of `phrases` when the late stage's sizes are asked for, where
+    /// it is `profile`'s.
     static func boardWindows(_ profile: Profile, phrases: Int, every step: CGFloat)
         -> [(layout: HomeLayout, space: HomeLayout.Space, text: HomeLayout.Text, context: String)] {
         var found: [(HomeLayout, HomeLayout.Space, HomeLayout.Text, String)] = []
@@ -388,6 +402,13 @@ struct LateStageProfileTests {
                     guard layout.profile == profile, layout.startersFit else { continue }
                     found.append((layout, space, text, "\(width)×\(height), \(name), \(profile), board of \(phrases)"))
                 }
+            }
+            for window in HomeLayoutEngineTests.windows {
+                let layout = ProfileChoice.layout(
+                    requested: .lateStage, space: window.space, text: text, modes: .phrasesAndTyping, phraseArea: board(phrases)
+                )
+                guard layout.profile == profile, layout.startersFit else { continue }
+                found.append((layout, window.space, text, "\(window.name), \(name), \(profile), board of \(phrases)"))
             }
         }
         return found
