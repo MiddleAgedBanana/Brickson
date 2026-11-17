@@ -1,6 +1,6 @@
 # Four more windows in the layout engine's tests
 
-*2026-11-17. Pull request #<n> (`claude/project-thread-sdy7jz`). A cloud
+*2026-11-17. Pull request #120 (`claude/project-thread-sdy7jz`). A cloud
 thread.*
 
 ## What changed and why
@@ -11,9 +11,12 @@ a sweep of window sizes with no safe areas. Four window sizes that
 current devices give were missing from the list. The sweep covered
 their widths, but never with their safe areas, so a layout that broke
 only once a device's top and bottom insets were taken away could have
-passed every test. They are measured on the iOS 27.2 simulators in
-PR #115's run (`docs/log/2026-11-15-experiments-simulator.md`, SIM-12),
-window and insets read from SwiftUI at the app's root in portrait:
+passed every test. They were measured on the iOS 27.2 simulators in
+the run of docs/EXPERIMENTS.md's SIM-12 (window sizes and safe areas),
+window and insets read from SwiftUI at the app's root in portrait. The
+run's own record comes with pull request #115
+(`docs/log/2026-11-15-experiments-simulator.md`, not on `main` when this
+was written), so the values this change uses are copied here:
 
 | Window | Simulator | Size (points) | Top, bottom |
 |---|---|---|---|
