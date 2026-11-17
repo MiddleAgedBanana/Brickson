@@ -6,11 +6,11 @@ only `@AGENTS.md`). Put agent instructions here, never in an
 agent-specific file. Keep it short: Codex reads only the first 32 KiB
 ([`project_doc_max_bytes`](https://developers.openai.com/codex/agent-configuration/agents-md))
 and Antigravity the first 24,000 bytes, so the rules that protect people
-come first, and `scripts/test-docs.py` fails if the sections through
-*Working with the owner* end past 32 KiB. If your copy of this file ends
-before *Gotchas*, read the rest from the repository (`cat AGENTS.md`)
-before changing anything. Why each rule exists is in docs/DECISIONS.md
-and docs/LESSONS.md; current state is in docs/HANDOFF.md.
+come first, and `scripts/test-docs.py` fails if the file grows past
+32 KiB. If your copy of this file ends before *Gotchas*, read the rest
+from the repository (`cat AGENTS.md`) before changing anything. Why each
+rule exists is in docs/DECISIONS.md and docs/LESSONS.md; current state is
+in docs/HANDOFF.md.
 
 ## What this is and what's at stake
 
@@ -154,6 +154,13 @@ its Effective date and the in-app copy in the same pull request.
 - Look Apple APIs up, never recall them: Context7, the Xcode MCP's
   `DocumentationSearch`, or developer.apple.com with `.md` appended to the
   page's path (the HTML page is an empty shell). Say when you could not.
+- **Look like Apple made it.** The app adds no glass or material of its
+  own and has no `PrimitiveButtonStyle`, toggle, system alert, context
+  menu, swipe action, repeating button, Light weight, fixed text size or
+  circular corner; every picture is an SF Symbol or custom symbol and
+  every `ButtonStyle` draws `isPressed`. `scripts/forbidden-code.py`
+  checks these, except where it names an exception (docs/DECISIONS.md,
+  "Guards for Apple's look").
 
 ## Design rules for dwell, switch and pointer input
 
@@ -280,10 +287,10 @@ path from a real input to the failure.
   that kind. Compare with the base branch; the owner decides.
 - A change to `.claude/settings.json`, `.claude/hooks/`, `.githooks/`,
   `scripts/privacy-check.py` or `scripts/forbidden-code.py` that unhooks
-  the guard or a check, drops a deny rule or a rule, or lets through what
-  its tests refuse, or a weakened `scripts/test-hooks.py`,
-  `scripts/test-privacy.py`, `scripts/test-forbidden-code.py` or
-  `scripts/test-docs.py`.
+  the guard or a check, drops a deny rule or a rule, adds a known
+  exception, or lets through what its tests refuse, or a weakened
+  `scripts/test-hooks.py`, `scripts/test-privacy.py`,
+  `scripts/test-forbidden-code.py` or `scripts/test-docs.py`.
 
 ### Not findings
 
@@ -364,16 +371,15 @@ like.
 ## Build and test
 
 ```sh
-# Any machine, cloud threads too (CI runs them all):
-python3 scripts/test-docs.py && python3 scripts/test-hooks.py && python3 scripts/test-privacy.py
-python3 scripts/test-forbidden-code.py  # what AGENTS.md forbids, in the code (docs/DECISIONS.md)
+# Any machine (CI runs them all):
+python3 scripts/test-docs.py && python3 scripts/test-hooks.py && python3 scripts/test-privacy.py && python3 scripts/test-forbidden-code.py
 python3 scripts/test-runner.py && python3 scripts/test-agent-bridge.py && python3 scripts/test-site.py && python3 scripts/test-select-xcode.py
 # On a Mac:
-scripts/test.sh          # generate the project, build, run the unit tests
-scripts/test.sh ui       # the UI tests on an iPad and an iPhone simulator
-scripts/test.sh device   # a build for a real device (needs DEVELOPMENT_TEAM)
+scripts/test.sh  # generate the project, build, run the unit tests
+scripts/test.sh ui  # the UI tests on an iPad and an iPhone simulator
+scripts/test.sh device  # a build for a real device (needs DEVELOPMENT_TEAM)
 scripts/test.sh unit '-only-testing:BricksonTests/PaletteTests/theContrastFormulaMatchesWCAG()'  # one test; keep the ()
-SIMULATOR_FAMILY=iphone scripts/test.sh ui                         # one family
+SIMULATOR_FAMILY=iphone scripts/test.sh ui  # one family
 DESTINATION='platform=iOS Simulator,id=<udid>' scripts/test.sh ui  # one simulator
 UI_TEST_PART=2 SIMULATOR_FAMILY=ipad scripts/test.sh ui  # one part, as CI runs it (scripts/ui-test-parts.py)
 # Results: build/TestResults/<mode>-<family>[-part<n>].xcresult
@@ -382,69 +388,66 @@ UI_TEST_PART=2 SIMULATOR_FAMILY=ipad scripts/test.sh ui  # one part, as CI runs 
 - On a Mac the unit suite is 100% green before any commit; CI is green
   before any merge. **Warnings are errors**: fix the code, never silence
   it (docs/DECISIONS.md, "Warnings are errors").
-- Build with Apple's newest released Xcode, never a pinned version; never
-  write an Xcode, SDK or simulator version into the project, a script, a
-  workflow or a document unless the owner asks. CI builds Debug only:
-  before an archive, run `scripts/test.sh device -configuration Release`.
-  The oldest supported iOS follows docs/DECISIONS.md, "Minimum iOS, iPhone
-  and iPad".
+- Build with Apple's newest released Xcode, never a pinned version, and
+  write no Xcode, SDK or simulator version into any file unless the owner
+  asks. CI builds Debug only: before an archive, run `scripts/test.sh
+  device -configuration Release`. The oldest supported iOS follows
+  docs/DECISIONS.md, "Minimum iOS, iPhone and iPad".
 - `Brickson.xcodeproj` is generated from `project.yml`: never edit,
   commit or open it from an agent, and never move the build to Xcode's
   JSON project format outside the pull request docs/DECISIONS.md plans;
   regenerate after adding or renaming a file. Commit the String Catalog a
   unit run updates.
-- Cloud agents with no route to a Mac cannot build or run the app: say so,
-  treat the change as untested until CI or a Mac run passes, and call the
-  pull request ready only once the Mac's run or CI is green.
-- A cloud session that reaches the owner's Mac (Remote Control,
-  MobileBuildMCP) builds and tests there; never conclude from a handoff
-  that you cannot. On the Mac, never check out, stash, reset or clean in
-  `~/code/brickson`, and never pull `main` there. Build a pushed branch in
-  its own worktree: `cd ~/code/brickson && git fetch origin <branch>`,
-  `git worktree add --detach ~/code/brickson-<topic> origin/<branch>`,
-  then `xcodegen generate` there; after a later push, fetch and
-  `git checkout --detach origin/<branch>` again. A String Catalog change
-  made there comes back as a diff to commit from your own session. Once
-  the pull request merges,
-  `git -C ~/code/brickson worktree remove ~/code/brickson-<topic>`.
-- MobileBuildMCP builds and tests only: set the worktree's
+- A cloud agent with no route to a Mac cannot build or run the app: say
+  so, and treat the change as untested and the pull request as not ready
+  until CI or a Mac run is green. One that reaches the owner's Mac (Remote
+  Control, MobileBuildMCP) builds and tests there; never conclude from a
+  handoff that you cannot. There, never check out, stash, reset, clean or
+  pull in `~/code/brickson`; build a pushed branch in its own worktree:
+  `cd ~/code/brickson && git fetch origin <branch>`, `git worktree add
+  --detach ~/code/brickson-<topic> origin/<branch>`, then `xcodegen
+  generate` there; after a later push, fetch and `git checkout --detach
+  origin/<branch>` again. A String Catalog change made there comes back as
+  a diff to commit from your own session. After the merge, `git -C
+  ~/code/brickson worktree remove ~/code/brickson-<topic>`.
+- MobileBuildMCP builds and tests only: give it the worktree's
   `Brickson.xcodeproj` (full path), scheme `Brickson`, a simulator id from
   `list_sims`, `derivedDataPath` under the worktree's `build/` and
   `persist: false`; `build_sim` with `buildForTesting: true`, then
   `test_sim` with its `testProductsPath`. A run with no tests is not a
-  pass; for a run longer than its 60-second wait, read the result bundle
-  with `xcrun xcresulttool get test-results summary`. Run the Python
-  checks yourself.
-- **Pushing to an open PR.** At most three review rounds from opening,
-  one push each, never while CI is still running; then one final push for
-  what is left. Push only for failing CI, a real bug or rule violation, or
-  a moved `main`. Answer every review comment and resolve its thread;
-  record declined findings in docs/DECISIONS.md or docs/HANDOFF.md with a
-  push you make anyway, or after the final push in the pull request's
+  pass; for a run past its 60-second wait, read the result bundle with
+  `xcrun xcresulttool get test-results summary`. Run the Python checks
+  yourself.
+- **Pushing to an open PR.** At most three review rounds from opening, one
+  push each, never while CI runs; then one final push for what is left.
+  Push only for failing CI, a real bug or rule violation, or a moved
+  `main`. Answer every review comment and resolve its thread; record
+  declined findings in docs/DECISIONS.md or docs/HANDOFF.md with a push
+  you make anyway, or after the final push in the pull request's
   description. A real bug, rule violation or failing CI found after the
-  final push stays open: tell the owner the fix you propose, and the owner
-  decides whether another push goes in. A run stopped at the time limit
-  with no failure is re-run once only if its unchanged steps were clearly
-  slower than on `main`; otherwise cut what the tests cost without
-  weakening any. Agents never merge, approve or enable auto-merge.
+  final push stays open: propose your fix to the owner, who decides
+  whether another push goes in. A run stopped at the time limit with no
+  failure is re-run once only if its unchanged steps were clearly slower
+  than on `main`; otherwise cut what the tests cost without weakening any.
+  Agents never merge, approve or enable auto-merge.
 - **Reviews and updates on GitHub.** Codex reviews every push by itself:
-  never post an `@codex` comment. Ask CodeRabbit with `@coderabbitai
-  review` after the push to review, and cubic with `@cubic-dev-ai review
-  this PR` if it has not reviewed; ask Greptile with a plain
-  `@greptileai`, never for a tier. Reviewers never write code: no autofix,
-  "Fix with cubic" or fix request. Before opening a pull request that
-  changes code, run `codex review --base origin/main` where the Codex CLI
-  is installed (the owner's Mac) and answer its findings, or say in the
-  pull request that it could not run; right after opening, ask for one Copilot review, only through
-  `request_copilot_review` (a request that fails for lack of credits is
-  said in the pull request and the thread, never retried).
+  never post an `@codex` comment. After a push to review, ask CodeRabbit
+  with `@coderabbitai review`, and cubic with `@cubic-dev-ai review this
+  PR` if it has not reviewed; ask Greptile with a plain `@greptileai`,
+  never for a tier. Reviewers never write code: no autofix, "Fix with
+  cubic" or fix request. Before opening a pull request that changes code,
+  run `codex review --base origin/main` where the Codex CLI is installed
+  (the owner's Mac) and answer its findings, or say in the pull request
+  that it could not run; right after opening, ask for one Copilot review,
+  only through `request_copilot_review` (one that fails for lack of
+  credits is said in the pull request and the thread, never retried).
   Documents-only pull requests get none. Where Codex posts an environment
   notice instead of a review, say so: a pull request that changes privacy
   or a workflow then waits for the owner's security review before it
-  merges. Whatever Codex posted, a pull request whose privacy or workflow
-  change came in a push after it opened also waits for that review, and
-  its ready message says so. Treat a Dependabot pull request as not
-  security-reviewed until the owner reads it.
+  merges; whatever Codex posted, so does one whose privacy or workflow
+  change came in a push after it opened, and its ready message says so.
+  Treat a Dependabot pull request as not security-reviewed until the owner
+  reads it.
 
 ## Guardrails for agents
 
@@ -503,9 +506,8 @@ Apple's skills again after each new Xcode release.
 
 ## Gotchas
 
-- Swift Testing filters need the function's parentheses
-  (`-only-testing:BricksonTests/PaletteTests/theContrastFormulaMatchesWCAG()`),
-  or `xcodebuild` runs nothing and reports success.
+- Swift Testing filters need the function's parentheses, or `xcodebuild`
+  runs nothing and reports success.
 - One simulator per agent, chosen with `DESTINATION` (`scripts/test.sh`
   passes its own `-destination`).
 - UI tests launch through `launchedApp`, which turns UIKit's animations
@@ -515,39 +517,37 @@ Apple's skills again after each new Xcode release.
   waiting for the change that did.
 - Outside `scripts/test.sh ui`, show the full software keyboard before a
   typing test: `xcrun simctl spawn <udid> defaults write
-  com.apple.keyboard.preferences AutomaticMinimizationEnabled -bool false`,
-  and write `DidShowContinuousPathIntroduction -bool true` to the same
-  domain. `KeyboardProbeTests` attaches its `KEYBOARD-PROBE` and
-  `KEYBOARD-BAND` lines to the result.
+  com.apple.keyboard.preferences` with `AutomaticMinimizationEnabled -bool
+  false`, then with `DidShowContinuousPathIntroduction -bool true`.
+  `KeyboardProbeTests` attaches its `KEYBOARD-PROBE` and `KEYBOARD-BAND`
+  lines to the result.
 - Time a long new chain sweep on its own and say in the pull request what
   it adds; pin any `ChainEngine` shortcut against the plain way in
   `ChainEngineTests`.
 - A crash cannot be a known issue: commit the reproduction disabled,
   naming its issue.
 - **A just-started simulator is slow, and the first UI test pays for it.**
-  Never put a call to a system service that can be slow on the main
-  thread at launch (docs/DECISIONS.md, "The voice list never holds up
-  launch").
+  Never call a system service that can be slow on the main thread at
+  launch (docs/DECISIONS.md, "The voice list never holds up launch").
 - **Accessibility frames do not prove visible words fit.** Keep the
   rendered-label regression beside reachability and audits.
-- **Audit only a still screen.** Speech and anything else that changes the
-  screen must be over before an audit; a wait is not a retry. Never retry
-  or discard an accessibility finding to make CI green.
+- **Audit only a still screen.** Speech and every other screen change must
+  be over before an audit; a wait is not a retry. Never retry or discard
+  an accessibility finding to make CI green.
 - `ViewThatFits` failed Apple's audit around text here: choose
   arrangements in a plain type and place each view once.
 - Check rendered appearance in a screenshot, not `XCUIDevice.appearance`.
-  Lazy Forms unload far-off rows, so a missing element may only be
-  scrolled away. Novelty voices are excluded from automatic voice choice
-  on purpose.
+  Lazy Forms unload far-off rows: a missing element may only be scrolled
+  away. Novelty voices are excluded from automatic voice choice on
+  purpose.
 - iPhone Duo has an iOS runtime of its own beside the plain one; keep
-  both. Never count an accessibility reading taken inside Device Hub on
-  iPhone Duo as evidence.
+  both. An accessibility reading taken inside Device Hub on iPhone Duo is
+  never evidence.
 - **CI results can be read without a Mac.** A result bundle holds
   recordings, attachments and the app's own log; read them before blaming
   the machine (`docs/log/2026-11-01-voice-list-off-launch.md`). Before
   lengthening a wait for a slow CI UI test, read
   `simulator-load-<family>[-part<n>].txt`.
-- Simulator audio is unreliable: sound checks need a real device.
 - A Remote Control session stops after about 60 idle minutes: run long
   jobs detached, with a check that ends within 45 minutes.
 - On the owner's Mac the shell aliases `cp`, `rm`, `grep` and `python3`;
