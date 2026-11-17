@@ -25,6 +25,8 @@ final class FakeAudioSession: AudioSessionControlling {
     /// Refuses every activation.
     var refusesActivation = false
     var refusesCategory = false
+    /// Runs as each activation begins, so a test can make one slow.
+    var onActivate: (() -> Void)?
     private(set) var categoryCalls: [CategoryCall] = []
     private(set) var activeCalls: [Bool] = []
     private(set) var isActive = false
@@ -41,6 +43,7 @@ final class FakeAudioSession: AudioSessionControlling {
     func setActive(_ active: Bool, notifyingOthersOnDeactivation: Bool) throws {
         activeCalls.append(active)
         if active {
+            onActivate?()
             if refusesActivation { throw FakeAudioSessionError() }
             let mixes = categoryCalls.last?.options.contains(.mixWithOthers) ?? false
             if refusesUnmixedActivation && !mixes { throw FakeAudioSessionError() }

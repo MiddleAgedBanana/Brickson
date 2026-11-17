@@ -85,8 +85,9 @@ nonisolated struct SpokenUtteranceTracker<ID: Equatable & Sendable>: Sendable {
     /// that skips reporting its last word never shows a false warning.
     static var cutOffCorrelationWindow: Duration { .seconds(3) }
 
-    /// How long an utterance may go, from the moment the app asks for it
-    /// (before its voice is looked up and it is handed to the synthesizer),
+    /// How long an utterance may go, from the moment the app is asked to
+    /// speak it (before any earlier phrase is stopped, audio is activated,
+    /// its voice is looked up and it is handed to the synthesizer),
     /// without a start or word report before it is treated as one that will
     /// not be heard. Long enough for a slow first phrase (the slowest healthy
     /// one measured took at most 5.4 seconds on an overloaded CI simulator),
@@ -98,8 +99,9 @@ nonisolated struct SpokenUtteranceTracker<ID: Equatable & Sendable>: Sendable {
     private struct Active: Sendable {
         let id: ID
         let source: UtteranceSource
-        /// When the app asked for the utterance, before its voice was looked
-        /// up and it was handed to the synthesizer.
+        /// When the app was asked to speak the utterance, before any earlier
+        /// phrase was stopped, audio was activated, its voice was looked up
+        /// and it was handed to the synthesizer.
         let beganAt: ContinuousClock.Instant
         /// True once the synthesizer said it began, or reported a word.
         var hasBegun: Bool

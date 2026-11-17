@@ -1000,8 +1000,9 @@ same test, with "Speaking" still showing.
 
 **The rule.** The speech watchdog (`SpeechService`) also checks each
 utterance against `SpokenUtteranceTracker.startLimit`, 15 seconds from the
-moment the app asks for it, just before it looks up the voice and hands it
-to the synthesizer. An utterance that by then has sent
+moment the app is asked to speak it, before it stops any earlier phrase,
+activates audio, looks up the voice and hands it to the synthesizer. An
+utterance that by then has sent
 neither a start report (`speechSynthesizer(_:didStart:)`, which Apple
 documents as the moment speech begins) nor a word report
 (`willSpeakRangeOfSpeechString`) is stopped and treated as cut off, after
@@ -1049,16 +1050,21 @@ trusts a phrase that reports no words at all ("A phrase the system cuts
 off"); if only words counted, a voice that reports none would have every
 message longer than the limit stopped while it was being heard.
 
-**Counted from the ask, voice lookup included.** Looking up the chosen
-voice can wait on the system's voice service, on the main thread, before
-the synthesizer has the phrase. That wait counts against the limit,
+**Counted from the ask, audio and voice lookup included.** Stopping an
+earlier phrase, activating the audio session and looking up the chosen
+voice all happen on the main thread before the synthesizer has the
+phrase, and the voice lookup can wait on the system's voice service. That
+time counts against the limit,
 because what the limit guards is how late after the person's choice a
 phrase would sound: one that has not started 15 seconds after it was
 asked for is late whatever held it up, and stopping it follows the rule
 above. A review on the pull request proposed starting the count after
 the lookup; declined for that reason, and because the synthesizer looks
 the voice up again as it takes the phrase (`SystemSpeechSynthesizer`), so
-the count could not start after every lookup anyway.
+the count could not start after every lookup anyway. A later review found
+that the first version started the count after the audio session
+activated, contrary to this rule; it now starts before
+(`SpeechServiceTests`, `aSlowAudioActivationCountsAgainstTheStartLimit`).
 
 **Evidence kept for the limit.** A start of one second or more is
 logged at notice level as "Speech began N ms after it was asked for",
@@ -1067,7 +1073,13 @@ voice that sends no start), and
 a phrase the limit stops at error level, numbers only and never the
 words, so a CI result bundle or a device's log shows how close real
 starts come. A start of 7.5 seconds or more (half the limit) is new
-evidence to revisit the limit with.
+evidence to revisit the limit with. The measurement is taken from the
+first report the app handles. A review proposed ordering the reports by
+the time each was stamped instead, in case the start report is handled
+after a word; declined, because each report is stamped as it arrives and
+passed to the main queue in arrival order, so the two can differ by at
+most the moments it takes to pass one along, against a log threshold of
+one second and a limit of 15.
 
 **What it does not catch.** A start report sent for speech that is never
 heard, and a phrase that began and then stays "speaking" with no finish

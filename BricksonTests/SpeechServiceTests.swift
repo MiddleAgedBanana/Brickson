@@ -472,6 +472,30 @@ struct SpeechServiceTests {
         #expect(!harness.coordinator.isHeld(by: .speech))
     }
 
+    /// The limit counts from the moment the phrase is asked for, so time
+    /// spent activating audio before the synthesizer has it counts too: the
+    /// person has been waiting all along. Fails if the count starts after
+    /// the audio session activates, which would leave this phrase
+    /// "Speaking" 15 seconds after it was chosen.
+    @Test func aSlowAudioActivationCountsAgainstTheStartLimit() async {
+        let harness = AudioHarness()
+        let clock = harness.clock
+        let activation: Duration = .seconds(10)
+        harness.audioSession.onActivate = { clock.advance(by: activation) }
+        harness.speech.speak("Yes.")
+        harness.audioSession.onActivate = nil
+        #expect(await waitUntil { harness.speechSleeper.isAnyoneSleeping })
+
+        harness.clock.advance(by: SpokenUtteranceTracker<UtteranceToken>.startLimit - activation)
+        #expect(await harness.speechSleeper.wakeAll())
+        #expect(harness.speechSleeper.pendingDurations == [.milliseconds(500)])
+
+        #expect(await harness.speechSleeper.wakeAll())
+        #expect(!harness.speech.isSpeaking)
+        #expect(harness.issue == .speechStopped)
+        #expect(harness.synthesizer.stopCount == 1)
+    }
+
     /// A slow first phrase is not cut off: on CI a healthy first phrase took
     /// about five seconds to begin. Fails if the limit acts before it is
     /// reached, or ever stops a phrase that began.

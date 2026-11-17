@@ -407,6 +407,10 @@ final class SpeechService {
     private func synthesize(_ text: String, source: UtteranceSource? = nil) -> String? {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
+        // The start limit counts from here: stopping an earlier phrase,
+        // activating audio and looking up the voice all count against it
+        // (docs/DECISIONS.md, "A phrase that does not start").
+        let askedAt = now()
 
         // Any deliberate new utterance supersedes the interrupted one. If its
         // audio session cannot activate, the Audio failed warning takes over
@@ -422,7 +426,7 @@ final class SpeechService {
 
         lastToken &+= 1
         let token = UtteranceToken(rawValue: lastToken)
-        utterances.began(token, source: source ?? .phrase(trimmed), at: now())
+        utterances.began(token, source: source ?? .phrase(trimmed), at: askedAt)
         synthesizer.speak(
             SpeechRequest(
                 token: token,

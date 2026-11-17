@@ -16,7 +16,9 @@ relaunched the app at 07:52:49. On a device that is a phrase the person
 never heard, and one that could sound minutes later, out of turn.
 
 Now the watchdog also gives each utterance 15 seconds to begin
-(`SpokenUtteranceTracker.startLimit`). One that has sent neither Apple's
+(`SpokenUtteranceTracker.startLimit`), counted from the moment the app is
+asked to speak it, before it stops any earlier phrase or activates
+audio. One that has sent neither Apple's
 start report (`speechSynthesizer(_:didStart:)`, newly forwarded) nor a
 word report by then is stopped, after a second look half a second later,
 and treated as cut off: Home shows the existing "Stopped — Again" (or
@@ -49,8 +51,8 @@ From that run's result bundle (`ui-test-results-ipad-part3`): when the
 test began each tap or press, from the test's own log; and the phrase's
 voice lookup and the first audio line of each launch that spoke, from the
 app's log. The limit counts from the moment the app asks for the phrase
-to be spoken, just before it looks up the voice, which falls between the
-test's tap and the voice lookup, so the two right-hand columns bound
+to be spoken, before it activates audio and looks up the voice, which
+falls between the test's tap and the voice lookup, so the two right-hand columns bound
 each start from below and above.
 
 | Launch (process) | Tap or press began | Voice lookup | First audio | From lookup | From tap or press |
@@ -83,6 +85,12 @@ is now measured too. The limit did not change.)
   first, where the count starts stated (docs/DECISIONS.md, "A phrase
   that does not start"), two more tracker tests, and the hashes and
   checks in this record.
+- The second review's two commits: the count starts before the earlier
+  phrase is stopped and audio is activated, as the rule says (the first
+  version started it after activation), with a test that makes a slow
+  activation count; the start-log thresholds worded as the code measures
+  them (one second or more); a review's proposal to order reports by
+  their stamps declined, with the reason, in docs/DECISIONS.md.
 
 ## Verified
 
@@ -92,7 +100,7 @@ is now measured too. The limit did not change.)
   with stand-ins for AVFoundation and `Logger`) compiled with no
   warnings in a throwaway package outside the repository, with Swift 6
   language mode, main-actor default isolation and the project's upcoming
-  features. 120 tests passed: every test in `SpokenUtteranceTrackerTests`
+  features. 121 tests passed: every test in `SpokenUtteranceTrackerTests`
   and `SpeechServiceTests` (except one about launch storage, which needs
   `LaunchOptions`) and the speech test from `OffMainThreadCallbackTests`.
 - **Each new test fails without the change it covers** (run on the same
@@ -120,7 +128,9 @@ is now measured too. The limit did not change.)
     began late stops being absorbed too soon:
     `aLateStartKeepsAbsorbingARepeatFromWhenItBegan`;
   - a word report never returning the start measurement, and every report
-    returning it: `aWordReportThatComesFirstSaysHowLongThePhraseTookToBegin`.
+    returning it: `aWordReportThatComesFirstSaysHowLongThePhraseTookToBegin`;
+  - the count starting after the audio session activates:
+    `aSlowAudioActivationCountsAgainstTheStartLimit`.
 - **The repository's Python checks**, on Linux in this cloud session,
   all passed: `scripts/test-docs.py`, `test-hooks.py`, `test-privacy.py`,
   `test-forbidden-code.py`, `forbidden-code.py`, `test-runner.py`,
