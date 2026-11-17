@@ -17,8 +17,10 @@ app, and its failure cannot tell that apart from a broken one.
 scripts/test-runner.py runs this on the UI tests (UITestWaitTests).
 
 A gesture's own length (press(forDuration:), thenHoldForDuration:) is not a
-wait and is not reported. Comments and the words inside strings are not
-read; code inside a string's interpolation is.
+wait and is not reported. Comments and the words inside strings, raw
+strings too, are not read; code inside a string's interpolation is. A wait
+whose arguments run over several lines is found on the line where it
+starts, and two waits on one line count as two.
 """
 import re
 import sys
@@ -26,8 +28,8 @@ from pathlib import Path
 
 FOLDER = Path(__file__).resolve().parent.parent / "BricksonUITests"
 
-# The helpers themselves: the only files that may wait on XCTest directly or
-# name a number of seconds.
+# The helpers themselves, at the top of the folder: the only files that may
+# wait on XCTest directly or name a number of seconds.
 HELPERS = frozenset({"UIWait.swift", "Waiting.swift"})
 
 # Files whose bare waits are not converted yet, and how many they hold. A
@@ -45,23 +47,28 @@ SLEEP = "a sleep"
 RUN_LOOP = "a run loop held for a time"
 DEADLINE = "a number of seconds as a deadline"
 
-# What makes a wait bare.
+# What makes a wait bare. Each pattern is read across line breaks. Where
+# one opens a parenthesis, the wait runs to the parenthesis that closes it,
+# and anything else found inside (its timeout, say) is part of that wait.
 BARE = (
     (re.compile(r"\btimeout\s*:\s*[0-9.]"), SECONDS),
     (re.compile(r"\.waitFor(Non)?Existence\s*\("), ELEMENT_WAIT),
-    (re.compile(r"\bXCTWaiter\b"), WAITER),
+    (re.compile(r"\bXCTWaiter\b(\s*\(\s*\))?(\s*\.\s*wait\s*\()?"), WAITER),
     (re.compile(r"\bfulfillment\s*\(\s*of\s*:"), WAITER),
     (re.compile(r"\bwaitForExpectations\s*\("), WAITER),
     (re.compile(r"(?<![\w.])wait\s*\(\s*for\s*:"), WAITER),
     (re.compile(r"\.wait\s*\(\s*for\s*:"), ELEMENT_WAIT),
     (re.compile(r"\bexpectation\s*\(\s*for(Notification)?\s*:"), PREDICATE),
-    (re.compile(r"\bXCT(NSPredicate|KVO|NSNotification|Darwin)\w*Expectation\b"), PREDICATE),
+    (re.compile(r"\bXCT(NSPredicate|KVO|NSNotification|Darwin)\w*Expectation\b(\s*\()?"), PREDICATE),
     (re.compile(r"(?<![\w.])u?sleep\s*\("), SLEEP),
-    (re.compile(r"\b(Thread|Task)\s*\.\s*sleep\b"), SLEEP),
-    (re.compile(r"\.run\s*\(\s*(mode\s*:.*)?until\s*:"), RUN_LOOP),
+    (re.compile(r"\b(Thread|Task)\s*\.\s*sleep\b(\s*\()?"), SLEEP),
+    (re.compile(r"\.run\s*\(\s*(mode\s*:[^)]*?)?until\s*:"), RUN_LOOP),
     (re.compile(r"\.(seconds|milliseconds|microseconds|nanoseconds)\s*\(\s*[0-9.]"), DEADLINE),
     (re.compile(r"\b(addingTimeInterval|timeIntervalSinceNow)\b"), DEADLINE),
 )
+
+# A string's opening quotes, with the number signs of a raw string.
+STRING_OPENING = re.compile(r'(#*)("""|")')
 
 
 def code_only(text):
@@ -80,21 +87,25 @@ def code_only(text):
     while i < n:
         kind, depth = stack[-1]
         if kind in ('"', '"""'):
-            if text.startswith("\\(", i):
-                out.append("  ")
+            # In a raw string (#"...", depth number signs) an escape and an
+            # interpolation start with a backslash and the same signs.
+            escape = "\\" + "#" * depth
+            if text.startswith(escape + "(", i):
+                out.append(" " * (len(escape) + 1))
                 stack.append(("interpolation", 0))
-                i += 2
-            elif text[i] == "\\":
-                out.append(blank(text[i:i + 2]))
-                i += 2
-            elif text.startswith(kind, i):
-                out.append(" " * len(kind))
+                i += len(escape) + 1
+            elif text.startswith(escape, i):
+                out.append(blank(text[i:i + len(escape) + 1]))
+                i += len(escape) + 1
+            elif text.startswith(kind + "#" * depth, i):
+                out.append(" " * (len(kind) + depth))
                 stack.pop()
-                i += len(kind)
+                i += len(kind) + depth
             else:
                 out.append(blank(text[i]))
                 i += 1
             continue
+        opening = STRING_OPENING.match(text, i) if text[i] in '#"' else None
         if text.startswith("//", i):
             end = text.find("\n", i)
             end = n if end < 0 else end
@@ -111,14 +122,10 @@ def code_only(text):
                     j += 1
             out.append(blank(text[i:j]))
             i = j
-        elif text.startswith('"""', i):
-            out.append("   ")
-            stack.append(('"""', 0))
-            i += 3
-        elif text[i] == '"':
-            out.append(" ")
-            stack.append(('"', 0))
-            i += 1
+        elif opening:
+            out.append(" " * (opening.end() - i))
+            stack.append((opening.group(2), len(opening.group(1))))
+            i = opening.end()
         elif kind == "interpolation" and text[i] == "(":
             stack[-1] = (kind, depth + 1)
             out.append("(")
@@ -137,14 +144,36 @@ def code_only(text):
     return "".join(out)
 
 
+def wait_end(code, start, end):
+    """Where the wait found at code[start:end] ends: at the parenthesis that
+    closes the last one it opens, or at `end` if it opens none."""
+    opening = code.rfind("(", start, end)
+    if opening < 0:
+        return end
+    depth = 0
+    for i in range(opening, len(code)):
+        if code[i] == "(":
+            depth += 1
+        elif code[i] == ")":
+            depth -= 1
+            if depth == 0:
+                return i + 1
+    return len(code)
+
+
 def bare_waits(text):
-    """(line, what) for each bare wait in Swift source `text`."""
-    found = []
-    for number, line in enumerate(code_only(text).split("\n"), start=1):
-        for pattern, what in BARE:
-            if pattern.search(line):
-                found.append((number, what))
-                break
+    """(line, what) for each bare wait in Swift source `text`, on the line
+    where it starts."""
+    code = code_only(text)
+    matches = sorted(
+        ((m.start(), -wait_end(code, m.start(), m.end()), what)
+         for pattern, what in BARE for m in pattern.finditer(code)),
+        key=lambda match: match[:2])
+    found, covered = [], 0
+    for start, negative_end, what in matches:
+        if start >= covered:
+            found.append((code.count("\n", 0, start) + 1, what))
+            covered = -negative_end
     return found
 
 
@@ -156,7 +185,7 @@ def problems(folder=FOLDER, not_yet_converted=None):
     found = [f"{name}: listed as not yet converted, but there is no such file; "
              "take it off the list" for name in sorted(allowed) if not (folder / name).is_file()]
     for path in sorted(folder.rglob("*.swift")):
-        if path.name in HELPERS:
+        if path.parent == folder and path.name in HELPERS:
             continue
         waits = bare_waits(path.read_text(encoding="utf-8"))
         name = path.relative_to(folder).as_posix()

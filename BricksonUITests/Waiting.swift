@@ -5,52 +5,35 @@ import XCTest
 
 extension XCTestCase {
     /// Looks at `condition` until it holds or `wait`'s limit has passed,
-    /// about twice a second, and says what it saw. Fails nothing itself;
-    /// every wait below goes through it.
+    /// about twice a second, and says what it saw (`UIWait.watch`, which
+    /// also says which looks count). Fails nothing itself; every wait below
+    /// goes through it.
     ///
-    /// A look that begins before the limit counts even if it ends after
-    /// it: on an overloaded Mac one query of the app has taken 12 seconds,
-    /// and its answer is still the app's answer. The test makes each look
-    /// itself, on the main actor, rather than through XCTest's predicate
-    /// expectations, which XCTest documents as evaluated on the main actor
-    /// only for `fulfillment(of:)` (`KeyboardProbeTests`). A wait with a
-    /// look slower than `UIWaitReport.slowLook` prints its report to the
-    /// log even when it ends well, since XCTest may have failed that look
-    /// itself ("Timed out while evaluating UI query").
+    /// The test makes each look itself, on the main actor, rather than
+    /// through XCTest's predicate expectations, which XCTest documents as
+    /// evaluated on the main actor only for `fulfillment(of:)`
+    /// (`KeyboardProbeTests`). A wait with a look slower than
+    /// `UIWaitReport.slowLook` prints its report to the log even when it
+    /// ends well, since XCTest may have failed that look itself ("Timed out
+    /// while evaluating UI query").
     @MainActor
     func look(_ wait: UIWait, until condition: () -> Bool) -> UIWaitReport {
-        let clock = ContinuousClock()
-        let limit = wait.seconds
-        let start = clock.now
-        let deadline = start + wait.duration
-        var looks = 0
-        var slowest = Duration.zero
-        while true {
-            let before = clock.now
-            let held = condition()
-            let after = clock.now
-            looks += 1
-            slowest = max(slowest, after - before)
-            if held || after >= deadline {
-                let report = UIWaitReport(
-                    held: held,
-                    elapsed: after - start,
-                    limit: limit,
-                    scale: wait.stretches ? UIWait.scale : 1,
-                    looks: looks,
-                    slowestLook: slowest,
-                    ended: .now
+        let report = wait.watch(
+            at: UIWait.scale,
+            now: { ContinuousClock.now },
+            pause: { pause in
+                _ = XCTWaiter.wait(
+                    for: [XCTestExpectation(description: "the pause between two looks")],
+                    timeout: UIWait.seconds(in: pause)
                 )
-                if report.hadASlowLook {
-                    print("UI-WAIT \(held ? "held" : "ran out"): \(report.description)")
-                }
-                return report
-            }
-            _ = XCTWaiter.wait(
-                for: [XCTestExpectation(description: "the pause between two looks")],
-                timeout: UIWait.pauseBetweenLooks
-            )
+            },
+            date: { .now },
+            until: condition
+        )
+        if report.hadASlowLook {
+            print("UI-WAIT \(report.held ? "held" : "ran out"): \(report.description)")
         }
+        return report
     }
 
     /// Waits until `condition` holds. If it does not within `wait`'s

@@ -1,12 +1,102 @@
 import Foundation
 import Testing
 
-/// The UI tests' wait limits (`UIWait`) and the words a wait adds when it
-/// runs out (`UIWaitReport`). Drives no app; the same file is compiled into
-/// the UI tests, whose waits in `Waiting.swift` use it (docs/DECISIONS.md,
+/// The UI tests' wait limits (`UIWait`), how a wait looks at the app
+/// (`UIWait.watch`) and the words a wait adds when it runs out
+/// (`UIWaitReport`). Drives no app; the same file is compiled into the UI
+/// tests, whose waits in `Waiting.swift` use it (docs/DECISIONS.md,
 /// "Tests").
 struct UIWaitTests {
     private static let ended = Date(timeIntervalSince1970: 1_794_895_820)
+
+    /// A clock the test moves by hand: a look or a pause takes only the
+    /// time the test gives it.
+    private final class HandClock {
+        let origin = ContinuousClock.now
+        var elapsed = Duration.zero
+        var now: ContinuousClock.Instant { origin + elapsed }
+    }
+
+    /// `wait` watched on `clock`, each pause running `overrun` past the
+    /// time asked for, as one can on an overloaded Mac.
+    private func watch(
+        _ wait: UIWait,
+        at scale: Double = 1,
+        on clock: HandClock,
+        overrun: Duration = .zero,
+        until condition: () -> Bool
+    ) -> UIWaitReport {
+        wait.watch(
+            at: scale,
+            now: { clock.now },
+            pause: { clock.elapsed += $0 + overrun },
+            date: { Self.ended },
+            until: condition
+        )
+    }
+
+    // Ending at the limit instead of at the first look that holds, or not
+    // looking again after a pause, fails here.
+    @Test func aWaitEndsAtTheFirstLookThatHolds() {
+        let clock = HandClock()
+        var looks = 0
+        let report = watch(.response, on: clock) {
+            clock.elapsed += .milliseconds(100)
+            looks += 1
+            return looks == 3
+        }
+        #expect(report.held)
+        #expect(report.looks == 3)
+        #expect(report.elapsed == .milliseconds(1_300))
+        #expect(report.slowestLook == .milliseconds(100))
+    }
+
+    // Ending before the limit, or pausing past it before giving up, fails
+    // here; so does a limit that ignores the scale.
+    @Test func aWaitThatNeverHoldsLastsItsWholeLimit() {
+        let clock = HandClock()
+        let report = watch(.strict(seconds: 1), on: clock) {
+            clock.elapsed += .milliseconds(200)
+            return false
+        }
+        #expect(!report.held)
+        #expect(report.looks == 2)
+        #expect(report.elapsed == .seconds(1))
+
+        let stretched = watch(.quickResponse, at: 3, on: HandClock()) { false }
+        #expect(stretched.looks == 30)
+        #expect(stretched.elapsed == .seconds(15))
+        #expect(stretched.scale == 3)
+    }
+
+    // Refusing the answer of a look that started before the limit and
+    // ended after it fails here: a slow answer is still the app's answer.
+    @Test func aLookThatStartsBeforeTheLimitCountsEvenIfItEndsAfterIt() {
+        let clock = HandClock()
+        let report = watch(.strict(seconds: 5), on: clock) {
+            guard clock.elapsed >= .milliseconds(4_500) else {
+                return false
+            }
+            clock.elapsed += .seconds(12)
+            return true
+        }
+        #expect(report.held)
+        #expect(report.looks == 10)
+        #expect(report.elapsed == .milliseconds(16_500))
+        #expect(report.slowestLook == .seconds(12))
+    }
+
+    // Looking again after a pause that ended past the limit fails here: a
+    // strict limit would then pass on a look that started too late.
+    @Test func noLookStartsAfterTheLimit() {
+        let clock = HandClock()
+        let report = watch(.strict(seconds: 5), on: clock, overrun: .seconds(6)) {
+            clock.elapsed > .zero
+        }
+        #expect(!report.held)
+        #expect(report.looks == 1)
+        #expect(report.elapsed == .milliseconds(6_500))
+    }
 
     // Changing a limit's normal length fails here, so a change to how long
     // a stuck app is given is a change someone made on purpose.

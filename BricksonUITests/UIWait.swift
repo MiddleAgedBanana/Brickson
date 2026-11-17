@@ -79,11 +79,11 @@ nonisolated struct UIWait: Equatable, Sendable {
         stretches ? normalSeconds * scale : normalSeconds
     }
 
-    /// This run's limit, in seconds.
-    var seconds: Double { limit(at: Self.scale) }
-
-    /// This run's limit, for a deadline on `ContinuousClock`.
-    var duration: Duration { .seconds(seconds) }
+    /// `duration` in seconds, as XCTest counts time.
+    static func seconds(in duration: Duration) -> Double {
+        let parts = duration.components
+        return Double(parts.seconds) + Double(parts.attoseconds) / 1e18
+    }
 
     /// The test runner's variable for the scale, set by `scripts/test.sh`.
     static let scaleVariable = "BRICKSON_UI_WAIT_SCALE"
@@ -109,14 +109,61 @@ nonisolated struct UIWait: Equatable, Sendable {
     /// How long a wait pauses between two looks at the app, in seconds:
     /// about as often as XCTest's own waits look.
     static let pauseBetweenLooks = 0.5
+
+    /// Looks at `condition` until it holds or this limit at `scale` has
+    /// passed, pausing between looks, and says what it saw. Every UI test
+    /// wait goes through this (`Waiting.swift`, with the real clock and
+    /// XCTest's pause); `UIWaitTests` drives it with a clock of its own.
+    ///
+    /// A look that starts before the limit counts even if it ends after
+    /// it: on an overloaded Mac one query of the app has taken 12 seconds,
+    /// and its answer is still the app's answer. No look starts after the
+    /// limit: a pause that ends late, as one can on an overloaded Mac, ends
+    /// the wait, so no later look can pass a strict limit.
+    func watch(
+        at scale: Double,
+        now: () -> ContinuousClock.Instant,
+        pause: (Duration) -> Void,
+        date: () -> Date,
+        until condition: () -> Bool
+    ) -> UIWaitReport {
+        let start = now()
+        let deadline = start + .seconds(limit(at: scale))
+        var held = false
+        var looks = 0
+        var slowest = Duration.zero
+        var end = start
+        repeat {
+            let before = now()
+            held = condition()
+            end = now()
+            looks += 1
+            slowest = max(slowest, end - before)
+            if held || end >= deadline {
+                break
+            }
+            pause(min(.seconds(Self.pauseBetweenLooks), deadline - end))
+            end = now()
+        } while end < deadline
+        return UIWaitReport(
+            held: held,
+            elapsed: end - start,
+            limit: limit(at: scale),
+            scale: stretches ? scale : 1,
+            looks: looks,
+            slowestLook: slowest,
+            ended: date()
+        )
+    }
 }
 
 /// What one wait saw, for the words its failure adds to the test's own
 /// message.
 nonisolated struct UIWaitReport: Equatable, Sendable {
-    /// Whether the condition held before the limit passed.
+    /// Whether a look that started before the limit found the condition
+    /// holding.
     let held: Bool
-    /// From the start of the first look to the end of the last.
+    /// From the start of the first look to the end of the wait.
     let elapsed: Duration
     /// The limit the wait had, in seconds.
     let limit: Double
@@ -165,7 +212,6 @@ nonisolated struct UIWaitReport: Equatable, Sendable {
     }
 
     static func seconds(_ duration: Duration) -> String {
-        let parts = duration.components
-        return seconds(Double(parts.seconds) + Double(parts.attoseconds) / 1e18)
+        seconds(UIWait.seconds(in: duration))
     }
 }

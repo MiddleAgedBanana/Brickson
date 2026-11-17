@@ -204,7 +204,7 @@ final class KeyboardProbeTests: XCTestCase {
     /// synchronous wait.
     @MainActor
     private func waitForWindow(of app: XCUIApplication, orientation: UIDeviceOrientation) -> CGRect {
-        var frame = app.windows.firstMatch.frame
+        var frame = CGRect.zero
         waitUntil("the window did not turn to \(orientation.isLandscape ? "landscape" : "portrait")") {
             frame = app.windows.firstMatch.frame
             return Self.window(frame, hasTurnedTo: orientation)
@@ -230,20 +230,15 @@ final class KeyboardProbeTests: XCTestCase {
     /// returns the last read, marked unsettled.
     @MainActor
     private func settledReadout(_ readout: XCUIElement) -> [String: String] {
-        var last = readout.label
-        var isFirstLook = true
+        // Each look reads the readout, half a second after the look before
+        // (`UIWait.pauseBetweenLooks`), and compares it with that look's.
+        var last: String?
         let settled = look(.response) {
-            // The first look is the read just made; each later one comes
-            // half a second after the one before (`UIWait.pauseBetweenLooks`).
-            if isFirstLook {
-                isFirstLook = false
-                return false
-            }
             let next = readout.label
             defer { last = next }
             return next == last
         }.held
-        var values = Self.values(in: last)
+        var values = Self.values(in: last ?? "")
         if !settled {
             values["settled"] = "no"
         }

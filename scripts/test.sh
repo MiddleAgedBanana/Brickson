@@ -97,7 +97,7 @@ else
 fi
 export TEST_RUNNER_BRICKSON_UI_WAIT_SCALE="$ui_wait_scale"
 if [ "$mode" = ui ]; then
-    echo "UI test waits: normal limits times $ui_wait_scale, strict ones unchanged (BricksonUITests/UIWait.swift)"
+    echo "UI test waits: a scale of $ui_wait_scale asked for; the tests hold it between 1 and 5 and never stretch a strict limit (BricksonUITests/UIWait.swift)"
 fi
 
 # The Xcode project is generated from project.yml every time, so it always

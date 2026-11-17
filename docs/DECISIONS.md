@@ -5758,7 +5758,10 @@ request merges only when they pass.
   through one helper (`BricksonUITests/Waiting.swift`) with a named limit
   (`BricksonUITests/UIWait.swift`), so a slow machine and a broken app
   fail differently. Each wait watches a real condition and ends as soon
-  as it holds; the limit only decides when a stuck app fails. On CI
+  as it holds; the limit only decides when a stuck app fails. A look
+  that starts before the limit counts even if it ends after it, and no
+  look starts after it, so a pause that ends late cannot pass a strict
+  limit (`UIWait.watch`, unit-tested with a clock of its own). On CI
   `scripts/test.sh` passes a scale of 3 (`BRICKSON_UI_WAIT_SCALE`, at
   most 5), which stretches every limit but a strict one: a launch 30
   seconds (90 on CI), one action's response 10 (30), a quick response
@@ -5800,7 +5803,8 @@ request merges only when they pass.
   overloaded simulator is given before that failure grew. The owner
   sees it in the pull request and decides by merging it or not.
   `scripts/ui-test-waits.py` (run by `scripts/test-runner.py`) refuses a
-  bare wait anywhere in the UI tests but the two helper files: a number
+  bare wait anywhere in the UI tests but the two helper files and the one
+  file below, wherever its arguments break across lines: a number
   of seconds handed to XCTest's waits, an XCTest waiter or predicate
   expectation, a sleep, a run loop held for a time or a deadline of the
   test's own. `HomeAccessibilityOrderTests.swift` keeps its 7 bare waits

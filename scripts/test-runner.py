@@ -984,11 +984,48 @@ class UITestWaitTests(unittest.TestCase):
             """})
         self.assertEqual(found, [])
 
+    # Reading one line at a time (a wait whose arguments run onto the next
+    # line), counting one wait per line, not reading the code inside a raw
+    # string's interpolation, or reading a raw string's words as code, fails
+    # here.
+    def test_waits_over_several_lines_beside_another_or_in_raw_strings_are_found(self):
+        over_lines = self.problems_in({"SomeTests.swift": """\
+            func test() {
+                wait(
+                    for: [seen],
+                    timeout: limit
+                )
+            }
+            """})
+        self.assertEqual(over_lines, ["SomeTests.swift:2: XCTest's waiter; wait with Waiting.swift "
+                                      "and a UIWait limit"])
+        both = "XCTAssertTrue(a.waitForExistence(timeout: 1) && b.waitForExistence(timeout: 1))\n"
+        self.assertEqual(len(self.problems_in({"SomeTests.swift": both})), 2)
+        grown = self.problems_in({"OldTests.swift": both}, {"OldTests.swift": 1})
+        self.assertIn("OldTests.swift: 2 bare waits, more than the 1", grown[0])
+        raw = self.problems_in({"SomeTests.swift": """\
+            func test() {
+                XCTFail(#"a \\" sleep(1) \\(sleep(1))"#)
+                XCTFail(#"seen: \\#(button.waitForExistence(timeout: 1))"#)
+            }
+            """})
+        self.assertEqual(len(raw), 1, raw)
+        self.assertTrue(raw[0].startswith("SomeTests.swift:3: "), raw)
+
     # Checking the helpers themselves, or letting a file not yet converted
-    # gain a wait, fails here; it may lose them.
+    # gain a wait, fails here; it may lose them. Only the helpers at the
+    # top of the folder are exempt, not another file with the same name.
     def test_only_the_helpers_wait_directly_and_old_files_may_not_grow(self):
         two = "button.waitForExistence(timeout: 5)\nsleep(1)\n"
         self.assertEqual(self.problems_in({"Waiting.swift": two, "UIWait.swift": two}), [])
+        with tempfile.TemporaryDirectory() as directory:
+            nested = Path(directory) / "Probes"
+            nested.mkdir()
+            (nested / "Waiting.swift").write_text(two)
+            found = self.waits_module().problems(Path(directory), {})
+        self.assertEqual(found, ["Probes/Waiting.swift:1: XCTest's own wait for an element; wait with "
+                                 "Waiting.swift and a UIWait limit",
+                                 "Probes/Waiting.swift:2: a sleep; wait with Waiting.swift and a UIWait limit"])
         self.assertEqual(self.problems_in({"OldTests.swift": two}, {"OldTests.swift": 2}), [])
         self.assertEqual(self.problems_in({"OldTests.swift": two}, {"OldTests.swift": 3}), [])
         grown = self.problems_in({"OldTests.swift": two}, {"OldTests.swift": 1})
@@ -1027,7 +1064,7 @@ class UITestWaitTests(unittest.TestCase):
                 self.assertEqual(result.returncode, 0, result.stderr)
                 scales = [event for event in result.events if event.startswith("scale ")]
                 self.assertEqual(scales, [f"scale {expected}"], result.events)
-                self.assertIn(f"UI test waits: normal limits times {expected}", result.stdout)
+                self.assertIn(f"UI test waits: a scale of {expected} asked for", result.stdout)
 
     # Renaming the variable on one side only leaves the UI tests at their
     # normal limits on CI, silently; this test fails instead.

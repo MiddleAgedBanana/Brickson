@@ -51,7 +51,10 @@ the first 35 minutes of a saturated job
    UI test. Each looks at a real condition about twice a second on the
    main actor and ends as soon as it holds. A look that starts before
    the limit counts even if it ends after it, since a slow answer is
-   still the app's answer.
+   still the app's answer, and no look starts after it: a pause that
+   ends late ends the wait, so it cannot pass a strict limit. The loop
+   itself is `UIWait.watch`, a plain function the unit tests drive with
+   a clock of their own.
 2. **Named limits that stretch on CI.** `BricksonUITests/UIWait.swift`
    names each limit: `launch` 30 seconds, `response` 10,
    `quickResponse` 5, `speechEnd` 30, `idleReset` 30, `observation` 3.
@@ -94,7 +97,8 @@ the first 35 minutes of a saturated job
    CI, because an overloaded Mac gives the app less of each second.
 6. **A check that refuses bare waits.** `scripts/ui-test-waits.py`
    reads every Swift file in `BricksonUITests` except the two helper
-   files, ignoring comments and the words inside strings, and reports a
+   files, ignoring comments and the words inside strings (raw strings
+   too), reading each wait across line breaks, and reports a
    number of seconds handed to XCTest, an XCTest waiter or predicate
    expectation, a sleep, a run loop held for a time, or a deadline of
    the test's own. `scripts/test-runner.py` runs it
@@ -111,7 +115,10 @@ now evaluates the same predicate itself through the helper.
 
 ## Commits
 
-One commit on `claude/project-thread-dz2uxv`; the pull request lists it.
+The commits on `claude/project-thread-dz2uxv`; the pull request lists
+them. After the first, they answer the review: 5-second waits kept at 5
+on a Mac, no look after the limit, the check reading across lines, and
+the probes' first reads inside their waits.
 
 ## Verified
 
@@ -119,20 +126,26 @@ One commit on `claude/project-thread-dz2uxv`; the pull request lists it.
   finds no bare wait outside the helpers and exactly 7 in
   `HomeAccessibilityOrderTests.swift`; `scripts/test-runner.py` passes,
   with the new `UITestWaitTests`. Each new Python test was seen to fail
-  with a pattern removed from the check or with `scripts/test.sh` giving
-  CI a scale of 1.
+  with a pattern removed from the check, with `scripts/test.sh` giving
+  CI a scale of 1, or with the check reading one line at a time,
+  counting one wait per line, not reading raw strings or exempting a
+  `Waiting.swift` in a subfolder.
 - The other Python checks in AGENTS.md, *Build and test*, pass.
 - New unit tests (`BricksonTests/UIWaitTests.swift`, Swift Testing),
   each naming the change that fails it: the normal limits; every limit
   but a strict one stretching with the scale; reading the scale (missing,
   below 1, above 5, not a number, infinite); the exact words of a wait
   that ran out on a slow machine and of a quick one; the 5-second line
-  for a slow look; how seconds are written. `UIWait.swift` and these
+  for a slow look; how seconds are written; and how a wait looks (it
+  ends at the first look that holds, lasts its whole limit when nothing
+  holds, counts a slow look that started in time, and starts no look
+  after the limit). `UIWait.swift` and these
   tests were compiled and run here with Swift 6.4.2 for Linux, in a
   scratch package with main-actor default isolation and warnings as
-  errors: all 8 pass, and comparing with `>` instead of `>=` for a slow
-  look, or letting a strict limit stretch, fails them. That is not the
-  app's toolchain: Xcode and iOS Foundation can still differ.
+  errors: all 12 pass, and comparing with `>` instead of `>=` for a slow
+  look, letting a strict limit stretch, looking again after a pause that
+  ended past the limit, or pausing past the limit, fails them. That is
+  not the app's toolchain: Xcode and iOS Foundation can still differ.
 
 ## Not verified
 

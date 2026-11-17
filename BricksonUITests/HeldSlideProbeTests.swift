@@ -207,10 +207,10 @@ final class HeldSlideProbeTests: XCTestCase {
         return (category.exists ? category.label : "(none)", message)
     }
 
-    /// Waits up to 3 s for Home to show any sentence it can (a phrase on
-    /// screen, Yes or No), then prints which one it showed, and whether the
-    /// first-run hint, which a fresh launch shows until something is
-    /// spoken, is still there. `start` and `end` are the sentences of the
+    /// Waits up to `UIWait.observation` (3 s, 9 on CI) for Home to show any
+    /// sentence it can (a phrase on screen, Yes or No), then prints which
+    /// one it showed, and whether the first-run hint, which a fresh launch
+    /// shows until something is spoken, is still there. `start` and `end` are the sentences of the
     /// controls where the touch began and ended; a phrase tile speaks its
     /// own label.
     @MainActor
