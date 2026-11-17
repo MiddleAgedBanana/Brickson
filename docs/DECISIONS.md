@@ -1060,13 +1060,13 @@ the lookup; declined for that reason, and because the synthesizer looks
 the voice up again as it takes the phrase (`SystemSpeechSynthesizer`), so
 the count could not start after every lookup anyway.
 
-**Evidence kept for the limit.** A start slower than one second is
+**Evidence kept for the limit.** A start of one second or more is
 logged at notice level as "Speech began N ms after it was asked for",
 whichever report shows it first (the start report, or a word from a
 voice that sends no start), and
 a phrase the limit stops at error level, numbers only and never the
 words, so a CI result bundle or a device's log shows how close real
-starts come. A start slower than half the limit (7.5 seconds) is new
+starts come. A start of 7.5 seconds or more (half the limit) is new
 evidence to revisit the limit with.
 
 **What it does not catch.** A start report sent for speech that is never

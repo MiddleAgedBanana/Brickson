@@ -30,10 +30,11 @@ phrase still "speaking".
 The 15 seconds, why the phrase is stopped rather than left to sound, and
 what the limit does not catch are in docs/DECISIONS.md, "A phrase that
 does not start". No new words appear on screen; a plainer warning is
-left to the owner (docs/HANDOFF.md, *Known gaps*). A start slower than
-one second is logged with its milliseconds, and a phrase the limit stops
-is logged as an error, numbers only, so later CI runs and device check
-P3 show how close real starts come to the limit.
+left to the owner (docs/HANDOFF.md, *Known gaps*). A start of one
+second or more is logged with its milliseconds, whichever report shows
+it first, and a phrase the limit stops is logged as an error, numbers
+only, so later CI runs and device check P3 show how close real starts
+come to the limit.
 
 `SpeechService` now takes its clock (`now`) like its `sleep`, so tests
 move time by hand (`ManualClock` in `AudioTestDoubles`); the app passes
