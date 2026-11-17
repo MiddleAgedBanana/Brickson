@@ -835,14 +835,29 @@ release in docs/ROADMAP.md when no thread has it yet.
   27.2's release candidate, so `scripts/select-xcode.py` skipped it and
   took 27.1 with iOS 27.0. Nothing is pinned, on purpose
   (docs/DECISIONS.md, "Build with Apple's current Xcode"), and nothing
-  needs changing: it ends when GitHub finishes the rollout. On the newer
-  image `HomeAccessibilityOrderTests.testQuickControlsComeFirstInEveryStateAtDefaultText`
-  failed once on the iPhone, just opened, reading Phrases and Type before
-  Yes and No. It has passed on the Mac's iOS 27.2 each time, and on
-  PR #82's last commit, with all three jobs on the newer image. If it
-  fails again on that image, it is intermittent, and pull requests will
-  meet it once every machine has the image. *(the next thread whose CI
-  shows it)*
+  needs changing: it ends when GitHub finishes the rollout.
+- `HomeAccessibilityOrderTests` fails now and then on CI's iPhone, always
+  in its first state, "just opened": once on PR #82's run (2026-11-06,
+  default text) and twice on 2026-11-15 on PR #114's branch, which
+  changes no app code (default text once, AX5 once). Each time that one
+  read lists Home's controls in plain screen order, top to bottom and
+  leading to trailing (Phrases, Type, Yes, No, Emergency, Again, Get
+  Attention), as if no `accessibilitySortPriority` had taken effect at
+  either level, though every region was there. Every later state in the
+  same run read the right order, and the run's recording shows Home drawn
+  and still, so nothing moved on screen. On the Mac's iPhone 17
+  simulator (iOS 27.2) 61 launches never read it wrong: idle, with every
+  processor busy, and with the app paused three quarters of the time
+  ([`log/2026-11-16-tile-contrast-pixels.md`](log/2026-11-16-tile-contrast-pixels.md)).
+  Not yet known: whether the order comes right with no input, which
+  would make it a read taken before the order settled, or stays wrong
+  until something on Home changes, which a person's first switch scan
+  would meet: an app defect. Since 2026-11-16 the test, after a wrong
+  read, reads again for five seconds without touching anything, still
+  fails, and says and attaches what it saw, so the next failure answers
+  it. Accepting an order that comes right within a few seconds would
+  weaken the test, so it is the owner's call, proposed in that log.
+  *(the next thread whose CI shows it)*
 - `SettingsTests.testAnIdleSettingsReturnsToItsFirstScreenAndStaysOpen`
   has failed once each on 2026-10-22, 2026-11-08 and 2026-11-12, on
   branches that did not touch it, and passed on each re-run: Family

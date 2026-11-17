@@ -125,10 +125,10 @@ final class HomeAccessibilityOrderTests: XCTestCase {
             expected.insert((label: "Stop", region: Self.categories), at: firstCategory)
         }
         XCTAssertGreaterThan(home.count, expected.count, "Home shows no phrase tiles in its regions (\(context)): \(order)")
-        XCTAssertEqual(
-            home.prefix(expected.count).map(\.label), expected.map { $0.label },
-            "Home's controls are out of order (\(context)): \(order)"
-        )
+        let expectedLabels = expected.map { $0.label }
+        let labels = home.prefix(expected.count).map(\.label)
+        let readAgain = labels == expectedLabels ? "" : orderWithoutInput(in: app, expected: expectedLabels, context: context)
+        XCTAssertEqual(labels, expectedLabels, "Home's controls are out of order (\(context))\(readAgain): \(order)")
         for (button, (label, region)) in zip(home, expected) where button.label == label {
             XCTAssertEqual(button.region, region, "\(label) is outside its region (\(context))")
         }
@@ -142,6 +142,42 @@ final class HomeAccessibilityOrderTests: XCTestCase {
                 "\(label) is not inside any of Home's regions (\(context)): \(order)"
             )
         }
+    }
+
+    /// After a read that found Home's order wrong, reads it again for five
+    /// seconds without touching anything, keeps each order it sees with
+    /// the time it first saw it in the results, and says whether the order
+    /// came right. The test still fails: this only tells a first read
+    /// taken before the order settled from an order that stays wrong until
+    /// something on Home changes, which a person scanning would meet. On
+    /// CI's iPhone the "just opened" read has now and then listed Home in
+    /// plain screen order (docs/HANDOFF.md, *Known gaps*).
+    @MainActor
+    private func orderWithoutInput(in app: XCUIApplication, expected: [String], context: String) -> String {
+        let clock = ContinuousClock()
+        let start = clock.now
+        var seen: [String] = []
+        var last: [String] = []
+        var rightAfter: Duration?
+        while rightAfter == nil, clock.now - start < .seconds(5) {
+            guard let buttons = try? orderedButtons(in: app) else { continue }
+            let labels = Array(buttons.filter { $0.region != nil }.prefix(expected.count).map(\.label))
+            if labels != last {
+                seen.append("\(clock.now - start): \(labels.joined(separator: ", "))")
+                last = labels
+            }
+            if labels == expected {
+                rightAfter = clock.now - start
+            }
+        }
+        let attachment = XCTAttachment(string: seen.joined(separator: "\n"))
+        attachment.name = "order-read-again-without-input-\(context)"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        if let rightAfter {
+            return "; read again with no input, it was right \(rightAfter) later"
+        }
+        return "; read again with no input for 5 s, it stayed wrong"
     }
 
     /// A button as the accessibility tree lists it, and the Home region
