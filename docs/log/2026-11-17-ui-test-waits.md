@@ -53,14 +53,23 @@ the first 35 minutes of a saturated job
    the limit counts even if it ends after it, since a slow answer is
    still the app's answer.
 2. **Named limits that stretch on CI.** `BricksonUITests/UIWait.swift`
-   names each limit: `launch` 30 seconds, `response` 10, `speechEnd` 30,
-   `idleReset` 30, `observation` 3. `scripts/test.sh` passes a scale to
+   names each limit: `launch` 30 seconds, `response` 10,
+   `quickResponse` 5, `speechEnd` 30, `idleReset` 30, `observation` 3.
+   Each wait takes the limit equal to the seconds it had, so on a Mac
+   it is as long as before, with the exceptions below.
+   `scripts/test.sh` passes a scale to
    the test runner (`TEST_RUNNER_BRICKSON_UI_WAIT_SCALE`, which reaches
    the tests as `BRICKSON_UI_WAIT_SCALE`): 3 when `CI` is `true`, 1
    otherwise, or the value of `BRICKSON_UI_WAIT_SCALE` if set. The tests
-   read it as at least 1 and at most 5. The waits that used to allow 60
-   seconds (the first screen after a launch) now allow 30 on a Mac and
-   90 on CI.
+   read it as at least 1 and at most 5. Two kinds of wait are shorter
+   on a Mac than before. The three that allowed 60 seconds for the
+   first screen after a launch allow 30 (90 on CI): `scripts/test.sh`
+   launches the app once before the UI tests, so the first test does
+   not meet a cold simulator, and a launch that never shows Home fails
+   in half the time. Two waits for Again after a phrase, in
+   `HomeReachabilityTests` and the AX5 test of `LaunchTests`, allowed
+   15 seconds and allow 10 (30 on CI), the limit the first-tap test has
+   always held on every machine.
 3. **Failures that say what happened.** A wait that runs out fails with
    the test's own words followed by, for example: "waited 30.1 s (limit
    30 s: 10 s times a scale of 3); looked 21 times, the slowest look
@@ -96,8 +105,8 @@ the first 35 minutes of a saturated job
    no more.
 
 Nothing is retried, skipped or loosened: every assertion is the one it
-was, and only the time a stuck app is given changed, and only on CI.
-Where a test's private helper used XCTest's predicate expectation, it
+was, and only the time a stuck app is given changed: longer on CI, the
+same on a Mac but for the two shorter kinds above. Where a test's private helper used XCTest's predicate expectation, it
 now evaluates the same predicate itself through the helper.
 
 ## Commits

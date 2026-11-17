@@ -87,7 +87,7 @@ final class KeyboardProbeTests: XCTestCase {
         let window = waitForWindow(of: app, orientation: orientation)
         let allowance = KeyboardAllowance(windowSize: window.size)
         // The screen focuses its field as it opens; tap only if that failed.
-        if !appears(app.keyboards.firstMatch, within: .response) {
+        if !appears(app.keyboards.firstMatch, within: .quickResponse) {
             field.tap()
         }
         waitToAppear(

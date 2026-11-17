@@ -99,7 +99,7 @@ final class GetAttentionOnHomeTests: XCTestCase {
 
         // Choosing Get Attention again leaves the alarm sounding.
         getAttention.tap()
-        waitToAppear(stop, "a second Get Attention stopped the alarm (\(context))")
+        waitToAppear(stop, within: .quickResponse, "a second Get Attention stopped the alarm (\(context))")
 
         // Stop: its well empties; nothing else moves.
         stop.tap()

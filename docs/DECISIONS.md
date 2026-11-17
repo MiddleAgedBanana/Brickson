@@ -5761,10 +5761,11 @@ request merges only when they pass.
   as it holds; the limit only decides when a stuck app fails. On CI
   `scripts/test.sh` passes a scale of 3 (`BRICKSON_UI_WAIT_SCALE`, at
   most 5), which stretches every limit but a strict one: a launch 30
-  seconds (90 on CI), one action's response 10 (30), a phrase's speech
-  ending 30 (90), Settings' idle reset 30 (90), and a watch for
-  something that must not happen 3 (9), stretched too because an
-  overloaded Mac gives the app less of each second it is watched. A wait
+  seconds (90 on CI), one action's response 10 (30), a quick response
+  the tests always gave 5 (15), a phrase's speech ending 30 (90),
+  Settings' idle reset 30 (90), and a watch for something that must not
+  happen 3 (9), stretched too because an overloaded Mac gives the app
+  less of each second it is watched. A wait
   that runs out says how long it waited, against which limit, how many
   times it looked, how long its slowest look took and when it ended (to
   find in the simulator-load record); a look over 5 seconds is named as
@@ -5780,10 +5781,16 @@ request merges only when they pass.
   their apps worked: the Mac at 300% of its three processors with a load
   average of 370 to 650, a single query of the app taking 5 to 12
   seconds, the simulator's voice taking more than 30 seconds to say
-  "Yes." (once more than a minute), and a failure that could not say whether the app or the
-  machine was slow. Load average was not used in the words: it is in
-  the hundreds on passing runs too. Nothing is retried, skipped or
-  loosened; only the time a stuck app is given changed, and only on CI.
+  "Yes." (once more than a minute), and a failure that could not say
+  whether the app or the machine was slow. Load average was not used in
+  the words: it is in the hundreds on passing runs too. Nothing is
+  retried, skipped or loosened. Only the time a stuck app is given
+  changed, and on a Mac each wait keeps the number of seconds it had,
+  with two exceptions, both shorter: the three waits for the first
+  screen after a launch had 60 seconds and have 30 (`scripts/test.sh`
+  launches the app once before the tests, so the first test does not
+  meet a cold simulator), and two waits for Again after a phrase had 15 and have
+  10, as the first-tap test always had.
   `scripts/ui-test-waits.py` (run by `scripts/test-runner.py`) refuses a
   bare wait anywhere in the UI tests but the two helper files: a number
   of seconds handed to XCTest's waits, an XCTest waiter or predicate

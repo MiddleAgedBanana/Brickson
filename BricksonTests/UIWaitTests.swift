@@ -13,6 +13,7 @@ struct UIWaitTests {
     @Test func eachLimitHasItsNormalLengthAtAScaleOfOne() {
         #expect(UIWait.launch.limit(at: 1) == 30)
         #expect(UIWait.response.limit(at: 1) == 10)
+        #expect(UIWait.quickResponse.limit(at: 1) == 5)
         #expect(UIWait.speechEnd.limit(at: 1) == 30)
         #expect(UIWait.idleReset.limit(at: 1) == 30)
         #expect(UIWait.observation.limit(at: 1) == 3)
@@ -25,6 +26,7 @@ struct UIWaitTests {
     @Test func everyLimitButAStrictOneStretchesWithTheScale() {
         #expect(UIWait.launch.limit(at: 3) == 90)
         #expect(UIWait.response.limit(at: 3) == 30)
+        #expect(UIWait.quickResponse.limit(at: 3) == 15)
         #expect(UIWait.speechEnd.limit(at: 3) == 90)
         #expect(UIWait.idleReset.limit(at: 3) == 90)
         #expect(UIWait.observation.limit(at: 3) == 9)

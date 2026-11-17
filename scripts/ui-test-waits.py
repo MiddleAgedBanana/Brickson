@@ -36,23 +36,31 @@ HELPERS = frozenset({"UIWait.swift", "Waiting.swift"})
 # helpers once that one has merged (docs/HANDOFF.md).
 NOT_YET_CONVERTED = {"HomeAccessibilityOrderTests.swift": 7}
 
-# What makes a wait bare, each with the words a report gives.
+# The words a report gives for each kind of bare wait.
+SECONDS = "a number of seconds as a timeout"
+ELEMENT_WAIT = "XCTest's own wait for an element"
+WAITER = "XCTest's waiter"
+PREDICATE = "a predicate expectation"
+SLEEP = "a sleep"
+RUN_LOOP = "a run loop held for a time"
+DEADLINE = "a number of seconds as a deadline"
+
+# What makes a wait bare.
 BARE = (
-    (re.compile(r"\btimeout\s*:\s*[0-9.]"), "a number of seconds as a timeout"),
-    (re.compile(r"\.waitFor(Non)?Existence\s*\("), "XCTest's own wait for an element"),
-    (re.compile(r"\bXCTWaiter\b"), "XCTest's waiter"),
-    (re.compile(r"\bfulfillment\s*\(\s*of\s*:"), "XCTest's waiter"),
-    (re.compile(r"\bwaitForExpectations\s*\("), "XCTest's waiter"),
-    (re.compile(r"(?<![\w.])wait\s*\(\s*for\s*:"), "XCTest's waiter"),
-    (re.compile(r"\.wait\s*\(\s*for\s*:"), "XCTest's own wait for an element"),
-    (re.compile(r"\bexpectation\s*\(\s*for(Notification)?\s*:"), "a predicate expectation"),
-    (re.compile(r"\bXCT(NSPredicate|KVO|NSNotification|Darwin)\w*Expectation\b"), "a predicate expectation"),
-    (re.compile(r"(?<![\w.])u?sleep\s*\("), "a sleep"),
-    (re.compile(r"\b(Thread|Task)\s*\.\s*sleep\b"), "a sleep"),
-    (re.compile(r"\.run\s*\(\s*(mode\s*:.*)?until\s*:"), "a run loop held for a time"),
-    (re.compile(r"\.(seconds|milliseconds|microseconds|nanoseconds)\s*\(\s*[0-9.]"),
-     "a number of seconds as a deadline"),
-    (re.compile(r"\b(addingTimeInterval|timeIntervalSinceNow)\b"), "a number of seconds as a deadline"),
+    (re.compile(r"\btimeout\s*:\s*[0-9.]"), SECONDS),
+    (re.compile(r"\.waitFor(Non)?Existence\s*\("), ELEMENT_WAIT),
+    (re.compile(r"\bXCTWaiter\b"), WAITER),
+    (re.compile(r"\bfulfillment\s*\(\s*of\s*:"), WAITER),
+    (re.compile(r"\bwaitForExpectations\s*\("), WAITER),
+    (re.compile(r"(?<![\w.])wait\s*\(\s*for\s*:"), WAITER),
+    (re.compile(r"\.wait\s*\(\s*for\s*:"), ELEMENT_WAIT),
+    (re.compile(r"\bexpectation\s*\(\s*for(Notification)?\s*:"), PREDICATE),
+    (re.compile(r"\bXCT(NSPredicate|KVO|NSNotification|Darwin)\w*Expectation\b"), PREDICATE),
+    (re.compile(r"(?<![\w.])u?sleep\s*\("), SLEEP),
+    (re.compile(r"\b(Thread|Task)\s*\.\s*sleep\b"), SLEEP),
+    (re.compile(r"\.run\s*\(\s*(mode\s*:.*)?until\s*:"), RUN_LOOP),
+    (re.compile(r"\.(seconds|milliseconds|microseconds|nanoseconds)\s*\(\s*[0-9.]"), DEADLINE),
+    (re.compile(r"\b(addingTimeInterval|timeIntervalSinceNow)\b"), DEADLINE),
 )
 
 

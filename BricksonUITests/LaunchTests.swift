@@ -40,7 +40,7 @@ final class LaunchTests: XCTestCase {
     func testAPhraseSpeaksOnTheFirstTap() {
         let app = launchedApp()
         let phrase = phraseTile("Hello.", in: app)
-        waitToAppear(phrase, "Home shows no \"Hello.\" tile")
+        waitToAppear(phrase, within: .quickResponse, "Home shows no \"Hello.\" tile")
 
         phrase.tap()
 
@@ -105,7 +105,10 @@ final class LaunchTests: XCTestCase {
     func testTheEmergencyPhrasesPassTheAccessibilityAudit() throws {
         let app = launchedApp()
         app.buttons["Emergency"].tap()
-        waitToAppear(phraseTile("I need help now.", in: app), "Emergency did not show the emergency phrases")
+        waitToAppear(
+            phraseTile("I need help now.", in: app), within: .quickResponse,
+            "Emergency did not show the emergency phrases"
+        )
         continueAfterFailure = true
         try assertPassesAccessibilityAudit(app, context: "Home with the emergency phrases, light")
     }
@@ -200,7 +203,7 @@ final class LaunchTests: XCTestCase {
     private func placeholderHeight(in app: XCUIApplication) -> Double {
         let hint = "Family: help with setting up is in Settings."
         let text = app.staticTexts[hint]
-        guard waitToAppear(text, "Home has no \"\(hint)\" text to measure") else {
+        guard waitToAppear(text, within: .quickResponse, "Home has no \"\(hint)\" text to measure") else {
             return 0
         }
         return text.frame.height

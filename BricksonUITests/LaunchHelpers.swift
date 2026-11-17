@@ -122,7 +122,7 @@ extension XCTestCase {
         line: UInt = #line
     ) {
         let control = app.buttons[label].firstMatch
-        guard waitToAppear(control, "\(label) is missing (\(context))", file: file, line: line) else {
+        guard waitToAppear(control, within: .quickResponse, "\(label) is missing (\(context))", file: file, line: line) else {
             return
         }
         let identity = SnapshotControlGeometry.Identity(identifier: control.identifier, label: control.label)

@@ -40,6 +40,12 @@ nonisolated struct UIWait: Equatable, Sendable {
     /// window turning, the layout settling.
     static let response = UIWait(normalSeconds: 10, stretches: true)
 
+    /// A response the tests have always given 5 seconds rather than 10:
+    /// a tap, press or hold speaking its phrase, Home's first tile or text
+    /// showing, a control still being there. Kept at 5 so that on a Mac
+    /// these waits are as long as they were; 15 on CI.
+    static let quickResponse = UIWait(normalSeconds: 5, stretches: true)
+
     /// A spoken phrase ending ("Speaking" leaving Home). On an overloaded
     /// Mac the simulator's voice took more than 30 seconds to say "Yes.",
     /// once more than a minute.

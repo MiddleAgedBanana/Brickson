@@ -38,7 +38,10 @@ final class PhraseDragTests: XCTestCase {
         XCTAssertTrue(messageRegion.exists)
         XCTAssertFalse(messageRegion.staticTexts[words].exists)
         tile.press(forDuration: 1.5)
-        waitToAppear(messageRegion.staticTexts[words], "The first 1.5-second hold on a phrase did not speak")
+        waitToAppear(
+            messageRegion.staticTexts[words], within: .quickResponse,
+            "The first 1.5-second hold on a phrase did not speak"
+        )
         attachCapture(app, name: "after-held-phrase")
     }
 
@@ -95,7 +98,7 @@ final class PhraseDragTests: XCTestCase {
         XCTAssertEqual(start.screenPoint.y, frame.midY, accuracy: 0.5)
         start.press(forDuration: 0.05, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.1)
         waitToAppear(
-            messageRegion.staticTexts[words],
+            messageRegion.staticTexts[words], within: .quickResponse,
             "A press on \"\(words)\" that moved by (\(dx), \(dy)) points did not speak it"
         )
         attachCapture(app, name: name)
@@ -230,7 +233,10 @@ final class PhraseDragTests: XCTestCase {
         )
         let words = tappedTile.label
         tappedTile.tap()
-        waitToAppear(messageRegion.staticTexts[words], "The first ordinary phrase tap after the drag did not speak")
+        waitToAppear(
+            messageRegion.staticTexts[words], within: .quickResponse,
+            "The first ordinary phrase tap after the drag did not speak"
+        )
     }
 
     private struct ControlKey: Hashable {
