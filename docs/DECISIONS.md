@@ -5789,8 +5789,13 @@ what to do instead. Nothing the app shows or does changed.
   names (another style's press state, or a property of its own called
   `isPressed`, does not count); `.textCase(.uppercase)`; a context menu, swipe action, swipe to delete, drag to move or drag and
   drop (invariants 1 and 3); a system alert, confirmation dialog or
-  action sheet (invariants 3 and 4; *Settings is a cover with a fixed
-  safety bar*); a toggle (invariant 10); a view given the button trait,
+  action sheet (invariants 3, 4 and 10; *Settings is a cover with a fixed
+  safety bar*), since the system places its buttons itself: measured in
+  the iOS 27.2 Simulator, a confirmation dialog opens with its first,
+  destructive item nearest the spot just activated, and on the iPhone
+  directly under it, so a repeated activation by Dwell, Snap to Item or
+  a switch's auto-select meets that item next (docs/EXPERIMENTS.md,
+  SIM-13, measured in pull request #115); a toggle (invariant 10); a view given the button trait,
   a default accessibility action or "responds to interaction"
   (invariants 1 and 2); an empty `catch` (invariant 5); the old clocks
   (`CACurrentMediaTime` and the like; AGENTS.md, *Workflow rules*); a
@@ -7093,6 +7098,17 @@ reasons behind its rules stay here and in docs/LESSONS.md. The order
 below still holds, and `scripts/test-docs.py` now also fails when the
 whole file passes the 32 KiB Codex reads by default (31,985 bytes and
 556 lines on 2026-11-12).
+
+**2026-11-17: room kept.** With the guards' line for Apple's look and the
+UI test parts' commands, AGENTS.md reached 32,883 bytes, past the limit.
+Its introduction, *Build and test* and *Gotchas* were tightened to 32,349
+bytes, keeping every rule: padding and repeated words went, the two
+bullets on cloud agents and the owner's Mac became one, the Swift Testing
+filter's example is the one in *Build and test*, and the gotcha that
+simulator audio is unreliable went, since *Workflow rules* already says
+simulators prove nothing about sound. The introduction now says the check
+fails when the whole file passes 32 KiB, not only when the sections Codex
+must read end past it.
 
 Its length is deliberate. Claude Code's guidance is under about 200 lines
 per file, but this project's safety, privacy, review and guard rules do

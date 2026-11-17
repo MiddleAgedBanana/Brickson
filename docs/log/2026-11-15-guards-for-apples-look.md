@@ -126,6 +126,19 @@ AGENTS.md gains one line under *Apple's current frameworks first*, and
   a named action written with empty parentheses, was reported as a view
   passed off as a button (CodeRabbit): it is now left alone, like the
   same call without them.
+- Then `main` came in with pull request #118 (the UI tests run in parts,
+  and a simulator that has already shut down counts as cleaned up), and
+  one more commit, pushed with the owner's approval, readies the pull
+  request to merge. With #118's lines AGENTS.md was 32,883 bytes, past
+  the 32 KiB Codex reads and the documentation test's limit; its
+  introduction, *Build and test* and *Gotchas* were tightened to 32,349
+  bytes, every rule kept (docs/DECISIONS.md, "AGENTS.md puts first what
+  Codex reads"), and the introduction no longer says the size test
+  covers only the sections Codex must read. The decision's refusal of
+  system dialogs now gives its measured reason: a confirmation dialog
+  opens with its destructive first item nearest the spot just tapped,
+  and on the iPhone directly under it (docs/EXPERIMENTS.md, SIM-13,
+  measured in pull request #115).
 
 ## Verified
 
@@ -152,6 +165,8 @@ In this cloud session, which cannot build Swift:
   here.
 - The documentation, hook, privacy, runner, agent bridge, site and Xcode
   selection checks listed in AGENTS.md, *Build and test*.
+- After `main` with #118 came in: all of the above again, on the merged
+  result with the shorter AGENTS.md.
 
 ## Not verified
 
@@ -169,3 +184,10 @@ In this cloud session, which cannot build Swift:
 - Colour rules (four appearances, semantic colours, no
   typed-in system values) are left to the colour tokens' own tests in
   pull request #113, not guarded here.
+- Three edge cases reviewers found in the counting commit, reproduced,
+  none changing what the check finds in the app today, for the next pull
+  request that touches the check: a known exception with a count of 0 is
+  never reported as stale; two nested styles with the same name in one
+  file (`A.Style`, `B.Style`) share their code for the press-state rule;
+  and a generic constraint (`<S: ButtonStyle>`) is taken for a
+  `ButtonStyle` conformance.
