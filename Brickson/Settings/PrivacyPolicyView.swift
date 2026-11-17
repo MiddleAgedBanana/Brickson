@@ -54,11 +54,11 @@ private struct PolicyBlockView: View {
         case .title:
             styled.font(.title.weight(.bold)).accessibilityAddTraits(.isHeader)
         case .heading:
-            styled.font(.title2.weight(.bold)).accessibilityAddTraits(.isHeader).padding(.top, 8)
+            styled.font(.title2.weight(.bold)).accessibilityAddTraits(.isHeader).padding(.top, Spacing.small)
         case .paragraph:
             styled.font(.body)
         case .listItem:
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
+            HStack(alignment: .firstTextBaseline, spacing: Spacing.small) {
                 Text(verbatim: "•").accessibilityHidden(true)
                 styled
             }

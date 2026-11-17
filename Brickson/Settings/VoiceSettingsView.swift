@@ -260,14 +260,14 @@ private struct VoiceRowView: View {
     private var isChosen: Bool { row.isSelected && goneNote == nil }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(alignment: .firstTextBaseline, spacing: 8) {
+        VStack(alignment: .leading, spacing: Spacing.small) {
+            HStack(alignment: .firstTextBaseline, spacing: Spacing.small) {
                 // Always laid out, so the name keeps its width and the
                 // row its height whichever voice is chosen.
                 Image(systemName: "checkmark.circle.fill")
                     .opacity(isChosen ? 1 : 0)
                     .accessibilityHidden(true)
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: Spacing.xxxSmall) {
                     // A voice's name is its own, never translated.
                     Text(verbatim: row.name)
                         .font(.title3.weight(.semibold))
@@ -327,7 +327,7 @@ private struct VoiceRowView: View {
             .accessibilityHidden(goneNote != nil)
             .allowsHitTesting(goneNote == nil)
         }
-        .padding(.bottom, 8)
+        .padding(.bottom, Spacing.small)
     }
 }
 
@@ -432,7 +432,7 @@ private struct PersonalVoiceWords: View {
     let guidance: PersonalVoiceGuidance
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: Spacing.medium) {
             SettingsHeading(verbatim: guidance.title)
             SettingsParagraph(verbatim: guidance.message)
             if let path = guidance.settingsPath {
