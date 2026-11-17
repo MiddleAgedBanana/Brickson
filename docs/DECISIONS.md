@@ -5474,9 +5474,10 @@ view draws.
   little lighter than the system drew them). Measured on the rendered
   pixels in the iOS 27.2 Simulator on 2026-11-16: `#0A60D6` with its
   white words at 5.74:1 in all four appearances, on an iPhone 17 and a
-  13-inch iPad Pro, on every control this fill draws, and the pressed
-  ring at 3.66:1 in light; the same run with `Color.accentColor` put
-  back measured `#1A7BFF` and 3.95:1 again
+  13-inch iPad Pro, on every control measured that this fill draws (all
+  but two, named in the log), and the pressed ring at 3.66:1 in light;
+  the same scripts on a build with `Color.accentColor` put back
+  measured `#1A7BFF` and 3.95:1 again
   ([`log/2026-11-16-tile-contrast-pixels.md`](log/2026-11-16-tile-contrast-pixels.md)).
   A real screen is still the device check the next point names.
 - `everyFillIsDrawnFromItsColourSet` fails if any of `Palette`'s fills,

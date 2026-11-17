@@ -14,10 +14,11 @@ Talking and the system buttons tinted with the same blue draw
 re-tinted the accent under Increase Contrast and the tiles' white words
 fell to 3.95:1 in dark. Its numbers were worked out, not measured on the
 pixels the app draws. They are now: on an iPhone and an iPad, in light and
-dark, with Increase Contrast on and off, every control this fill draws is
-`#0A60D6`, its white words 5.74:1, as `PaletteTests` predicts. Every
-target the repository sets holds (invariant 6: words at 4.5:1, a
-control's edge at 3:1).
+dark, with Increase Contrast on and off, every control measured that
+this fill draws (all but two, named in *Not verified*) is `#0A60D6`,
+its white words 5.74:1, as `PaletteTests` predicts. Every target the
+repository sets holds (invariant 6: words at 4.5:1, a control's edge at
+3:1).
 
 | What was measured | Light | Light, Increase Contrast | Dark | Dark, Increase Contrast |
 |---|---|---|---|---|
@@ -34,18 +35,26 @@ Each cell holds on both devices unless it says otherwise. The selected
 category's rings are the ones `HomeButtonLook` draws: white inside the
 edge in light, the screen's black inside a white border in dark.
 
-**The method can see the defect.** The same run on a build with
-`Palette.phraseFill` put back to `Color.accentColor` (never committed)
-measured what pull request #115 found: with Increase Contrast, `#1A7BFF`
-and white words at 3.95:1 in dark on the tiles, the selected category
-and Back to Talking, and `#084DAB` in light with the pressed ring at
-2.66:1. So Increase Contrast did reach the app, and the measurement tells
-the fixed fill from the broken one. This control matters because on
-`main`, in dark, the screenshots with Increase Contrast on and off are
-identical pixel for pixel (nothing on Home or Settings' first screen
-changes with it there); in light they differ only in the system's own
-status bar and home indicator. The simulator reported Increase Contrast
-`enabled` (`xcrun simctl ui`) for every "on" capture.
+**The method can see the defect.** The same scripts on a build with
+`Palette.phraseFill` put back to `Color.accentColor` (never committed),
+on the iPhone only, on Home, a pressed tile and Settings, in three
+appearances (dark with and without Increase Contrast, light with it),
+measured what pull request #115 found: with Increase Contrast in dark,
+the tiles, the pressed tile and Back to Talking `#1A7BFF` with white
+words at 3.95:1, and the selected category the same `#1A7BFF` (there
+the method took its black selection ring, 5.32:1, as the words, so the
+white words' 3.95:1 follows from the fill rather than from a measured
+word pixel); in light with Increase Contrast, `#084DAB` with the pressed
+ring at 2.66:1; in dark without it, `#0A60D6`. So Increase Contrast did
+reach the app, and the measurement tells the fixed fill from the broken
+one. This control matters because on `main`, in dark, the screenshots of
+Home, a pressed tile and Settings with Increase Contrast on and off are
+identical pixel for pixel (nothing there changes with it in dark); in
+light they differ only in the system's own status bar and home
+indicator. The system controls on the setup and Voice Settings screens
+do draw differently with it on, on both simulators. `xcrun simctl ui`
+read the setting back as `enabled` once, after the iPhone's last "on"
+capture; it was not read back for each capture.
 
 **2. The Home order test that fails now and then on CI's iPhone.**
 `HomeAccessibilityOrderTests` checks the order in which VoiceOver, Switch
@@ -120,6 +129,11 @@ defect to fix, with this test as its reproduction.
   appearances") and docs/ACCESSIBILITY.md (the Increase Contrast row).
 - The order test's second read, and its line in docs/HANDOFF.md,
   *Known gaps*.
+- Codex's review of that commit, before the pull request opened: a
+  failed re-read is counted and never reported as "stayed wrong".
+- The first review round: this record's claims narrowed to what was
+  measured, after the report-only verifier compared them with the raw
+  results, and `starve.sh` added to the evidence.
 
 ## Verified
 
@@ -139,8 +153,10 @@ defect to fix, with this test as its reproduction.
   converted to sRGB by Core Graphics. Inside each frame, inset 6 points
   (4 for system buttons) to clear any ring, the fill is the most common
   colour and the words are the colour with the highest contrast against
-  it, counted only where whole glyph cores have it (hundreds to
-  thousands of pixels each). The rings are the colours in the band
+  it, counted where it reaches that extreme (hundreds to thousands of
+  pixels for each control; for setup's Next in light, whose frame takes
+  in the white bar around the button, the count includes that white
+  too). The rings are the colours in the band
   inside the edge, and the screen is the most common colour 3 to 8
   points outside. Ratios use WCAG's formula as `PaletteTests` does
   (0.2126, 0.7152, 0.0722; 0.04045). A press was held with AXe's touch
@@ -173,10 +189,22 @@ defect to fix, with this test as its reproduction.
 - Reduce Transparency, Show Borders on, text sizes other than Large,
   landscape, and the iPad's lifted dark screen in multitasking (a known
   gap of its own in docs/HANDOFF.md).
-- The category editor's Save (the second `settingsRowStyle(fill:
-  Palette.phraseFill)` in `LibraryEditors.swift`) was not opened; it is
-  the same style as the phrase editor's Save, which was measured. The
-  Library's buttons were measured on the iPhone only.
+- Two controls this fill draws were not reached: the category editor's
+  Save (the second `settingsRowStyle(fill: Palette.phraseFill)` in
+  `LibraryEditors.swift`) and setup's later rest-board choice (the
+  chosen answer in `GuidedSetupView.swift`'s third use of the fill).
+  Each is the same style as one that was measured (the phrase editor's
+  Save, setup's first-step answer). The Library's Save was measured on
+  the iPhone only. `nav.py` reaches them on both simulators.
+- The control build ran on the iPhone only, in three appearances, on
+  Home, a pressed tile and Settings.
+- The probe runs' load commands were not saved with their logs: 16
+  `yes` processes for the first 10 busy launches, 22 for the other 18,
+  and `starve.sh` with 0.06 s stopped and 0.02 s running for the paused
+  ones.
+- Of the test's new messages, only "stayed wrong in … reads" was
+  forced, at the default text size on the iPhone. The changed test was
+  not run on an iPad here; CI's UI jobs run it on both.
 - Why CI's first read is in screen order. No reproduction here; the
   test's new second read is how the next failure will say more.
 

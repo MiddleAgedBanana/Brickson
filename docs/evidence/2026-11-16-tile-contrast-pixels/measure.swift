@@ -1,5 +1,5 @@
 // Measures rendered contrast in a Simulator screenshot.
-// usage: swift measure.swift <png> <scale> <targets.json>
+// usage: xcrun swiftc -O measure.swift -o measure, then: ./measure <png> <scale> <targets.json>
 // targets.json: [{"name": "...", "x":..,"y":..,"w":..,"h":.., "inset": pt}]  (points)
 // For each target: converts the PNG to sRGB, takes the fill as the most
 // common colour inside the frame inset by `inset` points (clear of any
