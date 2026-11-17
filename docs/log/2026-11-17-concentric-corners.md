@@ -32,7 +32,11 @@ them yet.
 ## Commits
 
 - `2ffd4bf` The rule, the shapes and both test suites.
-- The commit that adds this record, the decision and the handoff's gap.
+- `b98c05a` This record, the decision and the handoff's gap.
+- `aabf3c6` From review: the capsule's drawing test, and the handoff
+  naming which controls draw a fixed corner today.
+- A merge of `main`, so the UI tests run in their new parts.
+- The commit that records CI's first result here.
 
 ## Verified
 
@@ -45,6 +49,14 @@ them yet.
   concentricity, the nested example, each kind's radius, the capsule
   limit, nothing square); with a ring's minimum not reduced, 3 fail;
   without the capsule limit on a fixed corner, 1 fails.
+- CI's unit job on the first push (`b98c05a`): every unit test passed,
+  among them `CornerRuleTests` and the first five `CornerShapesTests`,
+  so SwiftUI drew each concentric corner at the radius the rule gives,
+  to half a point: 30 points 10 points in, the minimum 32 and 56 points
+  in, and a ring 6 points less than its tile both ways. `ImageRenderer`
+  passes the container shape on. The drawing tests add about 19 seconds
+  to the unit run. The capsule's drawing test came in the second push
+  and runs there first.
 - The Python checks: `test-docs`, `test-hooks`, `test-privacy`,
   `test-forbidden-code`, `test-runner`, `test-agent-bridge`, `test-site`
   and `test-select-xcode` all passed, and `forbidden-code.py` found
@@ -58,13 +70,9 @@ them yet.
 
 ## Not verified
 
-- **Nothing was built for iOS here.** A cloud session cannot compile
-  SwiftUI: `CornerShapes.swift` and `CornerShapesTests` are untested
-  until CI's unit job runs them. `CornerShapesTests` is the first test
-  that measures what `ConcentricRectangle` draws; if `ImageRenderer`
-  does not pass a container shape on, its first test fails with the
-  minimum drawn where the rule gives 30, and that is a finding about
-  the measure, not about the rule.
+- Nothing was built for iOS in this session, which cannot compile
+  SwiftUI: CI is the build of record for `CornerShapes.swift` and
+  `CornerShapesTests`.
 - Which curve `ConcentricRectangle` draws, continuous or circular: the
   measure accepts either and says which matched in a failure message.
 - What SwiftUI does with a different room across than down; the rule is
