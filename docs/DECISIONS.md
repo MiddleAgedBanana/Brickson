@@ -5544,6 +5544,51 @@ whether they wait for the design of the app's look or get the border now
 (Codex's review of pull request #113). The 32 look-alike pairs break no
 invariant: 15 is the colour search's target, not a rule here.
 
+**Every fill is its colour set by name, never `Color.accentColor`**
+*(added 2026-11-15, pull request #116; a correctness fix, no colour
+chosen)*. The Simulator run recorded in pull request #115 found the phrase
+tiles, the selected category and Back to Talking drawn `#084DAB` with
+Increase Contrast in light and `#1A7BFF` in dark, although their colour
+set, `AccentColor`, holds `#0A60D6` in all four slots. They were filled
+with `Color.accentColor`, the app's accent, which the system treats as a
+colour for words and symbols: with Increase Contrast on it draws the
+accent darker in light mode and lighter in dark mode, on top of whatever
+the colour set's high-contrast slots hold (they held `#0A60D6` and the
+accent still changed). Under the tiles' white words the lighter blue
+measured 3.95:1, and in light the black pressed ring came to 2.66:1 on
+the darker one: invariant 6 broken on both sides, while every test here
+passed, because they read the catalog through UIKit, not the colour a
+view draws.
+
+- `Palette.phraseFill` is `Color("AccentColor")`, the same colour set
+  loaded by name like every other fill. In that run every fill loaded by
+  name kept its colour set's value under Increase Contrast, so this one
+  should be drawn as the catalog holds it: `#0A60D6` in all four
+  appearances, words 5.74:1 and the pressed ring 3.66:1, as the budget
+  measures. Without Increase Contrast nothing changes; with it, these
+  controls should keep the blue they show without it (in light, a
+  little lighter than the system drew them). Not yet measured on the
+  rendered pixels: the next point says what confirms it.
+- `everyFillIsDrawnFromItsColourSet` fails if any of `Palette`'s fills,
+  or its fill label, is made any other way. It checks `Palette`, not the
+  views: a view that drew a colour of its own instead of `Palette`'s
+  would still pass it. SwiftUI's environment cannot set Increase
+  Contrast, so no unit test can resolve the drawn colour there; the
+  test pins the cause, and a Simulator or device measurement of the
+  rendered pixels (docs/HANDOFF.md, *Checks that need a real device*,
+  its row on buttons under Increase Contrast and Reduce Transparency)
+  confirms the result.
+- Why not new Increase Contrast values instead: the system's change
+  comes after the slot is read, so no slot value fixes a fill drawn with
+  `Color.accentColor`. And in dark mode, with white words and a black
+  screen, the words' ratio and the fill's edge multiply to 21, so a
+  darker slot gains words only by losing edge; `#0A60D6` is the value
+  that lowers neither (`increasedContrastNeverLowersContrast`).
+- The colour set keeps its name and stays the app's global accent
+  (`project.yml`), so system controls that use the accent for their
+  words and symbols still get the system's adjustment, which suits a
+  colour drawn as words.
+
 Before: each colour set had one value for every appearance, and
 `PaletteTests` measured that value in the four appearances against the
 base screen; the words on fills were `Color.white`.
@@ -5768,6 +5813,43 @@ request merges only when they pass.
   over adding a weekly CI run with animations on, or leaving them on
   and raising the iPad job's time limit (2026-11-13). Record:
   [`log/2026-11-13-ipad-ui-test-stall.md`](log/2026-11-13-ipad-ui-test-stall.md).
+- **2026-11-16, default, reversible:** the UI tests run in three parts
+  per device family, six jobs that run at the same time as GitHub has
+  Macs free, each with 90 minutes; this replaces one job per family
+  (2026-11-03). That morning the iPad's job ran past 90 minutes, on
+  `main` and on pull requests, and the iPhone's took up to 89, so
+  nothing could merge: each job spent 9 to 19 minutes starting the
+  simulator and building, then ran all 81 tests one after another, 48
+  to 70 minutes and more on a slow machine. `scripts/ui-test-parts.py`
+  names the test classes of every part but the last; the last runs
+  every other class, so a new class always runs somewhere and no class
+  can be left out of every part. `scripts/test.sh` runs one part when
+  `UI_TEST_PART` names it and everything without it. The parts are
+  balanced by measured time, about 18 to 28 minutes of tests each on
+  CI; move classes between them when one grows. A part keeps the full
+  run's order where a test depends on it, and the check enforces it
+  (`RUNS_AFTER`): `LibraryTests` audits a screen with the keyboard up,
+  and on a simulator whose keyboard has never shown, the empty
+  suggestion bar fails Apple's audit, so `LibraryTests` runs after
+  `KeyboardProbeTests` in the same part, as it always did.
+  `scripts/test-runner.py` checks that every UI test class runs in
+  exactly one part, that each family runs every part, and that the six
+  jobs differ only in family and part; "UI tests" passes only when all
+  six passed. Nothing is dropped: every test still runs on both
+  families on every pull request. The cost: each part starts its own
+  simulator and builds the app, so a run uses about a third more Mac
+  time, and GitHub runs at most five Mac jobs at once, so with the unit
+  job two parts wait for a free machine. Running two simulators in one
+  job was not chosen: GitHub's Mac has three processors, and the
+  simulator-load records show one simulator and its tests already
+  keeping them almost fully busy. Revisit when a part's job
+  takes more than about 45 minutes on a normal day (rebalance, or add
+  a part), or when GitHub's Macs get more processors (fewer parts). The
+  same day, a run whose tests all passed failed because its simulator
+  had already shut down when `scripts/test.sh` asked it to: a simulator
+  already shut down now counts as cleaned up, and one still running
+  still fails the run. Record:
+  [`log/2026-11-16-ui-test-parts.md`](log/2026-11-16-ui-test-parts.md).
 
 ## Personal details stay out of the repository
 

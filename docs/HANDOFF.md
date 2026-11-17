@@ -1522,9 +1522,18 @@ settings, date) and summarise it here.
 - The `main` ruleset matched docs/DECISIONS.md on 2026-10-15 (GitHub's
   API); its required checks are "Unit tests" and "UI tests".
   The unit job allows 60 minutes. The UI job allowed 120 for both
-  device families and took about 105; since 2026-11-03 each family has
-  a job of its own with 90 minutes, and "UI tests" is a job that passes
-  only when both passed (docs/DECISIONS.md, "Tests"). On 2026-11-12
+  device families and took about 105; from 2026-11-03 each family had
+  a job of its own with 90 minutes, and on 2026-11-16 those jobs ran
+  past 90 minutes. Since 2026-11-16 the UI tests run in three parts per
+  family (`scripts/ui-test-parts.py`), six jobs of 90 minutes each at
+  the same time, and "UI tests" is a job that passes only when all six
+  passed (docs/DECISIONS.md, "Tests";
+  [`log/2026-11-16-ui-test-parts.md`](log/2026-11-16-ui-test-parts.md),
+  which has every test's time and the tests a unit test might replace).
+  Each result bundle and record now names its part
+  (`ui-<family>-part<n>.xcresult`, `simulator-load-<family>-part<n>.txt`).
+  A simulator that has already shut down when the run ends counts as
+  cleaned up. On 2026-11-12
   the iPad job took 87 of its 90 minutes (pull request #103: about five
   minutes of new check-in tests, and one Home typing test whose taps
   each waited 120 seconds for the app to go idle), and the same day it
@@ -1558,7 +1567,8 @@ settings, date) and summarise it here.
   runs in a row stalled because iOS's lock-screen wallpaper prewarm
   starved the simulator; since then
   `scripts/test.sh` pauses those extensions on a simulator it started
-  and writes `simulator-load-<family>.txt` beside each result bundle:
+  and writes `simulator-load-<family>.txt` (on CI,
+  `simulator-load-<family>-part<n>.txt`) beside each result bundle:
   read it first if a stall comes back
   ([`log/2026-11-03-ui-test-stall.md`](log/2026-11-03-ui-test-stall.md)).
   Since 2026-11-04 the watcher reads processes with the Mac's own calls,
