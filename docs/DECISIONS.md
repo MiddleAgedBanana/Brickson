@@ -5790,7 +5790,15 @@ request merges only when they pass.
   screen after a launch had 60 seconds and have 30 (`scripts/test.sh`
   launches the app once before the tests, so the first test does not
   meet a cold simulator), and two waits for Again after a phrase had 15 and have
-  10, as the first-tap test always had.
+  10, as the first-tap test always had. A review of #122 asked for the
+  owner's acceptance first, since a CI run now passes where "Speaking"
+  shows for up to 90 seconds rather than 30. Declined as a default: no
+  wait stretched here bounds what the person meets. The person's bounds
+  are measured on a device, the app's own time limits are unit-tested,
+  and a phrase that never ends, a screen that never opens or a control
+  that never turns on still fails on every machine; only the time an
+  overloaded simulator is given before that failure grew. The owner
+  sees it in the pull request and decides by merging it or not.
   `scripts/ui-test-waits.py` (run by `scripts/test-runner.py`) refuses a
   bare wait anywhere in the UI tests but the two helper files: a number
   of seconds handed to XCTest's waits, an XCTest waiter or predicate
