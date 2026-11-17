@@ -1000,7 +1000,8 @@ same test, with "Speaking" still showing.
 
 **The rule.** The speech watchdog (`SpeechService`) also checks each
 utterance against `SpokenUtteranceTracker.startLimit`, 15 seconds from the
-moment it was handed to the synthesizer. An utterance that by then has sent
+moment the app asks for it, just before it looks up the voice and hands it
+to the synthesizer. An utterance that by then has sent
 neither a start report (`speechSynthesizer(_:didStart:)`, which Apple
 documents as the moment speech begins) nor a word report
 (`willSpeakRangeOfSpeechString`) is stopped and treated as cut off, after
@@ -1028,12 +1029,15 @@ phrase still "speaking".
 **Why 15 seconds.** Long enough for a slow first phrase: in the same CI
 run, on an overloaded iPad simulator, the first sound of each of five
 later launches came 1.9 to 4.9 seconds after the phrase's voice lookup
-(from the app's own log in the result bundle), and the 2026-10-25
-simulator controls
+and 3.1 to 5.4 seconds after the test began its tap or press (from the
+app's and the test's own logs in the result bundle). The limit counts
+from the moment the app asks for the phrase, which falls between the
+two, so the slowest healthy start took between 4.9 and 5.4 seconds. The
+2026-10-25 simulator controls
 ([speech diagnostic](evidence/2026-10-25-duo-design/speech-diagnostic/README.md))
 reported their start 0.03 to 0.08 seconds after asking and their first
-word 0.6 to 1 second after. Fifteen seconds is three times the slowest
-healthy start measured, rounded up to 5 seconds. Short enough that the person learns a
+word 0.6 to 1 second after. Fifteen seconds is nearly three times the
+slowest healthy start (2.8 times 5.4 seconds). Short enough that the person learns a
 phrase will not be heard before the 20 seconds after which the app
 already treats a synthesizer that reports nothing as possibly stuck
 (`SpokenUtteranceTracker.repeatWindow`). `SpokenUtteranceTrackerTests`
@@ -1045,11 +1049,24 @@ trusts a phrase that reports no words at all ("A phrase the system cuts
 off"); if only words counted, a voice that reports none would have every
 message longer than the limit stopped while it was being heard.
 
+**Counted from the ask, voice lookup included.** Looking up the chosen
+voice can wait on the system's voice service, on the main thread, before
+the synthesizer has the phrase. That wait counts against the limit,
+because what the limit guards is how late after the person's choice a
+phrase would sound: one that has not started 15 seconds after it was
+asked for is late whatever held it up, and stopping it follows the rule
+above. A review on the pull request proposed starting the count after
+the lookup; declined for that reason, and because the synthesizer looks
+the voice up again as it takes the phrase (`SystemSpeechSynthesizer`), so
+the count could not start after every lookup anyway.
+
 **Evidence kept for the limit.** A start slower than one second is
-logged at notice level as "Speech began N ms after it was asked for", and
+logged at notice level as "Speech began N ms after it was asked for",
+whichever report shows it first (the start report, or a word from a
+voice that sends no start), and
 a phrase the limit stops at error level, numbers only and never the
 words, so a CI result bundle or a device's log shows how close real
-starts come. A start measured within half the limit (7.5 seconds) is new
+starts come. A start slower than half the limit (7.5 seconds) is new
 evidence to revisit the limit with.
 
 **What it does not catch.** A start report sent for speech that is never

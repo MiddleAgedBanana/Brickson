@@ -85,11 +85,12 @@ nonisolated struct SpokenUtteranceTracker<ID: Equatable & Sendable>: Sendable {
     /// that skips reporting its last word never shows a false warning.
     static var cutOffCorrelationWindow: Duration { .seconds(3) }
 
-    /// How long an utterance may go, from being handed to the synthesizer,
+    /// How long an utterance may go, from the moment the app asks for it
+    /// (before its voice is looked up and it is handed to the synthesizer),
     /// without a start or word report before it is treated as one that will
     /// not be heard. Long enough for a slow first phrase (the slowest healthy
-    /// one measured took about 5 seconds on an overloaded CI simulator), and
-    /// shorter than `repeatWindow`, so the person learns of it before the app
+    /// one measured took at most 5.4 seconds on an overloaded CI simulator),
+    /// and shorter than `repeatWindow`, so the person learns of it before the app
     /// would treat the silence as a stuck synthesizer anyway
     /// (docs/DECISIONS.md, "A phrase that does not start").
     static var startLimit: Duration { .seconds(15) }
@@ -97,7 +98,8 @@ nonisolated struct SpokenUtteranceTracker<ID: Equatable & Sendable>: Sendable {
     private struct Active: Sendable {
         let id: ID
         let source: UtteranceSource
-        /// When the utterance was handed to the synthesizer.
+        /// When the app asked for the utterance, before its voice was looked
+        /// up and it was handed to the synthesizer.
         let beganAt: ContinuousClock.Instant
         /// True once the synthesizer said it began, or reported a word.
         var hasBegun: Bool
@@ -152,43 +154,61 @@ nonisolated struct SpokenUtteranceTracker<ID: Equatable & Sendable>: Sendable {
     /// Word callbacks refresh only the current utterance's recovery window.
     /// They can cross onto the main actor out of order, so an older callback
     /// must neither revive a replaced utterance nor shorten the current window.
-    mutating func recordProgress(_ id: ID, at instant: ContinuousClock.Instant) {
-        guard var current = active, current.id == id else { return }
+    /// Returns how long after `began` the utterance started, when this is
+    /// the first sign that it did (`recordStart`).
+    @discardableResult
+    mutating func recordProgress(_ id: ID, at instant: ContinuousClock.Instant) -> Duration? {
+        guard var current = active, current.id == id else { return nil }
         current.lastProgressAt = max(current.lastProgressAt, instant)
-        current.hasBegun = true
+        let delay = Self.markBegun(&current, at: instant)
         active = current
+        return delay
     }
 
     /// A word callback that also says how far the synthesizer has got: the
     /// end of the spoken range, as a UTF-16 offset into the utterance's text
     /// (`NSRange`'s units). Out-of-order callbacks never move it backwards.
+    /// Returns how long after `began` the utterance started, when this is
+    /// the first sign that it did (`recordStart`).
+    @discardableResult
     mutating func recordProgress(
         _ id: ID,
         reaching offset: Int,
         at instant: ContinuousClock.Instant
-    ) {
-        guard var current = active, current.id == id else { return }
+    ) -> Duration? {
+        guard var current = active, current.id == id else { return nil }
         current.lastProgressAt = max(current.lastProgressAt, instant)
         current.spokenThrough = max(current.spokenThrough ?? offset, offset)
-        current.hasBegun = true
+        let delay = Self.markBegun(&current, at: instant)
         active = current
+        return delay
     }
 
     /// The synthesizer said it began speaking the utterance. Returns how long
-    /// after `began` that was, the first time it is said for the current
-    /// utterance, so the app can log slow starts; nil for a repeat or for
-    /// any other utterance.
+    /// after `began` that was, when this is the first sign that the current
+    /// utterance started, so the app can log slow starts; nil once a start
+    /// or word report has already said so, and for any other utterance.
+    /// A voice may report a word first, or never report a start at all, so
+    /// the word reports return the same measurement.
     @discardableResult
     mutating func recordStart(_ id: ID, at instant: ContinuousClock.Instant) -> Duration? {
         guard var current = active, current.id == id, !current.hasBegun else { return nil }
-        current.hasBegun = true
         current.lastProgressAt = max(current.lastProgressAt, instant)
+        let delay = Self.markBegun(&current, at: instant)
         active = current
-        return instant - current.beganAt
+        return delay
     }
 
-    /// Whether the current utterance `id` has gone `startLimit` since it was
-    /// handed to the synthesizer with no start report and no word report.
+    /// Marks `utterance` as begun, returning how long after `began` that
+    /// was, or nil if it had already begun.
+    private static func markBegun(_ utterance: inout Active, at instant: ContinuousClock.Instant) -> Duration? {
+        guard !utterance.hasBegun else { return nil }
+        utterance.hasBegun = true
+        return instant - utterance.beganAt
+    }
+
+    /// Whether the current utterance `id` has gone `startLimit` since the
+    /// app asked for it with no start report and no word report.
     /// False for any utterance that is not the current one.
     func hasFailedToStart(_ id: ID, at now: ContinuousClock.Instant) -> Bool {
         guard let active, active.id == id, !active.hasBegun else { return false }

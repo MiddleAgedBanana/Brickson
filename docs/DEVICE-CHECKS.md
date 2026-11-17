@@ -863,7 +863,8 @@ Settings").*
    whether that first phrase itself waits.
 3. **Thread:** read the device's log from this run for Brickson's speech
    lines: "Speech began N ms after it was asked for" (written for every
-   start slower than one second) and "did not begin within 15000 ms"
+   start slower than one second, whichever report shows it first) and
+   "did not begin within 15000 ms"
    (written when the start limit stops a phrase). *Passes* when no
    phrase was stopped by the limit and every logged start is under
    7.5 seconds, half the limit; a slower one is new evidence for

@@ -312,15 +312,9 @@ final class SpeechService {
     private func receive(_ event: SpeechSynthesisEvent, for token: UtteranceToken) {
         switch event {
         case let .started(at: instant):
-            // Logged when slow, so a CI result bundle or a device's log
-            // shows how close real starts come to the start limit. Numbers
-            // only, never the words.
-            if let delay = utterances.recordStart(token, at: instant), delay >= Self.slowStartWorthLogging {
-                let delayMilliseconds = Self.milliseconds(delay)
-                logger.notice("Speech began \(delayMilliseconds) ms after it was asked for")
-            }
+            logStartIfSlow(utterances.recordStart(token, at: instant))
         case let .willSpeak(through: offset, at: instant):
-            utterances.recordProgress(token, reaching: offset, at: instant)
+            logStartIfSlow(utterances.recordProgress(token, reaching: offset, at: instant))
         case let .finished(at: instant):
             if utterances.ended(token, at: instant) == .endedBeforeItsFinalWord {
                 // Not shown on its own: some voices skip reporting the last
@@ -455,8 +449,18 @@ final class SpeechService {
     static let watchdogInterval: Duration = .seconds(1)
     static let watchdogGrace: Duration = .milliseconds(500)
 
-    /// A start this slow is logged (`receive(_:for:)`).
+    /// A start this slow is logged (`logStartIfSlow`).
     static let slowStartWorthLogging: Duration = .seconds(1)
+
+    /// Logs a start that took `slowStartWorthLogging` or longer, whichever
+    /// report showed it first (a start report, or a word from a voice that
+    /// sends none), so a CI result bundle or a device's log shows how close
+    /// real starts come to the start limit. Numbers only, never the words.
+    private func logStartIfSlow(_ delay: Duration?) {
+        guard let delay, delay >= Self.slowStartWorthLogging else { return }
+        let delayMilliseconds = Self.milliseconds(delay)
+        logger.notice("Speech began \(delayMilliseconds) ms after it was asked for")
+    }
 
     /// What the watchdog can find wrong with the current utterance.
     private enum WatchdogFinding {

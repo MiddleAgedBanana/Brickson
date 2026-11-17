@@ -1,6 +1,6 @@
 # A phrase that does not start is stopped and named
 
-*2026-11-17. Pull request #<n> (`claude/project-thread-4tes2b`). A
+*2026-11-17. Pull request #123 (`claude/project-thread-4tes2b`). A
 Claude cloud thread, which cannot build or run the app.*
 
 ## What changed and why
@@ -44,29 +44,44 @@ This is a small fix in one pull request, so it has no work file
 
 ## Evidence for the limit
 
-From the app's own log in that run's result bundle
-(`ui-test-results-ipad-part3`), the time from a phrase's voice lookup to
-the first audio line of each launch that spoke:
+From that run's result bundle (`ui-test-results-ipad-part3`): when the
+test began each tap or press, from the test's own log; and the phrase's
+voice lookup and the first audio line of each launch that spoke, from the
+app's log. The limit counts from the moment the app asks for the phrase
+to be spoken, just before it looks up the voice, which falls between the
+test's tap and the voice lookup, so the two right-hand columns bound
+each start from below and above.
 
-| Launch (process) | Voice lookup | First audio | Gap |
-| --- | --- | --- | ---: |
-| 20173, AX5 light, Yes | 07:49:21 tap; lookup answered 07:52:09 | none before 07:52:49 | stuck |
-| 27296, AX5 dark, Yes | 07:53:15.71 | 07:53:20.59 | 4.9 s |
-| 29483 | 07:55:20.93 | 07:55:22.99 | 2.1 s |
-| 29901 | 07:55:51.08 | 07:55:53.02 | 1.9 s |
-| 30630 | 07:56:12.66 | 07:56:14.65 | 2.0 s |
-| 50701, Speak | 08:06:49.64 | 08:06:52.91 | 3.3 s |
+| Launch (process) | Tap or press began | Voice lookup | First audio | From lookup | From tap or press |
+| --- | --- | --- | --- | ---: | ---: |
+| 20173, AX5 light, Yes | 07:49:21.58 | answered 07:52:09 | none before 07:52:49 | stuck | stuck |
+| 27296, AX5 dark, Yes | 07:53:15.20 | 07:53:15.66 | 07:53:20.59 | 4.9 s | 5.4 s |
+| 29483, press of 1.5 s | 07:55:19.06 | 07:55:20.93 | 07:55:22.99 | 2.1 s | 3.9 s |
+| 29901, press and drag | 07:55:48.11 | 07:55:51.08 | 07:55:53.02 | 1.9 s | 4.9 s |
+| 30630, press and drag | 07:56:11.58 | 07:56:12.67 | 07:56:14.65 | 2.0 s | 3.1 s |
+| 50701, Speak | 08:06:49.20 | 08:06:49.64 | 08:06:52.92 | 3.3 s | 3.7 s |
 
 The 2026-10-25 speech diagnostic's simulator controls reported their
 start 0.03 to 0.08 seconds after asking and their first word 0.6 to 1
-second after. The slowest healthy start, 4.9 seconds, rounded up to 5,
-times three is the 15-second limit; it stays under the 20-second
-`repeatWindow`.
+second after. The slowest healthy start therefore took between 4.9 and
+5.4 seconds from the ask. The 15-second limit is nearly three
+times the longer figure (2.8 times) and stays under the 20-second
+`repeatWindow`. (The first version of this record measured from the
+voice lookup only and called 15 seconds three times 5; a review on the
+pull request pointed out that the limit counts from earlier, so the tap
+is now measured too. The limit did not change.)
 
 ## Commits
 
-See the pull request: one commit with the change and its tests, one
-with these records.
+- `75d4577` Stop a phrase the speech service never begins, and say so
+  (the change and its tests).
+- `d50d523` Record the start limit, its evidence and its device check.
+- The review-fix commit after them: the start measured from the test's
+  tap as well as the voice lookup, the threshold for new evidence worded
+  the right way round, a slow start logged whichever report shows it
+  first, where the count starts stated (docs/DECISIONS.md, "A phrase
+  that does not start"), two more tracker tests, and the hashes and
+  checks in this record.
 
 ## Verified
 
@@ -76,7 +91,7 @@ with these records.
   with stand-ins for AVFoundation and `Logger`) compiled with no
   warnings in a throwaway package outside the repository, with Swift 6
   language mode, main-actor default isolation and the project's upcoming
-  features. 118 tests passed: every test in `SpokenUtteranceTrackerTests`
+  features. 120 tests passed: every test in `SpokenUtteranceTrackerTests`
   and `SpeechServiceTests` (except one about launch storage, which needs
   `LaunchOptions`) and the speech test from `OffMainThreadCallbackTests`.
 - **Each new test fails without the change it covers** (run on the same
@@ -99,8 +114,18 @@ with these records.
   - a limit of 8 seconds: `theStartLimitLeavesRoomForASlowFirstPhrase`;
   - recovery that does not stop the synthesizer:
     `aPhraseThatNeverBeginsNamesAgainOnceTheStartLimitPasses` and
-    `aVoiceSampleThatNeverBeginsOnlyClearsTheIndicator`.
-- The repository's Python checks (see the pull request).
+    `aVoiceSampleThatNeverBeginsOnlyClearsTheIndicator`;
+  - a start report not counted as progress, so a repeat of a phrase that
+    began late stops being absorbed too soon:
+    `aLateStartKeepsAbsorbingARepeatFromWhenItBegan`;
+  - a word report never returning the start measurement, and every report
+    returning it: `aWordReportThatComesFirstSaysHowLongThePhraseTookToBegin`.
+- **The repository's Python checks**, on Linux in this cloud session,
+  all passed: `scripts/test-docs.py`, `test-hooks.py`, `test-privacy.py`,
+  `test-forbidden-code.py`, `forbidden-code.py`, `test-runner.py`,
+  `test-agent-bridge.py`, `test-site.py` and `test-select-xcode.py`.
+  `privacy-check.py --outgoing --no-list` found nothing; no private list
+  exists in a cloud session, so the list was not checked.
 
 ## Not verified
 
@@ -111,6 +136,9 @@ with these records.
   system did send a start for a phrase it never voiced, this limit does
   not catch it (docs/DECISIONS.md, *What it does not catch*). The next
   stall on CI will show: the app now logs slow starts.
+- **The two log lines.** No test reads them: the app's logger cannot be
+  read in a unit test. The tracker tests pin the measurement they print;
+  device check P3, step 3 reads the lines themselves.
 - **Real devices.** How long phrases take to begin after a restart, in a
   Personal Voice, and on the oldest supported device: device check P3,
   step 3 (docs/DEVICE-CHECKS.md).

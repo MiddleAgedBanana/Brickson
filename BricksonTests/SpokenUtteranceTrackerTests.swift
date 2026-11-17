@@ -461,16 +461,58 @@ struct SpokenUtteranceTrackerTests {
         #expect(tracker.recordStart(1, at: start + .seconds(6)) == nil)
     }
 
+    /// A voice may report its first word before its start, or never report
+    /// a start at all; the slow start must still be measured, once. Fails
+    /// if only a start report returns the measurement, or if a later report
+    /// returns it again.
+    @Test func aWordReportThatComesFirstSaysHowLongThePhraseTookToBegin() {
+        var tracker = SpokenUtteranceTracker<Int>()
+        tracker.began(1, text: "Yes, please.", at: start)
+
+        #expect(tracker.recordProgress(2, reaching: 3, at: start + .seconds(1)) == nil)
+        #expect(tracker.recordProgress(1, reaching: 3, at: start + .seconds(8)) == .seconds(8))
+        #expect(tracker.recordStart(1, at: start + .milliseconds(8_100)) == nil)
+        #expect(tracker.recordProgress(1, reaching: 5, at: start + .seconds(9)) == nil)
+
+        var withoutOffsets = SpokenUtteranceTracker<Int>()
+        withoutOffsets.began(1, text: "Yes, please.", at: start)
+        #expect(withoutOffsets.recordProgress(1, at: start + .seconds(2)) == .seconds(2))
+        #expect(withoutOffsets.recordProgress(1, at: start + .seconds(3)) == nil)
+    }
+
+    /// A phrase that began late is still audibly playing for a while after
+    /// its start, so a lingering dwell on its tile is absorbed for the
+    /// repeat window counted from the start, not from the moment it was
+    /// handed over. Fails if a start report does not count as progress.
+    @Test func aLateStartKeepsAbsorbingARepeatFromWhenItBegan() {
+        var tracker = SpokenUtteranceTracker<Int>()
+        tracker.began(1, text: "Yes.", at: start)
+        tracker.recordStart(1, at: start + .seconds(5))
+
+        let window = SpokenUtteranceTracker<Int>.repeatWindow
+        #expect(tracker.absorbsRepeat(
+            of: "Yes.",
+            synthesizerIsSpeaking: true,
+            now: start + window + .seconds(2)
+        ))
+        #expect(!tracker.absorbsRepeat(
+            of: "Yes.",
+            synthesizerIsSpeaking: true,
+            now: start + .seconds(5) + window
+        ))
+    }
+
     /// The limit comes from evidence. On an overloaded CI simulator the
-    /// slowest healthy first phrase measured took 4.9 seconds from its voice
-    /// lookup to its first audio (rounded up to 5 here), so the limit leaves
-    /// room for twice that and more; and the person learns of a phrase that
-    /// will not be heard before the 20 seconds after which the app already
-    /// treats a synthesizer that says nothing as possibly stuck
+    /// slowest healthy first phrase measured took at most 5.4 seconds from
+    /// the test's tap to its first audio (the app hands the phrase over
+    /// between the two), so the limit leaves room for twice that and more;
+    /// and the person learns of a phrase that will not be heard before the
+    /// 20 seconds after which the app already treats a synthesizer that says
+    /// nothing as possibly stuck
     /// (`repeatWindow`). Fails if the limit is shortened into the range of
     /// slow healthy starts, or stretched past that window.
     @Test func theStartLimitLeavesRoomForASlowFirstPhrase() {
-        let slowestHealthyStartMeasured: Duration = .seconds(5)
+        let slowestHealthyStartMeasured: Duration = .milliseconds(5_400)
         let limit = SpokenUtteranceTracker<Int>.startLimit
 
         #expect(limit >= slowestHealthyStartMeasured * 2)
