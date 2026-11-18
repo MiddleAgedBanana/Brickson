@@ -119,61 +119,74 @@ struct HomeView: View {
                 modes: .phrasesAndTyping
             )
 
-            VStack(alignment: .leading, spacing: 0) {
-                Spacer(minLength: 0).frame(height: layout.firstRegionTopInset)
-                MessageRegion(
-                    layout: layout,
-                    messageLine: text.messageLine,
-                    isTyping: isTyping,
-                    isCovered: showsSettings,
-                    fieldIsFocused: $fieldIsFocused,
-                    showPhrases: { leaveTyping() },
-                    startTyping: { startTyping() }
-                )
-                .frame(height: layout.allocationHeight(of: [.message, .statusLine]), alignment: .top)
-                .homeRegion(.message)
-                Spacer(minLength: 0).frame(height: layout.regionGaps.aToC)
-                SafetyRow(
-                    layout: layout,
-                    isTyping: isTyping,
-                    emergencyIsAvailable: emergency != nil,
-                    isShowingEmergency: !isTyping && selected?.isEmergency == true,
-                    showEmergency: {
-                        leaveTyping()
-                        selectedCategoryID = emergency?.uuid
+            // The regions are declared in the order assistive technologies
+            // reach them (`HomeRegion`), each under the regions and gaps
+            // above it on screen: until SwiftUI has applied their sort
+            // priorities, the accessibility tree lists them as declared.
+            ZStack(alignment: .topLeading) {
+                ForEach(HomeRegion.allCases, id: \.self) { region in
+                    VStack(alignment: .leading, spacing: 0) {
+                        ForEach(Array(Self.heights(above: region, in: layout).enumerated()), id: \.offset) { _, height in
+                            Spacer(minLength: 0).frame(height: height)
+                        }
+                        switch region {
+                        case .safety:
+                            SafetyRow(
+                                layout: layout,
+                                isTyping: isTyping,
+                                emergencyIsAvailable: emergency != nil,
+                                isShowingEmergency: !isTyping && selected?.isEmergency == true,
+                                showEmergency: {
+                                    leaveTyping()
+                                    selectedCategoryID = emergency?.uuid
+                                }
+                            )
+                            .frame(height: layout.allocationHeight(of: HomeLayout.Slot.safetyRow))
+                            .homeRegion(.safety)
+                        case .message:
+                            MessageRegion(
+                                layout: layout,
+                                messageLine: text.messageLine,
+                                isTyping: isTyping,
+                                isCovered: showsSettings,
+                                fieldIsFocused: $fieldIsFocused,
+                                showPhrases: { leaveTyping() },
+                                startTyping: { startTyping() }
+                            )
+                            .frame(height: layout.allocationHeight(of: [.message, .statusLine]), alignment: .top)
+                            .homeRegion(.message)
+                        case .categories:
+                            CategoriesAndSettings(
+                                layout: layout,
+                                categories: CategorySelection.shownInCategoryRow(ordered),
+                                selectedID: isTyping ? nil : selected?.uuid,
+                                restBoard: board?.uuid,
+                                phraseCounts: counts,
+                                typingCells: isTyping ? layout.typingCells : nil,
+                                select: { selectedCategoryID = $0 },
+                                showsSettings: $showsSettings
+                            )
+                            .frame(height: layout.allocationHeight(of: HomeLayout.Slot.categoriesRegion))
+                            .homeRegion(.categories)
+                        case .phrases:
+                            HStack(spacing: 0) {
+                                Spacer(minLength: 0).frame(width: layout.grid.frame.minX - layout.content.minX)
+                                PhraseGrid(
+                                    phrases: CategorySelection.phrases(of: selected?.uuid, in: phrases),
+                                    isEmergency: selected?.isEmergency == true,
+                                    isTyping: isTyping,
+                                    layout: layout.grid,
+                                    largestCategoryCount: largestCategoryCount,
+                                    tileFont: layout.isRegular ? .regularTile : .compactTile
+                                )
+                                .frame(width: layout.grid.frame.width)
+                                Spacer(minLength: 0).frame(width: layout.content.maxX - layout.grid.frame.maxX)
+                            }
+                            .frame(maxHeight: .infinity)
+                            LibraryWarnings(topSpacing: layout.regionGap)
+                        }
                     }
-                )
-                .frame(height: layout.allocationHeight(of: HomeLayout.Slot.safetyRow))
-                .homeRegion(.safety)
-                Spacer(minLength: 0).frame(height: layout.regionGaps.cToB)
-                CategoriesAndSettings(
-                    layout: layout,
-                    categories: CategorySelection.shownInCategoryRow(ordered),
-                    selectedID: isTyping ? nil : selected?.uuid,
-                    restBoard: board?.uuid,
-                    phraseCounts: counts,
-                    typingCells: isTyping ? layout.typingCells : nil,
-                    select: { selectedCategoryID = $0 },
-                    showsSettings: $showsSettings
-                )
-                .frame(height: layout.allocationHeight(of: HomeLayout.Slot.categoriesRegion))
-                .homeRegion(.categories)
-                Spacer(minLength: 0).frame(height: layout.regionGaps.bToD)
-                HStack(spacing: 0) {
-                    Spacer(minLength: 0).frame(width: layout.grid.frame.minX - layout.content.minX)
-                    PhraseGrid(
-                        phrases: CategorySelection.phrases(of: selected?.uuid, in: phrases),
-                        isEmergency: selected?.isEmergency == true,
-                        isTyping: isTyping,
-                        layout: layout.grid,
-                        largestCategoryCount: largestCategoryCount,
-                        tileFont: layout.isRegular ? .regularTile : .compactTile
-                    )
-                    .frame(width: layout.grid.frame.width)
-                    Spacer(minLength: 0).frame(width: layout.content.maxX - layout.grid.frame.maxX)
                 }
-                .frame(maxHeight: .infinity)
-                LibraryWarnings(topSpacing: layout.regionGap)
             }
             .padding(.horizontal, HomeLayout.margins.horizontal)
             .padding(.vertical, HomeLayout.margins.vertical)
@@ -214,6 +227,29 @@ struct HomeView: View {
     private func leaveTyping() {
         fieldIsFocused = false
         isTyping = false
+    }
+
+    /// What stands above `region` on screen, top to bottom: the inset
+    /// above the first region, then each region and the gap under it, as
+    /// the layout engine sizes them. Stacked above a region, they put it
+    /// where it stands in Home's column of regions.
+    private static func heights(above region: HomeRegion, in layout: HomeLayout) -> [CGFloat] {
+        let column = [
+            layout.firstRegionTopInset,
+            layout.allocationHeight(of: [.message, .statusLine]),
+            layout.regionGaps.aToC,
+            layout.allocationHeight(of: HomeLayout.Slot.safetyRow),
+            layout.regionGaps.cToB,
+            layout.allocationHeight(of: HomeLayout.Slot.categoriesRegion),
+            layout.regionGaps.bToD,
+        ]
+        let count = switch region {
+        case .message: 1
+        case .safety: 3
+        case .categories: 5
+        case .phrases: 7
+        }
+        return Array(column.prefix(count))
     }
 }
 
@@ -722,13 +758,17 @@ private struct SafetyRow: View {
     let isShowingEmergency: Bool
     let showEmergency: () -> Void
 
+    /// The controls are declared in the order they are reached
+    /// (`HomeRegion.safetyRowOrder`), the order the accessibility tree
+    /// lists them in until SwiftUI has applied their sort priorities, and
+    /// each stands at its own frame
+    /// from the engine: in one row on regular widths, Emergency first, and
+    /// in two on compact ones.
     var body: some View {
-        if layout.isRegular && layout.modes == .phrasesAndTyping {
-            HomeControlRow(layout: layout, slots: [.emergency, .yes, .no, .again, .getAttention], control: control)
-        } else {
-            VStack(alignment: .leading, spacing: layout.safetyRowGap) {
-                HomeControlRow(layout: layout, slots: [.yes, .no, .emergency], control: control)
-                HomeControlRow(layout: layout, slots: [.again, .getAttention], control: control)
+        SafetyRowLayout(layout: layout, slots: HomeRegion.safetyRowOrder) {
+            ForEach(HomeRegion.safetyRowOrder, id: \.self) { slot in
+                control(slot)
+                    .accessibilitySortPriority(HomeRegion.sortPriority(inSafetyRow: slot))
             }
         }
     }
@@ -763,7 +803,6 @@ private struct SafetyRow: View {
         .buttonStyle(HomeButtonStyle(fill: Palette.controlFill))
         .sized(as: .yes, in: layout)
         .accessibilityInputLabels(HomeControlNames.yes.inputLabels)
-        .accessibilitySortPriority(HomeRegion.firstInRegion)
     }
 
     private var no: some View {
@@ -775,7 +814,6 @@ private struct SafetyRow: View {
         .buttonStyle(HomeButtonStyle(fill: Palette.controlFill))
         .sized(as: .no, in: layout)
         .accessibilityInputLabels(HomeControlNames.no.inputLabels)
-        .accessibilitySortPriority(HomeRegion.secondInRegion)
     }
 
     private var again: some View {
@@ -788,7 +826,6 @@ private struct SafetyRow: View {
         .sized(as: .again, in: layout)
         .disabled(speech.lastSpokenText == nil)
         .accessibilityInputLabels(HomeControlNames.again.inputLabels)
-        .accessibilitySortPriority(HomeRegion.lastInRegion)
     }
 
     /// Says the whole message being typed and keeps it (docs/DECISIONS.md,
@@ -806,7 +843,6 @@ private struct SafetyRow: View {
         .sized(as: .again, in: layout)
         .disabled(!drafts.composer.canSpeak)
         .accessibilityInputLabels(HomeControlNames.speak.inputLabels)
-        .accessibilitySortPriority(HomeRegion.lastInRegion)
     }
 
     private var emergencyButton: some View {
@@ -1240,6 +1276,32 @@ private struct HomeControlRow<Control: View>: View {
                     control(slot)
                 }
             }
+        }
+    }
+}
+
+/// Places the safety row's controls, declared in the order assistive
+/// technologies reach them (`slots`), each at its slot's frame from the
+/// layout engine, wherever it stands in the row; as
+/// `LibraryQuestionLayout` places its views in the order VoiceOver reads
+/// them. Each control sizes itself to its slot (`sized(as:in:)`).
+private nonisolated struct SafetyRowLayout: Layout {
+    let layout: HomeLayout
+    /// The controls' slots, in the order the controls are declared.
+    let slots: [HomeLayout.Slot]
+
+    func sizeThatFits(proposal _: ProposedViewSize, subviews _: Subviews, cache _: inout ()) -> CGSize {
+        layout.allocationBounds(of: slots).size
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal _: ProposedViewSize, subviews: Subviews, cache _: inout ()) {
+        let row = layout.allocationBounds(of: slots)
+        for (subview, slot) in zip(subviews, slots) {
+            let frame = layout.allocation(slot)
+            subview.place(
+                at: CGPoint(x: bounds.minX + frame.minX - row.minX, y: bounds.minY + frame.minY - row.minY),
+                proposal: ProposedViewSize(width: frame.width, height: frame.height)
+            )
         }
     }
 }
