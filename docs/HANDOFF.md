@@ -870,21 +870,31 @@ release in docs/ROADMAP.md when no thread has it yet.
   27.2's release candidate, so `scripts/select-xcode.py` skipped it and
   took 27.1 with iOS 27.0. Nothing is pinned, on purpose
   (docs/DECISIONS.md, "Build with Apple's current Xcode"), and nothing
-  needs changing: it ends when GitHub finishes the rollout. On the newer
-  image `HomeAccessibilityOrderTests.testQuickControlsComeFirstInEveryStateAtDefaultText`
-  failed once on the iPhone, just opened, reading Phrases and Type before
-  Yes and No. It has passed on the Mac's iOS 27.2 each time, and on
-  PR #82's last commit, with all three jobs on the newer image. On
-  2026-11-15, on that image, it failed on two pushes in a row of pull
-  request #114, which changes no Swift: first its largest-text case
-  (`testQuickControlsComeFirstInEveryStateAtTheLargestText`), then the
-  default-text one, both with the same reading. That app was `main`'s at
-  `7cb0299`, where the test passed an hour before the first. Only the
-  read just after launch fails; every later state in the same test
-  passes. So it is intermittent, and a pull request's CI can fail on it
-  with no change to the app. Cause unknown, and whether a person using
-  Switch Control or VoiceOver can meet that order just after launch is
-  not known. *(a Mac thread)*
+  needs changing: it ends when GitHub finishes the rollout.
+- `HomeAccessibilityOrderTests` failed now and then on CI, always in its
+  first state, "just opened", on the iPhone and the iPad, at both text
+  sizes, reading Home in screen order (Phrases and Type first). The
+  cause, found 2026-11-17 in the app's own log in CI's result bundles:
+  until SwiftUI had applied `accessibilitySortPriority`, the tree XCTest
+  read listed a container's elements in the order they are declared, and
+  Home declared its regions and the safety row's controls top to bottom.
+  On one run (#125's, 44135506925) the first tree read was in that order
+  in 9 of 39 iPhone launches and 2 of 39 iPad ones, for 0.35 s to at
+  least 3.9 s on a drawn, still Home; only the order test checks it. Home
+  now declares them in the order they are reached (`HomeRegion.allCases`,
+  `HomeRegion.safetyRowOrder`), so the controls' order is the same before
+  and after the sort, with every control's, region's and text's frame
+  unchanged on the iPhone 17 and iPad Pro 13-inch simulators in portrait
+  and light (docs/DECISIONS.md, "Home's scan order and names";
+  [`log/2026-11-17-home-order-before-sorting.md`](log/2026-11-17-home-order-before-sorting.md)).
+  Not known: whether a person's VoiceOver or Switch Control ever met the
+  old order on a device; the window was seen only on CI's simulators. The
+  test still reads again after a wrong first read and says what it saw,
+  so a failure of another kind would show. No unit test notices if
+  `HomeView` goes back to declaring them in screen order: only this
+  test, when SwiftUI sorts late, and the log's script on CI's result
+  bundles. *(closed 2026-11-17; the next thread whose CI shows it reopens
+  it)*
 - `SettingsTests.testAnIdleSettingsReturnsToItsFirstScreenAndStaysOpen`
   has failed once each on 2026-10-22, 2026-11-08 and 2026-11-12, on
   branches that did not touch it, and passed on each re-run: Family
