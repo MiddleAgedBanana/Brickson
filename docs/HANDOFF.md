@@ -868,34 +868,30 @@ release in docs/ROADMAP.md when no thread has it yet.
   took 27.1 with iOS 27.0. Nothing is pinned, on purpose
   (docs/DECISIONS.md, "Build with Apple's current Xcode"), and nothing
   needs changing: it ends when GitHub finishes the rollout.
-- `HomeAccessibilityOrderTests` fails now and then on CI, always in its
-  first state, "just opened": on the iPhone once on PR #82's run
-  (2026-11-06, default text) and twice on 2026-11-15 on two pushes in a
-  row of PR #114, which changes no Swift (AX5 first, then default text;
-  the app was `main`'s at `7cb0299`, where the test had passed an hour
-  before), and on the iPad once on 2026-11-17 on PR #122's run
-  44037184309 (AX5, read 0.8 s after Yes first existed). Each time that
-  one read lists Home's controls in plain screen order, top to bottom
-  and leading to trailing (on the iPhone: Phrases, Type, Yes, No,
-  Emergency, Again, Get Attention), as if no `accessibilitySortPriority`
-  had taken effect at either level, though every region was there.
-  Every later state in the same run read the right order, and the run's
-  recording shows Home drawn and still, so nothing moved on screen. On
-  the Mac's iPhone 17 simulator (iOS 27.2) 61 launches never read it
-  wrong: idle, with every processor busy, and with the app paused three
-  quarters of the time
-  ([`log/2026-11-16-tile-contrast-pixels.md`](log/2026-11-16-tile-contrast-pixels.md)).
-  So a pull request's CI can fail on it with no change to the app. Not
-  yet known: whether the order comes right with no input, which would
-  make it a read taken before the order settled, or stays wrong until
-  something on Home changes, which a person's first switch scan could
-  meet: an app defect. Since 2026-11-16 the test, after a wrong read,
-  reads again for five seconds without touching anything, still fails,
-  and says and attaches what it saw, so the next failure answers it, as
-  long as those reads of the tree succeed (if none does, it says the
-  answer is unknown). Accepting an order that comes right within a few
-  seconds would weaken the test, so it is the owner's call, proposed in
-  that log. *(the next thread whose CI shows it)*
+- `HomeAccessibilityOrderTests` failed now and then on CI, always in its
+  first state, "just opened", on the iPhone and the iPad, at both text
+  sizes, reading Home in screen order (Phrases and Type first). The
+  cause, found 2026-11-17 in the app's own log in CI's result bundles:
+  until SwiftUI had applied `accessibilitySortPriority`, the tree XCTest
+  read listed a container's elements in the order they are declared, and
+  Home declared its regions and the safety row's controls top to bottom.
+  On one run (#125's, 44135506925) the first tree read was in that order
+  in 9 of 39 iPhone launches and 2 of 39 iPad ones, for 0.35 s to at
+  least 3.9 s on a drawn, still Home; only the order test checks it. Home
+  now declares them in the order they are reached (`HomeRegion.allCases`,
+  `HomeRegion.safetyRowOrder`), so the controls' order is the same before
+  and after the sort, with every control's, region's and text's frame
+  unchanged on the iPhone 17 and iPad Pro 13-inch simulators in portrait
+  and light (docs/DECISIONS.md, "Home's scan order and names";
+  [`log/2026-11-17-home-order-before-sorting.md`](log/2026-11-17-home-order-before-sorting.md)).
+  Not known: whether a person's VoiceOver or Switch Control ever met the
+  old order on a device; the window was seen only on CI's simulators. The
+  test still reads again after a wrong first read and says what it saw,
+  so a failure of another kind would show. No unit test notices if
+  `HomeView` goes back to declaring them in screen order: only this
+  test, when SwiftUI sorts late, and the log's script on CI's result
+  bundles. *(closed 2026-11-17; the next thread whose CI shows it reopens
+  it)*
 - `SettingsTests.testAnIdleSettingsReturnsToItsFirstScreenAndStaysOpen`
   has failed once each on 2026-10-22, 2026-11-08 and 2026-11-12, on
   branches that did not touch it, and passed on each re-run: Family
