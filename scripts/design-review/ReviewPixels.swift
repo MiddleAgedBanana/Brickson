@@ -171,8 +171,16 @@ nonisolated enum ReviewMeasure {
                 }
             }
         }
-        guard let fill = commonest(inner) ?? commonest(band), let edgeColour = commonest(edge) else { return nil }
-        let pageColour = commonest(page) ?? edgeColour
+        guard let fill = commonest(inner) ?? commonest(band), let outermost = commonest(edge) else { return nil }
+        let pageColour = commonest(page) ?? outermost
+        // What meets the screen at the edge: the commonest colour of the
+        // outermost band that is not the screen itself, where it covers at
+        // least a tenth of the band. A capsule's round ends leave much of
+        // its frame's band showing the screen; the shape's own edge is the
+        // rest. A shape no different from the screen has no edge: the screen.
+        let edgeTotal = edge.values.reduce(0, +)
+        let edgeColour = commonest(edge.filter { $0.key != pageColour })
+            .flatMap { colour in (edge[colour] ?? 0) * 10 >= edgeTotal ? colour : nil } ?? pageColour
         let candidates = inner.filter { $0.value >= minimumWordPixels }
         let words = candidates.keys.max { lhs, rhs in
             let (a, b) = (lhs.contrast(with: fill), rhs.contrast(with: fill))

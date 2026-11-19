@@ -72,6 +72,15 @@ TITLES = {
     "inactive-light": "Inactive window, light",
     "inactive-dark": "Inactive window, dark",
 }
+ROLE_ASSETS = ["AccentColor", "ControlFill", "EmergencyFill", "AttentionFill", "StopFill"]
+EXPECTED = (
+    [f"review.colour.{a}" for a in ROLE_ASSETS] + ["review.ink.primary", "review.ink.status"]
+    + [f"review.spacing.{n}" for n in (2, 4, 6, 8, 12, 16, 24)]
+    + [f"review.corner.{c}" for c in ("fixed", "capsule", "concentric")]
+    + [f"review.control.{a}.{s}" for a in ROLE_ASSETS for s in ("on", "selected", "off", "pressed")]
+    + ["review.tile.AccentColor", "review.tile.EmergencyFill"]
+    + [f"review.settings.{a}.{s}" for a in ("AccentColor", "ControlFill") for s in ("on", "off")]
+)
 TEXT_SIZES = {"large": "large", "AX5": "accessibility-extra-extra-extra-large"}
 LAUNCH = ["--fresh-test-storage", "--uikit-animations=off", "-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
 HOME = LAUNCH + ["--home-profile=touch", "--attention-tone=silent"]
@@ -236,13 +245,12 @@ def capture_sheet(sim, name, settings):
     top = readout_frame["y"]
     bottom = window["height"] - 20
     specimens, pages, last = {}, [], None
-    for page in range(40):
-        nodes = sim.tree() if page else nodes
-        signature = [(n.get("AXUniqueId"), round(n["frame"]["y"])) for n in nodes if (n.get("AXUniqueId") or "").startswith("review.")]
+    for page in range(60):
+        nodes, png = still(sim, f"{name}-sheet-{page:02d}")
+        signature = positions(nodes)
         if signature == last:
             break
         last = signature
-        png = sim.screenshot(f"{name}-sheet-{page:02d}")
         visible = {n["AXUniqueId"]: frame_of(n) for n in nodes
                    if (n.get("AXUniqueId") or "").startswith("review.") and n["AXUniqueId"] != "review.readout"
                    and fully_inside(frame_of(n), top, bottom, window["width"])}
@@ -253,9 +261,31 @@ def capture_sheet(sim, name, settings):
             if identifier.endswith(".pressed") and identifier not in specimens:
                 specimens[identifier] = press(sim, f"{name}-pressed-{len(specimens):02d}", identifier, f)
         pages.append(png)
-        run("axe", "gesture", "scroll-up", "--distance", "0.5", "--udid", sim.udid)
-        time.sleep(1.5)
-    return {"readout": readout, "readoutFrame": readout_frame, "pages": pages, "specimens": specimens}
+        if all(i in specimens for i in EXPECTED):
+            break
+        run("axe", "gesture", "scroll-up", "--distance", "0.3", "--udid", sim.udid)
+    missing = sorted(i for i in EXPECTED if i not in specimens)
+    return {"readout": readout, "readoutFrame": readout_frame, "pages": pages, "specimens": specimens, "missing": missing}
+
+
+def positions(nodes):
+    return [(n.get("AXUniqueId"), round(n["frame"]["y"], 1)) for n in nodes if (n.get("AXUniqueId") or "").startswith("review.")]
+
+
+def still(sim, shot):
+    """The screen once it has stopped moving: the tree read twice the
+    same, the screenshot, and the tree read the same once more, so every
+    frame belongs to the pixels it is measured on."""
+    for _ in range(10):
+        before = sim.tree()
+        time.sleep(0.8)
+        middle = sim.tree()
+        if positions(before) != positions(middle):
+            continue
+        png = sim.screenshot(shot)
+        if positions(sim.tree()) == positions(middle):
+            return middle, png
+    sys.exit(f"{shot}: the screen never stopped moving")
 
 
 def press(sim, shot, identifier, frame):
