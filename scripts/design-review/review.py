@@ -6,6 +6,7 @@ file says how.
 
 usage:
   review.py capture <udid> <iphone|ipad> <outdir> [<appearance> ...]
+  review.py screens <udid> <iphone|ipad> <outdir> [<appearance> ...]
   review.py inactive <udid> <outdir> <inactive-light|inactive-dark> <visible-bottom>
   review.py compose <outdir>
 
@@ -19,6 +20,8 @@ inactive  the same sheet and screens on an iPad in Windowed Apps, behind
           a Settings window that has the focus; `visible-bottom` is the
           top of that window, in points. Run `capture` for the same iPad
           first: the sheet's frames come from its `light` run.
+screens   takes Home, typing, the alarm and Settings again, into the
+          manifests `capture` wrote.
 compose   lays every appearance side by side, one picture for each part
           of the sheet and each screen, and writes README.md beside them.
 
@@ -244,7 +247,7 @@ def capture_sheet(sim, name, settings):
     readout_frame = frame_of(next(n for n in nodes if n.get("AXUniqueId") == "review.readout"))
     top = readout_frame["y"]
     bottom = window["height"] - 20
-    specimens, pages, last = {}, [], None
+    specimens, pages, last, partial = {}, [], None, {}
     for page in range(60):
         nodes, png = still(sim, f"{name}-sheet-{page:02d}")
         signature = positions(nodes)
@@ -254,6 +257,13 @@ def capture_sheet(sim, name, settings):
         visible = {n["AXUniqueId"]: frame_of(n) for n in nodes
                    if (n.get("AXUniqueId") or "").startswith("review.") and n["AXUniqueId"] != "review.readout"
                    and fully_inside(frame_of(n), top, bottom, window["width"])}
+        for n in nodes:
+            identifier, f = n.get("AXUniqueId") or "", frame_of(n)
+            if identifier.startswith("review.") and identifier not in visible and identifier != "review.readout":
+                shown = min(f["y"] + f["h"], bottom) - max(f["y"], top)
+                if shown > partial.get(identifier, (0,))[0]:
+                    clipped = dict(f, y=max(f["y"], top), h=shown)
+                    partial[identifier] = (shown, png, clipped)
         fresh = {i: f for i, f in visible.items() if i not in specimens and not i.endswith(".pressed")}
         for identifier, measured in sim.measure(png, [dict(name=i, **f) for i, f in fresh.items()]).items():
             specimens[identifier] = {"image": png, "frame": measured["frame"], "reading": measured.get("reading")}
@@ -264,6 +274,12 @@ def capture_sheet(sim, name, settings):
         if all(i in specimens for i in EXPECTED):
             break
         run("axe", "gesture", "scroll-up", "--distance", "0.3", "--udid", sim.udid)
+    # A specimen taller than the screen never shows whole: it is measured
+    # where most of it shows, and marked so.
+    for identifier, (shown, png, clipped) in partial.items():
+        if identifier not in specimens and not identifier.endswith(".pressed"):
+            measured = sim.measure(png, [dict(name=identifier, **clipped)])[identifier]
+            specimens[identifier] = {"image": png, "frame": measured["frame"], "reading": measured.get("reading"), "clipped": True}
     missing = sorted(i for i in EXPECTED if i not in specimens)
     return {"readout": readout, "readoutFrame": readout_frame, "pages": pages, "specimens": specimens, "missing": missing}
 
@@ -301,24 +317,55 @@ def press(sim, shot, identifier, frame):
     return {"image": png, "frame": measured["frame"], "reading": measured.get("reading")}
 
 
-def buttons(nodes, width, height):
-    found = []
+def keyboard_top(nodes):
+    """Where Apple's keyboard starts, or nil while none shows."""
+    tops = [n["frame"]["y"] for n in nodes if n.get("AXUniqueId") == "inputView" and n["frame"]["height"] > 0]
+    return min(tops) if tops else None
+
+
+def key_of(node):
+    f = node["frame"]
+    return (node.get("AXLabel"), round(f["x"]), round(f["y"]), round(f["width"]), round(f["height"]))
+
+
+def buttons(nodes, width, height, hidden=frozenset()):
+    """The controls a screen shows, each with a name of its own: Brickson's
+    controls, and the keys of Apple's keyboard where it shows. Controls the
+    keyboard covers, or a cover hides (`hidden`), are left out."""
+    found, top = [], keyboard_top(nodes)
     for node in nodes:
-        kind = node.get("type")
-        if kind not in ("Button", "TextField", "TextView") or not (node.get("AXLabel") or node.get("AXUniqueId")):
+        if node.get("type") not in ("Button", "TextField", "TextView") or not (node.get("AXLabel") or node.get("AXUniqueId")):
+            continue
+        if key_of(node) in hidden:
             continue
         f = frame_of(node)
-        if f["w"] >= 44 and f["h"] >= 30 and fully_inside(f, 0, height, width):
-            found.append({"name": node.get("AXUniqueId") or node.get("AXLabel"), "label": node.get("AXLabel"), **f})
+        if not fully_inside(f, 0, height, width):
+            continue
+        in_keyboard = top is not None and f["y"] + f["h"] > top
+        if in_keyboard and f["y"] >= top - 1 and f["w"] >= 20 and f["h"] >= 20:
+            kind, inset = "key", 3
+        elif not in_keyboard and f["w"] >= 44 and f["h"] >= 30:
+            kind, inset = "control", review_inset(node)
+        else:
+            continue
+        name = f"{len(found):02d}:{node.get('AXUniqueId') or node.get('AXLabel')}"
+        found.append({"name": name, "label": node.get("AXLabel") or node.get("AXUniqueId"), "kind": kind, "inset": inset, **f})
     return found
 
 
-def capture_screen(sim, name, screen, nodes):
+def review_inset(node):
+    # A text field draws no ring: its words start close to its edge.
+    return 3 if node.get("type") in ("TextField", "TextView") else 6
+
+
+def capture_screen(sim, name, screen, nodes, hidden=frozenset()):
     window = next(n for n in nodes if n.get("type") == "Application")["frame"]
     png = sim.screenshot(f"{name}-{screen}")
-    targets = buttons(nodes, window["width"], window["height"])
-    measured = sim.measure(png, [{k: t[k] for k in ("name", "x", "y", "w", "h")} for t in targets])
-    return {"image": png, "buttons": [{"label": t["label"], **measured[t["name"]]} for t in targets if t["name"] in measured]}
+    with open(png[:-4] + "-tree.json", "w") as handle:
+        json.dump(nodes, handle)
+    targets = buttons(nodes, window["width"], window["height"], hidden)
+    measured = sim.measure(png, [{k: t[k] for k in ("name", "x", "y", "w", "h", "inset")} for t in targets])
+    return {"image": png, "buttons": [{"label": t["label"], "kind": t["kind"], **measured[t["name"]]} for t in targets if t["name"] in measured]}
 
 
 def has(identifier):
@@ -332,6 +379,7 @@ def capture_screens(sim, name):
     if not nodes:
         sys.exit(f"{name}: Home did not open")
     screens["home"] = capture_screen(sim, name, "home", nodes)
+    home = frozenset(key_of(n) for n in nodes if n.get("type") == "Button")
     run("axe", "tap", "--id=type", "--udid", sim.udid)
     time.sleep(4)
     screens["typing"] = capture_screen(sim, name, "typing", sim.tree())
@@ -347,11 +395,11 @@ def capture_screens(sim, name):
     nodes = sim.wait_for(lambda n: any(x.get("AXLabel") == "Back to Talking" for x in n))
     if nodes:
         time.sleep(1)
-        screens["settings"] = capture_screen(sim, name, "settings", sim.tree())
+        screens["settings"] = capture_screen(sim, name, "settings", sim.tree(), hidden=home)
     return screens
 
 
-def capture(udid, family, outdir, names):
+def capture(udid, family, outdir, names, screens_only=False):
     sim = Simulator(udid, family, None)
     # The full software keyboard, as AGENTS.md's Gotchas ask, for the typing capture.
     for key in ("AutomaticMinimizationEnabled", "DidShowContinuousPathIntroduction"):
@@ -363,10 +411,15 @@ def capture(udid, family, outdir, names):
             sim.outdir = os.path.join(outdir, family, name)
             os.makedirs(sim.outdir, exist_ok=True)
             sim.apply(settings)
-            manifest = {"family": family, "appearance": name, "scale": sim.scale, "settings": settings}
-            manifest["sheet"] = capture_sheet(sim, name, settings)
+            path = os.path.join(sim.outdir, "manifest.json")
+            if screens_only:
+                with open(path) as handle:
+                    manifest = json.load(handle)
+            else:
+                manifest = {"family": family, "appearance": name, "scale": sim.scale, "settings": settings}
+                manifest["sheet"] = capture_sheet(sim, name, settings)
             manifest["screens"] = capture_screens(sim, name)
-            with open(os.path.join(sim.outdir, "manifest.json"), "w") as handle:
+            with open(path, "w") as handle:
                 json.dump(manifest, handle, indent=1, sort_keys=True)
             print(f"{family} {name}: {len(manifest['sheet']['specimens'])} specimens, screens {sorted(manifest['screens'])}")
     finally:
@@ -517,6 +570,8 @@ def manifests(outdir, family):
 def screen_failures(screen):
     failures = []
     for button in screen.get("buttons", []):
+        if button.get("kind") == "key":
+            continue
         reading = button.get("reading")
         for what, ratio, target in verdicts("fill", reading):
             if ratio < target:
@@ -531,7 +586,7 @@ def compose_layout(path, layout, out):
 
 
 def compose(outdir):
-    readme, failures = [], []
+    readme, failures, keys = [], [], []
     for family in FAMILIES:
         found = manifests(outdir, family)
         if not found:
@@ -573,6 +628,9 @@ def compose(outdir):
                     size = png_size(screen["image"])
                     lines = [TITLES[m["appearance"]]]
                     wrong = screen_failures(screen)
+                    for button in screen.get("buttons", []):
+                        if button.get("kind") == "key" and button.get("reading"):
+                            keys.append((family, TITLES[m["appearance"]], button.get("label"), button["reading"]))
                     for label, what, ratio, target, reading in wrong:
                         failures.append((family, TITLES[m["appearance"]], f"{title}: {label}", what, ratio, target, reading))
                     if "difference" in screen:
@@ -586,10 +644,10 @@ def compose(outdir):
                 "title": f"{title} ({family})", "subtitle": "Whole captures at their own pixels, in each appearance.",
                 "columns": ["" for _ in range(5)], "rows": rows}, out)
             readme.append((out, f"{title}, on the {family} simulator, in each appearance."))
-    write_readme(outdir, readme, failures)
+    write_readme(outdir, readme, failures, keys)
 
 
-def write_readme(outdir, pictures, failures):
+def write_readme(outdir, pictures, failures, keys=()):
     lines = ["# Brickson design review sheet", "",
              "Generated by `scripts/design-review/review.py compose`; the summary at the top is written by hand.", "",
              "## Pictures", ""]
@@ -603,16 +661,25 @@ def write_readme(outdir, pictures, failures):
         lines.append(f"| {family} | {appearance} | {what} | {pair} | {ratio:.2f}:1 (needs {target}) | {colours} |")
     if not failures:
         lines.append("| | | none | | | |")
+    lines += ["", "## Apple's keyboard while typing", "",
+              "The keys are Apple's, not Brickson's to change; their lowest measured pair in each appearance:", "",
+              "| Device | Appearance | Keys measured | Lowest words | Key |", "|---|---|---|---|---|"]
+    by_capture = {}
+    for family, appearance, label, reading in keys:
+        by_capture.setdefault((family, appearance), []).append((reading["wordsOnFill"], label, reading))
+    for (family, appearance), found in by_capture.items():
+        ratio, label, reading = min(found, key=lambda item: item[0])
+        lines.append(f"| {family} | {appearance} | {len(found)} | {ratio:.2f}:1, `{reading['words']}` on `{reading['fill']}` | {label} |")
     with open(os.path.join(outdir, "README.generated.md"), "w") as handle:
         handle.write("\n".join(lines) + "\n")
     print(f"{len(pictures)} pictures, {len(failures)} pairs under target")
 
 
 def main(argv):
-    if len(argv) >= 5 and argv[1] == "capture" and UDID.fullmatch(argv[2]) and argv[3] in FAMILIES:
+    if len(argv) >= 5 and argv[1] in ("capture", "screens") and UDID.fullmatch(argv[2]) and argv[3] in FAMILIES:
         names = argv[5:] or list(APPEARANCES)
         if all(name in APPEARANCES for name in names):
-            return capture(argv[2], argv[3], os.path.abspath(argv[4]), names)
+            return capture(argv[2], argv[3], os.path.abspath(argv[4]), names, screens_only=argv[1] == "screens")
     if len(argv) == 6 and argv[1] == "inactive" and UDID.fullmatch(argv[2]) and argv[4] in INACTIVE and argv[5].isdigit():
         return inactive(argv[2], os.path.abspath(argv[3]), argv[4], float(argv[5]))
     if len(argv) == 3 and argv[1] == "compose":

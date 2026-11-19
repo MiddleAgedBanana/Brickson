@@ -62,16 +62,20 @@ struct DesignReviewScreen: View {
                     }
                 }
                 section("Words on the screen") {
-                    grid([Catalogue.primaryInk, Catalogue.statusInk]) { identifier in
-                        let isStatus = identifier == Catalogue.statusInk
-                        specimen(isStatus ? "Status line" : "Primary ink") {
-                            Text(verbatim: isStatus ? "Speaking" : "Choose a phrase to speak it.")
-                                .font((isStatus ? LabelFont.status : LabelFont.message).font)
-                                .foregroundStyle(.primary)
-                                .padding(Spacing.small)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .accessibilityElement(children: .combine)
-                                .accessibilityIdentifier(identifier)
+                    // The full width, as Home's message has it, so the
+                    // words wrap as they do there.
+                    VStack(alignment: .leading, spacing: Spacing.large) {
+                        ForEach([Catalogue.primaryInk, Catalogue.statusInk], id: \.self) { identifier in
+                            let isStatus = identifier == Catalogue.statusInk
+                            specimen(isStatus ? "Status line" : "Primary ink") {
+                                Text(verbatim: isStatus ? "Speaking" : "Choose a phrase to speak it.")
+                                    .font((isStatus ? LabelFont.status : LabelFont.message).font)
+                                    .foregroundStyle(.primary)
+                                    .padding(Spacing.small)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                                    .accessibilityElement(children: .combine)
+                                    .accessibilityIdentifier(identifier)
+                            }
                         }
                     }
                 }
