@@ -102,8 +102,13 @@ struct DesignReviewScreen: View {
                     }
                 }
                 section("Settings rows") {
-                    grid(Catalogue.settingsRoles.flatMap { role in Catalogue.settingsStates.map { (role, $0) } }) { pair in
-                        specimen("\(pair.0.name), \(pair.1.rawValue)") { settingsRow(pair.0, pair.1) }
+                    // The full width, as Settings gives its rows.
+                    VStack(alignment: .leading, spacing: Spacing.large) {
+                        ForEach(Catalogue.settingsRoles, id: \.asset) { role in
+                            ForEach(Catalogue.settingsStates, id: \.self) { state in
+                                specimen("\(role.name), \(state.rawValue)") { settingsRow(role, state) }
+                            }
+                        }
                     }
                 }
             }

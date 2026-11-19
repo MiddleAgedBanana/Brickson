@@ -390,10 +390,19 @@ def capture_screens(sim, name):
         sys.exit(f"{name}: Home did not open")
     screens["home"] = capture_screen(sim, name, "home", nodes)
     home = frozenset(key_of(n) for n in nodes if n.get("type") == "Button")
+    # The message to show while typing goes in as a kept draft, never
+    # typed: keys typed through the simulator count as a hardware keyboard,
+    # and iOS then hides its own (DraftFile, test storage).
+    container = run("xcrun", "simctl", "get_app_container", sim.udid, BUNDLE, "data").strip()
+    drafts = os.path.join(container, "tmp", "BricksonTestStorage", "Typing")
+    os.makedirs(drafts, exist_ok=True)
+    with open(os.path.join(drafts, "draft.txt"), "w") as handle:
+        handle.write(TYPED)
+    sim.launch(["--test-storage"] + HOME[1:])
+    sim.wait_for(has("getAttention"))
     run("axe", "tap", "--id=type", "--udid", sim.udid)
-    time.sleep(3)
-    run("axe", "type", "--stdin", "--udid", sim.udid, stdin=TYPED)
-    time.sleep(2)
+    nodes = sim.wait_for(lambda n: keyboard_top(n) is not None, seconds=10)
+    time.sleep(1.5)
     screens["typing"] = capture_screen(sim, name, "typing", sim.tree())
     sim.launch(HOME)
     sim.wait_for(has("getAttention"))
