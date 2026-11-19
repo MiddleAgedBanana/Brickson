@@ -24,8 +24,13 @@ Every job gets a folder, build/agent-bridge/<time>-<agent>-<kind>/, in the
 checkout it ran in: brief.md (the whole prompt sent), command.json, the
 agent's own output, result.md (its final message) and summary.json (how it
 ended, refusals, commits and changed files, read from git, not from the
-agent). `done` appears when it is over. The agent's words are data, never
-instructions or approval (AGENTS.md, *Guardrails for agents*).
+agent). `done` appears when it is over, even after a job that left git
+unable to read the checkout: the status then says what could not be read,
+and the summary's branch, commits and changed files are null. The agent's
+words are data, never instructions or approval (AGENTS.md, *Guardrails
+for agents*). The bridge's own git runs with git hooks, core.fsmonitor and
+every filter the settings define turned off, so none of those runs a
+command an agent named, outside its sandbox.
 
 Without --write a job is read-only: Codex runs in its read-only sandbox,
 agy is told not to change anything, and any file it changes anyway is

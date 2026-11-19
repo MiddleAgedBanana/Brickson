@@ -1722,12 +1722,21 @@ settings, date) and summarise it here.
   message, author and committer, before the branch moves to it;
   otherwise nothing is committed and the job says why; the bridge's own
   git, its privacy check and its jobs run without git's
-  repository-location variables
+  repository-location variables; the bridge's own git and its privacy
+  check also run with every git filter the settings define turned off,
+  as hooks and `core.fsmonitor` already were (the settings git uses to
+  reach a remote are not turned off); and a job that leaves git
+  unreadable still ends with `summary.json` and `done`, saying what
+  could not be read
   ([record](log/2026-11-12-bridge-commits-and-guard-code.md)).
   CodeRabbit's finding that #99's record should again list the Mac check
   under *Not verified* was declined, and CodeRabbit then withdrew it: the
   check was made before #99 merged (same record, *CodeRabbit's review of
-  the second push*). Neither
+  the second push*). Of the eleven findings CodeRabbit left on #108,
+  which did this bridge work another way, five are fixed in this bridge,
+  four were already fixed in it, so nothing was ported for them, and two
+  were about #108's own record (same record, *Brought over from pull
+  request #108*). None of this
   has been run through a real Codex or agy job on the Mac yet (same
   record, *Not verified*).
   Jules, Google's cloud coding agent, is no longer one of Brickson's
