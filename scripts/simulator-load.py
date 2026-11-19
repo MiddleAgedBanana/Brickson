@@ -3,12 +3,15 @@
 which of them use the machine's processors.
 
     simulator-load.py start --udid <udid> --out <file> --parent <pid> [--pause-posters]
+    simulator-load.py settle --out <file> [--limit <seconds>]
     simulator-load.py stop --pid <pid> --out <file>
 
 `start` starts a watcher in the background, waits for it to begin
 watching (or, on a Mac too busy to start it in time, leaves it to begin)
 and prints its pid; `stop` stops it, waits for its summary and prints it.
-scripts/test.sh starts one for each simulator it tests on.
+scripts/test.sh starts one for each simulator it tests on. `settle`
+waits, before the UI tests, until the Mac is no longer busy with the
+simulator's start (see "Waiting for the Mac to settle" below).
 
 Every five seconds the watcher reads the Mac's process list, finds the
 processes the simulator runs (everything started under that device's
@@ -53,6 +56,25 @@ extensions started meanwhile were never paused
 (docs/log/2026-11-04-watcher-without-ps.md). Only the processes of the
 one simulator named by --udid are read in detail or paused, and only on
 a Mac.
+
+Waiting for the Mac to settle. A simulator that starts for the first
+time, as every simulator on GitHub's machines does, starts hundreds of
+background tasks: indexing, widgets, wallpapers, health, news and the
+rest. On GitHub's Mac (three processors) they kept every processor busy,
+with 400 to 550 tasks waiting for one, for a quarter of an hour and more,
+and the UI tests started five minutes into it. In the 320 UI test jobs
+from 2026-11-12 to 2026-11-19, a test step never stalled while the load
+was under 250, and stalled 50 times above it; tests that started with
+the load under 150 failed once in 10,504 runs, and those that started
+above 350 about eight times in a thousand
+(docs/log/2026-11-19-ui-tests-wait-for-a-settled-mac.md). So `settle`
+reads the load every five seconds and returns once three readings in a
+row are under 50 for each of the Mac's processors (150 on GitHub's), or
+after --limit seconds (twenty minutes unless given), saying which in the
+log and in the record. It only waits: it never fails a run, and a Mac
+that does not settle is tested anyway, with a warning. The load is the
+one-minute average of tasks running or waiting for a processor
+(os.getloadavg), the "load" of each of the record's lines.
 """
 import argparse
 import ctypes
@@ -78,6 +100,16 @@ CHECK = 1.0
 # busy starting a simulator can take longer than this to start Python.
 WAIT = 15.0
 STOPPED = "Stopped."
+
+# The Mac has settled once its load has been under this many for each of
+# its processors on this many readings in a row, INTERVAL apart; `settle`
+# waits no longer than SETTLE_LIMIT seconds unless told, and says how far
+# it is every SETTLE_SAYS. The measurements behind the numbers are in the
+# module's description.
+SETTLED_LOAD = 50.0
+SETTLED_READINGS = 3
+SETTLE_LIMIT = 20 * 60.0
+SETTLE_SAYS = 60.0
 
 
 def clock_time():
@@ -582,6 +614,69 @@ def stop(arguments, wait=WAIT):
     return 0
 
 
+def spell(seconds):
+    """A wait's length in words: "35 s", "9 min 35 s", "20 min"."""
+    minutes, rest = divmod(round(seconds), 60)
+    if not minutes:
+        return f"{rest} s"
+    return f"{minutes} min" + (f" {rest} s" if rest else "")
+
+
+def settle(arguments, load=None, processors=os.cpu_count, clock=time.monotonic, sleep=time.sleep):
+    """Waits until the Mac has settled (the module's description says
+    what that is and why), or until the limit, and says which in the log
+    and in the record. Always 0: the tests run either way."""
+    if load is None:
+        def load():
+            return os.getloadavg()[0]
+    count = processors() or 1
+    wanted = SETTLED_LOAD * count
+
+    def note(line):
+        # One short line at a time, added to the end: the watcher writes
+        # the same file.
+        try:
+            with open(arguments.out, "a", encoding="utf-8") as record:
+                record.write(f"{clock_time()} {line}\n")
+        except OSError as error:
+            print(f"warning: could not write to {arguments.out}: {error}", file=sys.stderr)
+
+    began = said = clock()
+    under, first = 0, True
+    while True:
+        try:
+            reading = load()
+        except OSError as error:
+            print(f"warning: the Mac's load could not be read ({error}), so the tests start "
+                  "without waiting for it to settle.", file=sys.stderr)
+            note(f"the Mac's load could not be read ({error}); the tests run without the wait")
+            return 0
+        now = clock()
+        waited = now - began
+        if first:
+            first = False
+            print(f"Waiting for the Mac to settle before the tests: its load is {reading:.0f}, and "
+                  f"they start once it has stayed under {wanted:.0f} ({SETTLED_LOAD:.0f} for each "
+                  f"of its {count} processors), or after {spell(arguments.limit)}.", flush=True)
+            note(f"waiting for the Mac to settle before the tests: load {reading:.1f}, "
+                 f"wanted under {wanted:.0f}")
+        under = under + 1 if reading < wanted else 0
+        if under >= SETTLED_READINGS:
+            print(f"The Mac settled after {spell(waited)}: load {reading:.0f}.", flush=True)
+            note(f"the Mac settled after {waited:.0f} s: load {reading:.1f}")
+            return 0
+        if waited >= arguments.limit:
+            print(f"warning: the Mac had not settled after {spell(waited)} (load {reading:.0f}, "
+                  f"wanted under {wanted:.0f}); the tests run anyway.", file=sys.stderr)
+            note(f"the Mac had not settled after {waited:.0f} s: load {reading:.1f}; "
+                 "the tests run anyway")
+            return 0
+        if now - said >= SETTLE_SAYS:
+            said = now
+            print(f"  still settling after {spell(waited)}: load {reading:.0f}", flush=True)
+        sleep(INTERVAL)
+
+
 def parse(arguments=None):
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     commands = parser.add_subparsers(dest="command", required=True)
@@ -597,12 +692,16 @@ def parse(arguments=None):
     stopping = commands.add_parser("stop")
     stopping.add_argument("--pid", type=int, required=True)
     stopping.add_argument("--out", required=True)
+    settling = commands.add_parser("settle")
+    settling.add_argument("--out", required=True)
+    settling.add_argument("--limit", type=float, default=SETTLE_LIMIT)
     return parser.parse_args(arguments)
 
 
 def main():
     arguments = parse()
-    return {"start": start, "watch": watch, "stop": stop}[arguments.command](arguments)
+    return {"start": start, "watch": watch, "stop": stop,
+            "settle": settle}[arguments.command](arguments)
 
 
 if __name__ == "__main__":

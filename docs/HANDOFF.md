@@ -867,7 +867,17 @@ release in docs/ROADMAP.md when no thread has it yet.
   27.2's release candidate, so `scripts/select-xcode.py` skipped it and
   took 27.1 with iOS 27.0. Nothing is pinned, on purpose
   (docs/DECISIONS.md, "Build with Apple's current Xcode"), and nothing
-  needs changing: it ends when GitHub finishes the rollout.
+  needs changing: it ends when GitHub finishes the rollout. A new image
+  can also be faulty: on 2026-11-16, from about 00:15 to 10:50 UTC, jobs
+  that landed on image 20261112.0361.1 (macOS 27.2) lost their simulator
+  or crawled to the 90-minute limit, other developers reported the same
+  (`actions/runner-images` issues 15334 and 15337), and GitHub went back
+  to 20261104.0337.1 that day. On 2026-11-19 GitHub published a
+  pre-release image with the same macOS, 20261119.0378. When jobs lose
+  the simulator or stop at their limit, read the image's version at the
+  top of the job's log first ("Runner Image"): a second try may land on
+  the older image
+  ([`log/2026-11-19-ui-tests-wait-for-a-settled-mac.md`](log/2026-11-19-ui-tests-wait-for-a-settled-mac.md)).
 - `HomeAccessibilityOrderTests` failed now and then on CI, always in its
   first state, "just opened", on the iPhone and the iPad, at both text
   sizes, reading Home in screen order (Phrases and Type first). The
@@ -893,9 +903,13 @@ release in docs/ROADMAP.md when no thread has it yet.
   bundles. *(closed 2026-11-17; the next thread whose CI shows it reopens
   it)*
 - `SettingsTests.testAnIdleSettingsReturnsToItsFirstScreenAndStaysOpen`
-  has failed once each on 2026-10-22, 2026-11-08 and 2026-11-12, on
-  branches that did not touch it, and passed on each re-run: Family
-  Setup did not open, or its tap found no hit point. The 2026-11-12
+  has failed once each on 2026-10-22, 2026-11-08, 2026-11-12 and
+  2026-11-17 (on `main`), on commits that did not touch it, and passed
+  on each re-run: Family Setup did not open, or its tap found no hit
+  point. The 2026-11-12 failure came 38 minutes into its job, on a
+  settled Mac (a load of 26), so the simulator's busy start
+  (docs/DECISIONS.md, "Tests", 2026-11-19) is not its cause; the
+  2026-11-17 one came ten minutes in, at a load of about 510. The 2026-11-12
   recording stays on Settings' first screen throughout. A likely cause,
   not proven: under `--short-timeouts` Settings' idle limit is 3
   seconds, an untouched Settings resets every 3 seconds, and each reset
@@ -903,6 +917,25 @@ release in docs/ROADMAP.md when no thread has it yet.
   even on its first screen, so a tap can land on a rebuild
   ([`log/2026-11-12-ci-claims-narrowed.md`](log/2026-11-12-ci-claims-narrowed.md)).
   *(a Settings thread, in its own pull request)*
+- Twelve CI jobs from 2026-11-13 to 2026-11-19, eight "Unit tests" and
+  four iPad UI jobs, were cancelled by nobody: only "The operation was
+  canceled." in the log, no new push, far from any time limit, and the
+  rest of the run carried on. Each was cancelled 8.5 to 13 minutes after
+  its simulator began to start, at a load of 550 to 860 where 500 is
+  usual. A lead, not proved: GitHub's agent on the machine, starved for
+  about ten minutes, cannot tell GitHub's service it still holds the
+  job, and the service takes the job back. The wait before the UI tests
+  (docs/DECISIONS.md, "Tests", 2026-11-19) does not fix it, because it
+  happens before the tests. Until a fix is tried, a second try of that
+  job is the remedy. What to try, in order, is in
+  [`log/2026-11-19-ui-tests-wait-for-a-settled-mac.md`](log/2026-11-19-ui-tests-wait-for-a-settled-mac.md),
+  *Follow-ups*. *(the owner chooses whether a thread takes it up)*
+- Whether the wait before the UI tests ends the waits that ran out on a
+  busy Mac is measured on one CI run so far. After about twenty runs
+  with it on `main`, count again with the script in
+  [`log/2026-11-19-ui-tests-wait-for-a-settled-mac.md`](log/2026-11-19-ui-tests-wait-for-a-settled-mac.md):
+  a wait that ran out in a test started on a settled Mac has another
+  cause and needs its own look. *(the next thread on CI)*
 - Settings' Get Attention place is still empty, although AGENTS.md's
   design rules say "Settings opens on a large way back and a start-only
   Get Attention". Scored on 2026-10-24, Get Attention there would sound
@@ -1615,7 +1648,18 @@ settings, date) and summarise it here.
   on the iPhone in the probe run, where one test's 10 s wait ran out
   inside that burst). Each "paused" line says what the instance had
   used
-  ([`log/2026-11-04-watcher-without-ps.md`](log/2026-11-04-watcher-without-ps.md)). Home's
+  ([`log/2026-11-04-watcher-without-ps.md`](log/2026-11-04-watcher-without-ps.md)).
+  Since 2026-11-19 the UI tests also wait, after the warm-up launch and
+  before the first test, until the Mac's load has stayed under 50 for
+  each of its processors (150 on GitHub's Mac) or twenty minutes have
+  passed. A week of CI records, read side by side, showed that the
+  waits that ran out on pull requests that had not touched the failing
+  test were in tests started while the Mac was still busy with the
+  simulator's first start, and almost never in tests started later
+  (docs/DECISIONS.md, "Tests", 2026-11-19; [`log/2026-11-19-ui-tests-wait-for-a-settled-mac.md`](log/2026-11-19-ui-tests-wait-for-a-settled-mac.md),
+  which sorts that week's failures into their kinds). The wait writes
+  its start and end into the simulator's record: when a UI test's wait
+  runs out, read there first whether the Mac had settled. Home's
   layout test uses bounded live queries while retaining every tile's
   visibility and position checks. After incorporating `main` at `d79d836`,
   its audit helper also keeps issue-time captures and native XCTest
