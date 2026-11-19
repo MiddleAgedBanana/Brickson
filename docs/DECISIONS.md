@@ -864,7 +864,11 @@ the answer is None, because starter phrases such as "I need my medication."
 are the person's own words to the people nearby, not guidance on managing a
 condition. Infrequent would make the app 13+. The full answers are in
 docs/APP-STORE.md, section 6. Re-answer when the starter phrases, an in-app
-web view or caregiver alerts change what the app contains. Whether US state
+web view or caregiver alerts change what the app contains. *2026-11-19:*
+Apple added two questions, Shared Location and Dating and Relationships,
+asked from 2026-11-16 and due from every app by 2027-01-12; Brickson
+answers No to both, since it has no location code and no such feature
+(docs/APP-STORE.md, section 6). Whether US state
 age-assurance laws require the Declared Age Range API is **not** decided
 here; any age check must never cover or block communication (invariants 2
 and 10).
@@ -1797,6 +1801,33 @@ category.
   starter's largest category), a short last row can scroll up beside the
   categories, part of invariant 11's scrolling gap (docs/HANDOFF.md,
   *Known gaps*).
+
+## Text people read is in American English
+
+*2026-11-19. Default; reversible if the owner objects
+([`log/2026-11-19-records-brought-up-to-date.md`](log/2026-11-19-records-brought-up-to-date.md)).*
+
+Every word Brickson shows or says for itself (the String Catalog, the
+starter phrases, the system's permission prompts in `Info.plist`) and
+every word of its App Store text (name, subtitle, promotional text,
+description, keywords, What's New and the notes for App Review) is
+written in American English: "color", "center", "gray", "favorite",
+"canceled". The App Store record's primary language is English (U.S.)
+(docs/APP-STORE.md, section 1), the store text is drafted in it
+(docs/ASO.md, *The store text*), and one spelling everywhere keeps the
+String Catalog's keys stable for translation later.
+
+- **One exception.** The English (U.K.) and English (Australia) store
+  localizations name the disease "MND", "motor neurone disease", because
+  that is what people there search for (docs/ASO.md, *Other
+  English-speaking stores*); the rest of their text is the US text.
+- **A person's own words are never respelled.** Phrases and categories a
+  family writes, and everything shown with `Text(verbatim:)`, stay as
+  typed.
+- **Not covered:** code identifiers, comments and the project's
+  documents.
+- Respelling a starter phrase, even only its spelling, changes words a
+  person speaks, so it goes to the owner first.
 
 ## Words wider than Home's narrowest buttons
 
@@ -5483,7 +5514,7 @@ fill, which Apple's own dark and Increase Contrast dark system colours
 favour: by their published values they carry black words far better than
 white) without touching every view.
 
-**What `PaletteTests` measures**, ported from the stage 5 colour search's
+**What `PaletteTests` measures**, ported from a colour search's
 checked arithmetic (`BricksonTests/ColourArithmetic.swift`, cross-checked
 against that search's Python and Sharma, Wu and Dalal's published
 CIEDE2000 pairs in `theArithmeticMatchesTheColourSearch`), except that
@@ -6807,8 +6838,8 @@ station answers.
   library, anything from the private list, Apple's private API, or
   anything learned by taking Apple's software apart. It speaks neutral
   test words only (docs/DEVICE-CHECKS.md, *Keep the repository's rules*).
-- **Revisit when** stage 4's experiments are done: the owner chooses
-  whether the probe is removed or kept to run them again after a new
+- **Revisit when** the experiments in docs/EXPERIMENTS.md are done: the
+  owner chooses whether the probe is removed or kept to run them again after a new
   iOS.
 
 ## Reviews, updates and GitHub settings
@@ -6827,7 +6858,7 @@ review setup does not quietly break them.
   with different training and tools each see things the others miss,
   and one stands in when another is out of credits or reviews for the
   hour. So cubic joins Codex, CodeRabbit and Greptile (it does not
-  replace Greptile, as the consultant's brief of 2026-11-06 proposed),
+  replace Greptile, as a proposal of 2026-11-06 had it),
   and each reviewer's settings live in a file here, where agents and
   reviewers read them, rather than only on its website:
   - **`.coderabbit.yaml`** (the owner approved its contents).
@@ -7063,6 +7094,23 @@ review setup does not quietly break them.
 - No `CODEOWNERS` file: the owner is the only maintainer and appears as
   the author of every pull request agents open, and GitHub never asks an
   author to review their own pull request.
+- **2026-11-19, the record catches up: eight reviewers, all the
+  owner's.** The owner said on 2026-11-16 that every review bot on
+  Brickson's pull requests is theirs. Besides Codex, CodeRabbit,
+  Greptile, cubic and Copilot (above), three more comment by themselves,
+  and no agent asks them:
+  - **Gitar** (`gitar-bot`) posts a review as pushes arrive. Its
+    auto-apply is off and stays off, because reviewers never write the
+    code (above; AGENTS.md, "Reviews and updates on GitHub").
+  - **Graphify** (`graphify-labs`) posts one summary review per pull
+    request (one each on #112, #114, #116, #117 and #119, whatever their
+    pushes), so its review may not cover a later head.
+  - **SonarQube Cloud** (`sonarqubecloud`) posts a quality-gate comment
+    and check runs of its own; none of them is a required check.
+
+  cubic's app was installed on 2026-11-15 and has reviewed since #114.
+  None of the eight approves, and every conversation any of them opens
+  is one the ruleset requires resolved (*`main` ruleset*, below).
 
 ### Dependencies
 
@@ -7087,9 +7135,8 @@ commit each tag stood for is held apart, in the lockfile (below).
   checkout keeps the job's token where every later step's `git` can
   use it, and no step here runs `git` against GitHub; nothing uploaded
   includes the checkout either, so this closes a door rather than a
-  leak (zizmor's `artipacked` check, run for the consultant's brief of
-  2026-11-06). `scripts/test-runner.py` fails a checkout without it,
-  in any workflow.
+  leak (zizmor's `artipacked` check, run on 2026-11-06).
+  `scripts/test-runner.py` fails a checkout without it, in any workflow.
 - **Dependency review on every pull request.**
   `.github/workflows/dependency-review.yml` runs GitHub's
   `actions/dependency-review-action`, which fails a pull request that
@@ -7293,7 +7340,7 @@ through its API on 2026-10-15:
 | Require a pull request before merging | 0 approvals; merge commits only | Nobody pushes to `main`. The owner cannot approve pull requests that show them as author, so any approval count would block every merge. Merge commits keep the commit hashes HANDOFF cites on `main`. |
 | Require status checks to pass | "Unit tests" and "UI tests" | The job names in `tests.yml`. Renaming a job blocks every pull request until the ruleset is changed to match. |
 | Require branches to be up to date | Off | Each update reruns the Mac tests; `main` is tested again after every merge anyway. |
-| Require conversation resolution | On | Every reviewer's comment (Codex, CodeRabbit, Greptile, cubic, Copilot), and every CodeQL alert posted on the pull request, gets an answer before a merge. AI Scan findings were answered too, by practice, while it was on (until 2026-11-08, *Code scanning* above). |
+| Require conversation resolution | On | Every reviewer's comment (Codex, CodeRabbit, Greptile, cubic, Copilot, Gitar, Graphify, SonarQube Cloud), and every CodeQL alert posted on the pull request, gets an answer before a merge. AI Scan findings were answered too, by practice, while it was on (until 2026-11-08, *Code scanning* above). |
 | Require code scanning results | CodeQL: errors, high or higher | A workflow change that CodeQL flags as an error, or as a high or critical security problem, cannot merge. It did not cover Dependabot's first pull request, which got no CodeQL analysis before merging (*Code scanning* above). |
 | Automatically request Copilot code review | Off since 2026-11-03 (on before, with new pushes and drafts off) | The agent asks for Copilot's review once per code pull request, after Codex's review is answered (since 2026-11-08, *Code review* above). |
 | Block force pushes, restrict deletions | On | History on `main` never changes. |
@@ -7301,7 +7348,7 @@ through its API on 2026-10-15:
 
 ## AGENTS.md puts first what Codex reads
 
-*2026-11-03. Default, from the owner's consultant notes; reversible if
+*2026-11-03. Default, from notes the owner passed on; reversible if
 the owner objects
 ([`log/2026-11-03-agents-md-for-codex.md`](log/2026-11-03-agents-md-for-codex.md)).*
 

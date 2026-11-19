@@ -6,10 +6,13 @@ edits this page in place and writes its record in [`docs/log/`](log/README.md);
 nothing is appended here. Plan: [`docs/ROADMAP.md`](ROADMAP.md). How the
 project runs: [`docs/SDLC.md`](SDLC.md).
 
-**State as of 2026-10-23: PR #14 (the library core), PR #33 (Settings
-on Home), PR #35 (Show Borders on Home) and PR #17 (agent guardrails)
-are merged; PR #17 landed as `7bff8f0`.**
-Ten threads are working in parallel on the first release, R0.
+**State as of 2026-11-19: `main` is at `606a26b`, pull request #126,
+merged 2026-11-18.** Open pull requests: #108 (a draft) and #109, two
+versions of one change to the agent bridge; #115, the record of the
+simulator experiments; #120, four more windows for Home's layout tests;
+#122, UI test waits; #123, a phrase the speech service never begins;
+and #124, the code scanning alerts. Device checks wait for the Team ID
+(*Next steps, in order*, step 4).
 
 ## What the app does today
 
@@ -781,7 +784,7 @@ release in docs/ROADMAP.md when no thread has it yet.
   chains with the one chain engine"); how iPadOS moves a pointer when a
   window is resized is not known until a device shows it (*Checks that
   need a real device*). Found
-  2026-11-03 from the owner's consultant notes
+  2026-11-03 in a review of the project's documents
   ([log](log/2026-11-03-agents-md-for-codex.md)). *(R0, docs/ROADMAP.md,
   *The quality bar*, Q10; no thread has it yet)*
 - Typing on Home (since 2026-10-24) has automated coverage on CI's iPad and
@@ -1032,8 +1035,6 @@ release in docs/ROADMAP.md when no thread has it yet.
   device check. *(owner, with a device build)*
 - If SwiftData cannot create even an in-memory library, the app stops
   (`fatalError` in `PhraseLibraryStore.openForApp`). *(owner)*
-- `cloudKitDatabase: .none` and the absence of an iCloud capability are
-  privacy-policy promises no test pins. *(Test seams and CI evidence)*
 - Personal Voice permission is still asked at first launch without
   explanation. Voice Settings' explained Ask button is built
   (docs/DECISIONS.md, "Asking for Personal Voice from Voice Settings") but
@@ -1299,11 +1300,8 @@ docs/ROADMAP.md, *The quality bar*, Q24):
 9. Settings for the reviewers and GitHub's machines, from 2026-11-07
    (docs/DECISIONS.md, *Code review* and *Dependencies*), once that
    pull request has merged:
-   - **Install cubic** from
-     [its Marketplace page](https://github.com/marketplace/cubic-ai-code-reviews):
-     sign in at cubic.dev with GitHub, and give its app **Only select
-     repositories**, with Brickson alone. Success: the next pull request
-     gets a review from `cubic-dev-ai`.
+   - **Install cubic:** done. Its app has reviewed pull requests since
+     #114 (2026-11-15).
    - **Allow only GitHub's actions (and your own):** done. GitHub's API
      showed it on 2026-11-07, with "Allow actions created by GitHub"
      ticked and nothing else.
@@ -1672,13 +1670,18 @@ settings, date) and summarise it here.
   opening it, its local Codex review answered (since 2026-11-08; AI
   Scan is off since that day);
   Greptile reviews when a pull request opens, as far as its free plan's
-  credits allow; cubic, once the owner installs its app, reviews when
-  one opens and after each push; CodeRabbit reviews only when a comment
+  credits allow; cubic reviews when one opens and after each push (its
+  app since 2026-11-15); CodeRabbit reviews only when a comment
   asks, `@coderabbitai review`, since the owner's trial ended. Since
   2026-11-07 each one's settings are in the repository
   (`.coderabbit.yaml`, `cubic.yaml`, `.greptile/`), with every feature
   that writes code and has a setting turned off, and AGENTS.md's rule
   holds the rest (docs/DECISIONS.md, *Code review*).
+  Three more of the owner's reviewers comment by themselves, never
+  approve, and no agent asks them: Gitar (its auto-apply off), Graphify
+  (one summary review per pull request so far) and SonarQube Cloud (a
+  quality-gate comment and check runs of its own, none of them
+  required); docs/DECISIONS.md, *Code review*, 2026-11-19.
   None reviews Dependabot's pull requests by itself. The AI credits
   Copilot's reviews use show only in Settings → Billing → AI usage;
   the owner budgets 35 to 50 reviews a month (docs/DECISIONS.md,
