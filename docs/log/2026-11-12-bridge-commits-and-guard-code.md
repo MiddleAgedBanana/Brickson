@@ -344,8 +344,8 @@ cannot run it; the command is under *Not verified*. Whatever it shows,
 the bridge now turns those filters off for its own git.
 
 **The reviews of the fifth push.** cubic left eight findings and
-CodeRabbit eleven, one of them the same in both. Each was checked against
-the code. Eleven are answered by a change here, the five in the bridge
+CodeRabbit twelve, one of them the same in both. Each was checked against
+the code. Twelve are answered by a change here, the six in the bridge
 test first:
 
 - *A job could keep a bytecode cache the bridge never clears* (cubic).
@@ -374,6 +374,16 @@ test first:
   failed* (CodeRabbit), when a job's commits changed the code and left a
   folder where a file was. The sentence about the commits no longer
   claims it.
+- *A refusal or a stop that could not unstage the job's files said
+  nothing* (CodeRabbit). The bridge clears what it staged with
+  `git reset` and did not check it, so when the reset failed the files
+  stayed staged and the status said only that the work was not
+  committed. The status and `bridge_commit` now say the files may still
+  be staged and name the command that clears them. Before the bridge has
+  staged anything it adds nothing, since a git that cannot be read is
+  what the status already says. This finding was missed when the others
+  were answered: the report-only verifier found it unanswered on the
+  sixth push, and its fix went in with the seventh (`8068aa1`).
 - *The tests' own git* (cubic, and CodeRabbit). The helpers that set up
   and read the made-up checkouts now read the fixture's settings alone,
   and the tests drop git's repository variables before they run git, so
@@ -408,11 +418,28 @@ Not changed, and why:
 - *A privacy report that cannot be written* (CodeRabbit). When the job's
   folder cannot be written, neither can `summary.json` or `done`, so
   sending the failure to `finish()` would give the caller no result
-  either. Nothing has been committed at that point.
+  either. That reason does not cover the finding's own example, a folder
+  left under the report's name, where the rest of the job folder can
+  still be written. Either way the bridge ends with Python's own error
+  and no `done`; nothing has been committed at that point, and the job's
+  files are still staged (*Follow-ups*).
 - *agy output that is not text ends with no `done`* (CodeRabbit, outside
   the diff). Already under *Follow-ups*. Reading it with errors replaced
   would also stop the unreadable-output test from pinning the put-back's
   `finally`, so it needs its own test first.
+
+**After the sixth push.** The report-only verifier ran on the sixth push
+(`f9e6f03`). It found the unanswered finding above, and that a comment in
+`run()` said a stop during the clean-up is never dropped, which does not
+hold for a Codex read-only or review job, where nothing reads the note;
+the comment now says so (`ab82a2c`). CodeRabbit, having read the answers,
+withdrew two of its findings: the staged rename, and the tracked file
+under `build/`. On the sixth push it left one finding, marked minor and
+outside the diff: staging very many changed files in one `git add` can
+pass the operating system's limit on a command's length, and the bridge
+then stops with Python's own error and no `done`. Not changed here
+(*Follow-ups*). The security finding's conversation waits for the
+owner's decision.
 
 **#99's record, corrected.** Its first *Not verified* line, the hook file
 installed on the Mac, was checked on 2026-11-12, so it now sits under
@@ -465,7 +492,12 @@ merge that brought them to `main`, `3f92a8b` (cubic, on the fifth push).
   git
 - `b82caee` Never say the guard's code was put back after the put-back
   failed
-- and the commit that records these here, which cannot name itself.
+- `f9e6f03` Record the reviews of the bridge's fifth push
+- `8068aa1` Say when a refusal or a stop could not unstage the job's
+  files
+- `ab82a2c` Say what a noted stop does in each kind of job
+- and the commit that records these three here, which cannot name
+  itself.
 
 ## Verified
 
@@ -473,11 +505,11 @@ In a cloud container (Linux, git 2.43), which cannot run Codex or agy,
 with Python 3.13 and with Python 3.9.25, the version of the Mac's
 `/usr/bin/python3`:
 
-- `scripts/test-agent-bridge.py`: 72 of 72 on both. Thirty-two tests
+- `scripts/test-agent-bridge.py`: 73 of 73 on both. Thirty-three tests
   are new. The first twelve each failed on `main`'s bridge (19 failing
   cases between them); the three from the independent review, the two
   from CodeRabbit's review of the second push, the two from its review of
-  the third, the eight for what #108's review found and the five from
+  the third, the eight for what #108's review found and the six from
   the reviews of the fifth push each failed on this branch's bridge
   before its fix. Two
   existing tests check the new write instructions: Codex's fails on
@@ -622,6 +654,14 @@ with Python 3.13 and with Python 3.9.25, the version of the Mac's
     folder where `guard.py` was. The status says the bridge could not
     put the code back and that the commits change it; before the fix it
     went on to say the code was put back.
+  - `test_a_refusal_or_stop_that_cannot_unstage_the_jobs_files_says_so`:
+    a stand-in git fails the unstage (every `git reset` but the one that
+    fills a new worktree). In one case the privacy check refuses the
+    commit; in the other a stop arrives once the files are staged, sent
+    by the bridge to itself just before the check. The files stay
+    staged, and the status and `bridge_commit` say so and name
+    `git reset`. On the sixth push's bridge both cases fail: neither
+    status says anything about the files.
 - The tests' own git: with `GIT_INDEX_FILE` and `GIT_PREFIX` exported,
   the commit test passes; the test file as it was at `0566cc0` ends in
   an error there.
@@ -698,6 +738,8 @@ with Python 3.13 and with Python 3.9.25, the version of the Mac's
   the test sends it from inside the bridge at that exact point.
 - The reading of a job's commits (`git log --full-history -m`) with the
   Mac's own git.
+- A `git reset` that really fails after a refusal: the test makes a
+  stand-in git fail it.
 
 ## Follow-ups
 
@@ -735,3 +777,17 @@ with Python 3.13 and with Python 3.9.25, the version of the Mac's
 - Whether reading the filters a moment before git runs stays a known
   limit (*The reviews of the fifth push*, the security finding). Owner:
   the owner.
+- The bridge stops with a Python error and no `done` when something is
+  left in the job folder under a name the bridge writes (a folder named
+  `privacy-check.txt`, say), with the job's files still staged when that
+  happens after staging; and when so many files changed that one
+  `git add` passes the operating system's limit on a command's length,
+  with nothing staged (*After the sixth push*). Nothing is committed
+  either way. Owner: the thread that makes the next bridge pull request,
+  which sends both through the refusal.
+- A stop that arrives while a timed-out agy is being stopped is reported
+  as arriving after agy ended; and a stop in the instant between the
+  agent ending and the bridge starting to note stops can still cut the
+  clean-up short, as it could before this pull request. The verifier
+  read both in the code and reproduced neither. Owner: the thread that
+  makes the next bridge pull request, which decides.

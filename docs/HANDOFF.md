@@ -1736,13 +1736,14 @@ settings, date) and summarise it here.
   which did this bridge work another way, five are fixed in this bridge,
   four were already fixed in it, so nothing was ported for them, and two
   were about #108's own record (same record, *Brought over from pull
-  request #108*). The reviews of that push found five more faults in the
+  request #108*). The reviews of that push found six more faults in the
   bridge, fixed in the same pull request: a job could keep a bytecode
   cache folder the bridge never clears, commits that changed the guard's
   code and put it back were reported as unchanged, a stop was dropped
   while the agent's processes were being stopped, a failed listing of a
-  job's commits read as none, and a status claimed a put-back that had
-  failed. Eight findings were not changed, one of them a security
+  job's commits read as none, a status claimed a put-back that had
+  failed, and a refusal that could not unstage the job's files did not
+  say so. Eight findings were not changed, one of them a security
   finding left for the owner: the bridge reads which filters are set a
   moment before its git runs, so a job outside any sandbox could add one
   in between, which gains it nothing it could not already do (same
