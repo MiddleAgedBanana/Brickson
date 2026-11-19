@@ -61,7 +61,16 @@ simulators in every appearance:
 
 ## Commits
 
-COMMITS
+- `3a3ec01`: Add a debug-only design review sheet and its capture script (work in progress)
+- `5ce6944`: Capture each page only once the screen is still, and read a capsule's edge
+- `dcb0f79`: Test the review sheet's measurements and script, and record the decision
+- `128a3f6`: Measure each screen's controls once each, leave covered ones out, and report the keyboard's keys apart
+- `e72527a`: Fit the swatches' words as controls do, type a message for the typing capture, and measure the field's own edge
+- `98cc699`: Show Settings' rows at Settings' width, and put the typed message in as a kept draft
+- `a8caf4f`: Capture the inactive iPad window clear of the focused window's shadow, and Settings over Home at the sizes Home was captured at
+- `d5e46e2`: Answer Codex's review before opening: verdicts on full ratios, the weaker of two marks as the words, the scale read from the capture, safe reruns, and the keyboard required
+- `d07540a`: Leave the screen in a shape's corners out of its words, read keys for their letters, and record what the sheet showed
+- The commit that adds this list.
 
 ## Verified
 
