@@ -1526,6 +1526,35 @@ class BridgeTests(unittest.TestCase):
         self.assertEqual(self.git_out(folder, 'show', 'HEAD:docs/new.md'),
                          b'new from the agent: plain words\n')
 
+    def test_a_filter_set_only_for_the_jobs_branch_never_runs_when_a_worktree_is_reused(self):
+        # A write job given a worktree that already exists moves it to the
+        # job's new branch with `git switch -c`, which rewrites every file
+        # main has changed since. git reads its settings there while the
+        # folder is still on its old branch, where a filter set for codex/
+        # branches alone is off, so nothing runs; this pins that.
+        outside = Path(self.temp.name) / 'outside'
+        outside.mkdir()
+        mark = outside / 'ran'
+        (self.owner / 'AGENTS.md').write_text('# main has moved on\n')
+        env = {**os.environ, **self.env}
+        for args in (['commit', '-q', '-am', 'move main on'], ['push', '-q', 'origin', 'main']):
+            subprocess.run(['git', '-C', str(self.owner), *args], check=True, env=env,
+                           capture_output=True)
+        included = Path(self.temp.name) / 'codex-branches.gitconfig'
+        included.write_text(f"[filter \"mark\"]\n\tsmudge = touch '{mark}'; tr a-z A-Z\n"
+                            f"\tclean = touch '{mark}'; cat\n")
+        git(self.owner, 'config', 'includeIf.onbranch:codex/.path', str(included))
+        (self.owner / '.git' / 'info').mkdir(exist_ok=True)
+        (self.owner / '.git' / 'info' / 'attributes').write_text('* filter=mark\n')
+        result, _folder, out, summary = self.codex_write('reused', '--worktree',
+                                                         str(self.worktree))
+        self.assertFalse(mark.exists())
+        self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+        self.assertEqual(summary['branch'], 'codex/reused')
+        self.assertTrue(summary['bridge_commit'].startswith('committed '), summary)
+        self.assertEqual(self.git_out(self.worktree, 'show', 'HEAD:AGENTS.md'),
+                         b'# main has moved on\na change from the agent\n')
+
     def test_a_status_git_cannot_read_is_never_taken_as_nothing_changed(self):
         # `git status` that fails prints nothing, which read as a clean
         # folder: a Codex write job's work was "nothing to commit" and the
