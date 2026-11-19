@@ -109,6 +109,10 @@ PRIVACY_CHECK = Path(__file__).resolve().parent / 'privacy-check.py'
 # with the source; so putting the source back is not enough. git ignores
 # them, and Python makes them again.
 GUARD_CACHES = ('scripts/__pycache__', '.claude/hooks/__pycache__')
+# With this set, Python keeps its bytecode under the folder it names and
+# not beside the source, where the bridge never clears it. No job gets it,
+# so the guard an agent's hook starts uses only the caches above.
+CACHE_VARIABLES = ('PYTHONPYCACHEPREFIX',)
 
 
 def job_environment(out):
@@ -120,8 +124,10 @@ def job_environment(out):
     sandbox: an agent that unsets these variables can still push, and an
     agent's GitHub tool with its own sign-in is not covered. Isolation
     outside the agent's process is not built. Without git's repository
-    variables, so the agent's git works on the job's checkout."""
-    dropped = TOKENS + tuple(name for name in REPOSITORY_VARIABLES if name not in JOB_KEEPS)
+    variables, so the agent's git works on the job's checkout, and without
+    a bytecode cache folder of its own (CACHE_VARIABLES)."""
+    dropped = (TOKENS + CACHE_VARIABLES
+               + tuple(name for name in REPOSITORY_VARIABLES if name not in JOB_KEEPS))
     env = {key: value for key, value in os.environ.items() if key not in dropped}
     entries = [('remote.origin.pushurl', NO_PUSH)]
     entries += [(f'url.{NO_PUSH}.pushInsteadOf', prefix)

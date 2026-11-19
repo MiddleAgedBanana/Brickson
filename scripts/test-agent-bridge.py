@@ -35,7 +35,8 @@ STUB = r'''#!/usr/bin/env python3
 import json, os, stat, sys, time
 entry = {'tool': os.path.basename(sys.argv[0]), 'argv': sys.argv[1:], 'cwd': os.getcwd(),
          'stdin_closed': stat.S_ISCHR(os.fstat(0).st_mode),
-         'git_env': {key: value for key, value in os.environ.items() if key.startswith('GIT_')}}
+         'git_env': {key: value for key, value in os.environ.items() if key.startswith('GIT_')},
+         'pycache_prefix': os.environ.get('PYTHONPYCACHEPREFIX')}
 with open(os.environ['STUB_LOG'], 'a') as log:
     log.write(json.dumps(entry) + '\n')
 mode = os.environ.get('STUB_MODE', '')
@@ -1415,6 +1416,21 @@ class BridgeTests(unittest.TestCase):
         refused = self.bridge('agy', '--brief', str(self.brief))
         self.assertEqual(refused.returncode, 2, refused.stderr)
         self.assertIn('uncommitted', refused.stderr)
+
+    def test_a_job_never_gets_a_bytecode_cache_folder_of_its_own(self):
+        # With PYTHONPYCACHEPREFIX, Python keeps its bytecode under that
+        # folder and not beside the source, and the bridge clears only the
+        # caches beside the guard's code: one planted there would outlast
+        # the put-back (cubic, on #109).
+        prefix = Path(self.temp.name) / 'pycache'
+        self.point_agy_at(self.agy_folder)
+        self.install_agy_hook()
+        for agent in ('codex', 'agy'):
+            with self.subTest(agent):
+                result = self.bridge(agent, '--brief', str(self.brief),
+                                     env={'PYTHONPYCACHEPREFIX': str(prefix)})
+                self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+                self.assertIsNone(self.calls()[-1]['pycache_prefix'])
 
     # Filters, and git that cannot be read ---------------------------------------
 
