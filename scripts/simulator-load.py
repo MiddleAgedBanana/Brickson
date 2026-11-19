@@ -622,24 +622,33 @@ def spell(seconds):
     return f"{minutes} min" + (f" {rest} s" if rest else "")
 
 
-def settle(arguments, load=None, processors=os.cpu_count, clock=time.monotonic, sleep=time.sleep):
+def one_minute_load():
+    """The Mac's count of tasks running or waiting for a processor,
+    averaged over the last minute."""
+    return os.getloadavg()[0]
+
+
+def add_to_record(path, line):
+    """Adds a line, with its time, to the simulator's record. One short
+    line at a time, added to the end: the watcher writes the same file."""
+    try:
+        with open(path, "a", encoding="utf-8") as record:
+            record.write(f"{clock_time()} {line}\n")
+    except OSError as error:
+        print(f"warning: could not write to {path}: {error}", file=sys.stderr)
+
+
+def settle(arguments, load=one_minute_load, processors=os.cpu_count, clock=time.monotonic,
+           sleep=time.sleep):
     """Waits until the Mac has settled (the module's description says
     what that is and why), or until the limit, and says which in the log
-    and in the record. Always 0: the tests run either way."""
-    if load is None:
-        def load():
-            return os.getloadavg()[0]
+    and in the record. Its status is 0 however the wait ends: the tests
+    run either way."""
     count = processors() or 1
     wanted = SETTLED_LOAD * count
 
     def note(line):
-        # One short line at a time, added to the end: the watcher writes
-        # the same file.
-        try:
-            with open(arguments.out, "a", encoding="utf-8") as record:
-                record.write(f"{clock_time()} {line}\n")
-        except OSError as error:
-            print(f"warning: could not write to {arguments.out}: {error}", file=sys.stderr)
+        add_to_record(arguments.out, line)
 
     began = said = clock()
     under, first = 0, True
@@ -650,7 +659,7 @@ def settle(arguments, load=None, processors=os.cpu_count, clock=time.monotonic, 
             print(f"warning: the Mac's load could not be read ({error}), so the tests start "
                   "without waiting for it to settle.", file=sys.stderr)
             note(f"the Mac's load could not be read ({error}); the tests run without the wait")
-            return 0
+            break
         now = clock()
         waited = now - began
         if first:
@@ -664,17 +673,18 @@ def settle(arguments, load=None, processors=os.cpu_count, clock=time.monotonic, 
         if under >= SETTLED_READINGS:
             print(f"The Mac settled after {spell(waited)}: load {reading:.0f}.", flush=True)
             note(f"the Mac settled after {waited:.0f} s: load {reading:.1f}")
-            return 0
+            break
         if waited >= arguments.limit:
             print(f"warning: the Mac had not settled after {spell(waited)} (load {reading:.0f}, "
                   f"wanted under {wanted:.0f}); the tests run anyway.", file=sys.stderr)
             note(f"the Mac had not settled after {waited:.0f} s: load {reading:.1f}; "
                  "the tests run anyway")
-            return 0
+            break
         if now - said >= SETTLE_SAYS:
             said = now
             print(f"  still settling after {spell(waited)}: load {reading:.0f}", flush=True)
         sleep(INTERVAL)
+    return 0
 
 
 def parse(arguments=None):

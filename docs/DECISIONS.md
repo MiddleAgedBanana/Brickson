@@ -5996,20 +5996,30 @@ request merges only when they pass.
   that never settles is tested anyway with a warning, and so is one
   whose wait could not run. The unit tests do not wait: none of their
   failures that week was a wait run out. The cost is minutes in every
-  UI job, first measured on the pull request that added it (its
-  description has the figures); on a Mac with more processors the limit
-  is higher and the wait is the ten seconds its three readings take.
+  UI job: on the first CI run with it the wait was 3.8 to 13.2 minutes,
+  a middle of 8, the tests were not measurably quicker, and a part's
+  job took 34 to 45 minutes where it took 28 to 35. On a Mac with more
+  processors the limit is higher and the wait is the ten seconds its
+  three readings take.
   Not chosen: longer waits in the tests that failed; stopping iOS's
   background tasks, which changes the system the tests run on; a larger
   paid machine, which hides the cause; and keeping a started
   simulator's data between runs, which would remove the start-up work
   instead of waiting for it but needs a workflow change, a new action
   and its own experiment, so it is the follow-up if the wait proves
-  long. The wallpaper pausing (2026-11-03) is unchanged: measure it
+  long. The wait runs in the foreground, as the build and the tests
+  do, so a TERM signal sent to `scripts/test.sh` alone is answered when
+  the wait ends, as it is for them. CodeRabbit's review of pull request
+  #128 asked for the wait to be made interruptible; declined, because
+  the build before it and the tests after it, each longer, would still
+  hold the script the same way, and a change to how the script answers
+  signals belongs to all its steps together. The wallpaper pausing
+  (2026-11-03) is unchanged: measure it
   again now that the tests start settled, one change at a time. This
   does not explain the jobs GitHub cancelled before their tests began
   (docs/HANDOFF.md, *Known gaps*). Revisit when a wait often reaches its
-  twenty minutes, when a part's job takes more than about 45 minutes,
+  twenty minutes, when a part's job often takes more than about 45
+  minutes (the slowest of the first six took 44.7, so this is close),
   or when a wait runs out in a test that started settled, which would
   show the cause is another for that test. Record:
   [`log/2026-11-19-ui-tests-wait-for-a-settled-mac.md`](log/2026-11-19-ui-tests-wait-for-a-settled-mac.md).

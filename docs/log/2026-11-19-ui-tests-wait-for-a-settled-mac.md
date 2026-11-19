@@ -139,6 +139,41 @@ that started with the load under 150; or a load that climbs back over
 250 once the tests begin, which would mean the tests themselves, not
 the start-up work, make the queue.
 
+**What the first run showed** (this pull request's CI run 44561755361,
+six UI jobs, 162 tests run):
+
+1. *Held.* Every wait ended with the load under 150, at 125 to 137:
+   after 3.8, 5.4 and 8.2 minutes on the iPad's three parts and 7.9, 8.1
+   and 13.2 on the iPhone's. The first reading under 150 came 9.5 to
+   17.1 minutes after the record began (a middle of 11.4), where it was
+   17 to 22 with tests running beside the start-up work: left alone, the
+   work is over sooner.
+2. *Held, weakly.* No step stalled in any of the six jobs. Before, 36
+   of 192 part jobs had a stalled step, so six in a row without one
+   would come by luck about three times in ten.
+3. *Not borne out.* The tests took about as long as before. The 152
+   tests with five or more earlier passing runs took 127.1 minutes
+   against 129.4 for their usual times, 2% less: 6% less for the 74
+   that used to start on a busy Mac, 2% more for the other 78. One job
+   in ten differs from its usual times by 18% or more with no change at
+   all, so one run cannot show a difference this small, and it is far
+   from the sixth predicted. The likely reason: the first tests now
+   start at a load of 108 to 192, settled enough not to stall and still
+   busier than the 30 to 60 late in a job that the prediction was drawn
+   from.
+4. *Held, weakly.* All six jobs passed and no wait ran out. About one
+   part job in ten failed this way before, so six clean jobs prove
+   little; it takes about twenty runs.
+
+Neither sign that it is wrong appeared: no test that started settled
+stalled or ran out of time, and once the tests began the load's highest
+reading was 146 to 232 (its middle 42 to 86), never over 250. One job
+(iPhone, part 3) began its first test at a load of 192, above the 150
+its wait ended on: starting the test runner adds its own work.
+
+In the same run the "Unit tests" job was cancelled by nobody (kind K,
+below), so the run as a whole was not green.
+
 **The fix.** `scripts/test.sh ui` now runs
 `scripts/simulator-load.py settle` after the warm-up launch and before
 the tests. It reads the load every five seconds and goes on once three
@@ -152,13 +187,15 @@ fourteen), so the wait there is the ten seconds its three readings
 take. The unit tests are not held: none of their failures that week
 was a time-out. Decision: docs/DECISIONS.md, "Tests", 2026-11-19.
 
-**What it costs.** Unknown until it has run, so this pull request's own
-CI run is the first measurement. If the start-up work takes as long
-with no tests beside it as it does now, the wait is about 12 to 16
-minutes a job; it should be less, since the tests no longer compete for
-the processors, and the tests themselves should take three or four
-minutes less. A part's job takes 28 to 35 minutes today against a 90-minute
-limit.
+**What it costs.** Before it had run, the estimate was 12 to 16 minutes
+a job if the start-up work took as long with no tests beside it, less
+if not, with three or four minutes back from quicker tests. Measured on
+this pull request's first CI run: the wait was 3.8 to 13.2 minutes, a
+middle of 8, the tests were not measurably quicker, and a part's job
+took 34 to 45 minutes (iPad 34.0, 39.7 and 41.5; iPhone 38.6, 37.9 and
+44.7) where it took 28 to 35, against a 90-minute limit. So the wait
+costs about eight minutes a job and buys tests that start on a settled
+Mac; it does not pay for itself in time.
 
 **Not chosen.**
 
@@ -210,12 +247,16 @@ of the job's log first ("Runner Image", "Version"): anything but
 20261104.0337.1 on such a day is GitHub's, and a second try may land on
 the old image.
 
-### K. Twelve jobs cancelled by nobody
+### K. Twelve jobs cancelled by nobody, and a thirteenth on this pull request
 
 Jobs 131888864802, 132378333766, 132666697858, 132782961624,
 133728538153, 133728538354, 133809038493, 133813222902, 133941760558,
 135347957492, 135347957553 and 135524904860, from 2026-11-13 to
-2026-11-19.
+2026-11-19. The thirteenth is the "Unit tests" job of this pull
+request's own first run (135692767647): cancelled 10 minutes 46 seconds
+after its simulator began to start and six minutes into the build, with
+the load at 722 and rising to 868, and the record's watcher taking five
+and a half minutes to begin. It fits the twelve in every sign.
 
 - Every one was cancelled 8.5 to 13 minutes after its simulator began
   to start. All twelve used the iPad simulator (the unit tests run on
@@ -244,14 +285,20 @@ needing its own experiment, is in *Follow-ups*.
 
 ## Commits
 
-One commit: the wait (`scripts/simulator-load.py`, `scripts/test.sh`),
-its tests (`scripts/test-runner.py`) and these records.
+- `230131b`: the wait (`scripts/simulator-load.py`, `scripts/test.sh`),
+  its tests (`scripts/test-runner.py`) and these records.
+- The next commit, after the first CI run and the first reviews: the
+  run's result written into these records; the real command's test no
+  longer pins the seconds a real process took, and a test on the
+  suite's own clock pins the limit instead (CodeRabbit's review); the
+  wait's function has one way out and two small helpers (SonarQube
+  Cloud's two notes), behaving as before.
 
 ## Verified
 
 - `python3 scripts/test-runner.py` on the cloud thread's Linux machine:
-  115 tests, 5 skipped there because they need a Mac (GitHub's unit job
-  runs them). Seven are new:
+  116 tests, 5 skipped there because they need a Mac (GitHub's unit job
+  runs them). Eight are new:
   - `PreparationTests.test_ui_tests_start_only_after_the_wait_for_the_mac_to_settle`
     and the list in `test_ui_tests_get_the_full_keyboard_and_a_warm_simulator`
     fail if the wait is dropped, or moved before the warm-up (tried);
@@ -265,11 +312,19 @@ its tests (`scripts/test-runner.py`) and these records.
     tried), the limit is 50 for each processor (fails with a fixed 150;
     tried), a Mac that never settles is tested after twenty minutes with
     a warning and a line a minute meanwhile, a load that cannot be read
-    holds nothing, and the real command runs.
+    holds nothing, a wait given no time reads the load once and does not
+    sleep (fails if `--limit` is ignored, or with a sleep before the
+    limit is looked at; tried), and the real command runs.
 - The other checks AGENTS.md lists for any machine passed on the same
   machine (`test-docs`, `test-hooks`, `test-privacy`,
   `test-forbidden-code`, `test-agent-bridge`, `test-site`,
   `test-select-xcode`).
+- GitHub CI, run 44561755361 on `230131b` (image `xcode-27-arm64`
+  20261104.0337.1; iPad Pro 13-inch (M5) and iPhone 17 simulators, iOS
+  27.2): all six UI jobs passed, with the waits, loads and times given
+  under *What the first run showed*. Its "Unit tests" job was cancelled
+  by nobody before any unit test ran (kind K), so the unit tests have
+  not passed on this branch until the next run.
 - The figures above: each job's record and result bundle from GitHub,
   read with scripts kept outside the repository. This reads one job the
   same way (a result bundle unzipped from the job's "ui-test-results"
@@ -323,19 +378,17 @@ its tests (`scripts/test-runner.py`) and these records.
 
 ## Not verified
 
-- **Whether the wait works.** Nothing here has run on GitHub's Mac
-  yet. This pull request's first CI run is the experiment, and its
-  result, against the four predictions above, is in the pull request's
-  description. One run is six UI jobs: enough to see how long the wait
-  is, whether steps stall and how long tests take, not enough to count
-  failures that came once in ten jobs. That needs about twenty runs.
-- How long the wait is, and so what a job now takes.
+- **Whether the wait ends the failures of kind A.** One run of six UI
+  jobs fits the explanation and cannot prove it: failures came once in
+  ten jobs and stalls once in five, so it takes about twenty runs.
+- Whether tests are any quicker for starting settled: not seen in one
+  run, and smaller than one run can show.
 - That the wait is short on the owner's Mac: reasoned from its limit
   there (700), not run.
 - Why the load takes longer to fall since the tests run in parts (a
   middle of 19 minutes against 14.5). More of our own jobs start at the
   same moment since then; whether that is the reason is not known.
-- The cause of the twelve cancelled jobs (a lead only), of the one part
+- The cause of the cancelled jobs (a lead only), of the one part
   that crawled to its limit (J), and of the three jobs of 2026-11-17
   and one of 2026-11-13 that lost their simulator on the usual image
   (C).
@@ -344,13 +397,17 @@ its tests (`scripts/test-runner.py`) and these records.
 
 ## Follow-ups
 
-- **Read this pull request's CI run** with the script above and put the
-  result in its description *(this thread)*.
 - **After about twenty runs with the wait on `main`,** count kind A
-  again. If stalls or time-outs remain in tests that started settled,
-  the hypothesis is wrong for those and they need their own look *(the
-  next thread on CI)*.
-- **The cancelled jobs (K).** In the order to try them: keep a started
+  again, and the jobs' times. If stalls or time-outs remain in tests
+  that started settled, the hypothesis is wrong for those and they need
+  their own look; if they are gone, the eight minutes a job are the
+  price, and keeping a started simulator's data between runs (below) is
+  how to get them back *(the next thread on CI)*.
+- **The cancelled jobs (K).** First, to prove the lead or drop it: a
+  workflow step that runs only when a job was cancelled and saves, from
+  the log GitHub's agent keeps on the machine, the lines about its hold
+  on the job (where the image keeps that log was not checked; the whole
+  log is not ours to publish unread). Then, in the order to try them: keep a started
   simulator's data between runs, which removes the start-up work, the
   cancelled jobs' likely cause and most of the wait together, at the
   cost of a workflow change the owner pastes; give GitHub's agent a

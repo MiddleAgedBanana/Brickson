@@ -1806,17 +1806,31 @@ class SettleTests(unittest.TestCase):
                       "start without waiting for it to settle.", warnings)
         self.assertIn("the Mac's load could not be read", self.record.read_text())
 
-    # The command missing from the script's own, or `--limit` not reaching
-    # the wait, fails this test: with no time allowed, the real command
-    # reads this machine's load once and says it did not wait.
-    def test_the_command_waits_no_longer_than_its_limit(self):
+    # A sleep before the limit is looked at, or `--limit` not reaching the
+    # wait, fails this test: with no time allowed the wait reads the load
+    # once and does not sleep at all.
+    def test_the_wait_is_no_longer_than_its_limit(self):
+        status, printed, warnings = self.settle([400], arguments=("--limit", "0"))
+        self.assertEqual((status, self.now), (0, 0.0))
+        self.assertIn("or after 0 s.", printed)
+        self.assertEqual(warnings, "warning: the Mac had not settled after 0 s (load 400, wanted "
+                                   "under 150); the tests run anyway.\n")
+
+    # The command missing from the script's own, or its `--limit` not
+    # reaching the wait, fails this test: with no time allowed, the real
+    # command reads this machine's load once and says it did not wait. How
+    # long that took is the machine's to say (a busy one can take a second
+    # over one reading), so the seconds are not pinned here; the test
+    # above pins them on its own clock.
+    def test_the_command_reads_the_real_load_and_its_limit(self):
         ran = subprocess.run([sys.executable, "-I", str(SCRIPT.with_name("simulator-load.py")),
                               "settle", "--out", str(self.record), "--limit", "0"],
                              capture_output=True, text=True, timeout=60)
         self.assertEqual(ran.returncode, 0, ran.stderr)
         self.assertIn("Waiting for the Mac to settle before the tests", ran.stdout)
-        self.assertIn("the Mac had not settled after 0 s", ran.stderr)
-        self.assertRegex(self.record.read_text(), r"the Mac had not settled after 0 s: load \d+\.\d; ")
+        self.assertRegex(ran.stderr, r"the Mac had not settled after \d+ s \(load \d+, ")
+        self.assertRegex(self.record.read_text(),
+                         r"the Mac had not settled after \d+ s: load \d+\.\d; the tests run anyway")
 
 
 @unittest.skipUnless(sys.platform == "darwin",

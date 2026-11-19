@@ -917,11 +917,11 @@ release in docs/ROADMAP.md when no thread has it yet.
   even on its first screen, so a tap can land on a rebuild
   ([`log/2026-11-12-ci-claims-narrowed.md`](log/2026-11-12-ci-claims-narrowed.md)).
   *(a Settings thread, in its own pull request)*
-- Twelve CI jobs from 2026-11-13 to 2026-11-19, eight "Unit tests" and
+- Thirteen CI jobs from 2026-11-13 to 2026-11-19, nine "Unit tests" and
   four iPad UI jobs, were cancelled by nobody: only "The operation was
   canceled." in the log, no new push, far from any time limit, and the
   rest of the run carried on. Each was cancelled 8.5 to 13 minutes after
-  its simulator began to start, at a load of 550 to 860 where 500 is
+  its simulator began to start, at a load of 550 to 870 where 500 is
   usual. A lead, not proved: GitHub's agent on the machine, starved for
   about ten minutes, cannot tell GitHub's service it still holds the
   job, and the service takes the job back. The wait before the UI tests
@@ -931,7 +931,9 @@ release in docs/ROADMAP.md when no thread has it yet.
   [`log/2026-11-19-ui-tests-wait-for-a-settled-mac.md`](log/2026-11-19-ui-tests-wait-for-a-settled-mac.md),
   *Follow-ups*. *(the owner chooses whether a thread takes it up)*
 - Whether the wait before the UI tests ends the waits that ran out on a
-  busy Mac is measured on one CI run so far. After about twenty runs
+  busy Mac is measured on one CI run so far: six UI jobs, all passed,
+  no step stalled, at a cost of about eight minutes a job. After about
+  twenty runs
   with it on `main`, count again with the script in
   [`log/2026-11-19-ui-tests-wait-for-a-settled-mac.md`](log/2026-11-19-ui-tests-wait-for-a-settled-mac.md):
   a wait that ran out in a test started on a settled Mac has another
