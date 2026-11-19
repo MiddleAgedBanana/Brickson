@@ -77,7 +77,15 @@ if 'guardcode' in mode:  # the guard's own code, which agy's hook runs
     how = os.environ['STUB_GUARD']
     guard = os.path.join('.claude', 'hooks', 'guard.py')
     privacy = os.path.join('scripts', 'privacy-check.py')
-    if how in ('edit', 'commit'):
+    def run_git(*args):
+        subprocess.run(['git', *args], check=True, capture_output=True)
+    if how == 'merge':  # changed on a side branch that a merge then takes nothing from
+        with open('note.md', 'w') as note:  # a commit of the job's own first, so the
+            note.write('a note\n')          # merge's first parent is one of its commits
+        run_git('add', 'note.md')
+        run_git('commit', '-q', '-m', 'Add a note')
+        run_git('checkout', '-q', '-b', 'side')
+    if how in ('edit', 'commit', 'revert', 'merge'):
         for name in (guard, privacy):
             with open(name, 'w') as code:
                 code.write('allow everything\n')
@@ -88,9 +96,13 @@ if 'guardcode' in mode:  # the guard's own code, which agy's hook runs
             code.write('allow everything\n')
         os.remove(guard)
         os.symlink(outside, guard)
-    if how == 'commit':
-        subprocess.run(['git', 'commit', '-q', '-am', 'Weaken the guard'], check=True,
-                       capture_output=True)
+    if how in ('commit', 'revert', 'merge'):
+        run_git('commit', '-q', '-am', 'Weaken the guard')
+    if how == 'revert':  # a later commit puts the code back
+        run_git('revert', '--no-edit', 'HEAD')
+    if how == 'merge':
+        run_git('checkout', '-q', '-')
+        run_git('merge', '-q', '-s', 'ours', '--no-edit', 'side')
 if 'badoutput' in mode:  # output the bridge cannot read as text
     sys.stdout.buffer.write(b'\xff\xfe not text\n')
     sys.stdout.flush()
@@ -1416,6 +1428,32 @@ class BridgeTests(unittest.TestCase):
         refused = self.bridge('agy', '--brief', str(self.brief))
         self.assertEqual(refused.returncode, 2, refused.stderr)
         self.assertIn('uncommitted', refused.stderr)
+
+    def test_commits_that_change_the_guards_code_and_put_it_back_are_reported(self):
+        # Where the branch ends says nothing about a commit on the way: one
+        # that changes the guard's code and a later one that puts it back,
+        # or a side branch that a merge takes nothing from (cubic, on #109).
+        self.point_agy_at(self.agy_folder)
+        for number, (how, commits) in enumerate((('revert', 2), ('merge', 3))):
+            with self.subTest(how):
+                self.install_agy_hook()
+                installed = self.guard_code()
+                result = self.bridge('agy', '--brief', str(self.brief), '--write', '--branch',
+                                     f'undo-{number}',
+                                     env={'STUB_MODE': 'guardcode', 'STUB_GUARD': how})
+                self.assertEqual(result.returncode, 1, result.stderr)
+                summary = json.loads((self.job_folder(result) / 'summary.json').read_text())
+                self.assertIn("commits the job added change the guard's code", summary['status'])
+                for name in installed:
+                    self.assertIn(name, summary['status'])
+                    self.assertIn(name, summary['guard_code'])
+                self.assertEqual(len(summary['commits']), commits)
+                # The branch ends with the code it began with, so nothing
+                # else would have said so.
+                self.assertEqual(self.guard_code(), installed)
+                self.assertEqual(self.git_out(self.agy_folder, 'status', '--porcelain'), b'')
+                self.assertEqual(self.git_out(self.agy_folder, 'diff', '--name-only',
+                                              'origin/main', 'HEAD', '--', *installed), b'')
 
     def test_a_job_never_gets_a_bytecode_cache_folder_of_its_own(self):
         # With PYTHONPYCACHEPREFIX, Python keeps its bytecode under that

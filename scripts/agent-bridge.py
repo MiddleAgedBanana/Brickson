@@ -476,7 +476,9 @@ def restore_guard_code(checkout, saved, start):
     and say whether the job's commits (since start) change it. The commits
     stay for the thread to read; the folder then shows the earlier code as
     an uncommitted change, so the next agy job is refused until a thread
-    has dealt with them. A job can leave git unable to read the checkout;
+    has dealt with them. Commits that change it on the way and end with
+    the code the branch began with leave the folder clean, so they are
+    named too. A job can leave git unable to read the checkout;
     the job then says its commits could not be checked, and still ends
     with done. Returns summary.json's guard_code, and the job's status
     when the guard's code was changed or could not be checked."""
@@ -496,13 +498,21 @@ def restore_guard_code(checkout, saved, start):
             problems.append(f'changed the guard\'s code ({names}), and the bridge could not put '
                             f'it back ({error}): agy may run a changed guard in {checkout} until '
                             'it is restored from origin/main')
-    listed = b''
+    listed = touched = b''
     try:
         if start:
             head = git(checkout, 'rev-parse', '--verify', 'HEAD^{commit}')
             if head != start:
                 listed = git(checkout, '--literal-pathspecs', 'diff', '--name-only', '-z', start,
                              head, '--', *GUARD_CODE, raw=True)
+                # Every commit the job added, not only where they end: one
+                # can change the guard's code and a later one put it back
+                # (cubic, on #109). --full-history, so a side branch that a
+                # merge took nothing from is still read; -m, so a merge is
+                # compared with each of its parents.
+                touched = git(checkout, '--literal-pathspecs', 'log', '--full-history', '-m',
+                              '--name-only', '-z', '--format=', f'{start}..{head}', '--',
+                              *GUARD_CODE, raw=True)
     except Stop as error:
         notes.append(f'what the job committed could not be read ({error})')
         problems.append('the bridge could not check whether the job\'s commits change the '
@@ -516,6 +526,15 @@ def restore_guard_code(checkout, saved, start):
             problems.append(f'its commits change the guard\'s code ({names}); the bridge put the '
                             f'earlier code back in the working tree, so {checkout} is not clean '
                             'and the next agy job is refused until a thread has dealt with them')
+        between = sorted({os.fsdecode(name.strip()) for name in touched.split(b'\0')}
+                         .intersection(GUARD_CODE).difference(committed))
+        if between:
+            names = ', '.join(between)
+            notes.append(f'commits the job added change it ({names}), and the branch ends '
+                         'with the code it began with')
+            problems.append(f'commits the job added change the guard\'s code ({names}), though '
+                            'the branch ends with the code it began with; read them before '
+                            'they are pushed')
     return '; '.join(notes) or 'unchanged', '; '.join(problems) or None
 
 
