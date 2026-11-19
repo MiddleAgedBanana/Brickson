@@ -59,6 +59,10 @@ final class FakeSpeechSynthesizer: SpeechSynthesizing {
     var onEvent: (@MainActor (UtteranceToken, SpeechSynthesisEvent) -> Void)?
     private(set) var requests: [SpeechRequest] = []
     private(set) var stopCount = 0
+    /// Requests handed over while an earlier one was still held, speaking
+    /// or paused. A real synthesizer queues such a request and speaks it
+    /// only once the earlier one ends.
+    private(set) var queuedRequestCount = 0
     /// Where each report's instant comes from: the harness's clock, so
     /// reports and the speech service read the same time.
     private let now: @MainActor () -> ContinuousClock.Instant
@@ -70,6 +74,7 @@ final class FakeSpeechSynthesizer: SpeechSynthesizing {
     var latestToken: UtteranceToken? { requests.last?.token }
 
     func speak(_ request: SpeechRequest) {
+        if isSpeaking { queuedRequestCount += 1 }
         requests.append(request)
         isSpeaking = true
         isPaused = false
