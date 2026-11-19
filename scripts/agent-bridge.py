@@ -182,23 +182,70 @@ class Stop(Exception):
 
 def plain_environment():
     """This environment without the thread's GitHub tokens or git's
-    repository variables: what the bridge's own git and privacy check run
-    with, never a job's."""
+    repository variables: what own_environment() starts from, never a
+    job's."""
     dropped = TOKENS + REPOSITORY_VARIABLES
     return {key: value for key, value in os.environ.items() if key not in dropped}
 
 
+def filters_off(folder, env):
+    """Settings that turn off every filter git's settings define for
+    folder. A filter runs its command on a file's contents (clean when git
+    reads a file from the folder, smudge when it writes one there, process
+    for both) wherever an attributes file names it. agy, which has no
+    sandbox, can define one in the settings every worktree shares, and a
+    Codex job can name it in a .gitattributes of its own, so the bridge's
+    git, outside both, would run it (CodeRabbit, on #108). With an empty
+    command git reads and writes the contents as they are, and a filter
+    that is no longer required cannot fail. `git config` ends 1 when no
+    filter is set; any other failure stops the job, because taken as "no
+    filters" it would turn none off."""
+    found = subprocess.run(['git', '-C', str(folder), 'config', '-z', '--name-only',
+                            '--get-regexp', r'^filter\.'],
+                           capture_output=True, stdin=subprocess.DEVNULL, env=env)
+    if found.returncode not in (0, 1):
+        error = found.stderr.decode('utf-8', 'replace').strip()
+        raise Stop(f'could not read which git filters to turn off in {folder}: {error}')
+    drivers = set()
+    for name in os.fsdecode(found.stdout).split('\0'):
+        rest = name[len('filter.'):]
+        if name.startswith('filter.') and '.' in rest:
+            drivers.add(rest.rsplit('.', 1)[0])  # a filter's own name may hold dots
+    return [(f'filter.{driver}.{key}', value) for driver in sorted(drivers)
+            for key, value in (('clean', ''), ('smudge', ''), ('process', ''),
+                               ('required', 'false'))]
+
+
+def own_environment(folder):
+    """What the bridge's own git and its privacy check run with in folder,
+    never a job's: plain_environment(), and every filter git's settings
+    define there turned off (filters_off). The settings go in as
+    GIT_CONFIG_COUNT entries, which git reads after every settings file;
+    nothing inherited outranks them, since plain_environment() drops
+    GIT_CONFIG_PARAMETERS."""
+    env = plain_environment()
+    entries = filters_off(folder, env)
+    for number, (key, value) in enumerate(entries):
+        env[f'GIT_CONFIG_KEY_{number}'] = key
+        env[f'GIT_CONFIG_VALUE_{number}'] = value
+    if entries:
+        env['GIT_CONFIG_COUNT'] = str(len(entries))
+    return env
+
+
 def git(folder, *args, check=True, strip=True, raw=False, input=None):
     """The bridge's own git, without the thread's GitHub tokens and with
-    core.fsmonitor and git hooks off: an agent can change the checkout's
-    git settings, and a command it names there must never run outside its
-    sandbox or with what the agent was not given. With raw, git's output
-    comes back as bytes, untouched (file names, which need not be text).
-    input, when given, is git's stdin; otherwise stdin is closed."""
+    core.fsmonitor, git hooks and every filter off (own_environment): an
+    agent can change the checkout's git settings, and a command it names
+    there must never run outside its sandbox or with what the agent was
+    not given. It stops, whatever check says, when it cannot read which
+    filters to turn off. With raw, git's output comes back as bytes,
+    untouched (file names, which need not be text). input, when given, is
+    git's stdin; otherwise stdin is closed."""
     stdin = {'input': input} if input is not None else {'stdin': subprocess.DEVNULL}
     result = subprocess.run(['git', '-c', 'core.fsmonitor=false', '-c', 'core.hooksPath=/dev/null',
                              '-C', str(folder), *args],
-                            capture_output=True, text=not raw, env=plain_environment(), **stdin)
+                            capture_output=True, text=not raw, env=own_environment(folder), **stdin)
     if check and result.returncode != 0:
         error = result.stderr.decode('utf-8', 'replace') if raw else result.stderr
         raise Stop(f'git {" ".join(args)} failed in {folder}: {error.strip()}')
@@ -780,7 +827,7 @@ def privacy_check(checkout, message, commits):
                                     '--commits', commits, '--text', '-', str(checkout)],
                                    stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                    stderr=subprocess.STDOUT, text=True, cwd=str(checkout),
-                                   env=plain_environment())
+                                   env=own_environment(checkout))
     except OSError as error:
         return f'the privacy check could not run: {type(error).__name__}\n', None
     deadline, pending = time.monotonic() + 900, message
@@ -917,7 +964,14 @@ def codex_job(args):
         if not folder.exists():
             source = brickson_checkout(os.getcwd())
             git(source, 'fetch', '-q', 'origin', 'main')
-            git(source, 'worktree', 'add', '-q', '-b', branch, '--no-track', str(folder), 'origin/main')
+            # Made empty, then filled by the bridge's own git from inside
+            # it: settings can turn a filter on for the new branch or
+            # worktree alone (includeIf), which the bridge sees only from
+            # there, and `worktree add` would fill it with that filter on
+            # (CodeRabbit, on #108).
+            git(source, 'worktree', 'add', '-q', '--no-checkout', '-b', branch, '--no-track',
+                str(folder), 'origin/main')
+            git(folder, 'reset', '-q', '--hard')
             checkout = brickson_checkout(folder)
             hold_checkout(checkout)
         else:

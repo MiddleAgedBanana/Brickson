@@ -212,6 +212,9 @@ if 'plantpyc' in mode:
                     'py_compile.compile(sys.argv[1], cfile=os.path.join(sys.argv[3], name), '
                     'invalidation_mode=py_compile.PycInvalidationMode.UNCHECKED_HASH)',
                     planted, source, target], check=True)
+if 'attributes' in mode:  # name a filter the git settings define, for every file
+    with open('.gitattributes', 'w') as attributes:
+        attributes.write('* filter=mark\n')
 if entry['tool'] == 'codex':
     if args and args[0] == 'review':
         print('No P0 or P1 findings.')
@@ -849,9 +852,16 @@ class BridgeTests(unittest.TestCase):
         origin = subprocess.run(['git', '-C', str(self.worktree), 'remote', 'get-url', 'origin'],
                                 capture_output=True, text=True, check=True).stdout.strip()
         git(self.worktree, 'config', 'remote.origin.pushurl', origin)
-        result = self.bridge('codex', '--brief', str(self.brief), env={'STUB_MODE': 'push'})
-        self.assertEqual(result.returncode, 2, result.stderr)
-        self.assertIn('push URL', result.stderr)
+        # GIT_CONFIG would point the bridge's `git config` alone at another
+        # file, where it would find no push URL (CodeRabbit, on #108).
+        empty = Path(self.temp.name) / 'empty.gitconfig'
+        empty.write_text('')
+        for settings in ({}, {'GIT_CONFIG': str(empty)}):
+            with self.subTest(**settings):
+                result = self.bridge('codex', '--brief', str(self.brief),
+                                     env={'STUB_MODE': 'push', **settings})
+                self.assertEqual(result.returncode, 2, result.stderr)
+                self.assertIn('push URL', result.stderr)
         self.assertEqual(self.calls(), [])
         self.assertFalse((self.worktree / 'build').exists())
         branches = subprocess.run(['git', '-C', str(self.owner), 'ls-remote', '--heads', 'origin'],
@@ -1376,6 +1386,126 @@ class BridgeTests(unittest.TestCase):
         refused = self.bridge('agy', '--brief', str(self.brief))
         self.assertEqual(refused.returncode, 2, refused.stderr)
         self.assertIn('uncommitted', refused.stderr)
+
+    # Filters, and git that cannot be read ---------------------------------------
+
+    def test_no_filter_the_git_settings_define_runs_in_the_bridges_git(self):
+        # A filter runs the command the git settings give it on a file's
+        # contents, wherever an attributes file names it. agy, which has no
+        # sandbox, can define one in the settings every worktree shares,
+        # and a Codex job can name it in a .gitattributes of its own, so
+        # the bridge's git, outside the sandbox, would run it (CodeRabbit,
+        # on #108). A filter that is required must not stop the commit
+        # once its command is off.
+        outside = Path(self.temp.name) / 'outside'
+        outside.mkdir()
+        cases = (('clean', {'clean': "touch '{mark}'; tr a-z A-Z", 'required': 'true'}),
+                 ('process', {'process': "touch '{mark}'; exit 1", 'required': 'true'}))
+        for case, settings in cases:
+            with self.subTest(case):
+                mark = outside / case
+                for key in ('clean', 'process', 'required'):  # only this case's settings
+                    subprocess.run(['git', '-C', str(self.owner), 'config', '--unset-all',
+                                    f'filter.mark.{key}'], capture_output=True)
+                for key, value in settings.items():
+                    git(self.owner, 'config', f'filter.mark.{key}', value.format(mark=mark))
+                result, folder, out, summary = self.codex_write(f'filter-{case}',
+                                                                mode='attributes work')
+                # Read before any git of these tests could run the filter.
+                self.assertFalse(mark.exists())
+                self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+                self.assertTrue(summary['bridge_commit'].startswith('committed '), summary)
+                self.assertEqual(summary['changed_files'], [])
+                self.assertEqual(self.head_files(folder), sorted(
+                    ['.claude/hooks/guard.py', '.gitattributes', '.gitignore', 'AGENTS.md',
+                     'scripts/privacy-check.py', *self.WORK]))
+                # As the job wrote them, not as the filter would have.
+                self.assertEqual(self.git_out(folder, 'show', 'HEAD:docs/new.md'),
+                                 b'new from the agent: plain words\n')
+
+    def test_no_filter_the_bridges_own_environment_names_runs_in_its_git(self):
+        # Settings git takes from the environment would outrank or hide
+        # what the bridge turns off: GIT_CONFIG_PARAMETERS (what `git -c`
+        # passes on) outranks every other setting, and GIT_CONFIG points
+        # `git config` alone at another file, so the bridge would look for
+        # filters there, find none and turn none off (CodeRabbit, on #108).
+        # The bridge's own git takes neither.
+        outside = Path(self.temp.name) / 'outside'
+        outside.mkdir()
+        empty = Path(self.temp.name) / 'empty.gitconfig'
+        empty.write_text('')
+        cases = (('outranking',
+                  {'GIT_CONFIG_PARAMETERS': "'filter.mark.process=touch {mark}; exit 1'"}),
+                 ('hidden', {'GIT_CONFIG': str(empty)}))
+        for case, settings in cases:
+            with self.subTest(case):
+                mark = outside / case
+                if case == 'hidden':  # in the shared settings, which GIT_CONFIG hides
+                    git(self.owner, 'config', 'filter.mark.clean', f"touch '{mark}'; cat")
+                result, folder, out, summary = self.codex_write(
+                    f'named-{case}', mode='attributes work',
+                    **{key: value.format(mark=mark) for key, value in settings.items()})
+                self.assertFalse(mark.exists())
+                self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+                self.assertTrue(summary['bridge_commit'].startswith('committed '), summary)
+                self.assertEqual(summary['changed_files'], [])
+                self.assertEqual(self.git_out(folder, 'show', 'HEAD:docs/new.md'),
+                                 b'new from the agent: plain words\n')
+
+    def test_the_bridge_stops_when_git_cannot_say_which_filters_are_set(self):
+        # A failed read of the settings is not "no filters": taken as that,
+        # the bridge would turn none off and its git would run the one the
+        # shared settings define (CodeRabbit, on #108). The stand-in git
+        # fails only the bridge's question about filters.
+        import shutil
+        outside = Path(self.temp.name) / 'outside'
+        outside.mkdir()
+        mark = outside / 'ran'
+        git(self.owner, 'config', 'filter.mark.clean', f"touch '{mark}'; cat")
+        (self.worktree / '.gitattributes').write_text('* filter=mark\n')
+        (self.bin / 'git').write_text(
+            '#!/bin/sh\n'
+            'for word in "$@"; do\n'
+            '    if [ "$word" = \'^filter\\.\' ]; then\n'
+            '        echo "fatal: the stand-in git cannot read its settings" >&2\n'
+            '        exit 128\n'
+            '    fi\n'
+            'done\n'
+            f'exec \'{shutil.which("git")}\' "$@"\n')
+        (self.bin / 'git').chmod(0o755)
+        result = self.bridge('codex', '--brief', str(self.brief))
+        self.assertEqual(result.returncode, 2, result.stderr + result.stdout)
+        self.assertIn('filters', result.stderr)
+        self.assertIn('the stand-in git cannot read its settings', result.stderr)
+        self.assertFalse(mark.exists())
+        self.assertEqual(self.calls(), [])
+
+    def test_a_filter_set_only_for_the_jobs_branch_never_runs_while_its_worktree_is_made(self):
+        # The shared settings can define a filter for codex/ branches alone
+        # (includeIf "onbranch:"). Where the bridge starts it is off, so
+        # the bridge does not see it there, but `git worktree add` filled
+        # the new worktree on its codex/ branch, where it is on, and ran
+        # its smudge command outside any sandbox (CodeRabbit, on #108).
+        outside = Path(self.temp.name) / 'outside'
+        outside.mkdir()
+        mark = outside / 'ran'
+        included = Path(self.temp.name) / 'codex-branches.gitconfig'
+        included.write_text(f"[filter \"mark\"]\n\tsmudge = touch '{mark}'; tr a-z A-Z\n"
+                            f"\tclean = touch '{mark}'; cat\n")
+        git(self.owner, 'config', 'includeIf.onbranch:codex/.path', str(included))
+        (self.owner / '.git' / 'info').mkdir(exist_ok=True)
+        (self.owner / '.git' / 'info' / 'attributes').write_text('* filter=mark\n')
+        result, folder, out, summary = self.codex_write('branch-filter')
+        # Read before any git of these tests runs there, since that git
+        # would run the filter itself.
+        self.assertFalse(mark.exists())
+        self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+        self.assertTrue(summary['bridge_commit'].startswith('committed '), summary)
+        # The new worktree was filled, with every file as main has it.
+        self.assertEqual((folder / 'scripts' / 'privacy-check.py').read_text(), '# stand-in\n')
+        self.assertEqual((folder / '.gitignore').read_text(), 'build/\n.agents/\n__pycache__/\n')
+        self.assertEqual(self.git_out(folder, 'show', 'HEAD:docs/new.md'),
+                         b'new from the agent: plain words\n')
 
     def test_status_names_what_is_installed(self):
         self.point_agy_at(self.agy_folder)
