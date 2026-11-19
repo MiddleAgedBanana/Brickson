@@ -11,8 +11,10 @@ merged 2026-11-18.** Open pull requests: #108 (a draft) and #109, two
 versions of one change to the agent bridge; #115, the record of the
 simulator experiments; #120, four more windows for Home's layout tests;
 #122, UI test waits; #123, a phrase the speech service never begins;
-and #124, the code scanning alerts. Device checks wait for the Team ID
-(*Next steps, in order*, step 4).
+#124, the code scanning alerts; #128, waiting for a settled Mac before
+the UI tests; #129 (a draft), logging the speech service's pause and
+carry-on reports after #123; and #130, a design review sheet. Device
+checks wait for the Team ID (*Next steps, in order*, step 4).
 
 ## What the app does today
 

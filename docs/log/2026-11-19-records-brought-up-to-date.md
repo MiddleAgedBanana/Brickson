@@ -1,6 +1,6 @@
 # The records brought up to date
 
-*2026-11-19. Pull request (`claude/project-thread-zsjz76`). A Claude Code
+*2026-11-19. Pull request #127 (`claude/project-thread-zsjz76`). A Claude Code
 cloud thread, which cannot build or run the app. Documents only.*
 
 ## What changed and why
@@ -72,13 +72,19 @@ things a public repository should not.
 
 On `claude/project-thread-zsjz76`: `d07d433`, the records brought up to
 date; then the answers to the first review round (this file's *Older
-records, corrected*, and Gitar's "Approved" label in docs/DECISIONS.md).
+records, corrected*, and Gitar's "Approved" label in docs/DECISIONS.md);
+then this file's pull request number and the three pull requests opened
+since in docs/HANDOFF.md's state line.
 
 ## Verified
 
 - On the cloud thread (Linux): `python3 scripts/test-docs.py`,
   `scripts/test-hooks.py`, `scripts/test-privacy.py` and
   `scripts/test-forbidden-code.py`, with the result in the pull request.
+- GitHub CI on the second push: "Unit tests" and all six UI test parts
+  passed, after one re-run of an iPad part whose accessibility audit
+  timed out and a unit job cancelled on a slow runner; the pull request
+  has the details.
 - `AGENTS.md` stays under the 32 KiB that Codex reads.
 - Apple's pages read on 2026-11-19: the age-rating news item, the
   releases feed (Xcode 27.3 beta 2 the newest Xcode, 27.2 the newest
@@ -95,10 +101,11 @@ records, corrected*, and Gitar's "Approved" label in docs/DECISIONS.md).
 
 ## Follow-ups
 
-- **Two lines of docs/EXPERIMENTS.md** (SIM-2's "for stage 5" and SIM-3's
-  "stage 5 would then have to justify") are left as they were, because
-  pull request #115 changes the lines next to them; #115, or the next
-  change to the run sheet after it merges, words them like the rest.
+- **Two lines of docs/EXPERIMENTS.md**, one each in SIM-2 and SIM-3, still
+  name a step of planning kept outside the repository. They are left as
+  they were, because pull request #115 changes the lines next to them;
+  #115, or the next change to the run sheet after it merges, words them
+  like the rest.
   *(#115's thread)*
 - **The website's accessibility page** (`site/accessibility/index.html`)
   uses British spellings, 12 words on 12 lines: "colours" twice under
