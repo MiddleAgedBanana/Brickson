@@ -64,7 +64,7 @@ class Commands(unittest.TestCase):
         with self.assertRaises(SystemExit):
             review.main(["review.py", "capture", UDID, "iphone", "/tmp/x", "sepia"])
         with self.assertRaises(SystemExit):
-            review.main(["review.py", "inactive", UDID, "/tmp/x", "inactive-light", "-5"])
+            review.main(["review.py", "inactive", UDID, "/tmp/x", "inactive-light", "-5", "800"])
 
 
 KNOWN = {

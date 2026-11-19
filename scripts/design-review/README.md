@@ -47,25 +47,28 @@ contrast targets: words 4.5:1, a control's edge 3:1 (AGENTS.md, invariant
 
 ## An inactive iPad window
 
-An iPad window is inactive when another window has the focus, which takes
-Windowed Apps (Settings, Multitasking & Gestures). Once, by hand: open
-Brickson and the Settings app, make Brickson's window the screen's full
-width across the top, and the Settings window a short one under it, then
-leave Settings in front. Both keep their places. Then, after the iPad's
-`capture`:
+An iPad window is inactive when another app's window has the focus, which
+takes Windowed Apps (Settings, Multitasking & Gestures). After the iPad's
+`capture`, turn Windowed Apps on, open Brickson's window full size, and
+put the Settings app's window over its lower part, then:
 
 ```sh
-python3 review.py inactive <iPad udid> <output folder> inactive-light <top of the Settings window, in points>
-python3 review.py inactive <iPad udid> <output folder> inactive-dark <top of the Settings window, in points>
+python3 review.py inactive <iPad udid> <output folder> inactive-light <top of the Settings window> <its bottom>
+python3 review.py inactive <iPad udid> <output folder> inactive-dark <top of the Settings window> <its bottom>
 ```
 
-AXe reads only one app's tree while two windows show, and never the
-inactive one's, so the script finds the sheet's place on the screen from
-its phrase swatch, reads the sheet's readout a point at a time, and
-measures what the window shows of the sheet's first screen. It also takes
-the sheet, Home and Settings with the window active and inactive and
-counts the pixels that differ. Put the iPad back to Full Screen Apps when
-done.
+The top and bottom are in points. In Windowed Apps AXe reads only the
+focused app, and its coordinates are that app's window's, so arrange the
+windows by dragging their top edge and corner from the window that has
+the focus. The script reads the sheet's top line a point at a time (`axe
+describe-ui --point`), refuses a capture whose line does not say
+`window=inactive` in the appearance it set, finds where the sheet sits
+from a specimen's straight edges, and measures the specimens above the
+Settings window, clear of the shadow a focused window casts on what is
+behind it (140 points above it). It also takes the sheet, Home and
+Settings with Brickson's window active and inactive, and counts the
+pixels that differ in those rows. Erase the simulator, or turn Full
+Screen Apps back on, before capturing anything else.
 
 ## How a pair is measured
 

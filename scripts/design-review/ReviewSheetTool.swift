@@ -15,9 +15,10 @@ import UniformTypeIdentifiers
 //   review-sheet locate <png> <scale> <x> <y> <hex>
 //       Where the run of <hex> through the point (points) starts, left and
 //       up, in points: {"left", "top"}.
-//   review-sheet diff <a.png> <b.png> <scale>
+//   review-sheet diff <a.png> <b.png> <scale> [<top> <bottom> ...]
 //       How many pixels differ between two captures of one size, and the
-//       box round them in points.
+//       box round them in points; only in the bands of rows given (points),
+//       or everywhere.
 //   review-sheet compose <layout.json> <out.png>
 //       The side-by-side sheet: crops of captures at their own pixels, one
 //       column for each appearance, with captions under each.
@@ -30,7 +31,8 @@ struct ReviewSheetTool {
             switch arguments.first {
             case "measure" where arguments.count == 4: try measure(arguments[1], arguments[2], arguments[3])
             case "locate" where arguments.count == 6: try locate(Array(arguments[1...]))
-            case "diff" where arguments.count == 4: try diff(arguments[1], arguments[2], arguments[3])
+            case "diff" where arguments.count >= 4 && arguments.count % 2 == 0:
+                try diff(arguments[1], arguments[2], arguments[3], rows: Array(arguments[4...]))
             case "compose" where arguments.count == 3: try compose(arguments[1], arguments[2])
             default: throw ToolError("usage: review-sheet measure|locate|diff|compose … (see the file's first lines)")
             }
@@ -106,12 +108,15 @@ struct ReviewSheetTool {
         let box: ReviewRect?
     }
 
-    static func diff(_ first: String, _ second: String, _ scaleText: String) throws {
+    static func diff(_ first: String, _ second: String, _ scaleText: String, rows: [String]) throws {
         let (a, b) = (try bitmap(first), try bitmap(second))
         let scale = try number(scaleText)
         guard a.width == b.width, a.height == b.height else { throw ToolError("the captures differ in size") }
+        let edges = try rows.map { Int((try number($0) * scale).rounded()) }
+        let bands = stride(from: 0, to: edges.count, by: 2).map { max(0, edges[$0])..<min(a.height, max(edges[$0], edges[$0 + 1])) }
+        let lines = bands.isEmpty ? [0..<a.height] : bands
         var count = 0, minX = Int.max, minY = Int.max, maxX = -1, maxY = -1
-        for y in 0..<a.height {
+        for y in lines.joined() {
             for x in 0..<a.width where a.colour(x: x, y: y) != b.colour(x: x, y: y) {
                 count += 1
                 minX = min(minX, x); minY = min(minY, y); maxX = max(maxX, x); maxY = max(maxY, y)

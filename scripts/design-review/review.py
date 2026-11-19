@@ -7,7 +7,7 @@ file says how.
 usage:
   review.py capture <udid> <iphone|ipad> <outdir> [<appearance> ...]
   review.py screens <udid> <iphone|ipad> <outdir> [<appearance> ...]
-  review.py inactive <udid> <outdir> <inactive-light|inactive-dark> <visible-bottom>
+  review.py inactive <udid> <outdir> <inactive-light|inactive-dark> <covered-top> <covered-bottom>
   review.py compose <outdir>
 
 capture   sets each appearance on the simulator (all of them when none is
@@ -17,8 +17,8 @@ capture   sets each appearance on the simulator (all of them when none is
           Home while typing, Home with the alarm sounding and Settings.
           Every specimen and every button is measured from the pixels.
 inactive  the same sheet and screens on an iPad in Windowed Apps, behind
-          a Settings window that has the focus; `visible-bottom` is the
-          top of that window, in points. Run `capture` for the same iPad
+          a Settings window that has the focus and covers Brickson's window
+          from `covered-top` to `covered-bottom`, in points. Run `capture` for the same iPad
           first: the sheet's frames come from its `light` run.
 screens   takes Home, typing, the alarm and Settings again, into the
           manifests `capture` wrote.
@@ -412,7 +412,9 @@ def capture_screens(sim, name):
         time.sleep(1)
         screens["alarm"] = capture_screen(sim, name, "alarm", sim.tree())
         run("axe", "tap", "--id=stopAlert", "--udid", sim.udid)
-    sim.launch(LAUNCH + ["--screen=settings"])
+    # Over Home at the sizes Home was captured at, so the controls the
+    # cover hides are the ones `home` holds.
+    sim.launch(HOME + ["--screen=settings"])
     nodes = sim.wait_for(lambda n: any(x.get("AXLabel") == "Back to Talking" for x in n))
     if nodes:
         time.sleep(1)
@@ -460,58 +462,105 @@ def probe(udid, x, y):
         return None
 
 
-def inactive(udid, outdir, name, visible_bottom):
+# How far above the focused window its shadow darkens what is behind it, in
+# points, measured on the iPad in Windowed Apps: colours there are the
+# shadow's, not Brickson's.
+SHADOW_ABOVE = 140
+# Past the round corner of a specimen (`CornerRule.minimum`), where its
+# sides are straight.
+CORNER_CLEARANCE = 16
+
+
+def inactive(udid, outdir, name, covered_top, covered_bottom):
+    """The sheet, Home and Settings in an inactive window: an iPad in
+    Windowed Apps, with Brickson's window behind a Settings window that has
+    the focus and covers its middle, from `covered_top` to `covered_bottom`
+    (points). AXe reads only the focused app's tree there, so the sheet is
+    read a point at a time (`probe`)."""
     settings = settings_for(name)
     reference = json.load(open(os.path.join(outdir, "ipad", "light", "manifest.json")))
     specimens = reference["sheet"]["specimens"]
-    phrase = specimens["review.colour.AccentColor"]["frame"]
     sim = Simulator(udid, "ipad", os.path.join(outdir, "ipad", name))
     os.makedirs(sim.outdir, exist_ok=True)
     sim.apply(settings)
+    # Brickson's own rows above the Settings window, clear of its shadow,
+    # below the status bar, whose clock may change.
+    bands = ["40", f"{covered_top - SHADOW_ABOVE:.0f}"]
     try:
-        result = {"family": "ipad", "appearance": name, "scale": sim.scale, "settings": settings, "screens": {}}
-        for screen, arguments in (("sheet", LAUNCH + ["--screen=design-review"]), ("home", HOME), ("settings", LAUNCH + ["--screen=settings"])):
+        result = {"family": "ipad", "appearance": name, "scale": sim.scale, "settings": settings, "screens": {},
+                  "covered": [covered_top, covered_bottom]}
+        for screen, arguments in (("sheet", LAUNCH + ["--screen=design-review"]), ("home", HOME), ("settings", HOME + ["--screen=settings"])):
             sim.launch(arguments)
             time.sleep(6)
             active = sim.screenshot(f"{name}-{screen}-active")
             run("xcrun", "simctl", "launch", udid, "com.apple.Preferences")
             time.sleep(3)
             png = sim.screenshot(f"{name}-{screen}")
-            difference = json.loads(run(TOOL, "diff", active, png, str(sim.scale)))
-            result["screens"][screen] = {"image": png, "active": active, "difference": difference}
-            if screen != "sheet":
-                continue
-            # Where the window starts: the phrase swatch's left and top edges
-            # on the screen, less its frame inside the window.
-            hit = None
-            for y in range(150, int(visible_bottom), 12):
-                hit = probe(udid, phrase["x"] + 24, y)
-                if hit and hit.get("AXUniqueId") == "review.colour.AccentColor":
-                    break
-            if not hit or hit.get("AXUniqueId") != "review.colour.AccentColor":
-                sys.exit(f"{name}: the phrase swatch was not found in the inactive window")
-            inside = hit["frame"]
-            if abs(inside["width"] - phrase["w"]) > 0.5:
-                sys.exit(f"{name}: the window is {inside['width']} points across for the swatch, not the full screen's {phrase['w']}")
-            start = json.loads(run(TOOL, "locate", png, str(sim.scale), f"{phrase['x'] + 24:.1f}", f"{y:.1f}",
-                                   specimens["review.colour.AccentColor"]["reading"]["fill"]))
-            dx, dy = start["left"] - phrase["x"], start["top"] - phrase["y"]
-            line = reference["sheet"]["readoutFrame"]
-            readout = probe(udid, line["x"] + dx + 40, line["y"] + dy + 8)
-            label = (readout or {}).get("AXLabel")
-            if not readout_matches(label, settings, active=False):
-                sys.exit(f"{name}: the readout is {label!r}, not an inactive window in this appearance; nothing kept")
-            moved = {i: dict(name=i, x=s["frame"]["x"] + dx, y=s["frame"]["y"] + dy, w=s["frame"]["width"], h=s["frame"]["height"])
-                     for i, s in specimens.items() if not i.endswith(".pressed")}
-            seen = {i: t for i, t in moved.items() if t["y"] >= start["top"] - 4 and t["y"] + t["h"] <= visible_bottom}
-            measured = sim.measure(png, list(seen.values()))
-            result["sheet"] = {"readout": label, "offset": [dx, dy], "pages": [png], "specimens": {
-                i: {"image": png, "frame": m["frame"], "reading": m.get("reading")} for i, m in measured.items()}}
+            difference = json.loads(run(TOOL, "diff", active, png, str(sim.scale), *bands))
+            result["screens"][screen] = {"image": png, "active": active, "difference": difference, "buttons": []}
+            if screen == "sheet":
+                result["sheet"] = inactive_sheet(sim, name, png, settings, specimens, covered_top, covered_bottom)
         with open(os.path.join(sim.outdir, "manifest.json"), "w") as handle:
             json.dump(result, handle, indent=1, sort_keys=True)
-        print(f"ipad {name}: {len(result['sheet']['specimens'])} specimens; differences {[(s, v['difference']['pixels']) for s, v in result['screens'].items()]}")
+        print(f"ipad {name}: {len(result['sheet']['specimens'])} specimens; pixels changed by going inactive "
+              f"{[(s, v['difference']['pixels']) for s, v in result['screens'].items()]}")
     finally:
         sim.apply(PLAIN)
+
+
+def inactive_sheet(sim, name, png, settings, specimens, covered_top, covered_bottom):
+    """The readout, checked, and every specimen the Settings window leaves
+    whole, measured: where each is comes from its frame in the full-screen
+    `light` capture (the window is as wide, so the sheet lays out the same),
+    moved by where the window put a specimen found by `probe`."""
+    found, readout = {}, None
+    for y in range(44, 1376, 8):
+        if covered_top <= y <= covered_bottom:
+            continue
+        for x in (60, 300, 560):
+            hit = probe(sim.udid, x, y)
+            identifier = (hit or {}).get("AXUniqueId") or ""
+            if identifier == "review.readout":
+                readout = hit.get("AXLabel")
+            elif identifier in specimens and identifier not in found and specimens[identifier]["reading"]["fill"] != specimens[identifier]["reading"]["page"]:
+                found[identifier] = (x, y, hit["frame"])
+        if readout and len(found) >= 2:
+            break
+    if not readout_matches(readout, settings, active=False):
+        sys.exit(f"{name}: the readout is {readout!r}, not an inactive window in this appearance; nothing kept")
+    offset = None
+    for identifier, (x, y, inside) in found.items():
+        colour = specimens[identifier]["reading"]["fill"]
+        locate = lambda px, py: json.loads(run(TOOL, "locate", png, str(sim.scale), f"{px:.1f}", f"{py:.1f}", colour))
+        try:
+            rough = locate(x, y)
+            # Again through the middle of its side and clear of its round
+            # corners, where the first point may have been near one.
+            middle = rough["top"] + (y - rough["top"]) if y - rough["top"] > CORNER_CLEARANCE else rough["top"] + inside["height"] / 2
+            left = locate(rough["left"] + 2, middle)["left"]
+            top = locate(left + CORNER_CLEARANCE, middle)["top"]
+        except subprocess.CalledProcessError:
+            continue  # the point fell on its words, not its fill
+        # Where the window put the sheet: the fill's edge on the screen, less
+        # its frame in the full-screen capture.
+        full = specimens[identifier]["frame"]
+        if abs(inside["width"] - full["width"]) <= 0.5:
+            offset = (left - full["x"], top - full["y"])
+            break
+    if offset is None:
+        sys.exit(f"{name}: no specimen of the sheet could be placed in the inactive window")
+    dx, dy = offset
+    targets = []
+    for identifier, specimen in specimens.items():
+        f = specimen["frame"]
+        t = {"name": identifier, "x": f["x"] + dx, "y": f["y"] + dy, "w": f["width"], "h": f["height"]}
+        # Brickson's window is the one above the Settings window.
+        whole = t["y"] >= 40 and t["y"] + t["h"] <= covered_top - SHADOW_ABOVE
+        if whole and not identifier.endswith(".pressed"):
+            targets.append(t)
+    measured = sim.measure(png, targets)
+    return {"readout": readout, "offset": [dx, dy], "pages": [png], "missing": [],
+            "specimens": {i: {"image": png, "frame": m["frame"], "reading": m.get("reading")} for i, m in measured.items()}}
 
 
 # MARK: - The side-by-side sheets
@@ -703,8 +752,8 @@ def main(argv):
         names = argv[5:] or list(APPEARANCES)
         if all(name in APPEARANCES for name in names):
             return capture(argv[2], argv[3], os.path.abspath(argv[4]), names, screens_only=argv[1] == "screens")
-    if len(argv) == 6 and argv[1] == "inactive" and UDID.fullmatch(argv[2]) and argv[4] in INACTIVE and argv[5].isdigit():
-        return inactive(argv[2], os.path.abspath(argv[3]), argv[4], float(argv[5]))
+    if len(argv) == 7 and argv[1] == "inactive" and UDID.fullmatch(argv[2]) and argv[4] in INACTIVE and argv[5].isdigit() and argv[6].isdigit():
+        return inactive(argv[2], os.path.abspath(argv[3]), argv[4], float(argv[5]), float(argv[6]))
     if len(argv) == 3 and argv[1] == "compose":
         return compose(os.path.abspath(argv[2]))
     sys.exit(__doc__.split("\n\n")[1])
