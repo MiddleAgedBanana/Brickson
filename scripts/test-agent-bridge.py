@@ -271,11 +271,6 @@ sys.exit(3 if 'fail' in mode else 0)
 '''
 
 
-def git(folder, *args):
-    subprocess.run(['git', '-C', str(folder), *args], check=True, capture_output=True,
-                   stdin=subprocess.DEVNULL)
-
-
 class BridgeTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
@@ -296,6 +291,12 @@ class BridgeTests(unittest.TestCase):
         self.env = {'HOME': str(self.home), 'PATH': f'{self.bin}{os.pathsep}{os.environ["PATH"]}',
                     'STUB_LOG': str(self.log), 'GIT_CONFIG_GLOBAL': str(gitconfig),
                     'GIT_CONFIG_NOSYSTEM': '1'}
+        # The tests' own git reads these settings alone, never the runner's:
+        # an fsmonitor or a filter set there would run in the made-up
+        # checkouts (cubic, on #109). The real git, whatever stands in for
+        # it on the bridge's PATH.
+        self.git_env = {**os.environ, 'GIT_CONFIG_GLOBAL': str(gitconfig),
+                        'GIT_CONFIG_NOSYSTEM': '1'}
         # An origin with a Brickson-shaped main, the owner's checkout, and
         # worktrees beside it, as on the Mac.
         origin, seed = base / 'origin.git', base / 'seed'
@@ -395,8 +396,12 @@ class BridgeTests(unittest.TestCase):
                 json.loads((out / 'summary.json').read_text()))
 
     def git_out(self, folder, *args):
-        return subprocess.run(['git', '-C', str(folder), *args], capture_output=True,
-                              check=True).stdout
+        return subprocess.run(['git', '-C', str(folder), *args], capture_output=True, check=True,
+                              stdin=subprocess.DEVNULL, env=self.git_env).stdout
+
+    def git(self, folder, *args):
+        self.git_out(folder, *args)
+
     def stop_inside(self, function):
         """A driver that runs the bridge with function wrapped, so the
         bridge sends itself the signal it is given just before function
@@ -748,7 +753,7 @@ class BridgeTests(unittest.TestCase):
 
     def test_two_background_jobs_keep_separate_logs(self):
         other = self.home / 'code' / 'brickson-other'
-        git(self.owner, 'worktree', 'add', '-q', '-b', 'claude/other', str(other), 'origin/main')
+        self.git(self.owner, 'worktree', 'add', '-q', '-b', 'claude/other', str(other), 'origin/main')
         first = self.bridge('codex', '--brief', str(self.brief), '--background')
         second = self.bridge('codex', '--brief', str(self.brief), '--background', '--worktree', str(other))
         logs = [line.split(' printed in ')[1].split('. Read')[0]
@@ -814,7 +819,7 @@ class BridgeTests(unittest.TestCase):
 
     def test_a_renamed_file_is_listed_once_and_compared(self):
         # With -z, git writes a rename's original path as a field of its own.
-        git(self.worktree, 'mv', 'AGENTS.md', 'agents notes.md')
+        self.git(self.worktree, 'mv', 'AGENTS.md', 'agents notes.md')
         result = self.bridge('codex', '--brief', str(self.brief),
                              env={'STUB_MODE': 'onefile', 'STUB_FILE': 'agents notes.md'})
         self.assertEqual(result.returncode, 1, result.stderr)
@@ -910,7 +915,7 @@ class BridgeTests(unittest.TestCase):
         # for them, so the job's no-push URL would only be added beside it.
         origin = subprocess.run(['git', '-C', str(self.worktree), 'remote', 'get-url', 'origin'],
                                 capture_output=True, text=True, check=True).stdout.strip()
-        git(self.worktree, 'config', 'remote.origin.pushurl', origin)
+        self.git(self.worktree, 'config', 'remote.origin.pushurl', origin)
         # GIT_CONFIG would point the bridge's `git config` alone at another
         # file, where it would find no push URL (CodeRabbit, on #108).
         empty = Path(self.temp.name) / 'empty.gitconfig'
@@ -1069,7 +1074,7 @@ class BridgeTests(unittest.TestCase):
         # checkout, where the agent can write.
         outside = Path(self.temp.name) / 'outside'
         outside.mkdir()
-        git(self.owner, 'config', 'core.hooksPath', '.githooks')
+        self.git(self.owner, 'config', 'core.hooksPath', '.githooks')
         result, folder, out, summary = self.codex_write('hooks', mode='githooks work',
                                                         STUB_OUTSIDE=str(outside))
         self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
@@ -1521,7 +1526,7 @@ class BridgeTests(unittest.TestCase):
                     subprocess.run(['git', '-C', str(self.owner), 'config', '--unset-all',
                                     f'filter.mark.{key}'], capture_output=True)
                 for key, value in settings.items():
-                    git(self.owner, 'config', f'filter.mark.{key}', value.format(mark=mark))
+                    self.git(self.owner, 'config', f'filter.mark.{key}', value.format(mark=mark))
                 result, folder, out, summary = self.codex_write(f'filter-{case}',
                                                                 mode='attributes work')
                 # Read before any git of these tests could run the filter.
@@ -1554,7 +1559,7 @@ class BridgeTests(unittest.TestCase):
             with self.subTest(case):
                 mark = outside / case
                 if case == 'hidden':  # in the shared settings, which GIT_CONFIG hides
-                    git(self.owner, 'config', 'filter.mark.clean', f"touch '{mark}'; cat")
+                    self.git(self.owner, 'config', 'filter.mark.clean', f"touch '{mark}'; cat")
                 result, folder, out, summary = self.codex_write(
                     f'named-{case}', mode='attributes work',
                     **{key: value.format(mark=mark) for key, value in settings.items()})
@@ -1573,7 +1578,7 @@ class BridgeTests(unittest.TestCase):
         outside = Path(self.temp.name) / 'outside'
         outside.mkdir()
         mark = outside / 'ran'
-        git(self.owner, 'config', 'filter.mark.clean', f"touch '{mark}'; cat")
+        self.git(self.owner, 'config', 'filter.mark.clean', f"touch '{mark}'; cat")
         (self.worktree / '.gitattributes').write_text('* filter=mark\n')
         self.break_git_for(r'^filter\.')
         result = self.bridge('codex', '--brief', str(self.brief))
@@ -1595,7 +1600,7 @@ class BridgeTests(unittest.TestCase):
         included = Path(self.temp.name) / 'codex-branches.gitconfig'
         included.write_text(f"[filter \"mark\"]\n\tsmudge = touch '{mark}'; tr a-z A-Z\n"
                             f"\tclean = touch '{mark}'; cat\n")
-        git(self.owner, 'config', 'includeIf.onbranch:codex/.path', str(included))
+        self.git(self.owner, 'config', 'includeIf.onbranch:codex/.path', str(included))
         (self.owner / '.git' / 'info').mkdir(exist_ok=True)
         (self.owner / '.git' / 'info' / 'attributes').write_text('* filter=mark\n')
         result, folder, out, summary = self.codex_write('branch-filter')
@@ -1627,7 +1632,7 @@ class BridgeTests(unittest.TestCase):
         included = Path(self.temp.name) / 'codex-branches.gitconfig'
         included.write_text(f"[filter \"mark\"]\n\tsmudge = touch '{mark}'; tr a-z A-Z\n"
                             f"\tclean = touch '{mark}'; cat\n")
-        git(self.owner, 'config', 'includeIf.onbranch:codex/.path', str(included))
+        self.git(self.owner, 'config', 'includeIf.onbranch:codex/.path', str(included))
         (self.owner / '.git' / 'info').mkdir(exist_ok=True)
         (self.owner / '.git' / 'info' / 'attributes').write_text('* filter=mark\n')
         result, _folder, out, summary = self.codex_write('reused', '--worktree',
