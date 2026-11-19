@@ -482,7 +482,7 @@ def restore_guard_code(checkout, saved, start):
     the job then says its commits could not be checked, and still ends
     with done. Returns summary.json's guard_code, and the job's status
     when the guard's code was changed or could not be checked."""
-    notes, problems = [], []
+    notes, problems, put_back = [], [], True
     changed = [name for name in GUARD_CODE if read_plain(checkout, name) != saved[name]]
     if changed:
         names = ', '.join(changed)
@@ -494,6 +494,7 @@ def restore_guard_code(checkout, saved, start):
             notes.append(f'changed by the job ({names}) and put back')
             problems.append(f'changed the guard\'s code ({names}); the bridge put it back')
         except Exception as error:  # whatever stops it, the job still ends with done
+            put_back = False
             notes.append(f'changed by the job ({names}); not put back: {error}')
             problems.append(f'changed the guard\'s code ({names}), and the bridge could not put '
                             f'it back ({error}): agy may run a changed guard in {checkout} until '
@@ -519,13 +520,18 @@ def restore_guard_code(checkout, saved, start):
                         f'guard\'s code ({error}); read its commits before the next agy job')
     else:
         committed = sorted(os.fsdecode(name) for name in listed.split(b'\0') if name)
-        if committed:
+        if committed and put_back:
             names = ', '.join(committed)
             notes.append(f'the job\'s commits change it ({names}); the working tree has the '
                          'earlier code')
             problems.append(f'its commits change the guard\'s code ({names}); the bridge put the '
                             f'earlier code back in the working tree, so {checkout} is not clean '
                             'and the next agy job is refused until a thread has dealt with them')
+        elif committed:  # never "put back" after a put-back that failed
+            names = ', '.join(committed)
+            notes.append(f'the job\'s commits change it ({names})')
+            problems.append(f'its commits change the guard\'s code ({names}); read them before '
+                            'the next agy job')
         between = sorted({os.fsdecode(name.strip()) for name in touched.split(b'\0')}
                          .intersection(GUARD_CODE).difference(committed))
         if between:

@@ -90,7 +90,7 @@ if 'guardcode' in mode:  # the guard's own code, which agy's hook runs
         run_git('add', 'note.md')
         run_git('commit', '-q', '-m', 'Add a note')
         run_git('checkout', '-q', '-b', 'side')
-    if how in ('edit', 'commit', 'revert', 'merge'):
+    if how in ('edit', 'commit', 'revert', 'merge', 'commitfolder'):
         for name in (guard, privacy):
             with open(name, 'w') as code:
                 code.write('allow everything\n')
@@ -101,8 +101,11 @@ if 'guardcode' in mode:  # the guard's own code, which agy's hook runs
             code.write('allow everything\n')
         os.remove(guard)
         os.symlink(outside, guard)
-    if how in ('commit', 'revert', 'merge'):
+    if how in ('commit', 'revert', 'merge', 'commitfolder'):
         run_git('commit', '-q', '-am', 'Weaken the guard')
+    if how == 'commitfolder':  # then a folder where the guard was, which cannot be written over
+        os.remove(guard)
+        os.makedirs(os.path.join(guard, 'inside'))
     if how == 'revert':  # a later commit puts the code back
         run_git('revert', '--no-edit', 'HEAD')
     if how == 'merge':
@@ -1444,6 +1447,20 @@ class BridgeTests(unittest.TestCase):
         refused = self.bridge('agy', '--brief', str(self.brief))
         self.assertEqual(refused.returncode, 2, refused.stderr)
         self.assertIn('uncommitted', refused.stderr)
+
+    def test_a_put_back_that_failed_is_never_followed_by_put_back(self):
+        # The job commits a change to the guard's code, then leaves a folder
+        # where guard.py was (CodeRabbit, on #109).
+        self.point_agy_at(self.agy_folder)
+        self.install_agy_hook()
+        result = self.bridge('agy', '--brief', str(self.brief), '--write', '--branch', 'folder',
+                             env={'STUB_MODE': 'guardcode', 'STUB_GUARD': 'commitfolder'})
+        self.assertEqual(result.returncode, 1, result.stderr)
+        status = json.loads((self.job_folder(result) / 'summary.json').read_text())['status']
+        self.assertIn('could not put it back', status)
+        self.assertIn("its commits change the guard's code", status)
+        self.assertNotIn('put the earlier code back', status)
+        self.assertTrue((self.agy_folder / '.claude' / 'hooks' / 'guard.py' / 'inside').is_dir())
 
     def test_commits_that_change_the_guards_code_and_put_it_back_are_reported(self):
         # Where the branch ends says nothing about a commit on the way: one
