@@ -72,6 +72,8 @@ struct ReviewSheetTool {
         let name: String
         let x, y, w, h: Double
         let inset: Double?
+        /// A key of Apple's keyboard, read for its letter.
+        let key: Bool?
     }
 
     struct Measured: Codable {
@@ -86,7 +88,9 @@ struct ReviewSheetTool {
         let targets = try JSONDecoder().decode([Target].self, from: Data(contentsOf: URL(fileURLWithPath: targetsPath)))
         let measured = targets.map { target in
             let frame = ReviewRect(x: target.x, y: target.y, width: target.w, height: target.h)
-            return Measured(name: target.name, frame: frame, reading: ReviewMeasure.read(image, frame: frame, scale: scale, inset: target.inset ?? ReviewMeasure.defaultInset))
+            return Measured(name: target.name, frame: frame, reading: ReviewMeasure.read(
+                image, frame: frame, scale: scale, inset: target.inset ?? ReviewMeasure.defaultInset, strongestWords: target.key ?? false
+            ))
         }
         try printJSON(measured)
     }

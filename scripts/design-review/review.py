@@ -401,7 +401,7 @@ def capture_screen(sim, name, screen, nodes, hidden=frozenset()):
     with open(png[:-4] + "-tree.json", "w") as handle:
         json.dump(nodes, handle)
     targets = buttons(nodes, window["width"], window["height"], hidden)
-    measured = sim.measure(png, [{k: t[k] for k in ("name", "x", "y", "w", "h", "inset")} for t in targets])
+    measured = sim.measure(png, [dict({k: t[k] for k in ("name", "x", "y", "w", "h", "inset")}, key=t["kind"] == "key") for t in targets])
     return {"image": png, "buttons": [{"label": t["label"], "kind": t["kind"], "inset": t["inset"], **measured[t["name"]]}
                                       for t in targets if t["name"] in measured]}
 
@@ -719,21 +719,21 @@ def remeasure(manifest):
     scale = str(manifest["scale"])
     jobs = {}
     for identifier, specimen in (manifest.get("sheet") or {}).get("specimens", {}).items():
-        jobs.setdefault(specimen["image"], []).append((specimen, identifier, SPECIMEN_INSET))
+        jobs.setdefault(specimen["image"], []).append((specimen, identifier, SPECIMEN_INSET, False))
     for screen in manifest.get("screens", {}).values():
         for index, button in enumerate(screen.get("buttons", [])):
             inset = button.get("inset") or {"key": 3, "control": 6}.get(button.get("kind"), 6)
             if button.get("name", "").endswith("messageField"):
                 inset = FIELD_INSET - 2
-            jobs.setdefault(screen["image"], []).append((button, f"{index:03d}", inset))
+            jobs.setdefault(screen["image"], []).append((button, f"{index:03d}", inset, button.get("kind") == "key"))
     for image, items in jobs.items():
         path = image[:-4] + "-remeasure.json"
         with open(path, "w") as handle:
             json.dump([{"name": name, "x": item["frame"]["x"], "y": item["frame"]["y"], "w": item["frame"]["width"],
-                        "h": item["frame"]["height"], "inset": inset} for item, name, inset in items], handle)
+                        "h": item["frame"]["height"], "inset": inset, "key": key} for item, name, inset, key in items], handle)
         readings = {m["name"]: m.get("reading") for m in json.loads(run(TOOL, "measure", image, scale, path))}
         os.remove(path)
-        for item, name, _ in items:
+        for item, name, _, _ in items:
             item["reading"] = readings.get(name)
 
 

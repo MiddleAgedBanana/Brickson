@@ -122,18 +122,56 @@ struct ReviewPixelsTests {
         #expect(reading.rings.first.map { ReviewMeasure.rounded($0.onFill) } == 3.66)
     }
 
-    // A capsule leaves the page showing in its frame's corners; its edge is
-    // still its fill, as on Settings' rows.
-    @Test func aCapsulesEdgeIsItsFill() throws {
+    // A round shape leaves the page showing in its frame's corners, so
+    // much that the page is the commonest colour round the frame's edge;
+    // its edge is still its fill, as on Settings' capsule rows.
+    @Test func aRoundShapesEdgeIsItsFill() throws {
         let bitmap = try Self.picture { context in
             context.setShouldAntialias(true)
             context.setFillColor(Self.blue.cgColor)
-            context.addPath(CGPath(roundedRect: CGRect(x: 20, y: 20, width: 80, height: 40), cornerWidth: 20, cornerHeight: 20, transform: nil))
-            context.fillPath()
+            context.fillEllipse(in: CGRect(x: 40, y: 20, width: 40, height: 40))
         }
-        let reading = try #require(ReviewMeasure.read(bitmap, frame: Self.frame, scale: 2))
+        let reading = try #require(ReviewMeasure.read(bitmap, frame: ReviewRect(x: 40, y: 20, width: 40, height: 40), scale: 2))
         #expect(reading.edge == "#0A60D6")
         #expect(ReviewMeasure.rounded(reading.edgeOnPage) == 5.74)
+    }
+
+    // In dark mode a capsule's round ends show the black screen inside its
+    // frame; that black is the screen, never the words, though the words
+    // could be black too on a lighter fill.
+    @Test func theScreenInAShapesCornersIsNotTheWords() throws {
+        let bitmap = try Self.picture(page: Self.black) { context in
+            context.setFillColor(Self.blue.cgColor)
+            context.addPath(CGPath(roundedRect: CGRect(x: 20, y: 20, width: 80, height: 40), cornerWidth: 20, cornerHeight: 20, transform: nil))
+            context.fillPath()
+            context.setFillColor(Self.white.cgColor)
+            context.fill(CGRect(x: 44, y: 34, width: 32, height: 12))
+        }
+        let reading = try #require(ReviewMeasure.read(bitmap, frame: Self.frame, scale: 2))
+        #expect(reading.words == "#FFFFFF")
+        #expect(reading.foregrounds.map(\.colour) == ["#FFFFFF"])
+        let black = try Self.picture(page: Self.black) { context in
+            context.setFillColor(Self.white.cgColor)
+            context.addPath(CGPath(roundedRect: CGRect(x: 20, y: 20, width: 80, height: 40), cornerWidth: 20, cornerHeight: 20, transform: nil))
+            context.fillPath()
+            context.setFillColor(Self.black.cgColor)
+            context.fill(CGRect(x: 44, y: 34, width: 32, height: 12))
+        }
+        let words = try #require(ReviewMeasure.read(black, frame: Self.frame, scale: 2))
+        #expect(words.words == "#000000")
+        #expect(words.fill == "#FFFFFF")
+    }
+
+    // Words drawn on the screen itself, with nothing round them: the
+    // screen is their fill, never cut away as the screen round a shape.
+    @Test func wordsOnTheScreenKeepTheScreenForTheirFill() throws {
+        let bitmap = try Self.picture { context in
+            context.setFillColor(Self.black.cgColor)
+            context.fill(CGRect(x: 30, y: 34, width: 60, height: 12))
+        }
+        let reading = try #require(ReviewMeasure.read(bitmap, frame: Self.frame, scale: 2, inset: 0))
+        #expect(reading.fill == "#FFFFFF")
+        #expect(reading.words == "#000000")
     }
 
     // Where a shape does not differ from the page, there is no edge: the

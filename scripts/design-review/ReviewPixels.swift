@@ -151,25 +151,12 @@ nonisolated enum ReviewMeasure {
 
     /// Reads one specimen. `frame` is in points, `scale` pixels per point.
     /// Nil where the frame holds no pixel of the capture.
-    static func read(_ bitmap: ReviewBitmap, frame: ReviewRect, scale: Double, inset: Double = defaultInset) -> ReviewReading? {
+    static func read(_ bitmap: ReviewBitmap, frame: ReviewRect, scale: Double, inset: Double = defaultInset, strongestWords: Bool = false) -> ReviewReading? {
         let x0 = Int((frame.x * scale).rounded()), y0 = Int((frame.y * scale).rounded())
         let x1 = Int(((frame.x + frame.width) * scale).rounded()), y1 = Int(((frame.y + frame.height) * scale).rounded())
         guard x1 > x0, y1 > y0 else { return nil }
-        let innerDepth = Int((inset * scale).rounded()), edgeDepth = max(1, Int((edgeBand * scale).rounded()))
-        var inner: [ReviewColour: Int] = [:], edge: [ReviewColour: Int] = [:], band: [ReviewColour: Int] = [:], page: [ReviewColour: Int] = [:]
-        for y in y0..<y1 {
-            for x in x0..<x1 {
-                guard let colour = bitmap.colour(x: x, y: y) else { continue }
-                let depth = min(x - x0, x1 - 1 - x, y - y0, y1 - 1 - y)
-                if depth < edgeDepth { edge[colour, default: 0] += 1 }
-                if depth >= innerDepth {
-                    inner[colour, default: 0] += 1
-                } else {
-                    band[colour, default: 0] += 1
-                }
-            }
-        }
         let near = Int((pageBand.lowerBound * scale).rounded()), far = Int((pageBand.upperBound * scale).rounded())
+        var page: [ReviewColour: Int] = [:]
         for y in (y0 - far)..<(y1 + far) {
             for x in (x0 - far)..<(x1 + far) {
                 let distance = max(x0 - x, x - (x1 - 1), y0 - y, y - (y1 - 1), 0)
@@ -178,8 +165,49 @@ nonisolated enum ReviewMeasure {
                 }
             }
         }
+        // The screen showing inside the frame, round a shape's corners: the
+        // screen's colour reached from the frame's edge without crossing
+        // anything else. It is neither the fill nor the words.
+        let screen = commonest(page)
+        let (width, height) = (x1 - x0, y1 - y0)
+        var outside = [Bool](repeating: false, count: width * height)
+        // Only round a shape filled with something else: words drawn on the
+        // screen itself have the screen for their fill.
+        var whole: [ReviewColour: Int] = [:]
+        let deep = Int((inset * scale).rounded())
+        for y in (y0 + deep)..<max(y0 + deep, y1 - deep) {
+            for x in (x0 + deep)..<max(x0 + deep, x1 - deep) {
+                if let colour = bitmap.colour(x: x, y: y) { whole[colour, default: 0] += 1 }
+            }
+        }
+        if let screen, commonest(whole) != screen {
+            var queue: [(Int, Int)] = []
+            for x in 0..<width { queue += [(x, 0), (x, height - 1)] }
+            for y in 0..<height { queue += [(0, y), (width - 1, y)] }
+            while let (x, y) = queue.popLast() {
+                guard x >= 0, y >= 0, x < width, y < height, !outside[y * width + x],
+                      bitmap.colour(x: x0 + x, y: y0 + y) == screen else { continue }
+                outside[y * width + x] = true
+                queue += [(x + 1, y), (x - 1, y), (x, y + 1), (x, y - 1)]
+            }
+        }
+        let innerDepth = Int((inset * scale).rounded()), edgeDepth = max(1, Int((edgeBand * scale).rounded()))
+        var inner: [ReviewColour: Int] = [:], edge: [ReviewColour: Int] = [:], band: [ReviewColour: Int] = [:]
+        for y in y0..<y1 {
+            for x in x0..<x1 {
+                guard let colour = bitmap.colour(x: x, y: y) else { continue }
+                let depth = min(x - x0, x1 - 1 - x, y - y0, y1 - 1 - y)
+                if depth < edgeDepth { edge[colour, default: 0] += 1 }
+                if outside[(y - y0) * width + (x - x0)] && depth >= innerDepth { continue }
+                if depth >= innerDepth {
+                    inner[colour, default: 0] += 1
+                } else {
+                    band[colour, default: 0] += 1
+                }
+            }
+        }
         guard let fill = commonest(inner) ?? commonest(band), let outermost = commonest(edge) else { return nil }
-        let pageColour = commonest(page) ?? outermost
+        let pageColour = screen ?? outermost
         // What meets the screen at the edge: the commonest colour of the
         // outermost band that is not the screen itself, where it covers at
         // least a tenth of the band. A capsule's round ends leave much of
@@ -205,7 +233,9 @@ nonisolated enum ReviewMeasure {
             let (a, b) = (lhs.contrast(with: fill), rhs.contrast(with: fill))
             return a == b ? lhs.hex > rhs.hex : a < b
         }
-        let words = foregrounds.first ?? strongest ?? fill
+        // A key of Apple's keyboard is read for its letter, the strongest
+        // mark: its other colours are its own shading.
+        let words = (strongestWords ? strongest : foregrounds.first ?? strongest) ?? fill
         let wordsRatio = words.contrast(with: fill)
         let wordPixels = inner.filter { abs($0.key.contrast(with: fill) - wordsRatio) <= 0.05 }.values.reduce(0, +)
         let bandTotal = band.values.reduce(0, +)
