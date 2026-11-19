@@ -112,14 +112,14 @@ final class FakeSpeechSynthesizer: SpeechSynthesizing {
     /// synthesizer: speaking, and paused.
     func reportPause(_ token: UtteranceToken? = nil) {
         if token == nil || token == latestToken { isPaused = true }
-        send(.paused, for: token)
+        send(.paused(at: now()), for: token)
     }
 
     /// Reports that the latest request (or `token`) carried on after a
     /// pause.
     func reportContinue(_ token: UtteranceToken? = nil) {
         if token == nil || token == latestToken { isPaused = false }
-        send(.continued, for: token)
+        send(.continued(at: now()), for: token)
     }
 
     /// Goes quiet without reporting anything, as a stuck synthesizer can.

@@ -1,6 +1,6 @@
 # The synthesizer's pause and carry-on reports are logged
 
-*2026-11-19. Pull request #PR (`claude/speech-start-and-pause-signals`),
+*2026-11-19. Pull request #129 (`claude/speech-start-and-pause-signals`),
 built on pull request #123 and to be merged after it. A Claude thread
 running on the owner's Mac with Xcode 27.2.*
 
@@ -15,19 +15,21 @@ Brickson never pauses speech itself: it stops it, and never calls
 `pauseSpeaking(at:)`, the one case Apple documents the pause report for.
 
 Now both reports are forwarded through the same seam as the others
-(`SpeechSynthesisEvent.paused` and `.continued`), and the speech service
-logs each one, without the phrase's words, saying whether it was for the
-phrase still current: "The synthesizer paused the current utterance",
-"The synthesizer carried on with the current utterance", or the same for
+(`SpeechSynthesisEvent.paused` and `.continued`), each stamped with
+`ContinuousClock` as it arrives, before it crosses to the main thread
+(docs/LESSONS.md, "Timers use ContinuousClock"). The speech service logs
+each one, without the phrase's words, saying whether it was for the
+phrase still current and how long the report waited to be handled: "The
+synthesizer paused the current utterance (report waited N ms)", "The
+synthesizer carried on with the current utterance (...)", or the same for
 "an utterance that is no longer current". It also logs "An audio
-interruption began" when the interruption notice arrives, so a device's
-log shows which came first. Nothing else changes: a paused phrase is
+interruption began" when the interruption notice is handled, and "The
+audio output in use became unavailable" when headphones or a speaker go,
+so a device's log shows which came first. Nothing else changes: a paused phrase is
 still found by the interruption notice or by the speech watchdog, as
 before. Whether a pause report may be read as a cut-off is for device
 check S2, step 4, to decide (docs/DECISIONS.md, "A phrase the system
 cuts off", *Pause and carry-on reports are logged, not acted on yet*).
-The two cases carry no time stamp, as the cancel report does not:
-nothing reads one, and the log line has its own time.
 
 **A new phrase is never queued behind the last one.** A real
 synthesizer queues an utterance handed to it while it still holds
@@ -68,9 +70,16 @@ This is a small change in one pull request, so it has no work file
   log them (the change and its tests).
 - `af6f56f` Pin that a new phrase never queues and a stopped phrase
   stays stopped (tests only).
-- The records commit after them: docs/DECISIONS.md (the pause and
-  carry-on reports, and ducking in the mixing fallback),
-  docs/DEVICE-CHECKS.md (S2, step 4), docs/HANDOFF.md and this record.
+- `1b4369f` Record the pause reports, ducking in the fallback, and the
+  device check: docs/DECISIONS.md, docs/DEVICE-CHECKS.md (S2, step 4),
+  docs/HANDOFF.md and this record.
+- The commit answering Codex's review before the pull request opened
+  (`codex review` on the owner's Mac, against #123's tip): the reports
+  stamped as they arrive and the wait logged, as docs/LESSONS.md asks of
+  framework callbacks, so a notice handled while a report waited cannot
+  look as if it came first; device check S2 reads both kinds of log
+  line and keeps watching until the interruption ends; and output loss
+  logged for the headphone part of that check.
 
 ## Verified
 
@@ -87,7 +96,12 @@ simulator with iOS 27.2:
   arrival and its two reports. After the change: 94 tests passed.
 - **The whole unit suite after the change**: `scripts/test.sh unit`, with
   its Python checks, 1081 tests, 0 failed (1 skipped, 12 expected
-  failures), no build warnings, String Catalog unchanged.
+  failures), no build warnings, String Catalog unchanged; and again after
+  the commit answering Codex's review, with the same result.
+- **The stamp**: the background-thread test checks each report's instant
+  falls between the moment before the calls and the moment the
+  background task finished them, in order, so a stamp taken after the
+  hop to the main thread would fall outside it.
 - **Each new test fails without what it guards** (one change at a time,
   the test run alone, then put back):
   - a pause report acted on as a cut-off:

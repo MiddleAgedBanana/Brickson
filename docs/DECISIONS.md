@@ -1092,7 +1092,8 @@ Reversible if the owner objects.* The synthesizer's pause and carry-on
 reports (`speechSynthesizer(_:didPause:)` and
 `speechSynthesizer(_:didContinue:)`) are forwarded like its other reports
 and logged, without the phrase's words, saying whether each was for the
-phrase still current; nothing else changes. Brickson never calls
+phrase still current and how long it waited to reach the main thread
+(it is stamped as it arrives); nothing else changes. Brickson never calls
 `pauseSpeaking(at:)`, and Apple documents the pause report for a pause
 made that way, so whether the system also sends one when a call, Siri or
 another app's alarm pauses speech, in which order with the interruption

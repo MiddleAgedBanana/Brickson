@@ -73,24 +73,36 @@ struct OffMainThreadCallbackTests {
     /// The pause and carry-on reports come through the same delegate, with
     /// no thread guarantee either. Each must reach the main actor from a
     /// background thread, in order, with the utterance it is about, so the
-    /// synthesizer can tell whether it is the current one. Fails if either
-    /// is not forwarded, or becomes main-actor isolated, which traps there.
+    /// synthesizer can tell whether it is the current one, and stamped
+    /// when it arrived rather than when the main actor got to it
+    /// (docs/LESSONS.md, "Timers use ContinuousClock"). Fails if either is
+    /// not forwarded, is stamped after the hop, or becomes main-actor
+    /// isolated, which traps there.
     @Test @MainActor func pauseAndCarryOnReportsCanArriveOnABackgroundThread() async {
         let events = SpeechSynthesizerEvents()
         var received: [(utterance: AVSpeechUtterance, event: SpeechSynthesisEvent)] = []
         events.onEvent = { utterance, event in received.append((utterance, event)) }
         let synthesizer = Unchecked(AVSpeechSynthesizer())
         let utterance = Unchecked(AVSpeechUtterance(string: "Hello there."))
+        let before = ContinuousClock.now
 
-        await Task.detached {
+        let sent = await Task.detached {
             events.speechSynthesizer(synthesizer.value, didPause: utterance.value)
             events.speechSynthesizer(synthesizer.value, didContinue: utterance.value)
+            return ContinuousClock.now
         }.value
         let arrived = await waitUntil { received.count == 2 }
 
         #expect(arrived)
-        #expect(received.map(\.event) == [.paused, .continued])
         #expect(received.allSatisfy { $0.utterance === utterance.value })
+        guard received.count == 2,
+              case let .paused(at: pausedAt) = received[0].event,
+              case let .continued(at: continuedAt) = received[1].event
+        else {
+            Issue.record("Expected a pause, then a carry-on: \(received.map(\.event))")
+            return
+        }
+        #expect(before <= pausedAt && pausedAt <= continuedAt && continuedAt <= sent)
     }
 
     /// Reports sent one after another from a background thread arrive in

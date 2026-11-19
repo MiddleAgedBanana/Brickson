@@ -39,11 +39,13 @@ nonisolated enum SpeechSynthesisEvent: Equatable, Sendable {
     /// it), so this is never Brickson's own doing. Logged only, until a
     /// device check shows when the system sends it (docs/DECISIONS.md, "A
     /// phrase the system cuts off", *Pause and carry-on reports are logged,
-    /// not acted on yet*).
-    case paused
+    /// not acted on yet*). `instant` is when the report arrived, taken
+    /// before it crossed to the main actor, so the log can say how long it
+    /// waited there.
+    case paused(at: ContinuousClock.Instant)
     /// It carried on speaking the utterance after a pause. Logged only, as
-    /// `paused` is.
-    case continued
+    /// `paused` is; `instant` likewise.
+    case continued(at: ContinuousClock.Instant)
 }
 
 /// The speech service's view of `AVSpeechSynthesizer`, as a seam so tests can
@@ -151,14 +153,14 @@ final class SpeechSynthesizerEvents: NSObject, AVSpeechSynthesizerDelegate {
         _ synthesizer: AVSpeechSynthesizer,
         didPause utterance: AVSpeechUtterance
     ) {
-        forward(utterance, .paused)
+        forward(utterance, .paused(at: ContinuousClock.now))
     }
 
     nonisolated func speechSynthesizer(
         _ synthesizer: AVSpeechSynthesizer,
         didContinue utterance: AVSpeechUtterance
     ) {
-        forward(utterance, .continued)
+        forward(utterance, .continued(at: ContinuousClock.now))
     }
 
     private nonisolated func forward(_ utterance: AVSpeechUtterance, _ event: SpeechSynthesisEvent) {
