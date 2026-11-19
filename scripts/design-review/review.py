@@ -339,6 +339,10 @@ def buttons(nodes, width, height, hidden=frozenset()):
         if key_of(node) in hidden:
             continue
         f = frame_of(node)
+        if node.get("type") in ("TextField", "TextView"):
+            # Home's message field draws its edge this far outside the text
+            # field itself (MessageField.inset, Spacing.xSmall).
+            f = {"x": f["x"] - FIELD_INSET, "y": f["y"] - FIELD_INSET, "w": f["w"] + 2 * FIELD_INSET, "h": f["h"] + 2 * FIELD_INSET}
         if not fully_inside(f, 0, height, width):
             continue
         in_keyboard = top is not None and f["y"] + f["h"] > top
@@ -353,9 +357,15 @@ def buttons(nodes, width, height, hidden=frozenset()):
     return found
 
 
+FIELD_INSET = 6
+# Words typed in the message field for the typing capture: neutral, like
+# the starter library's.
+TYPED = "Could you open the window?"
+
+
 def review_inset(node):
-    # A text field draws no ring: its words start close to its edge.
-    return 3 if node.get("type") in ("TextField", "TextView") else 6
+    # A text field draws no ring: its words start just inside its edge.
+    return FIELD_INSET - 2 if node.get("type") in ("TextField", "TextView") else 6
 
 
 def capture_screen(sim, name, screen, nodes, hidden=frozenset()):
@@ -381,7 +391,9 @@ def capture_screens(sim, name):
     screens["home"] = capture_screen(sim, name, "home", nodes)
     home = frozenset(key_of(n) for n in nodes if n.get("type") == "Button")
     run("axe", "tap", "--id=type", "--udid", sim.udid)
-    time.sleep(4)
+    time.sleep(3)
+    run("axe", "type", "--stdin", "--udid", sim.udid, stdin=TYPED)
+    time.sleep(2)
     screens["typing"] = capture_screen(sim, name, "typing", sim.tree())
     sim.launch(HOME)
     sim.wait_for(has("getAttention"))
@@ -511,7 +523,7 @@ SCREENS = [
     ("settings", "Settings' first screen"),
     ("sheet", "The review sheet's first screen"),
 ]
-PADDING = 10
+PADDING = 3
 
 
 def order_key(identifier):
@@ -666,6 +678,8 @@ def write_readme(outdir, pictures, failures, keys=()):
               "| Device | Appearance | Keys measured | Lowest words | Key |", "|---|---|---|---|---|"]
     by_capture = {}
     for family, appearance, label, reading in keys:
+        if label == "space":
+            continue  # no glyph on it to read
         by_capture.setdefault((family, appearance), []).append((reading["wordsOnFill"], label, reading))
     for (family, appearance), found in by_capture.items():
         ratio, label, reading = min(found, key=lambda item: item[0])

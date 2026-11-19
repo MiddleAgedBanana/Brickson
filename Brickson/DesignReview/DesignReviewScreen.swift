@@ -153,13 +153,15 @@ struct DesignReviewScreen: View {
         Palette.fills.first { $0.asset == role.asset }?.color ?? Palette.controlFill
     }
 
-    /// A fill with the words every control draws on it, in the control font.
+    /// A fill with the words every control draws on it, fitted as a
+    /// control fits them (`FittedLabel`), so they never break.
     private func swatch(_ role: Catalogue.Role) -> some View {
-        Text(verbatim: role.name)
-            .font(LabelFont.quickControl.font)
+        FittedLabel(role.name, font: .quickControl)
             .foregroundStyle(Palette.fillLabel)
-            .padding(Spacing.small)
-            .frame(maxWidth: .infinity, minHeight: Self.controlHeight)
+            .padding(.horizontal, HomeLayout.labelInset.horizontal)
+            .padding(.vertical, HomeLayout.labelInset.vertical)
+            .frame(maxWidth: .infinity)
+            .frame(height: Self.controlHeight)
             .background(fill(role), in: RoundedRectangle(cornerRadius: CornerRule.minimum, style: .continuous))
             .accessibilityElement(children: .combine)
             .accessibilityIdentifier(Catalogue.colour(role))

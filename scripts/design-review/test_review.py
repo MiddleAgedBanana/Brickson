@@ -109,8 +109,11 @@ class Sheets(unittest.TestCase):
         self.assertEqual((crop["x"], crop["y"]), (0, 0))
         crop = review.crop({"x": 80, "y": 90, "width": 20, "height": 10}, 3, (300, 300))
         self.assertEqual((crop["x"] + crop["width"], crop["y"] + crop["height"]), (300, 300))
+        # The specimen and PADDING points of the screen round it, at the
+        # capture's own pixels.
+        pad = review.PADDING
         crop = review.crop({"x": 20, "y": 20, "width": 20, "height": 10}, 2, (300, 300))
-        self.assertEqual(crop, {"x": 20, "y": 20, "width": 80, "height": 60})
+        self.assertEqual(crop, {"x": (20 - pad) * 2, "y": (20 - pad) * 2, "width": (20 + 2 * pad) * 2, "height": (10 + 2 * pad) * 2})
 
 
 if __name__ == "__main__":
