@@ -67,8 +67,9 @@ and behaviour do not change: agy commits by itself.
   move `codex/<topic>` to that commit, and only from the commit it
   started from; the index already holds the commit's tree, so nothing is
   left to commit. If the check reports anything, cannot run or has no
-  private list, the branch does not move, nothing is left staged and the
-  work stays in the files; the job ends as `finished, but its work is not
+  private list, the branch does not move, the bridge unstages the job's
+  files (and says so when it cannot: *After the sixth push*, below) and
+  the work stays in the files; the job ends as `finished, but its work is not
   committed: ...` and exits 1, and the check's output, which gives places
   and kinds only, is kept in the job folder as `privacy-check.txt`. Its
   exit code 1 means a finding, or that the check itself failed, and the
@@ -128,8 +129,8 @@ Now:
   job ends saying its commits change the guard's code. agy's folder then
   shows that as an uncommitted change, so the next agy job is refused
   (`require_clean`) until a thread has dealt with those commits. After a
-  read-only job that changed the guard's code, the folder is clean again
-  and the next job runs with `guard_code: unchanged`.
+  read-only job that changed the guard's code and nothing else, the folder
+  is clean again and the next job runs with `guard_code: unchanged`.
 
 *Known limit:* the bridge does not compare the guard's code in agy's
 folder with origin/main before a job. Code that was already changed
@@ -402,8 +403,9 @@ Not changed, and why:
   can already run any command as the same user with the same
   environment, so a filter slipped in there gains nothing; and git has no
   way to turn off a filter it has not been told the name of. A known
-  limit. Its conversation is left open, because whether a security
-  finding stays a known limit is the owner's decision.
+  limit. Its conversation was left open, because whether a security
+  finding stays a known limit is the owner's decision; the owner decided
+  on 2026-11-19 that it does (*After it was marked ready*).
 - *A stop while the summary is written* (cubic) and *a stop just before
   the branch moves* (CodeRabbit). Every put-back has run by then, and the
   job ends with `done` either way, saying what happened to its work. A
@@ -447,6 +449,39 @@ push goes in. This one went in before the owner answered, as a process
 call made on the owner's behalf: the repository's ruleset needs every
 review conversation resolved before a merge, and this conversation could
 only be resolved by its fix.
+
+**After it was marked ready.** With GitHub's tests green on the seventh
+push the pull request was marked ready, and cubic then ran a deeper
+review by itself and left four findings:
+
+- *A push URL in the environment the bridge is started in* (cubic, P1).
+  Real, and opened by this pull request's own fourth push (`15855e5`).
+  Since then the bridge's own git reads neither `GIT_CONFIG_COUNT` nor
+  `GIT_CONFIG_PARAMETERS`, so its look for a push URL in the checkout
+  missed one set there, while a job still inherits both and gets the
+  no-push URL only added after them. git pushes to every push URL a
+  remote has, so a job's `git push origin` reached the inherited one
+  first. `main`'s bridge refuses such a start, because its git still
+  read them. Reproduced in a scratch repository (git 2.43 on Linux).
+  Fixed test first (`dc67208`): before a job is handed off, the bridge
+  reads the push URLs once more with those two settings, as the job's
+  git will, and refuses the hand-off when any remote has one. Settings
+  git cannot read stop it too, never taken as "no push URL". cubic
+  suggested giving a job none of the inherited settings instead. That
+  was not done: a job can need them to read the remote (the cloud
+  container this was written in carries three of its own, which say how
+  git reaches GitHub there and none of which is a push URL), and
+  refusing is what `main` does.
+- *Two sentences of this record* (cubic): that after a refusal nothing
+  is left staged, and that agy's folder is clean again after a read-only
+  job that changed the guard's code. Each held only in the usual case,
+  and both now say so.
+- *The security conversation is still open* (cubic). It was, on purpose.
+  The owner decided on 2026-11-19 that reading the filters a moment
+  before git runs stays a known limit, and the conversation was resolved
+  on that decision.
+
+This went in as an eighth push, which the owner allowed on 2026-11-19.
 
 **#99's record, corrected.** Its first *Not verified* line, the hook file
 installed on the Mac, was checked on 2026-11-12, so it now sits under
@@ -504,8 +539,9 @@ merge that brought them to `main`, `3f92a8b` (cubic, on the fifth push).
   files
 - `ab82a2c` Say what a noted stop does in each kind of job
 - `c2b197c` Record the verifier's run on the bridge's sixth push
-- and the commit that says why the seventh push went in, which cannot
-  name itself.
+- `6eed644` Say in the record why the bridge's seventh push went in
+- `dc67208` Refuse a start whose environment sets a push URL
+- and the commit that records the eighth push, which cannot name itself.
 
 ## Verified
 
@@ -513,12 +549,13 @@ In a cloud container (Linux, git 2.43), which cannot run Codex or agy,
 with Python 3.13 and with Python 3.9.25, the version of the Mac's
 `/usr/bin/python3`:
 
-- `scripts/test-agent-bridge.py`: 73 of 73 on both. Thirty-three tests
+- `scripts/test-agent-bridge.py`: 74 of 74 on both. Thirty-four tests
   are new. The first twelve each failed on `main`'s bridge (19 failing
   cases between them); the three from the independent review, the two
   from CodeRabbit's review of the second push, the two from its review of
-  the third, the eight for what #108's review found and the six from
-  the reviews of the fifth push each failed on this branch's bridge
+  the third, the eight for what #108's review found, the six from
+  the reviews of the fifth push and the one from the review made when
+  the pull request was marked ready each failed on this branch's bridge
   before its fix. Two
   existing tests check the new write instructions: Codex's fails on
   `main`'s bridge, and agy's pins that agy's instructions do not change.
@@ -670,6 +707,13 @@ with Python 3.13 and with Python 3.9.25, the version of the Mac's
     staged, and the status and `bridge_commit` say so and name
     `git reset`. On the sixth push's bridge both cases fail: neither
     status says anything about the files.
+  - `test_a_push_url_set_where_the_bridge_starts_is_refused`: the bridge
+    is started with a push URL in its environment: as a
+    `GIT_CONFIG_COUNT` entry, as one for another remote written in other
+    letters, and in `GIT_CONFIG_PARAMETERS`; and with a
+    `GIT_CONFIG_COUNT` git cannot read. Each start is refused before the
+    agent runs, and nothing reaches origin. On the seventh push's bridge
+    all four cases fail: the job runs.
 - The tests' own git: with `GIT_INDEX_FILE` and `GIT_PREFIX` exported,
   the commit test passes; the test file as it was at `0566cc0` ends in
   an error there.
@@ -701,6 +745,11 @@ with Python 3.13 and with Python 3.9.25, the version of the Mac's
 
 ## Not verified
 
+- The refusal of a push URL in the bridge's environment with the Mac's
+  own git, and which settings the shell a thread starts the bridge from
+  on the Mac carries there. Check, in that shell:
+  `echo "${GIT_CONFIG_COUNT:-not set}"` and
+  `echo "${GIT_CONFIG_PARAMETERS:+set}"`.
 - A real Codex write job through the new code on the Mac, ending in a
   bridge commit. The stand-in Codex answers as Codex did on 2026-11-08 and
   2026-11-12; the real one's final message may not begin with a one-line
@@ -783,8 +832,8 @@ with Python 3.13 and with Python 3.9.25, the version of the Mac's
   an agent that can stage has staged a rename (*The reviews of the fifth
   push*). Owner: the thread that makes the next bridge pull request.
 - Whether reading the filters a moment before git runs stays a known
-  limit (*The reviews of the fifth push*, the security finding). Owner:
-  the owner.
+  limit (*The reviews of the fifth push*, the security finding). Decided
+  by the owner on 2026-11-19: it stays one.
 - The bridge stops with a Python error and no `done` when something is
   left in the job folder under a name the bridge writes (a folder named
   `privacy-check.txt`, say), with the job's files still staged when that

@@ -1744,10 +1744,15 @@ settings, date) and summarise it here.
   job's commits read as none, a status claimed a put-back that had
   failed, and a refusal that could not unstage the job's files did not
   say so. Eight findings were not changed, one of them a security
-  finding left for the owner: the bridge reads which filters are set a
-  moment before its git runs, so a job outside any sandbox could add one
-  in between, which gains it nothing it could not already do (same
-  record, *The reviews of the fifth push*). None of this
+  finding that the owner decided on 2026-11-19 stays a known limit: the
+  bridge reads which filters are set a moment before its git runs, so a
+  job outside any sandbox could add one in between, which gains it
+  nothing it could not already do (same record, *The reviews of the
+  fifth push*). A review made when that pull request was marked ready
+  found that it had stopped refusing a start whose environment sets a
+  push URL (`GIT_CONFIG_COUNT` or `GIT_CONFIG_PARAMETERS`), which a job's
+  push would have reached; the bridge refuses such a start again (same
+  record, *After it was marked ready*). None of this
   has been run through a real Codex or agy job on the Mac yet (same
   record, *Not verified*).
   Jules, Google's cloud coding agent, is no longer one of Brickson's
