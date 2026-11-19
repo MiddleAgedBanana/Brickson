@@ -798,9 +798,11 @@ def run(command, cwd, out, timeout_minutes):
             except Interrupted:
                 code, interrupted = None, True
             finally:
-                # Nothing cuts the clean-up short, and a stop that arrives
-                # during it is noted, never dropped: a Codex write job then
-                # commits nothing (cubic, on #109).
+                # Nothing cuts the clean-up short. A stop that arrives
+                # during it is noted: a Codex write job then commits
+                # nothing and an agy job ends as stopped (cubic, on #109).
+                # Nothing reads the note in a Codex read-only or review
+                # job, so there the stop is dropped, as it was before.
                 for sig in SIGNALS:
                     signal.signal(sig, note_stop)
                 stop_group(process)
