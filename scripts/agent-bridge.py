@@ -939,21 +939,34 @@ def commit_codex_work(checkout, out, branch, answer, run_result, privacy_kept):
     if not names:
         return 'nothing to commit', None
 
+    added = False  # whether the bridge has begun to stage the job's files
+
     def unstage():
+        """Clear what is staged; False when git could not."""
         try:
-            git(checkout, 'reset', '-q', check=False)  # nothing is left staged
+            git(checkout, 'reset', '-q')
         except Stop:
-            pass  # git cannot be read at all here, which the job's status says
+            return False
+        return True
+
+    def left():
+        """What a status adds when the bridge could not clear what it had
+        staged (CodeRabbit, on #109). Before the bridge stages anything, a
+        git that cannot be read is what the job's status already says."""
+        if unstage() or not added:
+            return ''
+        return ('; the bridge could not unstage the job\'s files (git reset failed), so they may '
+                'still be staged: run `git reset` in the checkout before committing there')
 
     def refused(reason):
-        unstage()
+        reason += left()
         return f'not committed: {reason}', f'finished, but its work is not committed: {reason}'
 
     def stopped():
-        unstage()
-        return ('not committed: the bridge was told to stop before it committed',
+        note = left()
+        return ('not committed: the bridge was told to stop before it committed' + note,
                 'stopped: the bridge was told to stop after Codex finished, before it committed; '
-                'its work is left uncommitted')
+                'its work is left uncommitted' + note)
 
     if STOPS:
         return stopped()
@@ -976,6 +989,7 @@ def commit_codex_work(checkout, out, branch, answer, run_result, privacy_kept):
                        'read, or changed during the job, so the work was not checked')
     message = commit_message(answer, branch, out.name)
     try:
+        added = True  # a git add that fails may have staged some of them
         git(checkout, '--literal-pathspecs', 'add', '--', *names)
         staged = git(checkout, 'diff', '--cached', '--name-only', '-z', raw=True).split(b'\0')
         if any(os.fsdecode(name).startswith('build/') for name in staged):
@@ -988,7 +1002,7 @@ def commit_codex_work(checkout, out, branch, answer, run_result, privacy_kept):
         old = git(checkout, 'rev-parse', '--verify', 'HEAD^{commit}')
         tree = git(checkout, 'write-tree')
         if tree == git(checkout, 'rev-parse', '--verify', 'HEAD^{tree}'):
-            unstage()
+            unstage()  # the index holds what HEAD holds, so nothing can be left staged
             return 'nothing to commit', None
         # The exact commit, made without moving the branch, so the check
         # reads the author and committer it records, wherever git took them

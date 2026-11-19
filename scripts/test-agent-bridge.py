@@ -428,19 +428,25 @@ class BridgeTests(unittest.TestCase):
             'sys.exit(bridge.main(sys.argv[3:]))\n')
         return driver
 
-    def break_git_for(self, word):
+    def break_git_for(self, word, unless=None):
         """A stand-in git, first on the bridge's PATH, that fails any
-        command holding word and passes every other one to the real git."""
+        command holding word (but none that also holds unless) and passes
+        every other one to the real git."""
         import shutil
+        real = shutil.which('git')
+        spared = '' if unless is None else (
+            'for word in "$@"; do\n'
+            f'    if [ "$word" = \'{unless}\' ]; then exec \'{real}\' "$@"; fi\n'
+            'done\n')
         (self.bin / 'git').write_text(
-            '#!/bin/sh\n'
+            '#!/bin/sh\n' + spared +
             'for word in "$@"; do\n'
             f'    if [ "$word" = \'{word}\' ]; then\n'
             '        echo "fatal: the stand-in git fails this command" >&2\n'
             '        exit 128\n'
             '    fi\n'
             'done\n'
-            f'exec \'{shutil.which("git")}\' "$@"\n')
+            f'exec \'{real}\' "$@"\n')
         (self.bin / 'git').chmod(0o755)
 
     def head_files(self, folder):
@@ -1526,6 +1532,43 @@ class BridgeTests(unittest.TestCase):
                 self.assertEqual(summary['commits'], [])
                 folder = self.home / 'code' / f'brickson-codex-late-{number}'
                 self.assertEqual(self.staged(folder), b'')
+
+    def test_a_refusal_or_stop_that_cannot_unstage_the_jobs_files_says_so(self):
+        # The bridge clears what it staged when it refuses to commit, or is
+        # stopped first. When that git reset fails the files stay staged,
+        # and the status said only that the work was not committed
+        # (CodeRabbit, on #109).
+        import signal
+
+        def still_staged(result, folder, out, summary):
+            self.assertEqual(result.returncode, 1, result.stderr + result.stdout)
+            self.assertEqual(summary['commits'], [])
+            self.assertNotEqual(self.staged(folder), b'')  # the stand-in git cleared nothing
+            for text in (summary['status'], summary['bridge_commit']):
+                self.assertIn('still be staged', text)
+                self.assertIn('git reset', text)
+            self.assertEqual((out / 'done').read_text(), summary['status'] + '\n')
+
+        # Every reset but the one that fills a new worktree (reset --hard).
+        self.break_git_for('reset', unless='--hard')
+        with self.subTest('refused'):
+            result, folder, out, summary = self.codex_write('noreset', STUB_WORDS='Zorblatt')
+            self.assertIn('privacy check', summary['status'])
+            still_staged(result, folder, out, summary)
+        with self.subTest('stopped'):
+            # The stop arrives once the files are staged: a driver wraps
+            # privacy_check so the bridge first sends itself the signal.
+            self.install_codex_hook()
+            result = subprocess.run(
+                [sys.executable, str(self.stop_inside('privacy_check')), str(BRIDGE),
+                 str(int(signal.SIGTERM)), 'codex', '--brief', str(self.brief), '--write',
+                 '--branch', 'noreset-stop'],
+                capture_output=True, text=True, cwd=str(self.worktree), timeout=120,
+                env={**os.environ, **self.env, 'STUB_MODE': 'work'})
+            out = self.job_folder(result)
+            summary = json.loads((out / 'summary.json').read_text())
+            self.assertTrue(summary['status'].startswith('stopped'), summary['status'])
+            still_staged(result, self.home / 'code' / 'brickson-codex-noreset-stop', out, summary)
 
     # Filters, and git that cannot be read ---------------------------------------
 
