@@ -330,6 +330,23 @@ final class SpeechService {
             // which then finds nothing speaking; record the cut-off now.
             recordCutOff(utterances.cancelled(token))
             releaseSessionIfIdle()
+        case .paused:
+            // Logged only, for device check S2: whether the system pauses
+            // speech for a call, Siri or an alarm, and when, decides what a
+            // pause means (docs/DECISIONS.md, "A phrase the system cuts
+            // off", *Pause and carry-on reports are logged, not acted on
+            // yet*). Until then the watchdog finds a paused phrase.
+            if utterances.activeID == token {
+                logger.notice("The synthesizer paused the current utterance")
+            } else {
+                logger.notice("The synthesizer paused an utterance that is no longer current")
+            }
+        case .continued:
+            if utterances.activeID == token {
+                logger.notice("The synthesizer carried on with the current utterance")
+            } else {
+                logger.notice("The synthesizer carried on with an utterance that is no longer current")
+            }
         }
     }
 
@@ -338,6 +355,8 @@ final class SpeechService {
     private func handle(_ event: AudioSessionEvent) {
         switch event {
         case .interrupted:
+            // For device check S2, beside the synthesizer's pause report.
+            logger.notice("An audio interruption began")
             // A call, Siri or another app's alarm leaves the synthesizer
             // paused on an inactive session, and the end of the interruption
             // is not guaranteed. Stop for a clean state; the phrase stays in

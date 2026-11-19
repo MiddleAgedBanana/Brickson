@@ -70,6 +70,29 @@ struct OffMainThreadCallbackTests {
         #expect(received.contains(.cancelled))
     }
 
+    /// The pause and carry-on reports come through the same delegate, with
+    /// no thread guarantee either. Each must reach the main actor from a
+    /// background thread, in order, with the utterance it is about, so the
+    /// synthesizer can tell whether it is the current one. Fails if either
+    /// is not forwarded, or becomes main-actor isolated, which traps there.
+    @Test @MainActor func pauseAndCarryOnReportsCanArriveOnABackgroundThread() async {
+        let events = SpeechSynthesizerEvents()
+        var received: [(utterance: AVSpeechUtterance, event: SpeechSynthesisEvent)] = []
+        events.onEvent = { utterance, event in received.append((utterance, event)) }
+        let synthesizer = Unchecked(AVSpeechSynthesizer())
+        let utterance = Unchecked(AVSpeechUtterance(string: "Hello there."))
+
+        await Task.detached {
+            events.speechSynthesizer(synthesizer.value, didPause: utterance.value)
+            events.speechSynthesizer(synthesizer.value, didContinue: utterance.value)
+        }.value
+        let arrived = await waitUntil { received.count == 2 }
+
+        #expect(arrived)
+        #expect(received.map(\.event) == [.paused, .continued])
+        #expect(received.allSatisfy { $0.utterance === utterance.value })
+    }
+
     /// Reports sent one after another from a background thread arrive in
     /// that order. A finish that overtook the progress before it would hide
     /// a cut-off phrase. Fails if the hop stops preserving order.

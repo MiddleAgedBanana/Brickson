@@ -35,6 +35,15 @@ nonisolated enum SpeechSynthesisEvent: Equatable, Sendable {
     case willSpeak(through: Int, at: ContinuousClock.Instant)
     case finished(at: ContinuousClock.Instant)
     case cancelled
+    /// It paused the utterance. Brickson never pauses speech (it stops
+    /// it), so this is never Brickson's own doing. Logged only, until a
+    /// device check shows when the system sends it (docs/DECISIONS.md, "A
+    /// phrase the system cuts off", *Pause and carry-on reports are logged,
+    /// not acted on yet*).
+    case paused
+    /// It carried on speaking the utterance after a pause. Logged only, as
+    /// `paused` is.
+    case continued
 }
 
 /// The speech service's view of `AVSpeechSynthesizer`, as a seam so tests can
@@ -136,6 +145,20 @@ final class SpeechSynthesizerEvents: NSObject, AVSpeechSynthesizerDelegate {
         didCancel utterance: AVSpeechUtterance
     ) {
         forward(utterance, .cancelled)
+    }
+
+    nonisolated func speechSynthesizer(
+        _ synthesizer: AVSpeechSynthesizer,
+        didPause utterance: AVSpeechUtterance
+    ) {
+        forward(utterance, .paused)
+    }
+
+    nonisolated func speechSynthesizer(
+        _ synthesizer: AVSpeechSynthesizer,
+        didContinue utterance: AVSpeechUtterance
+    ) {
+        forward(utterance, .continued)
     }
 
     private nonisolated func forward(_ utterance: AVSpeechUtterance, _ event: SpeechSynthesisEvent) {
