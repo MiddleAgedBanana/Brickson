@@ -1682,6 +1682,16 @@ class BridgeTests(unittest.TestCase):
         self.assertEqual(summary['bridge_commit'], f'committed {head}')
         self.assertEqual((out / 'done').read_text(), 'finished\n')
 
+    def test_commits_git_cannot_list_are_never_reported_as_none(self):
+        # The agent commits by itself, and git then fails to list what the
+        # job added (CodeRabbit, on #109).
+        self.break_git_for('log')
+        result, _folder, out, summary = self.codex_write('nolog', mode='selfcommit')
+        self.assertEqual(result.returncode, 1, result.stderr + result.stdout)
+        self.assertIn('could not read the checkout after the job', summary['status'])
+        self.assertIsNone(summary['commits'])
+        self.assertEqual((out / 'done').read_text(), summary['status'] + '\n')
+
     def test_a_job_that_leaves_git_unable_to_read_its_settings_still_ends_with_done(self):
         # The bridge's git stops when it cannot read which filters to turn
         # off, so after a job that broke the settings every worktree shares

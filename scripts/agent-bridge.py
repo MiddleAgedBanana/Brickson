@@ -819,7 +819,7 @@ def finish(out, checkout, before, run_result, extra, problem=None):
         commits = []
         if before['head'] and after['head'] and before['head'] != after['head']:
             commits = git(checkout, 'log', '--format=%h %s',
-                          f'{before["head"]}..{after["head"]}', check=False).splitlines()
+                          f'{before["head"]}..{after["head"]}').splitlines()
     except Stop as error:
         after, commits = {'branch': None, 'head': None, 'changed': None, 'contents': None}, None
         unread = f'the bridge could not read the checkout after the job ({error})'
