@@ -6839,8 +6839,17 @@ it prints must be measured from those renders.
   on it, primary ink on the screen at the message's and the status line's
   sizes, every step of `Spacing.steps`, the three kinds of corner of
   *Concentric corners*, Home's controls in each fill on, selected, off
-  and pressed, two phrase tiles and Settings' rows on and off. Words are
-  `Text(verbatim:)`, so the String Catalog is untouched.
+  and pressed, two phrase tiles and Settings' rows on and off.
+- **An exception, the owner's to accept: the sheet's words are English
+  only, `Text(verbatim:)`, outside the String Catalog** (AGENTS.md,
+  *Workflow rules*: words people see go through it). Only the person
+  reviewing the design reads them, in a debug build, as only the person
+  running an experiment reads the probe app's (*A probe app for the
+  experiments, kept out of Brickson*, whose English-only words the owner
+  accepted on 2026-11-15); in the catalog they would be strings to
+  translate and ship in every release for a screen no release has. The
+  owner's merge of the pull request that adds the sheet accepts it;
+  declining it means the sheet's words go through the catalog.
 - **Appearances come from the system, never from the app.** The sheet
   writes no setting into the environment (*Guards for Apple's look*) and
   sets no colour scheme. A script on the Mac (`scripts/design-review/`)

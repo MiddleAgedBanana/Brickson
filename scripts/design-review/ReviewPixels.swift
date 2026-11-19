@@ -146,8 +146,11 @@ nonisolated enum ReviewMeasure {
     /// pixel of a neighbour's colour is never taken for them.
     static let minimumWordPixels = 6
     /// How far a colour must stand from the fill to count as something
-    /// drawn on it, rather than the fill's own shading.
-    static let distinctRatio = 1.5
+    /// drawn on it at all. Kept low, so faint words that fail are found
+    /// and reported, never dropped for a stronger mark beside them; the
+    /// fill's own shading is many colours of a few pixels each, which the
+    /// share a solid mark needs keeps out.
+    static let distinctRatio = 1.05
 
     /// Reads one specimen. `frame` is in points, `scale` pixels per point.
     /// Nil where the frame holds no pixel of the capture.

@@ -104,6 +104,18 @@ struct ReviewPixelsTests {
         #expect(reading.words == "#9A9A9A")
         #expect(reading.wordsOnFill < 4.5)
         #expect(reading.foregrounds.map(\.colour) == ["#9A9A9A", "#000000"])
+
+        // Words so faint they barely show, 1.16:1, are still the words.
+        let faint = ReviewColour(r: 0xEE, g: 0xEE, b: 0xEE)
+        let pale = try Self.picture { context in
+            context.setFillColor(Self.black.cgColor)
+            context.fill(CGRect(x: 28, y: 32, width: 10, height: 16))
+            context.setFillColor(faint.cgColor)
+            context.fill(CGRect(x: 44, y: 34, width: 40, height: 12))
+        }
+        let paleReading = try #require(ReviewMeasure.read(pale, frame: Self.frame, scale: 2))
+        #expect(paleReading.words == "#EEEEEE")
+        #expect(ReviewMeasure.rounded(paleReading.wordsOnFill) == 1.16)
     }
 
     // A ring inside the edge, as a pressed control draws one, is reported

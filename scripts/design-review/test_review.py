@@ -67,6 +67,16 @@ class Commands(unittest.TestCase):
             review.main(["review.py", "inactive", UDID, "/tmp/x", "inactive-light", "-5", "800"])
 
 
+class Folders(unittest.TestCase):
+    # The captures never go above the home folder or into the repository.
+    def test_the_output_folder_stays_in_the_home_folder_and_out_of_the_repository(self):
+        home = os.path.realpath(os.path.expanduser("~"))
+        self.assertEqual(review.output_folder(os.path.join(home, "brickson-review-sheet")), os.path.join(home, "brickson-review-sheet"))
+        for bad in ("/tmp/x", home, os.path.join(home, "..", "elsewhere"), os.path.join(HERE, "out")):
+            with self.assertRaises(SystemExit):
+                review.output_folder(bad)
+
+
 KNOWN = {
     "xcrun", "devicectl", "device", "settings", "appearance", "--device", "--mode", "light", "dark",
     "--increase-contrast", "--reduce-transparency", "--show-borders", "--text-size", "large",

@@ -833,15 +833,29 @@ def write_readme(outdir, pictures, failures, keys=()):
     print(f"{len(pictures)} pictures, {len(failures)} pairs under target")
 
 
+def output_folder(path):
+    """The folder the captures go to: a real path inside the home folder of
+    the person running this, never above it, and never this repository,
+    whose files the script must not overwrite."""
+    home = os.path.realpath(os.path.expanduser("~"))
+    folder = os.path.realpath(os.path.abspath(path))
+    repository = os.path.realpath(os.path.join(HERE, "..", ".."))
+    if os.path.commonpath([home, folder]) != home or folder == home:
+        sys.exit(f"the output folder must be inside {home}")
+    if os.path.commonpath([repository, folder]) == repository:
+        sys.exit("the output folder must be outside the repository")
+    return folder
+
+
 def main(argv):
     if len(argv) >= 5 and argv[1] in ("capture", "screens") and UDID.fullmatch(argv[2]) and argv[3] in FAMILIES:
         names = argv[5:] or list(APPEARANCES)
         if all(name in APPEARANCES for name in names):
-            return capture(argv[2], argv[3], os.path.abspath(argv[4]), names, screens_only=argv[1] == "screens")
+            return capture(argv[2], argv[3], output_folder(argv[4]), names, screens_only=argv[1] == "screens")
     if len(argv) == 7 and argv[1] == "inactive" and UDID.fullmatch(argv[2]) and argv[4] in INACTIVE and argv[5].isdigit() and argv[6].isdigit():
-        return inactive(argv[2], os.path.abspath(argv[3]), argv[4], float(argv[5]), float(argv[6]))
+        return inactive(argv[2], output_folder(argv[3]), argv[4], float(argv[5]), float(argv[6]))
     if len(argv) == 3 and argv[1] == "compose":
-        return compose(os.path.abspath(argv[2]))
+        return compose(output_folder(argv[2]))
     sys.exit(__doc__.split("\n\n")[1])
 
 
