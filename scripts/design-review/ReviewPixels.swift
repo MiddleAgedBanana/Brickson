@@ -113,6 +113,10 @@ nonisolated struct ReviewReading: Codable, Equatable, Sendable {
     /// How many pixels reach that contrast: solid strokes, not the soft
     /// edges of letters. A handful means the words were too thin to read.
     let wordPixels: Int
+    /// Every solid colour drawn on the fill, least contrast first: more
+    /// than one, such as words beside an icon of another colour, and the
+    /// words are the first.
+    let foregrounds: [Ring]
     /// The commonest colour in the outermost band inside the frame: the
     /// fill's own edge, or a border drawn over it.
     let edge: String
@@ -141,6 +145,9 @@ nonisolated enum ReviewMeasure {
     /// The fewest pixels a colour needs to count as the words, so a stray
     /// pixel of a neighbour's colour is never taken for them.
     static let minimumWordPixels = 6
+    /// How far a colour must stand from the fill to count as something
+    /// drawn on it, rather than the fill's own shading.
+    static let distinctRatio = 1.5
 
     /// Reads one specimen. `frame` is in points, `scale` pixels per point.
     /// Nil where the frame holds no pixel of the capture.
@@ -181,23 +188,37 @@ nonisolated enum ReviewMeasure {
         let edgeTotal = edge.values.reduce(0, +)
         let edgeColour = commonest(edge.filter { $0.key != pageColour })
             .flatMap { colour in (edge[colour] ?? 0) * 10 >= edgeTotal ? colour : nil } ?? pageColour
-        let candidates = inner.filter { $0.value >= minimumWordPixels }
-        let words = candidates.keys.max { lhs, rhs in
+        // The words: the solid colours drawn on the fill, each covering at
+        // least a twentieth of what is drawn there (the soft edges of
+        // letters are many colours with few pixels each). Where there are
+        // two, such as gray words beside a black icon, the one that stands
+        // out least is taken, and the reading says so: the stronger mark
+        // must never pass for the words.
+        let drawn = inner.filter { $0.key != fill && $0.key.contrast(with: fill) >= distinctRatio }
+        let drawnTotal = drawn.values.reduce(0, +)
+        let solid = drawn.filter { $0.value >= minimumWordPixels && $0.value * 20 >= drawnTotal }
+        let foregrounds = solid.keys.sorted { lhs, rhs in
+            let (a, b) = (lhs.contrast(with: fill), rhs.contrast(with: fill))
+            return a == b ? lhs.hex < rhs.hex : a < b
+        }
+        let strongest = inner.filter { $0.value >= minimumWordPixels }.keys.max { lhs, rhs in
             let (a, b) = (lhs.contrast(with: fill), rhs.contrast(with: fill))
             return a == b ? lhs.hex > rhs.hex : a < b
-        } ?? fill
+        }
+        let words = foregrounds.first ?? strongest ?? fill
         let wordsRatio = words.contrast(with: fill)
-        let wordPixels = inner.filter { $0.key.contrast(with: fill) >= wordsRatio - 0.05 }.values.reduce(0, +)
+        let wordPixels = inner.filter { abs($0.key.contrast(with: fill) - wordsRatio) <= 0.05 }.values.reduce(0, +)
         let bandTotal = band.values.reduce(0, +)
         let rings = band
             .filter { $0.key != fill && $0.key != pageColour && $0.value * 20 > bandTotal }
             .sorted { $0.value == $1.value ? $0.key.hex < $1.key.hex : $0.value > $1.value }
             .prefix(3)
-            .map { ReviewReading.Ring(colour: $0.key.hex, onFill: rounded($0.key.contrast(with: fill))) }
+            .map { ReviewReading.Ring(colour: $0.key.hex, onFill: $0.key.contrast(with: fill)) }
         return ReviewReading(
-            fill: fill.hex, words: words.hex, wordsOnFill: rounded(wordsRatio), wordPixels: wordPixels,
+            fill: fill.hex, words: words.hex, wordsOnFill: wordsRatio, wordPixels: wordPixels,
+            foregrounds: foregrounds.map { ReviewReading.Ring(colour: $0.hex, onFill: $0.contrast(with: fill)) },
             edge: edgeColour.hex, page: pageColour.hex,
-            edgeOnPage: rounded(edgeColour.contrast(with: pageColour)), fillOnPage: rounded(fill.contrast(with: pageColour)),
+            edgeOnPage: edgeColour.contrast(with: pageColour), fillOnPage: fill.contrast(with: pageColour),
             rings: Array(rings)
         )
     }
@@ -208,7 +229,10 @@ nonisolated enum ReviewMeasure {
         counts.max { $0.value == $1.value ? $0.key.hex > $1.key.hex : $0.value < $1.value }?.key
     }
 
-    /// Two decimals, as the sheet prints them.
+    /// Two decimals, as the repository's documents give a ratio. Readings
+    /// keep every decimal, and every verdict is taken on them: a pair at
+    /// 4.4986:1 fails 4.5 though it rounds to 4.50 (review.py prints it
+    /// with more decimals then).
     static func rounded(_ ratio: Double) -> Double {
         (ratio * 100).rounded() / 100
     }

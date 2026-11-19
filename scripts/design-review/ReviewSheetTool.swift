@@ -15,6 +15,8 @@ import UniformTypeIdentifiers
 //   review-sheet locate <png> <scale> <x> <y> <hex>
 //       Where the run of <hex> through the point (points) starts, left and
 //       up, in points: {"left", "top"}.
+//   review-sheet colour <png> <scale> <x> <y>
+//       The commonest colour in the point round (x, y): {"colour"}.
 //   review-sheet diff <a.png> <b.png> <scale> [<top> <bottom> ...]
 //       How many pixels differ between two captures of one size, and the
 //       box round them in points; only in the bands of rows given (points),
@@ -31,6 +33,7 @@ struct ReviewSheetTool {
             switch arguments.first {
             case "measure" where arguments.count == 4: try measure(arguments[1], arguments[2], arguments[3])
             case "locate" where arguments.count == 6: try locate(Array(arguments[1...]))
+            case "colour" where arguments.count == 5: try colour(Array(arguments[1...]))
             case "diff" where arguments.count >= 4 && arguments.count % 2 == 0:
                 try diff(arguments[1], arguments[2], arguments[3], rows: Array(arguments[4...]))
             case "compose" where arguments.count == 3: try compose(arguments[1], arguments[2])
@@ -101,6 +104,23 @@ struct ReviewSheetTool {
         try printJSON(["left": Double(start.left) / scale, "top": Double(start.top) / scale])
     }
 
+    // MARK: - colour
+
+    static func colour(_ arguments: [String]) throws {
+        let image = try bitmap(arguments[0])
+        let scale = try number(arguments[1])
+        let (x, y) = (try number(arguments[2]), try number(arguments[3]))
+        var counts: [ReviewColour: Int] = [:]
+        let (px, py, reach) = (Int((x * scale).rounded()), Int((y * scale).rounded()), max(1, Int(scale / 2)))
+        for dy in -reach...reach {
+            for dx in -reach...reach {
+                if let colour = image.colour(x: px + dx, y: py + dy) { counts[colour, default: 0] += 1 }
+            }
+        }
+        guard let found = ReviewMeasure.commonest(counts) else { throw ToolError("\(arguments[2]),\(arguments[3]) is outside the capture") }
+        try printJSON(["colour": found.hex])
+    }
+
     // MARK: - diff
 
     struct Difference: Codable {
@@ -161,6 +181,21 @@ struct ReviewSheetTool {
     /// A dark red that reads at 6.5:1 on white, for a pair under its target.
     static let failInk = CGColor(srgbRed: 0.69, green: 0, blue: 0.125, alpha: 1)
 
+    static func font(size: CGFloat = textSize, bold: Bool = false) -> CTFont {
+        CTFontCreateUIFontForLanguage(bold ? .emphasizedSystem : .system, size, nil)
+            ?? CTFontCreateWithName("Helvetica" as CFString, size, nil)
+    }
+
+    static func line(_ string: String, size: CGFloat = textSize, bold: Bool = false, colour: CGColor = ink) -> CTLine {
+        let attributes: [CFString: Any] = [kCTFontAttributeName: font(size: size, bold: bold), kCTForegroundColorAttributeName: colour]
+        return CTLineCreateWithAttributedString(CFAttributedStringCreate(nil, string as CFString, attributes as CFDictionary))
+    }
+
+    /// How wide a line of text draws, with a little room after it.
+    static func textWidth(_ string: String, bold: Bool = false) -> CGFloat {
+        CGFloat(CTLineGetTypographicBounds(line(string, bold: bold), nil, nil, nil)) + 12
+    }
+
     static func compose(_ layoutPath: String, _ outPath: String) throws {
         let layout = try JSONDecoder().decode(Layout.self, from: Data(contentsOf: URL(fileURLWithPath: layoutPath)))
         var sources: [String: CGImage] = [:]
@@ -172,13 +207,17 @@ struct ReviewSheetTool {
             return image
         }
         let columnCount = layout.columns.count
-        var widths = [CGFloat](repeating: 200, count: columnCount)
+        // Wide enough for its heading and every caption, as well as its crops.
+        var widths = layout.columns.map { max(200, textWidth($0, bold: true)) }
         var heights: [CGFloat] = []
         for row in layout.rows {
             var tallest: CGFloat = lineHeight
             for (index, cell) in row.cells.enumerated() where index < columnCount {
-                guard let cell else { continue }
-                widths[index] = max(widths[index], CGFloat(cell.crop.width))
+                guard let cell else {
+                    widths[index] = max(widths[index], textWidth("not captured"))
+                    continue
+                }
+                widths[index] = max(widths[index], CGFloat(cell.crop.width), cell.caption.map { textWidth($0) }.max() ?? 0)
                 tallest = max(tallest, CGFloat(cell.crop.height) + CGFloat(cell.caption.count) * lineHeight + 8)
             }
             heights.append(tallest)
@@ -198,12 +237,8 @@ struct ReviewSheetTool {
         // Top-down coordinates: CoreGraphics counts from the bottom.
         func flip(_ y: CGFloat, _ h: CGFloat) -> CGFloat { height - y - h }
         func text(_ string: String, x: CGFloat, top: CGFloat, size: CGFloat = textSize, bold: Bool = false, colour: CGColor = ink) {
-            let font = CTFontCreateUIFontForLanguage(bold ? .emphasizedSystem : .system, size, nil)
-                ?? CTFontCreateWithName("Helvetica" as CFString, size, nil)
-            let attributes: [CFString: Any] = [kCTFontAttributeName: font, kCTForegroundColorAttributeName: colour]
-            let line = CTLineCreateWithAttributedString(CFAttributedStringCreate(nil, string as CFString, attributes as CFDictionary))
             context.textPosition = CGPoint(x: x, y: flip(top, 0) - size)
-            CTLineDraw(line, context)
+            CTLineDraw(line(string, size: size, bold: bold, colour: colour), context)
         }
 
         text(layout.title, x: margin, top: margin, size: 36, bold: true)

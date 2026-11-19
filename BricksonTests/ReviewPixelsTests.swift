@@ -65,11 +65,11 @@ struct ReviewPixelsTests {
         let reading = try #require(ReviewMeasure.read(bitmap, frame: Self.frame, scale: 2))
         #expect(reading.fill == "#0A60D6")
         #expect(reading.words == "#FFFFFF")
-        #expect(reading.wordsOnFill == 5.74)
+        #expect(ReviewMeasure.rounded(reading.wordsOnFill) == 5.74)
         #expect(reading.wordPixels == 40 * 12 * 4)
         #expect(reading.page == "#FFFFFF")
         #expect(reading.edge == "#0A60D6")
-        #expect(reading.edgeOnPage == 5.74)
+        #expect(ReviewMeasure.rounded(reading.edgeOnPage) == 5.74)
         #expect(reading.rings.isEmpty)
     }
 
@@ -87,7 +87,23 @@ struct ReviewPixelsTests {
         #expect(reading.fill == "#FFFFFF")
         #expect(reading.words == "#000000")
         #expect(reading.edge == "#000000")
-        #expect(reading.edgeOnPage == 21)
+        #expect(ReviewMeasure.rounded(reading.edgeOnPage) == 21)
+    }
+
+    // Gray words beside a black icon: the words are the gray, the one that
+    // stands out least, never the icon's 21:1, and both are listed.
+    @Test func theWeakerOfTwoMarksIsTakenForTheWords() throws {
+        let gray = ReviewColour(r: 0x9A, g: 0x9A, b: 0x9A)
+        let bitmap = try Self.picture { context in
+            context.setFillColor(Self.black.cgColor)
+            context.fill(CGRect(x: 28, y: 32, width: 10, height: 16))
+            context.setFillColor(gray.cgColor)
+            context.fill(CGRect(x: 44, y: 34, width: 40, height: 12))
+        }
+        let reading = try #require(ReviewMeasure.read(bitmap, frame: Self.frame, scale: 2))
+        #expect(reading.words == "#9A9A9A")
+        #expect(reading.wordsOnFill < 4.5)
+        #expect(reading.foregrounds.map(\.colour) == ["#9A9A9A", "#000000"])
     }
 
     // A ring inside the edge, as a pressed control draws one, is reported
@@ -103,7 +119,7 @@ struct ReviewPixelsTests {
         let reading = try #require(ReviewMeasure.read(bitmap, frame: Self.frame, scale: 2))
         #expect(reading.edge == "#000000")
         #expect(reading.rings.map(\.colour) == ["#000000"])
-        #expect(reading.rings.first?.onFill == 3.66)
+        #expect(reading.rings.first.map { ReviewMeasure.rounded($0.onFill) } == 3.66)
     }
 
     // A capsule leaves the page showing in its frame's corners; its edge is
@@ -117,7 +133,7 @@ struct ReviewPixelsTests {
         }
         let reading = try #require(ReviewMeasure.read(bitmap, frame: Self.frame, scale: 2))
         #expect(reading.edge == "#0A60D6")
-        #expect(reading.edgeOnPage == 5.74)
+        #expect(ReviewMeasure.rounded(reading.edgeOnPage) == 5.74)
     }
 
     // Where a shape does not differ from the page, there is no edge: the
@@ -129,8 +145,8 @@ struct ReviewPixelsTests {
         }
         let reading = try #require(ReviewMeasure.read(bitmap, frame: Self.frame, scale: 2))
         #expect(reading.edge == "#FFFFFF")
-        #expect(reading.edgeOnPage == 1)
-        #expect(reading.wordsOnFill == 21)
+        #expect(ReviewMeasure.rounded(reading.edgeOnPage) == 1)
+        #expect(ReviewMeasure.rounded(reading.wordsOnFill) == 21)
     }
 
     // A few stray pixels of another colour are never taken for the words.

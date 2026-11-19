@@ -27,6 +27,7 @@ accessibility settings and puts them back to plain ones at the end.
 
 ```sh
 cd scripts/design-review
+mkdir -p ../../build/review
 xcrun swiftc -O -parse-as-library ReviewPixels.swift ReviewSheetTool.swift -o ../../build/review/review-sheet
 python3 review.py capture <iPhone udid> iphone <output folder>
 python3 review.py capture <iPad udid> ipad <output folder>
@@ -37,7 +38,12 @@ Each `capture` takes about two minutes for each appearance: light, dark,
 both with Increase Contrast, Reduce Transparency, Show Borders,
 Differentiate Without Colour, Bold Text and the largest text size. Name
 appearances after the family to take only those. It refuses to save a
-capture whose readout does not show the appearance it set.
+capture whose readout does not show the appearance it set, a sheet that
+never showed one of its specimens (`EXPECTED` in `review.py`), or a typing
+capture without Apple's keyboard. Each appearance is written to a folder
+of its own and replaces the last run's only when it succeeds; `compose`
+measures every capture again with the tool as it is, so a better
+measurement needs no new captures.
 
 `compose` writes one picture for each part of the sheet and each screen,
 for each device (`iphone-colours.png`, `ipad-screen-home.png` and so on),

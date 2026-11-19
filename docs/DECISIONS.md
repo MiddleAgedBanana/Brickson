@@ -6832,8 +6832,10 @@ it prints must be measured from those renders.
   `Palette`, `HomeButtonStyle`, `FittedLabel`, `settingsRowStyle` and
   `CornerRule` shapes, which the probe does not compile.
 - **What it shows.** Built from the app's own lists, so a token or step
-  added to them shows up, and `DesignReviewTests` fails if the sheet
-  leaves one out: every fill in `Palette.fills` with `Palette.fillLabel`
+  added to them shows up (`DesignReviewTests` fails if the catalogue's
+  own list of roles leaves out a fill, and the capture script refuses a
+  sheet that never showed one of the specimens it expects): every fill in
+  `Palette.fills` with `Palette.fillLabel`
   on it, primary ink on the screen at the message's and the status line's
   sizes, every step of `Spacing.steps`, the three kinds of corner of
   *Concentric corners*, Home's controls in each fill on, selected, off

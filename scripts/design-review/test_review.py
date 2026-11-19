@@ -104,6 +104,16 @@ class Sheets(unittest.TestCase):
         self.assertEqual([v[0] for v in review.verdicts("shape", reading)], ["edge"])
         self.assertEqual(review.verdicts("fill", None), [])
 
+    def test_a_ratio_under_its_target_never_prints_as_the_target(self):
+        self.assertEqual(review.shown(4.4986, 4.5), "4.4986")
+        self.assertEqual(review.shown(2.9988, 3.0), "2.9988")
+        self.assertEqual(review.shown(4.5, 4.5), "4.50")
+        self.assertEqual(review.shown(3.657, 3.0), "3.66")
+        lines, fails = review.caption("fill", {"wordsOnFill": 4.4986, "edgeOnPage": 5.0, "words": "#76767F",
+                                              "fill": "#FFFFFF", "edge": "#000000", "page": "#FFFFFF"})
+        self.assertTrue(fails)
+        self.assertIn("4.4986:1 under 4.5", lines[0])
+
     def test_a_crop_stays_inside_its_capture(self):
         crop = review.crop({"x": 2, "y": 2, "width": 50, "height": 20}, 3, (300, 300))
         self.assertEqual((crop["x"], crop["y"]), (0, 0))

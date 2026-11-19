@@ -26,11 +26,6 @@ struct DesignReviewTests {
         }
     }
 
-    // A step added to the spacing scale and not to the sheet fails this.
-    @Test func everySpacingStepIsOnTheSheet() {
-        #expect(DesignReviewCatalogue.spacing == Spacing.steps)
-    }
-
     // Each kind of corner Apple's design uses, the concentric one with the
     // app's minimum, set where it measures what `CornerShapesTests` pins.
     @Test func everyKindOfCornerIsOnTheSheet() {

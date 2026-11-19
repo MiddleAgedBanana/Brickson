@@ -32,6 +32,7 @@ simulator's UDID, which must look like one (test_review.py).
 import json
 import os
 import re
+import shutil
 import subprocess
 import sys
 import time
@@ -176,6 +177,13 @@ def verdicts(kind, reading):
     return pairs
 
 
+def shown(ratio, target):
+    """A ratio as the sheet prints it: two decimals, or four where two
+    would round a pair that misses its target up to the target."""
+    text = f"{ratio:.2f}"
+    return f"{ratio:.4f}" if ratio < target and float(text) >= target else text
+
+
 def caption(kind, reading):
     if not reading:
         return ["not measured"], False
@@ -184,12 +192,15 @@ def caption(kind, reading):
         under = ratio < target
         fails = fails or under
         colours = f"{reading['words']} on {reading['fill']}" if what == "words" else f"{reading['edge']} on {reading['page']}"
-        lines.append(f"{what} {ratio:.2f}:1{' under ' + str(target) if under else ''}  {colours}")
+        lines.append(f"{what} {shown(ratio, target)}:1{' under ' + str(target) if under else ''}  {colours}")
+    if len(reading.get("foregrounds", [])) > 1:
+        lines.append("also drawn: " + ", ".join(f["colour"] for f in reading["foregrounds"][1:]))
     return lines, fails
 
 
 class Simulator:
     def __init__(self, udid, family, outdir):
+        # The usual scale until `calibrate` reads it from a capture.
         self.udid, self.family, self.scale = udid, family, SCALES[family]
         self.outdir = outdir
 
@@ -208,6 +219,16 @@ class Simulator:
         path = os.path.join(self.outdir, name + ".png")
         run("xcrun", "simctl", "io", self.udid, "screenshot", "--type=png", path)
         return path
+
+    def calibrate(self, window, png):
+        """Pixels per point, from a capture of the whole window: never
+        assumed from the device, which can be 2x or 3x."""
+        width = png_size(png)[0]
+        scale = width / window["width"]
+        if abs(scale - round(scale)) > 0.01 or round(scale) not in (1, 2, 3):
+            sys.exit(f"{png}: {width} pixels for {window['width']} points is no screen scale")
+        self.scale = round(scale)
+        os.remove(png)
 
     def measure(self, png, targets):
         if not targets:
@@ -244,6 +265,7 @@ def capture_sheet(sim, name, settings):
     if not readout_matches(readout, settings):
         sys.exit(f"{name}: the sheet's readout is {readout!r}, not {' '.join(expected_readout(settings))}; nothing saved")
     window = next(n for n in nodes if n.get("type") == "Application")["frame"]
+    sim.calibrate(window, sim.screenshot(f"{name}-scale"))
     readout_frame = frame_of(next(n for n in nodes if n.get("AXUniqueId") == "review.readout"))
     top = readout_frame["y"]
     bottom = window["height"] - 20
@@ -281,6 +303,8 @@ def capture_sheet(sim, name, settings):
             measured = sim.measure(png, [dict(name=identifier, **clipped)])[identifier]
             specimens[identifier] = {"image": png, "frame": measured["frame"], "reading": measured.get("reading"), "clipped": True}
     missing = sorted(i for i in EXPECTED if i not in specimens)
+    if missing:
+        sys.exit(f"{name}: the sheet never showed {', '.join(missing)}; nothing saved")
     return {"readout": readout, "readoutFrame": readout_frame, "pages": pages, "specimens": specimens, "missing": missing}
 
 
@@ -358,6 +382,9 @@ def buttons(nodes, width, height, hidden=frozenset()):
 
 
 FIELD_INSET = 6
+# How far inside a specimen's edge its fill and words are read: past the
+# deepest ring a Home control draws (ReviewMeasure.defaultInset).
+SPECIMEN_INSET = 6
 # Words typed in the message field for the typing capture: neutral, like
 # the starter library's.
 TYPED = "Could you open the window?"
@@ -375,7 +402,8 @@ def capture_screen(sim, name, screen, nodes, hidden=frozenset()):
         json.dump(nodes, handle)
     targets = buttons(nodes, window["width"], window["height"], hidden)
     measured = sim.measure(png, [{k: t[k] for k in ("name", "x", "y", "w", "h", "inset")} for t in targets])
-    return {"image": png, "buttons": [{"label": t["label"], "kind": t["kind"], **measured[t["name"]]} for t in targets if t["name"] in measured]}
+    return {"image": png, "buttons": [{"label": t["label"], "kind": t["kind"], "inset": t["inset"], **measured[t["name"]]}
+                                      for t in targets if t["name"] in measured]}
 
 
 def has(identifier):
@@ -401,7 +429,9 @@ def capture_screens(sim, name):
     sim.launch(["--test-storage"] + HOME[1:])
     sim.wait_for(has("getAttention"))
     run("axe", "tap", "--id=type", "--udid", sim.udid)
-    nodes = sim.wait_for(lambda n: keyboard_top(n) is not None, seconds=10)
+    nodes = sim.wait_for(lambda n: keyboard_top(n) is not None, seconds=15)
+    if not nodes:
+        sys.exit(f"{name}: Apple's keyboard did not show for the typing capture; nothing saved")
     time.sleep(1.5)
     screens["typing"] = capture_screen(sim, name, "typing", sim.tree())
     sim.launch(HOME)
@@ -431,22 +461,44 @@ def capture(udid, family, outdir, names, screens_only=False):
     try:
         for name in names:
             settings = settings_for(name)
-            sim.outdir = os.path.join(outdir, family, name)
-            os.makedirs(sim.outdir, exist_ok=True)
+            final = os.path.join(outdir, family, name)
+            sim.outdir = begin(final, keep=screens_only)
             sim.apply(settings)
-            path = os.path.join(sim.outdir, "manifest.json")
             if screens_only:
-                with open(path) as handle:
-                    manifest = json.load(handle)
+                with open(os.path.join(sim.outdir, "manifest.json")) as handle:
+                    manifest = json.loads(handle.read().replace(final + os.sep, sim.outdir + os.sep))
+                sim.scale = manifest["scale"]
             else:
-                manifest = {"family": family, "appearance": name, "scale": sim.scale, "settings": settings}
+                manifest = {"family": family, "appearance": name, "settings": settings}
                 manifest["sheet"] = capture_sheet(sim, name, settings)
+                manifest["scale"] = sim.scale
             manifest["screens"] = capture_screens(sim, name)
-            with open(path, "w") as handle:
-                json.dump(manifest, handle, indent=1, sort_keys=True)
+            finish(sim.outdir, final, manifest)
             print(f"{family} {name}: {len(manifest['sheet']['specimens'])} specimens, screens {sorted(manifest['screens'])}")
     finally:
         sim.apply(PLAIN)
+
+
+def begin(final, keep=False):
+    """A fresh folder beside `final` for one run, so a run that fails
+    leaves the last good one whole: with its files when `keep`."""
+    work = final + ".partial"
+    shutil.rmtree(work, ignore_errors=True)
+    if keep:
+        shutil.copytree(final, work)
+    else:
+        os.makedirs(work)
+    return work
+
+
+def finish(work, final, manifest):
+    """The run's manifest, pointing at the files' final place, and the
+    folder put where the last run's was."""
+    text = json.dumps(manifest, indent=1, sort_keys=True).replace(json.dumps(work + os.sep)[1:-1], json.dumps(final + os.sep)[1:-1])
+    with open(os.path.join(work, "manifest.json"), "w") as handle:
+        handle.write(text)
+    shutil.rmtree(final, ignore_errors=True)
+    os.rename(work, final)
 
 
 # MARK: - The inactive window
@@ -479,9 +531,13 @@ def inactive(udid, outdir, name, covered_top, covered_bottom):
     read a point at a time (`probe`)."""
     settings = settings_for(name)
     reference = json.load(open(os.path.join(outdir, "ipad", "light", "manifest.json")))
-    specimens = reference["sheet"]["specimens"]
-    sim = Simulator(udid, "ipad", os.path.join(outdir, "ipad", name))
-    os.makedirs(sim.outdir, exist_ok=True)
+    # Only what the full-screen capture showed on its first page: the
+    # inactive window is captured unscrolled.
+    first = reference["sheet"]["pages"][0]
+    specimens = {i: s for i, s in reference["sheet"]["specimens"].items() if s["image"] == first}
+    final = os.path.join(outdir, "ipad", name)
+    sim = Simulator(udid, "ipad", begin(final))
+    sim.scale = reference["scale"]
     sim.apply(settings)
     # Brickson's own rows above the Settings window, clear of its shadow,
     # below the status bar, whose clock may change.
@@ -500,8 +556,7 @@ def inactive(udid, outdir, name, covered_top, covered_bottom):
             result["screens"][screen] = {"image": png, "active": active, "difference": difference, "buttons": []}
             if screen == "sheet":
                 result["sheet"] = inactive_sheet(sim, name, png, settings, specimens, covered_top, covered_bottom)
-        with open(os.path.join(sim.outdir, "manifest.json"), "w") as handle:
-            json.dump(result, handle, indent=1, sort_keys=True)
+        finish(sim.outdir, final, result)
         print(f"ipad {name}: {len(result['sheet']['specimens'])} specimens; pixels changed by going inactive "
               f"{[(s, v['difference']['pixels']) for s, v in result['screens'].items()]}")
     finally:
@@ -530,7 +585,8 @@ def inactive_sheet(sim, name, png, settings, specimens, covered_top, covered_bot
         sys.exit(f"{name}: the readout is {readout!r}, not an inactive window in this appearance; nothing kept")
     offset = None
     for identifier, (x, y, inside) in found.items():
-        colour = specimens[identifier]["reading"]["fill"]
+        # The colour the inactive window shows there, whatever the palette.
+        colour = json.loads(run(TOOL, "colour", png, str(sim.scale), f"{x:.1f}", f"{y:.1f}"))["colour"]
         locate = lambda px, py: json.loads(run(TOOL, "locate", png, str(sim.scale), f"{px:.1f}", f"{py:.1f}", colour))
         try:
             rough = locate(x, y)
@@ -633,7 +689,9 @@ def manifests(outdir, family):
         path = os.path.join(outdir, family, name, "manifest.json")
         if os.path.exists(path):
             with open(path) as handle:
-                found.append(json.load(handle))
+                manifest = json.load(handle)
+            remeasure(manifest)
+            found.append(manifest)
     return found
 
 
@@ -653,6 +711,30 @@ def compose_layout(path, layout, out):
     with open(path, "w") as handle:
         json.dump(layout, handle, indent=1)
     run(TOOL, "compose", path, out)
+
+
+def remeasure(manifest):
+    """Every reading taken again from its capture and frame with the tool
+    as it is now, so a better measurement needs no new captures."""
+    scale = str(manifest["scale"])
+    jobs = {}
+    for identifier, specimen in (manifest.get("sheet") or {}).get("specimens", {}).items():
+        jobs.setdefault(specimen["image"], []).append((specimen, identifier, SPECIMEN_INSET))
+    for screen in manifest.get("screens", {}).values():
+        for index, button in enumerate(screen.get("buttons", [])):
+            inset = button.get("inset") or {"key": 3, "control": 6}.get(button.get("kind"), 6)
+            if button.get("name", "").endswith("messageField"):
+                inset = FIELD_INSET - 2
+            jobs.setdefault(screen["image"], []).append((button, f"{index:03d}", inset))
+    for image, items in jobs.items():
+        path = image[:-4] + "-remeasure.json"
+        with open(path, "w") as handle:
+            json.dump([{"name": name, "x": item["frame"]["x"], "y": item["frame"]["y"], "w": item["frame"]["width"],
+                        "h": item["frame"]["height"], "inset": inset} for item, name, inset in items], handle)
+        readings = {m["name"]: m.get("reading") for m in json.loads(run(TOOL, "measure", image, scale, path))}
+        os.remove(path)
+        for item, name, _ in items:
+            item["reading"] = readings.get(name)
 
 
 def compose(outdir):
@@ -705,7 +787,11 @@ def compose(outdir):
                         failures.append((family, TITLES[m["appearance"]], f"{title}: {label}", what, ratio, target, reading))
                     if "difference" in screen:
                         lines.append(f"{screen['difference']['pixels']} pixels differ from the same window active")
-                    lines.append(f"{len(wrong)} measured pairs under target" if wrong else "every measured pair at target")
+                    measured = [b for b in screen.get("buttons", []) if b.get("kind") != "key" and b.get("reading")]
+                    if not measured:
+                        lines.append("controls not measured")
+                    else:
+                        lines.append(f"{len(wrong)} measured pairs under target" if wrong else f"all {len(measured)} measured controls at target")
                     cells.append({"image": screen["image"], "crop": {"x": 0, "y": 0, "width": size[0], "height": size[1]},
                                   "caption": lines, "fails": bool(wrong)})
                 rows.append({"label": "", "cells": cells})
@@ -728,7 +814,7 @@ def write_readme(outdir, pictures, failures, keys=()):
               "| Device | Appearance | What | Pair | Measured | Colours |", "|---|---|---|---|---|---|"]
     for family, appearance, what, pair, ratio, target, reading in failures:
         colours = f"`{reading['words']}` on `{reading['fill']}`" if pair == "words" else f"`{reading['edge']}` on `{reading['page']}`"
-        lines.append(f"| {family} | {appearance} | {what} | {pair} | {ratio:.2f}:1 (needs {target}) | {colours} |")
+        lines.append(f"| {family} | {appearance} | {what} | {pair} | {shown(ratio, target)}:1 (needs {target}) | {colours} |")
     if not failures:
         lines.append("| | | none | | | |")
     lines += ["", "## Apple's keyboard while typing", "",
