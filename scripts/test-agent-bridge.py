@@ -215,6 +215,20 @@ if 'plantpyc' in mode:
 if 'attributes' in mode:  # name a filter the git settings define, for every file
     with open('.gitattributes', 'w') as attributes:
         attributes.write('* filter=mark\n')
+if 'badconfig' in mode:
+    # Break the git settings every worktree shares, as an agent with no
+    # sandbox could, so every git command fails from here on.
+    import subprocess
+    shared = subprocess.run(['git', 'rev-parse', '--path-format=absolute', '--git-common-dir'],
+                            check=True, capture_output=True, text=True).stdout.strip()
+    with open(os.path.join(shared, 'config'), 'a') as config:
+        config.write('[broken\n')
+if 'badindex' in mode:  # an index git cannot read, so `git status` fails
+    import subprocess
+    folder = subprocess.run(['git', 'rev-parse', '--absolute-git-dir'], check=True,
+                            capture_output=True, text=True).stdout.strip()
+    with open(os.path.join(folder, 'index'), 'wb') as index:
+        index.write(b'not an index\n')
 if entry['tool'] == 'codex':
     if args and args[0] == 'review':
         print('No P0 or P1 findings.')
@@ -370,6 +384,21 @@ class BridgeTests(unittest.TestCase):
     def git_out(self, folder, *args):
         return subprocess.run(['git', '-C', str(folder), *args], capture_output=True,
                               check=True).stdout
+
+    def break_git_for(self, word):
+        """A stand-in git, first on the bridge's PATH, that fails any
+        command holding word and passes every other one to the real git."""
+        import shutil
+        (self.bin / 'git').write_text(
+            '#!/bin/sh\n'
+            'for word in "$@"; do\n'
+            f'    if [ "$word" = \'{word}\' ]; then\n'
+            '        echo "fatal: the stand-in git fails this command" >&2\n'
+            '        exit 128\n'
+            '    fi\n'
+            'done\n'
+            f'exec \'{shutil.which("git")}\' "$@"\n')
+        (self.bin / 'git').chmod(0o755)
 
     def head_files(self, folder):
         return sorted(os.fsdecode(name) for name in
@@ -1457,26 +1486,16 @@ class BridgeTests(unittest.TestCase):
         # the bridge would turn none off and its git would run the one the
         # shared settings define (CodeRabbit, on #108). The stand-in git
         # fails only the bridge's question about filters.
-        import shutil
         outside = Path(self.temp.name) / 'outside'
         outside.mkdir()
         mark = outside / 'ran'
         git(self.owner, 'config', 'filter.mark.clean', f"touch '{mark}'; cat")
         (self.worktree / '.gitattributes').write_text('* filter=mark\n')
-        (self.bin / 'git').write_text(
-            '#!/bin/sh\n'
-            'for word in "$@"; do\n'
-            '    if [ "$word" = \'^filter\\.\' ]; then\n'
-            '        echo "fatal: the stand-in git cannot read its settings" >&2\n'
-            '        exit 128\n'
-            '    fi\n'
-            'done\n'
-            f'exec \'{shutil.which("git")}\' "$@"\n')
-        (self.bin / 'git').chmod(0o755)
+        self.break_git_for(r'^filter\.')
         result = self.bridge('codex', '--brief', str(self.brief))
         self.assertEqual(result.returncode, 2, result.stderr + result.stdout)
         self.assertIn('filters', result.stderr)
-        self.assertIn('the stand-in git cannot read its settings', result.stderr)
+        self.assertIn('the stand-in git fails this command', result.stderr)
         self.assertFalse(mark.exists())
         self.assertEqual(self.calls(), [])
 
@@ -1506,6 +1525,91 @@ class BridgeTests(unittest.TestCase):
         self.assertEqual((folder / '.gitignore').read_text(), 'build/\n.agents/\n__pycache__/\n')
         self.assertEqual(self.git_out(folder, 'show', 'HEAD:docs/new.md'),
                          b'new from the agent: plain words\n')
+
+    def test_a_status_git_cannot_read_is_never_taken_as_nothing_changed(self):
+        # `git status` that fails prints nothing, which read as a clean
+        # folder: a Codex write job's work was "nothing to commit" and the
+        # job "finished", and agy was started in a folder nobody could
+        # vouch for (CodeRabbit, on #108).
+        result, folder, out, summary = self.codex_write('unreadable', mode='work badindex')
+        self.assertEqual(result.returncode, 1, result.stderr + result.stdout)
+        self.assertTrue(summary['status'].startswith('finished, but its work is not committed'),
+                        summary['status'])
+        self.assertTrue(summary['bridge_commit'].startswith('not committed: '), summary)
+        self.assertIn('index', summary['status'])
+        self.assertIn('could not read the checkout after the job', summary['status'])
+        self.assertIsNone(summary['changed_files'])
+        self.assertEqual((out / 'done').read_text(), summary['status'] + '\n')
+        self.assertTrue((folder / 'docs' / 'new.md').is_file())  # the work is still there
+        self.log.unlink()
+        self.point_agy_at(self.agy_folder)
+        self.install_agy_hook()
+        index = Path(self.git_out(self.agy_folder, 'rev-parse', '--absolute-git-dir')
+                     .decode().strip()) / 'index'
+        index.write_bytes(b'not an index\n')
+        refused = self.bridge('agy', '--brief', str(self.brief))
+        self.assertEqual(refused.returncode, 2, refused.stderr + refused.stdout)
+        self.assertIn('git status', refused.stderr)
+        self.assertEqual(self.calls(), [])
+
+    def test_a_commit_whose_short_name_git_cannot_give_is_still_reported(self):
+        # The last thing the bridge asks git after its commit is the
+        # commit's short name; a failure there must not lose summary.json
+        # and done for a commit that was made.
+        self.break_git_for('--short')
+        result, folder, out, summary = self.codex_write('short-name')
+        self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+        self.assertEqual(summary['status'], 'finished')
+        head = self.git_out(folder, 'rev-parse', 'HEAD').decode().strip()
+        self.assertEqual(summary['bridge_commit'], f'committed {head}')
+        self.assertEqual((out / 'done').read_text(), 'finished\n')
+
+    def test_a_job_that_leaves_git_unable_to_read_its_settings_still_ends_with_done(self):
+        # The bridge's git stops when it cannot read which filters to turn
+        # off, so after a job that broke the settings every worktree shares
+        # the bridge itself stopped, with no summary.json and no done, and
+        # a caller waiting for done waited for ever (CodeRabbit, on #108).
+        self.point_agy_at(self.agy_folder)
+        self.install_agy_hook()
+        shared = Path(self.git_out(self.owner, 'rev-parse', '--path-format=absolute',
+                                   '--git-common-dir').decode().strip()) / 'config'
+        good = shared.read_bytes()
+        installed = self.guard_code()
+        for agent, args, mode in (('agy', [], 'badconfig'),
+                                  ('agy', [], 'badconfig fail'),
+                                  ('codex', ['--write', '--branch', 'broken'], 'work badconfig')):
+            with self.subTest(agent=agent, mode=mode):
+                self.install_codex_hook()
+                result = self.bridge(agent, '--brief', str(self.brief), *args,
+                                     env={'STUB_MODE': mode})
+                broken = shared.read_bytes()
+                shared.write_bytes(good)  # so the next case, and these checks, can use git
+                self.assertNotEqual(broken, good)  # the agent did break it
+                self.assertEqual(result.returncode, 1, result.stderr + result.stdout)
+                out = self.job_folder(result)
+                summary = json.loads((out / 'summary.json').read_text())
+                self.assertEqual((out / 'done').read_text(), summary['status'] + '\n')
+                self.assertIn('could not read the checkout after the job', summary['status'])
+                self.assertIn('could not read which git filters to turn off', summary['status'])
+                self.assertIsNone(summary['changed_files'])
+                self.assertIsNone(summary['commits'])
+                if agent == 'agy':
+                    # How the agent ended comes first, then what went wrong.
+                    self.assertEqual(summary['status'].startswith('failed (exit 3); '),
+                                     'fail' in mode, summary['status'])
+                    self.assertIn("could not check whether the job's commits change the guard's "
+                                  'code', summary['status'])
+                    self.assertIn('could not be read', summary['guard_code'])
+                    self.assertEqual(self.guard_code(), installed)
+                else:
+                    self.assertTrue(summary['status'].startswith(
+                        'finished, but its work is not committed'), summary['status'])
+                    self.assertTrue(summary['bridge_commit'].startswith('not committed: '),
+                                    summary)
+                    folder = self.home / 'code' / 'brickson-codex-broken'
+                    self.assertTrue((folder / 'docs' / 'new.md').is_file())
+                    self.assertEqual(self.git_out(folder, 'rev-parse', 'HEAD'),
+                                     self.git_out(folder, 'rev-parse', 'origin/main'))
 
     def test_status_names_what_is_installed(self):
         self.point_agy_at(self.agy_folder)
