@@ -20,8 +20,13 @@ from pathlib import Path
 
 # An agent that runs the checks inside a bridge job inherits the job's
 # no-push settings; this file's throwaway origins need plain git.
+# And git's repository variables, which git exports to a hook that runs
+# these checks, would point the tests' own git at another index or
+# repository (CodeRabbit, on #109). A test that needs one passes it itself.
 for key in [key for key in os.environ if key.startswith(('GIT_CONFIG_KEY_', 'GIT_CONFIG_VALUE_'))
-            or key in ('GIT_CONFIG_COUNT', 'GIT_CONFIG_PARAMETERS')]:
+            or key in ('GIT_CONFIG_COUNT', 'GIT_CONFIG_PARAMETERS', 'GIT_DIR', 'GIT_WORK_TREE',
+                       'GIT_COMMON_DIR', 'GIT_INDEX_FILE', 'GIT_OBJECT_DIRECTORY',
+                       'GIT_ALTERNATE_OBJECT_DIRECTORIES', 'GIT_PREFIX', 'GIT_NAMESPACE')]:
     del os.environ[key]
 # The bridge's privacy check reads a private list from these; each test
 # gives its own made-up list in its made-up home, or none.
