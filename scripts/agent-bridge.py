@@ -97,6 +97,10 @@ REPOSITORY_VARIABLES = (
 # The configuration ones a job keeps: job_environment() adds its no-push
 # settings after whatever GIT_CONFIG_COUNT entries it inherits.
 JOB_KEEPS = ('GIT_CONFIG', 'GIT_CONFIG_PARAMETERS', 'GIT_CONFIG_COUNT')
+# The two of them every git command reads, a job's `git push` among them
+# (GIT_CONFIG points `git config` alone at another file): the bridge looks
+# in them for a push URL before it hands a job off (inherited_push_urls).
+INHERITED_SETTINGS = ('GIT_CONFIG_COUNT', 'GIT_CONFIG_PARAMETERS')
 # The guard's own code, tracked in every checkout: agy's hook runs the
 # adapter, which runs this guard.py, which loads this privacy-check.py.
 GUARD_CODE = ('.claude/hooks/guard.py', 'scripts/privacy-check.py')
@@ -265,10 +269,34 @@ def git(folder, *args, check=True, strip=True, raw=False, input=None):
     return result.stdout.strip() if strip else result.stdout
 
 
+def inherited_push_urls(top):
+    """The names of the push URLs set by the settings a job inherits from
+    the bridge's environment (INHERITED_SETTINGS). The bridge's own git
+    reads none of them, so its look at the checkout's push URLs misses
+    them, and job_environment() only adds the no-push URL after them: a
+    job's push would reach each one first (cubic, on #109). git reads them
+    here, as it will in the job. `git config` ends 1 when nothing matches;
+    any other failure stops the hand-off, because taken as "no push URL"
+    it would refuse nothing."""
+    inherited = {name: os.environ[name] for name in INHERITED_SETTINGS if name in os.environ}
+    if not inherited:
+        return []
+    found = subprocess.run(['git', '-C', str(top), 'config', '-z', '--name-only',
+                            '--get-regexp', r'^remote\..*\.pushurl$'],
+                           capture_output=True, stdin=subprocess.DEVNULL,
+                           env={**plain_environment(), **inherited})
+    if found.returncode not in (0, 1):
+        error = found.stderr.decode('utf-8', 'replace').strip()
+        raise Stop(f'could not read the git settings a job would inherit from the bridge\'s '
+                   f'environment ({", ".join(INHERITED_SETTINGS)}): {error}')
+    return sorted({name for name in os.fsdecode(found.stdout).split('\0') if name})
+
+
 def brickson_checkout(folder):
     """The top of the Brickson checkout holding folder, refusing the
     owner's own checkout (the repository's main worktree) and a checkout
-    that sets a push URL: git pushes to every push URL a remote has and
+    that sets a push URL, or a start whose environment sets one
+    (inherited_push_urls): git pushes to every push URL a remote has and
     skips pushInsteadOf for them, so a job's no-push URL would only be
     added beside it."""
     folder = Path(os.path.expanduser(str(folder))).resolve()
@@ -287,6 +315,11 @@ def brickson_checkout(folder):
         names = sorted({line.split()[0] for line in push_urls.splitlines()})
         raise Stop(f'{top} sets a push URL ({", ".join(names)}), which a job\'s pushes would '
                    'still reach; remove it before handing a job off here')
+    inherited = inherited_push_urls(top)
+    if inherited:
+        raise Stop(f'the environment the bridge was started in sets a push URL '
+                   f'({", ".join(inherited)}) through {" or ".join(INHERITED_SETTINGS)}, which '
+                   'a job\'s pushes would still reach; start the bridge without it')
     return top
 
 

@@ -946,6 +946,37 @@ class BridgeTests(unittest.TestCase):
                                   capture_output=True, text=True).stdout
         self.assertNotIn('from-agent', branches)
 
+    def test_a_push_url_set_where_the_bridge_starts_is_refused(self):
+        # The bridge's own git reads none of the settings its environment
+        # carries, but a job inherits them with the no-push URL only added
+        # after (JOB_KEEPS), so its push would reach the inherited URL
+        # first (cubic, on #109). main's bridge refused such a start.
+        origin = subprocess.run(['git', '-C', str(self.worktree), 'remote', 'get-url', 'origin'],
+                                capture_output=True, text=True, check=True).stdout.strip()
+
+        def counted(key):
+            return {'GIT_CONFIG_COUNT': '1', 'GIT_CONFIG_KEY_0': key, 'GIT_CONFIG_VALUE_0': origin}
+
+        cases = [('counted', counted('remote.origin.pushurl'), 'remote.origin.pushurl'),
+                 ('another remote, other letters', counted('Remote.backup.PushURL'),
+                  'remote.backup.pushurl'),
+                 ('parameters', {'GIT_CONFIG_PARAMETERS': f"'remote.origin.pushurl={origin}'"},
+                  'remote.origin.pushurl'),
+                 # Settings git cannot read are never taken as "no push URL".
+                 ('unreadable', {'GIT_CONFIG_COUNT': 'many'}, 'could not read')]
+        for case, settings, said in cases:
+            with self.subTest(case):
+                result = self.bridge('codex', '--brief', str(self.brief),
+                                     env={'STUB_MODE': 'push', **settings})
+                self.assertEqual(result.returncode, 2, result.stderr + result.stdout)
+                self.assertIn(said, result.stderr)
+                self.assertIn('GIT_CONFIG_COUNT', result.stderr)
+        self.assertEqual(self.calls(), [])
+        self.assertFalse((self.worktree / 'build').exists())
+        branches = subprocess.run(['git', '-C', str(self.owner), 'ls-remote', '--heads', 'origin'],
+                                  capture_output=True, text=True).stdout
+        self.assertNotIn('from-agent', branches)
+
     def test_codex_never_writes_its_answer_through_a_link(self):
         outside = Path(self.temp.name) / 'outside'
         outside.mkdir()
