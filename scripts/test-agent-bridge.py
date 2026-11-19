@@ -397,6 +397,23 @@ class BridgeTests(unittest.TestCase):
     def git_out(self, folder, *args):
         return subprocess.run(['git', '-C', str(folder), *args], capture_output=True,
                               check=True).stdout
+    def stop_inside(self, function):
+        """A driver that runs the bridge with function wrapped, so the
+        bridge sends itself the signal it is given just before function
+        runs: a stop that arrives exactly there."""
+        driver = Path(self.temp.name) / f'driver-{function}.py'
+        driver.write_text(
+            'import importlib.util, os, signal, sys\n'
+            'spec = importlib.util.spec_from_file_location("bridge", sys.argv[1])\n'
+            'bridge = importlib.util.module_from_spec(spec)\n'
+            'spec.loader.exec_module(bridge)\n'
+            f'original = bridge.{function}\n'
+            'def stopped_first(*args):\n'
+            '    os.kill(os.getpid(), int(sys.argv[2]))\n'
+            '    return original(*args)\n'
+            f'bridge.{function} = stopped_first\n'
+            'sys.exit(bridge.main(sys.argv[3:]))\n')
+        return driver
 
     def break_git_for(self, word):
         """A stand-in git, first on the bridge's PATH, that fails any
@@ -1365,18 +1382,7 @@ class BridgeTests(unittest.TestCase):
         # the signal, then puts the hook back.
         import signal
         self.point_agy_at(self.agy_folder)
-        driver = Path(self.temp.name) / 'driver.py'
-        driver.write_text(
-            'import importlib.util, os, signal, sys\n'
-            'spec = importlib.util.spec_from_file_location("bridge", sys.argv[1])\n'
-            'bridge = importlib.util.module_from_spec(spec)\n'
-            'spec.loader.exec_module(bridge)\n'
-            'original = bridge.restore_agy_guard\n'
-            'def stopped_first(*args):\n'
-            '    os.kill(os.getpid(), int(sys.argv[2]))\n'
-            '    return original(*args)\n'
-            'bridge.restore_agy_guard = stopped_first\n'
-            'sys.exit(bridge.main(sys.argv[3:]))\n')
+        driver = self.stop_inside('restore_agy_guard')
         for number, sig in enumerate((signal.SIGTERM, signal.SIGHUP)):
             with self.subTest(sig.name):
                 self.install_agy_hook()
@@ -1469,6 +1475,30 @@ class BridgeTests(unittest.TestCase):
                                      env={'PYTHONPYCACHEPREFIX': str(prefix)})
                 self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
                 self.assertIsNone(self.calls()[-1]['pycache_prefix'])
+
+    def test_a_stop_while_the_agents_processes_are_cleared_commits_nothing(self):
+        # The stop arrives after Codex has exited, while the bridge stops
+        # whatever the agent started: a driver wraps stop_group so the
+        # bridge first sends itself the signal (cubic, on #109).
+        import signal
+        driver = self.stop_inside('stop_group')
+        for number, sig in enumerate((signal.SIGTERM, signal.SIGHUP)):
+            with self.subTest(sig.name):
+                self.install_codex_hook()
+                result = subprocess.run(
+                    [sys.executable, str(driver), str(BRIDGE), str(int(sig)), 'codex', '--brief',
+                     str(self.brief), '--write', '--branch', f'late-{number}'],
+                    capture_output=True, text=True, cwd=str(self.worktree), timeout=120,
+                    env={**os.environ, **self.env, 'STUB_MODE': 'work'})
+                self.assertEqual(result.returncode, 1, result.stderr)
+                out = self.job_folder(result)
+                summary = json.loads((out / 'summary.json').read_text())
+                self.assertEqual((out / 'done').read_text(), summary['status'] + '\n')
+                self.assertTrue(summary['status'].startswith('stopped'), summary['status'])
+                self.assertIn('not committed', summary['bridge_commit'])
+                self.assertEqual(summary['commits'], [])
+                folder = self.home / 'code' / f'brickson-codex-late-{number}'
+                self.assertEqual(self.staged(folder), b'')
 
     # Filters, and git that cannot be read ---------------------------------------
 

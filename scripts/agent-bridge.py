@@ -756,7 +756,7 @@ def interrupt(signum, _frame):
     raise Interrupted(signum)
 
 
-STOPS = []  # stops the bridge was given after a Codex write job's agent ended
+STOPS = []  # stops the bridge was given once the agent had ended, or was being stopped
 
 
 def note_stop(signum, _frame):
@@ -792,8 +792,11 @@ def run(command, cwd, out, timeout_minutes):
             except Interrupted:
                 code, interrupted = None, True
             finally:
-                for sig in SIGNALS:  # nothing cuts the clean-up short
-                    signal.signal(sig, signal.SIG_IGN)
+                # Nothing cuts the clean-up short, and a stop that arrives
+                # during it is noted, never dropped: a Codex write job then
+                # commits nothing (cubic, on #109).
+                for sig in SIGNALS:
+                    signal.signal(sig, note_stop)
                 stop_group(process)
     finally:
         for sig, handler in previous.items():
