@@ -7099,9 +7099,11 @@ review setup does not quietly break them.
   Brickson's pull requests is theirs. Besides Codex, CodeRabbit,
   Greptile, cubic and Copilot (above), three more comment by themselves,
   and no agent asks them:
-  - **Gitar** (`gitar-bot`) posts a review as pushes arrive. Its
-    auto-apply is off and stays off, because reviewers never write the
-    code (above; AGENTS.md, "Reviews and updates on GitHub").
+  - **Gitar** (`gitar-bot`) posts a review comment as pushes arrive.
+    The "Approved" in that comment is Gitar's own label, never a GitHub
+    approval. Its auto-apply is off and stays off, because reviewers
+    never write the code (above; AGENTS.md, "Reviews and updates on
+    GitHub").
   - **Graphify** (`graphify-labs`) posts one summary review per pull
     request (one each on #112, #114, #116, #117 and #119, whatever their
     pushes), so its review may not cover a later head.

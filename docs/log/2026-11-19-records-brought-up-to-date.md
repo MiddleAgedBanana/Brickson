@@ -56,17 +56,23 @@ things a public repository should not.
   sheet's question IDs are its own, grouped by topic (accessibility,
   design, other communication apps), and no longer described by where
   the research was kept.
-- **Older records.** Wording that pointed to notes kept outside the
-  repository, or to what a tool's plan costs, is made generic in nine
-  earlier `docs/log/` files, one work file, five passages of
-  docs/DECISIONS.md and one each of docs/HANDOFF.md and
-  docs/ACCESSIBILITY.md. What each records is unchanged;
-  docs/log/README.md allows correcting an entry.
+- **Older records, corrected.** Nine earlier `docs/log/` files, one
+  work file, five passages of docs/DECISIONS.md and one each of
+  docs/HANDOFF.md and docs/ACCESSIBILITY.md pointed to notes kept
+  outside the repository, or to what a tool's plan costs, which this
+  public repository does not hold. Each is a correction of that mistake,
+  which docs/log/README.md allows in a merged entry ("correct a mistake
+  in it"), not a later change; this file records it. What each says
+  about Brickson and the work is unchanged. One detail goes with the
+  wording: the 2026-11-13 entry now says that two readers and a check
+  stopped before they finished, but no longer why, because the reason it
+  gave was the tool's plan.
 
 ## Commits
 
-One commit on `claude/project-thread-zsjz76`: the records brought up to
-date.
+On `claude/project-thread-zsjz76`: `d07d433`, the records brought up to
+date; then the answers to the first review round (this file's *Older
+records, corrected*, and Gitar's "Approved" label in docs/DECISIONS.md).
 
 ## Verified
 

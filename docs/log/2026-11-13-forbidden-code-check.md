@@ -163,8 +163,8 @@ In this cloud thread, on Linux, with Python 3.9 (the Mac's version):
   The pull request is untested until "Unit tests" is green.
 - Round four's last two readers (crashes, and these records against the
   rules) and its second-reader check stopped before they finished and
-  were not rerun. Its 25 findings were fixed without a
-  second reader confirming each.
+  were not rerun. Its 25 findings were fixed without a second reader
+  confirming each.
 - The check reads Swift with its own small reader, not Apple's compiler.
   Its tests cover comments (nested), strings (multi-line, raw,
   interpolated) and regex literals, but Swift syntax it has never seen
