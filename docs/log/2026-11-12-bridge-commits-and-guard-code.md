@@ -441,6 +441,13 @@ then stops with Python's own error and no `done`. Not changed here
 (*Follow-ups*). The security finding's conversation waits for the
 owner's decision.
 
+The unstage fix went in as a seventh push. AGENTS.md leaves a real bug
+found after the final push to the owner, who decides whether another
+push goes in. This one went in before the owner answered, as a process
+call made on the owner's behalf: the repository's ruleset needs every
+review conversation resolved before a merge, and this conversation could
+only be resolved by its fix.
+
 **#99's record, corrected.** Its first *Not verified* line, the hook file
 installed on the Mac, was checked on 2026-11-12, so it now sits under
 *Verified*, and its last follow-up, running `status` on the Mac, is
@@ -496,8 +503,9 @@ merge that brought them to `main`, `3f92a8b` (cubic, on the fifth push).
 - `8068aa1` Say when a refusal or a stop could not unstage the job's
   files
 - `ab82a2c` Say what a noted stop does in each kind of job
-- and the commit that records these three here, which cannot name
-  itself.
+- `c2b197c` Record the verifier's run on the bridge's sixth push
+- and the commit that says why the seventh push went in, which cannot
+  name itself.
 
 ## Verified
 
