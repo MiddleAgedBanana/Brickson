@@ -50,6 +50,30 @@ move time by hand (`ManualClock` in `AudioTestDoubles`); the app passes
 This is a small fix in one pull request, so it has no work file
 (docs/work/README.md).
 
+**One UI test wait made longer.** After `main` was merged in again
+(`99bbd98`), `HomeSizesTests.testHomeIsLargestUntilAnsweredAndTouchsOnceTouchIsChosen()`
+failed on the iPad in all three CI attempts. The first time, Apple's
+audit of Settings timed out with no finding. The second and third times,
+Settings' Family Setup row was still in the accessibility hierarchy 10
+seconds after Family Setup's title appeared. In both of those runs,
+`simulator-load-ipad-part1.txt` shows iOS redrawing its lock-screen
+wallpapers (PosterBoard at 60 to 80% and the wallpaper extensions it
+starts) during that step, five to eight minutes after the simulator
+started. The same test passed on `main` (run 624) and on #124 (run 625).
+There the redraw had run about three minutes after the start, long
+before the step, and the step took about a second at the same or higher
+load. In the third attempt the screen recording shows Family Setup
+already drawn, without the row, by about 02:46:55 UTC, while the test
+still found the row at 02:47:04. On the owner's Mac the step passed 64
+of 64 times, 32 on `main` and 32 on this branch, with the row gone in
+about 0.1 seconds. The step runs no speech code, because the test speaks
+nothing before it. So `open(_:waitingFor:in:context:)` now waits up to
+60 seconds for the row to go, not 10. It still fails if the screen never
+finishes opening, and no audit is retried or loosened. The redraw does
+not explain the first failure, the audit timeout. That came about seven
+minutes after the start, with no redraw logged then, and this change
+does not touch it.
+
 ## Evidence for the limit
 
 From that run's result bundle (`ui-test-results-ipad-part3`): when the
@@ -100,6 +124,10 @@ is now measured too. The limit did not change.)
   a phrase held up past it on the main thread is never handed over and
   one that begins that late is stopped as it begins (docs/DECISIONS.md,
   "A phrase that does not start"), with three tests.
+- The CI wait commit, after `main` was merged in again: `HomeSizesTests`
+  waits up to 60 seconds, not 10, for the row a screen was opened from to
+  leave the accessibility hierarchy (above), and docs/HANDOFF.md records
+  why. Test code and records only, no app code.
 
 ## Verified
 
@@ -178,6 +206,11 @@ is now measured too. The limit did not change.)
   showing "Stopped — Again", so the test goes on to its audit with that
   warning on screen. Whether that screen passes the audit at AX5 is for
   CI to show.
+- **The longer Family Setup wait on CI.** Whether 60 seconds covers the
+  wallpaper redraw when it lands on that step is for CI to show; the
+  redraw's link to the lag is a strong match in the runner's records,
+  not a proof. The Settings audit timeout of the first attempt is not
+  explained.
 
 ## Follow-ups
 

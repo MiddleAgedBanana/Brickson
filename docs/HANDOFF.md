@@ -1628,7 +1628,14 @@ settings, date) and summarise it here.
   on the iPhone in the probe run, where one test's 10 s wait ran out
   inside that burst). Each "paused" line says what the instance had
   used
-  ([`log/2026-11-04-watcher-without-ps.md`](log/2026-11-04-watcher-without-ps.md)). Home's
+  ([`log/2026-11-04-watcher-without-ps.md`](log/2026-11-04-watcher-without-ps.md)).
+  Pausing the extensions does not stop PosterBoard's own redraw. On
+  #123, twice while it ran, `HomeSizesTests` still found Settings' Family
+  Setup row in the accessibility hierarchy 10 seconds after Family
+  Setup's title appeared. In one of those runs, the screen recording
+  already showed Family Setup without the row. That wait is now 60
+  seconds, a CI timing allowance that loosens no check
+  ([`log/2026-11-17-phrase-start-limit.md`](log/2026-11-17-phrase-start-limit.md)). Home's
   layout test uses bounded live queries while retaining every tile's
   visibility and position checks. After incorporating `main` at `d79d836`,
   its audit helper also keeps issue-time captures and native XCTest

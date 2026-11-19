@@ -90,6 +90,17 @@ final class HomeSizesTests: XCTestCase {
         return touch
     }
 
+    /// How long `open` waits for the chosen row to leave the accessibility
+    /// hierarchy once the new screen's title is there. It usually takes
+    /// about a second. On GitHub's three-processor runners iOS redraws its
+    /// lock-screen wallpapers a few minutes after the simulator starts;
+    /// twice, during that redraw, the row Family Setup was opened from
+    /// stayed in the hierarchy more than 10 seconds, once while the screen
+    /// recording already showed Family Setup without it (docs/HANDOFF.md,
+    /// "Repository, CI and website"). A screen that never finishes opening
+    /// still fails here.
+    private static let previousScreenGoneTimeout: TimeInterval = 60
+
     /// Chooses `row` and waits for the screen titled `title`, and for `row`
     /// to have gone with the screen it was on.
     @MainActor
@@ -97,7 +108,11 @@ final class HomeSizesTests: XCTestCase {
         row.tap()
         XCTAssertTrue(app.navigationBars[title].waitForExistence(timeout: 10), "\(title) did not open (\(context))")
         let gone = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: row)
-        XCTAssertEqual(XCTWaiter.wait(for: [gone], timeout: 10), .completed, "\(title) did not finish opening (\(context))")
+        XCTAssertEqual(
+            XCTWaiter.wait(for: [gone], timeout: Self.previousScreenGoneTimeout),
+            .completed,
+            "\(title) did not finish opening (\(context))"
+        )
     }
 
     /// Whether `window` holds Eye Tracking's sizes at every text size, by
