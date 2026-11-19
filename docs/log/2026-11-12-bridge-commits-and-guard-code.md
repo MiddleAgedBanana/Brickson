@@ -343,10 +343,82 @@ git settings define before the next bridge commit there. A cloud thread
 cannot run it; the command is under *Not verified*. Whatever it shows,
 the bridge now turns those filters off for its own git.
 
+**The reviews of the fifth push.** cubic left eight findings and
+CodeRabbit eleven, one of them the same in both. Each was checked against
+the code. Eleven are answered by a change here, the five in the bridge
+test first:
+
+- *A job could keep a bytecode cache the bridge never clears* (cubic).
+  With `PYTHONPYCACHEPREFIX` set where the bridge starts, Python keeps
+  its bytecode under the folder that names and not beside the source, so
+  a cache an agy job planted there would outlast the put-back and run in
+  place of the restored privacy check. No job's environment carries the
+  variable now, so the guard an agent's hook starts uses only the caches
+  the bridge clears.
+- *Commits that change the guard's code and put it back were reported as
+  unchanged* (cubic and CodeRabbit). The bridge compared only where the
+  job's commits began and ended. It now also reads every commit the job
+  added, a side branch that a merge took nothing from among them, and a
+  job whose commits touch the guard's code on the way ends `commits the
+  job added change the guard's code (...), though the branch ends with
+  the code it began with; read them before they are pushed`. The folder
+  is clean then, so the next agy job is not refused.
+- *A stop while the agent's processes were being stopped was dropped*
+  (cubic). `run()` ignored stop signals for that moment, so a Codex write
+  job went on to commit. The stop is now noted there as it is
+  afterwards, and the job commits nothing.
+- *A failed listing of the job's commits read as no commits*
+  (CodeRabbit). The job now says the checkout could not be read, with
+  `null` for the three fields, as for every other failed read.
+- *A status that said the guard's code was put back after the put-back
+  failed* (CodeRabbit), when a job's commits changed the code and left a
+  folder where a file was. The sentence about the commits no longer
+  claims it.
+- *The tests' own git* (cubic, and CodeRabbit). The helpers that set up
+  and read the made-up checkouts now read the fixture's settings alone,
+  and the tests drop git's repository variables before they run git, so
+  a runner's fsmonitor or filter, or the index git gives a hook, never
+  reaches them. Tests only.
+- *This record* (cubic, three findings). The commit list names
+  `188e140`, each follow-up says who owns it, and #99's record names the
+  merge that brought its commits to `main`.
+
+Not changed, and why:
+
+- *Find the filters and run git with one fixed set of settings*
+  (CodeRabbit, as a security finding). Between the bridge reading which
+  filters are set and its git starting, another job could add one. Only
+  something outside Codex's sandbox can write git's settings, and that
+  can already run any command as the same user with the same
+  environment, so a filter slipped in there gains nothing; and git has no
+  way to turn off a filter it has not been told the name of. A known
+  limit. Its conversation is left open, because whether a security
+  finding stays a known limit is the owner's decision.
+- *A stop while the summary is written* (cubic) and *a stop just before
+  the branch moves* (CodeRabbit). Every put-back has run by then, and the
+  job ends with `done` either way, saying what happened to its work. A
+  check at either place leaves a later instant open all the same.
+- *A staged rename whose source the bridge adds again*, *a tracked file
+  replaced by a folder of files* and *a tracked file under `build/`
+  renamed out of it* (CodeRabbit). The first and last need the agent to
+  stage, which Codex's sandbox does not allow, and the last also a
+  tracked file under `build/`, which Brickson ignores. In the first two
+  the bridge refuses to commit and says so, with the work left in the
+  files, though its reason for the second does not fit (*Follow-ups*).
+- *A privacy report that cannot be written* (CodeRabbit). When the job's
+  folder cannot be written, neither can `summary.json` or `done`, so
+  sending the failure to `finish()` would give the caller no result
+  either. Nothing has been committed at that point.
+- *agy output that is not text ends with no `done`* (CodeRabbit, outside
+  the diff). Already under *Follow-ups*. Reading it with errors replaced
+  would also stop the unreadable-output test from pinning the put-back's
+  `finally`, so it needs its own test first.
+
 **#99's record, corrected.** Its first *Not verified* line, the hook file
 installed on the Mac, was checked on 2026-11-12, so it now sits under
 *Verified*, and its last follow-up, running `status` on the Mac, is
-marked done by that same check.
+marked done by that same check. Its *Commits* section now names the
+merge that brought them to `main`, `3f92a8b` (cubic, on the fifth push).
 
 ## Commits
 
@@ -381,7 +453,19 @@ marked done by that same check.
 - `775d82f` End every job with done when git cannot be read, and say so
 - `17ee831` Pin that a reused worktree runs no filter set for the job's
   branch
-- and the commit that records these here.
+- `188e140` Record what was brought over from pull request #108
+- `e61e508` Give no job a bytecode cache folder of its own
+- `10c4d1c` Name commits that change the guard's code on the way
+- `fd35c6c` Note a stop that arrives while the agent's processes are
+  stopped
+- `0566cc0` Run the bridge tests' own git with the fixture's settings
+  alone
+- `fda1b56` Never report commits git could not list as none
+- `8ab442c` Drop git's repository variables before the bridge tests run
+  git
+- `b82caee` Never say the guard's code was put back after the put-back
+  failed
+- and the commit that records these here, which cannot name itself.
 
 ## Verified
 
@@ -389,12 +473,13 @@ In a cloud container (Linux, git 2.43), which cannot run Codex or agy,
 with Python 3.13 and with Python 3.9.25, the version of the Mac's
 `/usr/bin/python3`:
 
-- `scripts/test-agent-bridge.py`: 67 of 67 on both. Twenty-seven tests
+- `scripts/test-agent-bridge.py`: 72 of 72 on both. Thirty-two tests
   are new. The first twelve each failed on `main`'s bridge (19 failing
   cases between them); the three from the independent review, the two
   from CodeRabbit's review of the second push, the two from its review of
-  the third and the eight for what #108's review found each failed on
-  this branch's bridge before its fix. Two
+  the third, the eight for what #108's review found and the five from
+  the reviews of the fifth push each failed on this branch's bridge
+  before its fix. Two
   existing tests check the new write instructions: Codex's fails on
   `main`'s bridge, and agy's pins that agy's instructions do not change.
   The new tests:
@@ -511,6 +596,35 @@ with Python 3.13 and with Python 3.9.25, the version of the Mac's
     stand-in git fails `rev-parse --short`. The job ends `finished`, with
     the commit named by its full hash. On `0f02da6` it ended with exit 2
     and neither file, the commit made.
+  - `test_a_job_never_gets_a_bytecode_cache_folder_of_its_own`: a Codex
+    and an agy job started with `PYTHONPYCACHEPREFIX` set; the stand-in
+    records that it was not given it. Both cases failed on `188e140`.
+  - `test_commits_that_change_the_guards_code_and_put_it_back_are_reported`:
+    a stand-in agy commits a change to the guard's code and reverts it,
+    or commits it on a side branch that a merge then takes nothing from.
+    Each job exits 1 naming both files, with the folder clean. Both
+    cases failed on `188e140` (exit 0, `finished`), and the merge case
+    fails on a copy that lists the commits with a plain `git log`. On
+    git 2.43, `-m` alone also reads the side branch, so no copy pins
+    `--full-history` by itself; it stays because git's documented
+    default leaves such a branch out.
+  - `test_a_stop_while_the_agents_processes_are_cleared_commits_nothing`:
+    a driver sends the bridge SIGTERM or SIGHUP as it starts to stop the
+    agent's processes after a Codex write job. The job ends `stopped`,
+    with nothing committed or staged. On `188e140` both cases exited 0
+    with the work committed.
+  - `test_commits_git_cannot_list_are_never_reported_as_none`: the
+    stand-in Codex commits by itself, and a stand-in git fails `log`.
+    The job exits 1 with `commits` null. Before the fix it exited 0 as
+    `finished`.
+  - `test_a_put_back_that_failed_is_never_followed_by_put_back`: a
+    stand-in agy commits a change to the guard's code, then leaves a
+    folder where `guard.py` was. The status says the bridge could not
+    put the code back and that the commits change it; before the fix it
+    went on to say the code was put back.
+- The tests' own git: with `GIT_INDEX_FILE` and `GIT_PREFIX` exported,
+  the commit test passes; the test file as it was at `0566cc0` ends in
+  an error there.
 - Broken copies of the new code each failed the tests named: git hooks
   left on in the bridge's git (the hooks test); staging without
   `--literal-pathspecs` (the commit test); skipping the privacy check's
@@ -575,25 +689,49 @@ with Python 3.13 and with Python 3.9.25, the version of the Mac's
   plants one in `scripts/__pycache__` only.
 - The repository-variables fix with the Mac's own git, whose list of
   those variables may differ from git 2.43's.
+- Whether anything on the Mac gives agy's hook `PYTHONPYCACHEPREFIX`
+  again after the bridge has dropped it (a shell start-up file that the
+  hook's command reads, say). Check, on the Mac, in the shell the bridge
+  is started from: `echo "${PYTHONPYCACHEPREFIX:-not set}"`. `not set`
+  means the fix changes nothing there.
+- A stop that arrives by itself during the clean-up after a real agent:
+  the test sends it from inside the bridge at that exact point.
+- The reading of a job's commits (`git log --full-history -m`) with the
+  Mac's own git.
 
 ## Follow-ups
 
 - A thread on the Mac runs one small Codex write job through the bridge
-  once this merges, and reads its commit and `privacy-check.txt`.
+  once this merges, and reads its commit and `privacy-check.txt`. Owner:
+  a thread on the Mac, after the merge.
 - The bridge stops with a Python error, writing no `done`, when agy's
   output is not UTF-8 text (found while testing the put-back; the guard's
-  code and hook are still put back). A later bridge pull request reads it
-  with errors replaced.
+  code and hook are still put back). Owner: the thread that makes the
+  next bridge pull request, which reads it with errors replaced, after
+  adding a test of an unreadable output that still pins the put-back's
+  `finally`.
 - A Codex read-only job and a `codex-review` job have the gap the agy fix
   closed: they note no stops, so a SIGTERM or SIGHUP between the end of
   `run()` and `finish()` ends the bridge with no `done`. Nothing is
   staged or put back in those jobs, so only the `done` file is lost; a
-  later bridge pull request notes stops there too.
+  later bridge pull request notes stops there too. Owner: the same
+  thread.
 - A stop that lands in the instant between the bridge starting to note
   stops and the agent starting is only noted, so the agent runs its whole
   job and the job is reported as stopped after the agent ended. Nothing
-  is lost; the status is not exact.
+  is lost; the status is not exact. The same holds for a stop that
+  arrives while the summary is written, or just before the branch moves
+  (*The reviews of the fifth push*). Owner: nobody, unless a status that
+  is not exact ever costs something.
 - The bridge's git still obeys the settings for reaching a remote when it
   fetches `main` (*Brought over from pull request #108*, the known
   limit). A later bridge pull request could give its fetch fixed
-  settings; whoever takes the next bridge change decides.
+  settings. Owner: the thread that makes the next bridge pull request,
+  which decides.
+- The bridge refuses to commit, with a reason that does not fit, when a
+  job replaces a tracked file with a folder of files; and it refuses when
+  an agent that can stage has staged a rename (*The reviews of the fifth
+  push*). Owner: the thread that makes the next bridge pull request.
+- Whether reading the filters a moment before git runs stays a known
+  limit (*The reviews of the fifth push*, the security finding). Owner:
+  the owner.

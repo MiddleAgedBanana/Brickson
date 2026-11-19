@@ -81,7 +81,7 @@ as before.
 
 ## Commits
 
-The commits of pull request #99.
+The commits of pull request #99, which merged to `main` as `3f92a8b`.
 
 ## Verified
 
