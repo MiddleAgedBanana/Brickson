@@ -11,6 +11,15 @@
 /// a group. The order is fixed: it never depends on Home's state, the
 /// library or use (invariant 8). The regions are C, A, B and D of "Home's
 /// slot plan", which stand top to bottom as A, C, B, D.
+///
+/// The cases are in that order, and Home declares its regions in it, as it
+/// does the safety row's controls (`safetyRowOrder`): until SwiftUI has
+/// applied the sort priorities below, the accessibility tree lists the
+/// elements in the order they are declared. On CI's simulators the tree
+/// XCTest read stayed that way for seconds after Home appeared (at least
+/// 3.9 in one launch), with nothing touched
+/// (docs/log/2026-11-17-home-order-before-sorting.md). Declared in this
+/// order, Home's controls are in the same order before and after the sort.
 nonisolated enum HomeRegion: CaseIterable, Sendable {
     /// C: Yes, No, Emergency, Get Attention and Again.
     case safety
@@ -62,4 +71,23 @@ nonisolated enum HomeRegion: CaseIterable, Sendable {
     /// leads the row (docs/DECISIONS.md, "Typing on Home").
     static let firstInRegion: Double = 2
     static let secondInRegion: Double = 1
+
+    /// The safety row's controls in the order assistive technologies reach
+    /// them, and the order Home declares them in: Yes, No, Emergency, Get
+    /// Attention, then Again (or Speak, in Again's place), wherever each
+    /// stands. On screen Emergency leads the row on regular widths, and
+    /// Again stands before Get Attention on compact ones.
+    static let safetyRowOrder: [HomeLayout.Slot] = [.yes, .no, .emergency, .getAttention, .again]
+
+    /// The sort priority of a control in the safety row. Sorted by it,
+    /// then by where they stand, the controls come in `safetyRowOrder` in
+    /// every layout (`HomeRegionTests`).
+    static func sortPriority(inSafetyRow slot: HomeLayout.Slot) -> Double {
+        switch slot {
+        case .yes: firstInRegion
+        case .no: secondInRegion
+        case .again: lastInRegion
+        default: 0
+        }
+    }
 }

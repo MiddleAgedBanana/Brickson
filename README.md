@@ -134,6 +134,7 @@ adding, removing or renaming files. Do not edit the generated project.
 scripts/test.sh          # Build and run unit tests
 scripts/test.sh ui       # Run simulator UI tests
 python3 scripts/test-site.py  # Check the static website
+python3 scripts/test-forbidden-code.py  # Check the code for what AGENTS.md forbids
 python3 scripts/privacy-check.py --outgoing  # Look for personal details before a push
 ```
 
@@ -171,8 +172,17 @@ wallpaper extensions, which iOS otherwise starts a few minutes after the
 simulator boots and which slowed GitHub's machines until tests failed.
 
 GitHub Actions runs unit and UI tests for pull requests and pushes to
-`main`, with the iPad's and the iPhone's UI tests on two machines at the
-same time. Passing tests are required before merging. Physical-device checks
+`main`. The UI tests run in three parts on the iPad and three on the
+iPhone, six jobs that run at the same time as machines are free (GitHub
+runs at most five Mac jobs at once, so some wait for one);
+`scripts/ui-test-parts.py` says
+which tests each part runs, and every test runs in one part. To run one
+part as CI does:
+
+```sh
+UI_TEST_PART=2 SIMULATOR_FAMILY=ipad scripts/test.sh ui
+```
+ Passing tests are required before merging. Physical-device checks
 are still necessary for audio, dwell, Eye Tracking and other access methods.
 
 ## Repository structure
@@ -182,6 +192,7 @@ are still necessary for audio, dwell, Eye Tracking and other access methods.
 | `Brickson/` | SwiftUI app, speech services, phrase library and resources |
 | `BricksonTests/` | Unit tests for core logic and safety rules |
 | `BricksonUITests/` | Simulator UI and accessibility tests |
+| `BricksonProbe/` | A test app for the hands-on experiments, run with its own **BricksonProbe** scheme; never part of Brickson |
 | `project.yml` | XcodeGen project configuration |
 | `scripts/` | App test runner and static website checks |
 | `site/` | GitHub Pages website and privacy policy |
@@ -241,6 +252,7 @@ date, and accessibility page changes an updated "Last updated" date.
 - [How the project is run, stage by stage](docs/SDLC.md)
 - [Design and engineering decisions](docs/DECISIONS.md)
 - [Accessibility features and APIs, by ALS stage](docs/ACCESSIBILITY.md)
+- [Hands-on experiments: the run sheet](docs/EXPERIMENTS.md)
 - [Lessons from the reference app](docs/LESSONS.md)
 - [Implementation and porting sequence](docs/PORTING.md)
 - [Research behind the roadmap](docs/recon/README.md)

@@ -22,8 +22,15 @@ with Stop's well at their leading top and Settings at their trailing
 end, and tiles from a neutral starter set, every frame from the layout
 engine, from the space the window gives it (docs/DECISIONS.md, "The
 layout engine", *Home on the engine*, and "Get Attention and Stop on
-Home"). Its sizes follow Family Setup's answer to how the screen is
-reached, switched on when the owner chose the largest sizes that fit
+Home"). Its gaps, margins and insets, and Settings', are steps of one
+spacing scale but for two named exceptions, the 15-point gap of Eye
+Tracking and the late stage and a dimmed Settings row's 14-point inset
+(`Spacing`; docs/DECISIONS.md, "One spacing scale"); the gaps between
+the tiles and between the safety row's controls measure equal on the
+engine's frames in every profile (`EqualGapsTests`) and in the running
+app on CI's iPad and iPhone at the default and largest text sizes
+(`HomeLayoutTests`). Its sizes follow Family Setup's answer to how the
+screen is reached, switched on when the owner chose the largest sizes that fit
 (2026-10-30; docs/DECISIONS.md, "Sizes that follow how the screen is
 reached", *Switched on by the owner*): touch's for touch, Voice
 Control and someone helping, larger ones for Switch Control, Head
@@ -486,6 +493,21 @@ release in docs/ROADMAP.md when no thread has it yet.
   where no complete row fits; it changes no code or release boundary.
   *(R0 item 3, before App Review: docs/ROADMAP.md, *The quality bar*,
   Q3; then the owner)*
+- Three pairs of nearly equal spacing values were kept as they were when
+  the app moved onto its spacing scale, since changing them changes what
+  people see: a dimmed Settings row's words 14 points in beside Settings'
+  16-point gutter; Eye Tracking's and the late stage's 15-point gap
+  between controls beside the 16-point step; and Home's message field with 6 points around its
+  words against the Library editor's outlined field with 12
+  (docs/DECISIONS.md, "One spacing scale"). *(the design of the app's
+  look)*
+- Nothing yet flags a spacing number written into a view instead of a
+  step of the scale: the check belongs beside the look rules and known
+  exceptions that pull request #114 adds to the forbidden-code check, so
+  it waits for that to merge (docs/DECISIONS.md, "One spacing scale").
+  The rendered equal-gaps check measures touch's sizes only, as the other
+  UI tests ask for them; the engine's gaps are checked in every profile.
+  *(the first pull request on the forbidden-code check after #114)*
 - The slot plan has no answer yet for more than four everyday categories
   (docs/DECISIONS.md, "Home's slot plan", *Open*), so editing and import
   refuse a fifth (docs/DECISIONS.md, "Three or four everyday
@@ -678,14 +700,69 @@ release in docs/ROADMAP.md when no thread has it yet.
   check on a device (docs/DECISIONS.md, "Get Attention"). *(owner, with a
   device build)*
 - In dark mode, iPad multitasking can lift a window's background from
-  black to the elevated gray. Against `#1C1C1E` (a commonly reported
-  value, not read from Apple) the accent, control and Emergency fills
+  black to the elevated gray. Against `#1C1C1E` (UIKit's value, as CI
+  read it on 2026-11-15) the accent, control and Emergency fills
   come to 2.84 to 2.96:1, under invariant 6's 3:1. Since 2026-11-02
   every Home button draws a white border in dark mode, and `PaletteTests`
   measures it against the lifted screen (4.5:1 or better), so no button's
-  fill meets that screen. The message field's 2pt border is still the
-  control fill there (2.84:1 against `#1C1C1E`); `PaletteTests` does not
-  measure it. *(the next accessibility thread)*
+  fill meets that screen. Two things there still meet it with no border,
+  and since 2026-11-15 `PaletteTests.everyFillKeepsItsContrastBudget`
+  measures both, as named known issues, with and without Increase
+  Contrast (where the lifted gray is lighter still, `#242426` as CI read
+  it, so the ratios fall to 2.59 to 2.70:1): the typing fields'
+  2pt edge, the control fill (2.84:1 against `#1C1C1E`), on Home's message
+  field and the Library's text fields; and the system's bordered prominent
+  buttons tinted with the accent or control fill (2.96 and 2.84:1), on
+  Settings' rows, Voice Settings' speeds and setup's choices. A rule-backed
+  fix that needs no new colour exists: draw the primary-ink border Home's
+  controls draw in dark mode (`HomeButtonLook`) on those too, and a
+  primary-ink field edge in dark mode. It changes how they look, so it
+  waits for the owner's design of the app's look, which chooses dark
+  mode's values and may solve it with brighter dark fills instead. The
+  test reads the lifted gray from UIKit; the measured ratios are in CI's
+  unit result bundle (the `unit-test-results` artifact's
+  `ExpectedFailures`), not its printed log, which leaves out tests that
+  record known issues. These are breaches of invariant 6, not accepted exceptions:
+  the owner decides whether they wait for the design or get the border
+  now.
+  *(the owner's design of the app's look; docs/DECISIONS.md, "Colour
+  tokens in four appearances")*
+- Every colour token has four slots (light, dark, and each with Increase
+  Contrast) since 2026-11-15, each holding the one value the app always
+  had, so nothing looks different (docs/DECISIONS.md, "Colour tokens in
+  four appearances"). What the measurements leave for the owner's design
+  of the app's look, which chooses new values, each a named known issue in
+  `PaletteTests` that fails loudly when its value is fixed:
+  - **Fills that look alike** (`theFillsTellApartInEveryVision`, CIEDE2000
+    under 15, in all four appearances): Emergency `#C8161E` and Get
+    Attention `#B45309` are 2.7 apart for deuteranopia, 9.9 for
+    protanopia and 9.1 for tritanopia, close to one colour; the control
+    fill `#5A6474` and Stop `#0F766E` are 3.7, 9.7 and 14.8 apart for the
+    same three; the accent `#0A60D6` and the control fill 13.9, and the
+    accent and Stop 10.9, for tritanopia. Words, icons and places still
+    tell each of them apart, so nothing depends on colour alone.
+  - **Edges on the lifted dark screen**: the item above.
+  - **Increase Contrast adds nothing yet.** Each Increase Contrast slot
+    repeats its default value, which `increasedContrastNeverLowersContrast`
+    allows; Apple asks for "an increased contrast option for each variant
+    that provides a significantly higher amount of visual differentiation"
+    (Human Interface Guidelines, Color).
+  - **Dark mode reuses light's values.** Apple's own dark colours are
+    lighter than its light ones; Brickson's are the same, which is why
+    white words leave the fills near 3:1 on dark screens: with white
+    words at 4.5:1 on a fill, the fill can stand at most 3.78:1 from the
+    lifted gray and 4.67:1 from black, the "contrast budget".
+  *(the owner's design of the app's look)*
+- Home's controls and message field, Settings' cards and the Library
+  editor's field draw a fixed 12-point corner, whatever the window
+  around them, where Apple's current design nests corners concentrically
+  (Settings' rows keep the system button's own shape). The concentric shapes and their rule exist since
+  2026-11-17 (docs/DECISIONS.md, "Concentric corners"), tested in numbers
+  and on rendered pixels, but no screen uses them: which control takes
+  which kind of corner is the look's. The change that adopts them checks
+  that every label stays clear of a larger curve and that each target
+  floor holds at a rounder corner.
+  *(the owner's design of the app's look)*
 - iPad windows the person can resize have two gaps besides being
   untested (*Verification*). No scene has a minimum window size, though
   docs/LESSONS.md, "Windows need a minimum size", asks for one derived
@@ -790,14 +867,31 @@ release in docs/ROADMAP.md when no thread has it yet.
   27.2's release candidate, so `scripts/select-xcode.py` skipped it and
   took 27.1 with iOS 27.0. Nothing is pinned, on purpose
   (docs/DECISIONS.md, "Build with Apple's current Xcode"), and nothing
-  needs changing: it ends when GitHub finishes the rollout. On the newer
-  image `HomeAccessibilityOrderTests.testQuickControlsComeFirstInEveryStateAtDefaultText`
-  failed once on the iPhone, just opened, reading Phrases and Type before
-  Yes and No. It has passed on the Mac's iOS 27.2 each time, and on
-  PR #82's last commit, with all three jobs on the newer image. If it
-  fails again on that image, it is intermittent, and pull requests will
-  meet it once every machine has the image. *(the next thread whose CI
-  shows it)*
+  needs changing: it ends when GitHub finishes the rollout.
+- `HomeAccessibilityOrderTests` failed now and then on CI, always in its
+  first state, "just opened", on the iPhone and the iPad, at both text
+  sizes, reading Home in screen order (Phrases and Type first). The
+  cause, found 2026-11-17 in the app's own log in CI's result bundles:
+  until SwiftUI had applied `accessibilitySortPriority`, the tree XCTest
+  read listed a container's elements in the order they are declared, and
+  Home declared its regions and the safety row's controls top to bottom.
+  On one run (#125's, 44135506925) the first tree read was in that order
+  in 9 of 39 iPhone launches and 2 of 39 iPad ones, for 0.35 s to at
+  least 3.9 s on a drawn, still Home; only the order test checks it. Home
+  now declares them in the order they are reached (`HomeRegion.allCases`,
+  `HomeRegion.safetyRowOrder`), so the controls' order is the same before
+  and after the sort, with every control's, region's and text's frame
+  unchanged on the iPhone 17 and iPad Pro 13-inch simulators in portrait
+  and light (docs/DECISIONS.md, "Home's scan order and names";
+  [`log/2026-11-17-home-order-before-sorting.md`](log/2026-11-17-home-order-before-sorting.md)).
+  Not known: whether a person's VoiceOver or Switch Control ever met the
+  old order on a device; the window was seen only on CI's simulators. The
+  test still reads again after a wrong first read and says what it saw,
+  so a failure of another kind would show. No unit test notices if
+  `HomeView` goes back to declaring them in screen order: only this
+  test, when SwiftUI sorts late, and the log's script on CI's result
+  bundles. *(closed 2026-11-17; the next thread whose CI shows it reopens
+  it)*
 - `SettingsTests.testAnIdleSettingsReturnsToItsFirstScreenAndStaysOpen`
   has failed once each on 2026-10-22, 2026-11-08 and 2026-11-12, on
   branches that did not touch it, and passed on each re-run: Family
@@ -1089,6 +1183,27 @@ release in docs/ROADMAP.md when no thread has it yet.
   and Shortcuts)*
 - The bundle identifier contains the owner's first name and is permanent
   after the first upload. *(owner)*
+- The check for code the app must never contain holds only the app's own
+  code to the frameworks table (docs/DECISIONS.md, "Apple's current
+  frameworks first"). Holding the test targets to it waits on two things
+  found while building the check. They predate it and are **not**
+  accepted gaps: a review still flags both. The UI tests' row, "UIKit
+  types in UI tests", does not name `TypingOnHomeTests`, which reads the
+  device idiom for a failure message, and `HomeRestBoardTests` imports
+  UIKit and uses none of it. Adding a file to the row is an exception, so
+  the owner decides between that and changing the test
+  ([record](log/2026-11-13-forbidden-code-check.md), *Follow-ups*).
+  *(owner)*
+- Two places in Settings break a guard of Apple's look on purpose, each a
+  named known exception in `scripts/forbidden-code.py`
+  (docs/DECISIONS.md, "Guards for Apple's look"), kept as inputs to the
+  new design because changing either changes what a person sees.
+  `SettingsRowButtonStyle` is a `PrimitiveButtonStyle`: only one can wrap
+  the system's bordered prominent style, which it does to redraw the
+  dimmed look at 4.5:1; the system's style still decides when the row
+  fires. `SettingsPairLabel` draws the icons above Hear and Use at a fixed
+  20 points, so they do not grow with the person's text size.
+  *(the new design)*
 
 ## Next steps, in order
 
@@ -1214,7 +1329,14 @@ work is the owner's first two sessions there, for which a thread makes the
 look-target sheet and, when the owner writes "go" with a device on the
 cable, runs A1 over Remote Control; its record lists what else it
 leaves ([`log/2026-11-04-device-procedures.md`](log/2026-11-04-device-procedures.md),
-*Follow-ups*). R0 in [docs/ROADMAP.md](ROADMAP.md), in order; the owner's
+*Follow-ups*). The hands-on experiments that the research of
+2026-11-14 asked for have one ordered run sheet,
+[docs/EXPERIMENTS.md](EXPERIMENTS.md), and a probe app to run them,
+`BricksonProbe/`, which never ships (docs/DECISIONS.md, "A probe app for
+the experiments, kept out of Brickson"): a Mac session builds the probe
+and runs the simulator group first (its *What the Mac session does
+next*); its device group starts with A-1 and needs the Team ID. R0 in
+[docs/ROADMAP.md](ROADMAP.md), in order; the owner's
 long-term vision, the direction behind it, is its *Where this goes*.
 The next pull requests, in order, with which may run side by side and
 which change Home, are its
@@ -1437,9 +1559,18 @@ settings, date) and summarise it here.
 - The `main` ruleset matched docs/DECISIONS.md on 2026-10-15 (GitHub's
   API); its required checks are "Unit tests" and "UI tests".
   The unit job allows 60 minutes. The UI job allowed 120 for both
-  device families and took about 105; since 2026-11-03 each family has
-  a job of its own with 90 minutes, and "UI tests" is a job that passes
-  only when both passed (docs/DECISIONS.md, "Tests"). On 2026-11-12
+  device families and took about 105; from 2026-11-03 each family had
+  a job of its own with 90 minutes, and on 2026-11-16 those jobs ran
+  past 90 minutes. Since 2026-11-16 the UI tests run in three parts per
+  family (`scripts/ui-test-parts.py`), six jobs of 90 minutes each at
+  the same time, and "UI tests" is a job that passes only when all six
+  passed (docs/DECISIONS.md, "Tests";
+  [`log/2026-11-16-ui-test-parts.md`](log/2026-11-16-ui-test-parts.md),
+  which has every test's time and the tests a unit test might replace).
+  Each result bundle and record now names its part
+  (`ui-<family>-part<n>.xcresult`, `simulator-load-<family>-part<n>.txt`).
+  A simulator that has already shut down when the run ends counts as
+  cleaned up. On 2026-11-12
   the iPad job took 87 of its 90 minutes (pull request #103: about five
   minutes of new check-in tests, and one Home typing test whose taps
   each waited 120 seconds for the app to go idle), and the same day it
@@ -1473,7 +1604,8 @@ settings, date) and summarise it here.
   runs in a row stalled because iOS's lock-screen wallpaper prewarm
   starved the simulator; since then
   `scripts/test.sh` pauses those extensions on a simulator it started
-  and writes `simulator-load-<family>.txt` beside each result bundle:
+  and writes `simulator-load-<family>.txt` (on CI,
+  `simulator-load-<family>-part<n>.txt`) beside each result bundle:
   read it first if a stall comes back
   ([`log/2026-11-03-ui-test-stall.md`](log/2026-11-03-ui-test-stall.md)).
   Since 2026-11-04 the watcher reads processes with the Mac's own calls,
@@ -1637,9 +1769,19 @@ settings, date) and summarise it here.
   conventions and hard limits and no history; the whole file fits inside
   Codex's 32 KiB. Keep it that way: short, concrete rules, the reasons in
   docs/DECISIONS.md. Record: [the change](log/2026-11-12-agents-md-trim.md).
-  `scripts/test.sh` runs the guard's tests, the docs cross-reference
-  check (`scripts/test-docs.py`) and the privacy check's tests
-  (`scripts/test-privacy.py`) before the unit tests.
+  `scripts/test.sh` runs the docs cross-reference check
+  (`scripts/test-docs.py`), the guard's tests, the privacy check's tests
+  (`scripts/test-privacy.py`), the agent bridge's tests and the check for
+  code the app must never contain (`scripts/test-forbidden-code.py`)
+  before the unit tests. That check fails the "Unit tests" job when the
+  code breaks a rule of AGENTS.md a script can decide: network code, a
+  device check, a package, a workflow given a write token and the rest in
+  docs/DECISIONS.md, "A check for code the app must never contain"
+  ([record](log/2026-11-13-forbidden-code-check.md)), and the rules of
+  Apple's look a script can decide in the app that ships: glass, a
+  `PrimitiveButtonStyle`, a toggle, a system alert, a picture that is not
+  an SF Symbol and the rest in "Guards for Apple's look"
+  ([record](log/2026-11-15-guards-for-apples-look.md)).
   New issues start from the "Something went wrong" form; blank issues are
   off. Record: [`docs/log/2026-10-21-agent-guardrails.md`](log/2026-10-21-agent-guardrails.md).
   The review fixes cover configured and wildcard pushes, alternate Git

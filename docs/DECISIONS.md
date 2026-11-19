@@ -170,6 +170,102 @@ containers, "instead of building device-specific interfaces" (AGENTS.md,
   entry. Before: AGENTS.md said floors were "computed in physical size per
   device".
 
+## One spacing scale
+
+*Default, adopted 2026-11-16 (pull request #117): an objective call left
+to the project, reversible. Nothing a person sees changed.*
+
+The room between views, and the margins and insets around them, come
+from one scale, `Spacing` (`Brickson/Layout/Spacing.swift`), instead of
+numbers written into each view. A step has one name everywhere, so the
+same kind of room is the same number on every screen, and the app's
+coming look can change a step in one place. Gaps that should be equal
+and are not are easy to miss by eye, so a test now measures them
+(below).
+
+- **The steps** are the values the app already drew, on a two-point grid:
+  `xxxSmall` 2, `xxSmall` 4, `xSmall` 6, `small` 8, `medium` 12, `large`
+  16 and `xLarge` 24 points. Every number that moved onto the scale moved
+  onto the step of its own value, so no frame changed: Home's margins (16
+  and 8), its labels' inset (4 and 6), the message's status gap (4) and
+  its field's inset (6); touch's gap between controls (8), and the switch
+  and head gap (12); Settings' gutter and gap between rows (16), the gap
+  beside its first row (16) and under its safety bar (8); and the stacks
+  and paddings of Settings, Voice Settings, the Library's editor field,
+  the privacy policy, setup and the keyboard probe screen.
+- **Made from steps.** Each profile's smallest gap between regions is its
+  gap between controls plus `xxxSmall`, and its gap between regions where
+  there is room plus `xxSmall` (10 and 12 for touch, as before).
+  `HomeLayout.controlSpacing`, `regionSpacing` and `minimumRegionSpacing`
+  are touch's, read from the profile instead of written again.
+- **Off the scale on purpose.** Eye Tracking's and the late stage's gap
+  between controls, 15 points, is the reference app's 12-point gaze gap
+  held at the densest supported screen like the profiles' floors
+  (*Layouts from the space available*), so it changes only with them.
+  A dimmed Settings row draws its words 14 points in
+  (`SettingsRowButtonStyle.systemWordsInset`), the system button's own
+  inset measured on CI, so the words do not move as the row dims.
+- **Not spacing, so not steps:** the distances the dwell checks keep
+  between a look and a control (`SettingsRowPlace.margin`,
+  `HomeLayout.wellClearance`, the half point counted as a tie), measuring
+  slack (`WordFit.widthSlack`), the widths and insets of borders and
+  rings, corner radii, sizes and floors; `spacing: 0` in stacks whose
+  frames the layout engine sets; and `.padding()` with no value, which is
+  the system's own.
+- **Nearly equal values, kept for the look to decide** (docs/HANDOFF.md,
+  *Known gaps*): 14 beside 16 (the dimmed row's words and Settings'
+  gutter), 15 beside 16 (Eye Tracking's and the late stage's gap and the
+  large step), and Home's message field at 6 against the Library
+  editor's outlined field at 12. Changing any of them changes what
+  people see.
+- **Text size.** A step stays the same at every text size: the words and
+  the controls that hold them grow (the layout engine measures one line
+  of each label at the person's size), while a gap is room for a finger,
+  a pointer or a look between two targets, which does not depend on the
+  words. Growing gaps with `@ScaledMetric` would also take room from the
+  targets at the largest sizes, where Home needs it most. The one
+  spacing that grows with the words is a label's gap between its icon
+  and its words, a share of the font (`LabelFont.iconSpacing(at:)`).
+  Nothing in the scale names a device, a window or an orientation.
+
+**Equal gaps measure equal.** Where the layout promises one gap, between
+every two phrase tiles across and down and between the safety row's
+controls, one rule judges it: `EqualGaps` (`BricksonUITests/EqualGaps.swift`,
+compiled into the unit tests too) groups frames into rows, measures every
+gap, and fails when two differ by more than half a point, or when there
+is nothing to measure or controls touch. Half a point is the tie the
+chain checks use and one pixel on a 2x screen: SwiftUI rounds each edge
+to a pixel, so equal gaps can come out one pixel apart, while an uneven
+gap a person can see differs by a point or more.
+
+- `EqualGapsTests` (Swift Testing) applies it to frames made by hand,
+  even and uneven, and to the layout engine's frames in
+  every window `HomeLayoutEngineTests` sweeps and in every profile in a
+  phone's and an iPad's windows, at the default and largest text sizes;
+  each gap must also be the profile's gap between controls.
+- `HomeLayoutTests` applies it to the running app on CI's iPad and iPhone
+  simulators, at the default and the largest accessibility text size, in
+  portrait and, on the iPad, landscape: the eight tiles of the starter
+  library's largest category and the five safety-row controls, read from
+  the accessibility tree. It runs inside the test that already launches
+  Home in each of those, so it adds no launch. It is an XCTest UI test
+  because only XCTest drives an app (*Apple's current frameworks first*,
+  the XCTest and XCUIAutomation row). `EqualGaps` itself uses no UIKit
+  type, so the unit tests run the same rule.
+- What they cannot show: the rendered gaps of profiles other than
+  touch's, which the UI tests ask for (the engine's are checked);
+  windows with a reserved region, where a fold or camera widens one gap
+  on purpose (`HomeReservedRegionTests`); the gaps of Settings and setup,
+  which only the steps hold; and the drawn fill, since an accessibility
+  frame is the button's, which Home's fills fill.
+- A check that flags a new spacing number written into a view belongs
+  with the look rules the forbidden-code check is gaining in pull request
+  #114, beside its list of known exceptions; it is added once that merges
+  (docs/HANDOFF.md, *Known gaps*).
+
+Before: each view wrote its own numbers, with the same values repeated
+in about thirty-five places.
+
 ## App identity
 
 *2026-10-10. Name: owner. Other values: default.*
@@ -530,16 +626,19 @@ Mac, so the pull request that causes one fixes it before it merges.
   a fix people need now, and fixing the warning is not quick, that pull
   request may set `SWIFT_TREAT_WARNINGS_AS_ERRORS` to `NO` in the
   `settings` of the one target the warning is in (`project.yml`), and adds
-  a line here naming the warning, why it waits and who turns the setting
-  back on. Never more targets than the warning is in, and never longer
-  than the fix takes. The narrower route, keeping only the warning's
+  a line here naming the warning, the target in backticks (the check in
+  *A check for code the app must never contain* reads it), why it waits
+  and who turns the setting back on. Never more targets than the warning
+  is in, and never longer than the fix takes. The narrower route, keeping only the warning's
   diagnostic group a warning with `SWIFT_WARNINGS_AS_WARNINGS_GROUPS`
   ("Diagnostic Groups Remain Warnings"), does nothing while warnings are
   errors on Xcode 27.1: Xcode passes the group to the compiler before
   `-warnings-as-errors`, and the later flag wins. A deliberate unused
   value in a group named there still failed CI as an error
   ([`log/2026-10-23-warnings-as-errors.md`](log/2026-10-23-warnings-as-errors.md),
-  *Verified*). Use that route only after a CI run shows it working.
+  *Verified*). Use that route only after a CI run shows it working, and
+  only in the target named here, like the setting above (the check holds
+  `SWIFT_WARNINGS_AS_WARNINGS_GROUPS` and `-Wwarning` to the same rule).
 - **Release builds.** CI builds the Debug configuration only. Code under
   `#if DEBUG` (launch options, the keyboard probe) compiles differently
   in Release, so a warning only a Release build sees would first stop an
@@ -560,7 +659,9 @@ Reversible if the owner objects.*
 
 iOS and iPadOS 26.0 or later, on iPhone and iPad. Mac ("Designed for
 iPad"), Mac Catalyst and Vision Pro are switched off until someone decides
-to support them.
+to support them. Every deployment target in `project.yml` matches the
+first version written "or later" in this section (*A check for code the
+app must never contain*).
 
 The number follows from two rules. Check them again when Apple's next
 major release drops devices, and move the number only as they allow.
@@ -655,7 +756,10 @@ would bring it in; a file that uses none does not import it. SwiftUI's
 bridges to UIKit (`UIHostingController`, `UIViewControllerRepresentable`)
 and its modifiers typed with UIKit values (`keyboardType`) are SwiftUI's
 own API and need no UIKit import. The table below, not a search for
-imports, is the complete record.
+imports, is the complete record. `scripts/forbidden-code.py` reads it: an
+app file that uses one of these and is not named, in backticks, in the
+Where cell of a row for it fails the unit tests (*A check for code the
+app must never contain*).
 
 **Kept, and why.** Each row is a legacy framework or API that no current
 one replaces with no loss.
@@ -678,6 +782,7 @@ one replaces with no loss.
 | `UIHostingController.sizeThatFits(in:)` | `StarterLabelFitTests` | The exact size SwiftUI gives a label, to within half a point. SwiftUI's `ImageRenderer` draws pixels, and Apple does not say its size is unrounded. | — |
 | A `UIHostingController` shown in a `UIWindow` | `SwiftDataBehaviourTests` | Checks that SwiftUI's `modelContainer` leaves the library's autosave off, which happens only for a view on screen; a unit test has no SwiftUI way to put a view in a window. | — |
 | `INAlternativeAppNames`, SiriKit's Info.plist key | `project.yml` | App Intents has no way to give the app other names. Apple's App Shortcuts sessions say `.applicationName` includes these names; SiriKit's article says they need an Intents extension (*App identity*). | R2's Siri device check |
+| In the experiments' probe app only: `UIApplication.isIdleTimerDisabled`, `UIAccessibility.post(notification:argument:)` with `.pauseAssistiveTechnology` and `.resumeAssistiveTechnology`, and `UIAccessibility`'s status values | `ProbeSystem` | The probe measures them (*A probe app for the experiments, kept out of Brickson*). SwiftUI has no way to keep the screen awake or to pause VoiceOver or Switch Control, and none to read whether AssistiveTouch, Guided Access or Shake to Undo is on. Where SwiftUI has a value too (VoiceOver, Switch Control, Reduce Motion), the probe reads UIKit's beside it to compare the two (A-27). | With the probe |
 
 Siri and Shortcuts (R2) are built with App Intents and App Shortcuts. A
 SiriKit Intents extension is added only if R2's device check shows the
@@ -2642,7 +2747,16 @@ R0 item 3's accessibility work (docs/ACCESSIBILITY.md, sections 1 and 3;
   *2026-10-23:* Again is in C, reached after Emergency, and Settings in
   B, after the categories (*Settings on Home*). Get Attention is in C,
   after Emergency and before Again; Stop, while it shows, is reached
-  first in B (*Get Attention and Stop on Home*).
+  first in B (*Get Attention and Stop on Home*). *2026-11-17:* the
+  priorities alone were not enough. Until SwiftUI had applied them, the
+  accessibility tree XCTest read on CI's simulators listed elements in the
+  order they are declared, which matched Home's screen order, Phrases
+  and Type before Yes, No and Emergency, for seconds at a time on a still
+  Home (at least 3.9 in one launch). So Home also declares its
+  regions, and the safety row its controls, in the order they are
+  reached (`HomeRegion.allCases`, `HomeRegion.safetyRowOrder`), each
+  placed at the engine's frame; nothing moves
+  ([`log/2026-11-17-home-order-before-sorting.md`](log/2026-11-17-home-order-before-sorting.md)).
 - **Each region is an accessibility container** (`.contain`), so its
   controls are reached together and Switch Control can offer it as a
   group when Group Items is on. The regions carry identifiers for tests
@@ -5324,6 +5438,262 @@ Glass*, has the measurements and the review.
 
 Before: `Palette` had the three fills and no rule about glass.
 
+Since 2026-11-15 each role's colour is a token with four slots, each
+holding the value above (*Colour tokens in four appearances*).
+
+## Colour tokens in four appearances
+
+*2026-11-15. Default, reversible: an engineering choice the owner leaves
+to the project. No colour changed.*
+
+Every colour set in the asset catalog has the four slots Apple's colour
+sets offer: any (light), dark, high contrast, and dark with high
+contrast. Apple asks this of every custom colour: "If you define a custom
+color, make sure to supply light and dark variants, and an increased
+contrast option for each variant that provides a significantly higher
+amount of visual differentiation" (Human Interface Guidelines, Color,
+read 2026-11-15; the same words in *Adopting Liquid Glass*), and its
+dark-mode article names the asset catalog as the place ("specify
+different color values for both light and dark appearances. You can
+also specify high-contrast versions of your colors", *Supporting Dark
+Mode in your interface*, read 2026-11-15).
+
+**Each slot holds the value the role always had**, so the app looks
+exactly as before and no screenshot changes. Choosing a value for each
+slot is the owner's design of the app's look; until then the slots are
+plumbing that design can fill without touching a view.
+
+**Why the asset catalog, not code.** SwiftUI's `Color("Name")` picks the
+slot from the environment's `colorScheme` and `colorSchemeContrast` with
+no code of Brickson's, and UIKit's trait resolution reads the same
+slots, which is how `PaletteTests` measures Increase Contrast (SwiftUI's
+environment cannot set it: *Apple's current frameworks first*, the
+`UIColor` and `UITraitCollection` row). A colour built in code would
+need UIKit's dynamic provider in the app, a closure the renderer calls
+off the main thread (the crash `OffMainThreadCallbackTests` guards
+against), and a row in that table; and the slots are visible and
+editable in Xcode's colour-set editor.
+
+**The words on fills are a token too.** `FillLabel` (`Palette.fillLabel`),
+white in all four slots, is what Home's controls, Settings' rows and the
+Library's chosen-picture check draw on a fill, where they drew
+`Color.white`. Each label pair has two sides; with only the fill a token,
+an appearance could not carry its own words (dark words on a luminous
+fill, which Apple's own dark and Increase Contrast dark system colours
+favour: by their published values they carry black words far better than
+white) without touching every view.
+
+**What `PaletteTests` measures**, ported from the stage 5 colour search's
+checked arithmetic (`BricksonTests/ColourArithmetic.swift`, cross-checked
+against that search's Python and Sharma, Wu and Dalal's published
+CIEDE2000 pairs in `theArithmeticMatchesTheColourSearch`), except that
+contrast keeps WCAG's own luminance coefficients (0.2126, 0.7152,
+0.0722), as `PaletteTests` always did: the search's longer CIE Y
+coefficients move a ratio in its fourth decimal, enough to pass `#B60015`
+on black at 3.0002:1 where WCAG gives 2.9998:1
+(`theContrastFormulaMatchesWCAG` pins it):
+
+- **Every slot's value**, from a table of tokens, and every colour set in
+  the catalog's source has exactly the four slots, in sRGB, and is in the
+  table (`everyTokenHasFourSlots` reads the catalog's source; the
+  simulator reaches the files of the machine that built the tests).
+- **The contrast budget** (`everyFillKeepsItsContrastBudget`): wherever a
+  fill is drawn, in each appearance, its words at 4.5:1 and what meets
+  the screen at its edge at 3:1, on the base screen and on the lifted one
+  iPad multitasking can give a window. What meets the screen is the fill,
+  or a border drawn over its edge: on Home it is whatever
+  `HomeButtonLook` draws there (the primary-ink border in dark mode); on
+  the system's bordered prominent buttons tinted with a fill (Settings'
+  rows, Voice Settings' speeds, setup's choices) and the typing fields'
+  edge it is the fill. The two pull against each other on dark screens:
+  white words at 4.5:1 leave a fill at most 3.78:1 from the lifted gray.
+- **Increase Contrast never lowers contrast**
+  (`increasedContrastNeverLowersContrast`): its words and its fill
+  against the screen measure at least what they do without it. Measured
+  on the base screen, which Increase Contrast leaves white or black; the
+  lifted gray is itself lighter under Increase Contrast, an Apple value
+  no token can change, and the budget holds 3:1 there.
+- **Fills that mean different things never look alike**
+  (`theFillsTellApartInEveryVision`): every two of the five fills at
+  least 15 apart in CIEDE2000, with typical colour vision and as
+  simulated for protanopia, deuteranopia and tritanopia (Machado,
+  Oliveira and Fernandes, 2009, at full severity), in each appearance.
+  Apple: "Avoid using the same color to mean different things" (Human
+  Interface Guidelines, Color). 15 is the colour search's step for
+  colours that must not be taken for each other (its rules R3 and R4,
+  from the field's thresholds: 10 "clearly different at a glance", 15
+  for colour-blind checks). Greyscale is not asked: with words at 4.5:1
+  the search proved there is no room for these fills to differ in gray,
+  so their words and icons carry it, as Apple asks.
+
+The earlier pins stay: the fill label on every fill, every fill against
+the base screen, every ring ink on every fill, and primary ink on the
+base and lifted screens.
+
+**Today's values miss in two places, and the misses are recorded, not
+fixed.** Each is a strict `withKnownIssue` citing this section, listed
+in `PaletteTests` (`knownEdgeFailures`, `knownLookalikes`) and in
+docs/HANDOFF.md, *Known gaps*, as inputs for the design: the accent and
+control fills on system buttons and the control fill as the typing
+fields' edge, on the lifted dark screen with and without Increase
+Contrast (6); and eight pairs of fills under 15 for one of the three
+colour visions, in all four appearances (32), Emergency and Get
+Attention at 2.7 for deuteranopia the closest. The day a value passes,
+its known issue is not recorded and the test fails, until its line is
+removed. Nothing was changed to pass: a new colour, or a border on
+Settings' buttons, changes how the app looks, which is the owner's call,
+and no test was weakened.
+
+**The six edges are not accepted.** They break invariant 6 on the lifted
+dark screen today, as they did before this change, when nothing measured
+them (the base recorded only the message field's edge). A known issue
+keeps CI green while measuring them; it is not an exception to the
+invariant. The owner decides, by merging this or asking otherwise,
+whether they wait for the design of the app's look or get the border now
+(Codex's review of pull request #113). The 32 look-alike pairs break no
+invariant: 15 is the colour search's target, not a rule here.
+
+**Every fill is its colour set by name, never `Color.accentColor`**
+*(added 2026-11-15, pull request #116; a correctness fix, no colour
+chosen)*. The Simulator run recorded in pull request #115 found the phrase
+tiles, the selected category and Back to Talking drawn `#084DAB` with
+Increase Contrast in light and `#1A7BFF` in dark, although their colour
+set, `AccentColor`, holds `#0A60D6` in all four slots. They were filled
+with `Color.accentColor`, the app's accent, which the system treats as a
+colour for words and symbols: with Increase Contrast on it draws the
+accent darker in light mode and lighter in dark mode, on top of whatever
+the colour set's high-contrast slots hold (they held `#0A60D6` and the
+accent still changed). Under the tiles' white words the lighter blue
+measured 3.95:1, and in light the black pressed ring came to 2.66:1 on
+the darker one: invariant 6 broken on both sides, while every test here
+passed, because they read the catalog through UIKit, not the colour a
+view draws.
+
+- `Palette.phraseFill` is `Color("AccentColor")`, the same colour set
+  loaded by name like every other fill. In that run every fill loaded by
+  name kept its colour set's value under Increase Contrast, so this one
+  should be drawn as the catalog holds it: `#0A60D6` in all four
+  appearances, words 5.74:1 and the pressed ring 3.66:1, as the budget
+  measures. Without Increase Contrast nothing changes; with it, these
+  controls should keep the blue they show without it (in light, a
+  little lighter than the system drew them). Measured on the rendered
+  pixels in the iOS 27.2 Simulator on 2026-11-16: `#0A60D6` with its
+  white words at 5.74:1 in all four appearances, on an iPhone 17 and a
+  13-inch iPad Pro, on every control measured that this fill draws (all
+  but two, named in the log), and the pressed ring at 3.66:1 in light;
+  the same scripts on a build with `Color.accentColor` put back
+  measured `#1A7BFF` and 3.95:1 again
+  ([`log/2026-11-16-tile-contrast-pixels.md`](log/2026-11-16-tile-contrast-pixels.md)).
+  A real screen is still the device check the next point names.
+- `everyFillIsDrawnFromItsColourSet` fails if any of `Palette`'s fills,
+  or its fill label, is made any other way. It checks `Palette`, not the
+  views: a view that drew a colour of its own instead of `Palette`'s
+  would still pass it. SwiftUI's environment cannot set Increase
+  Contrast, so no unit test can resolve the drawn colour there; the
+  test pins the cause. The Simulator's measurement of the rendered
+  pixels, above, confirms the result there; a real device's is still
+  pending (docs/HANDOFF.md, *Checks that need a real device*, its row
+  on buttons under Increase Contrast and Reduce Transparency).
+- Why not new Increase Contrast values instead: the system's change
+  comes after the slot is read, so no slot value fixes a fill drawn with
+  `Color.accentColor`. And in dark mode, with white words and a black
+  screen, the words' ratio and the fill's edge multiply to 21, so a
+  darker slot gains words only by losing edge; `#0A60D6` is the value
+  that lowers neither (`increasedContrastNeverLowersContrast`).
+- The colour set keeps its name and stays the app's global accent
+  (`project.yml`), so system controls that use the accent for their
+  words and symbols still get the system's adjustment, which suits a
+  colour drawn as words.
+
+Before: each colour set had one value for every appearance, and
+`PaletteTests` measured that value in the four appearances against the
+base screen; the words on fills were `Color.white`.
+
+## Concentric corners
+
+*Default, adopted 2026-11-17 (pull request #121): an objective call left
+to the project, reversible. Nothing a person sees changed: no screen uses
+it yet.*
+
+Apple's current design builds rounded shapes from three kinds of corner,
+in its own words: "fixed shapes have a constant corner radius. Capsules
+use a radius that's half the height of the container. And concentric
+shapes calculate their radius by subtracting padding from the parent's"
+(WWDC25, *Get to know the new design system*, read 2026-11-17). Its
+guide to the new design asks apps to keep "a sense of visual continuity
+in your interface by using rounded shapes that are concentric to their
+containers", with SwiftUI's `ConcentricRectangle` and
+`rect(corners:isUniform:)` (*Adopting Liquid Glass*). A concentric
+corner shares its container's centre, as a sheet's corners follow the
+screen's; a grid of tiles that all share one fixed radius, whatever the
+window around them, is the plainest way a screen looks unlike Apple's
+own. Home's controls draw one fixed 12-point corner today
+(`HomeButtonStyle.cornerRadius`). This entry adds the rule and the
+shapes the app's coming look is built from; which kind each control
+takes is that look's to decide, the owner's.
+
+- **The rule, as numbers:** `CornerRule` (`Brickson/Layout/CornerRule.swift`,
+  plain Foundation, no device). Its `Kind` holds the three kinds; a
+  concentric corner's radius is its container's less the room between
+  them, never less than its minimum and never negative; a capsule's is
+  half its shorter side; no corner is rounder than a capsule. The layout
+  engine and the tests can know a corner's radius without drawing it.
+- **The shapes, drawn by SwiftUI:** `CornerRule.Kind.shape`
+  (`Brickson/Home/CornerShapes.swift`) gives a `RoundedRectangle` with
+  the continuous curve for a fixed corner, a `Capsule` for a capsule,
+  and SwiftUI's own `ConcentricRectangle` with
+  `.concentric(minimum:)` for a concentric one, which takes its radius
+  from the nearest container shape: the window's corners, or a view's
+  `concentricContainer(radius:)`, which sets `containerShape(_:)` to a
+  continuous rounded rectangle. Brickson computes no window radius:
+  SwiftUI knows it, and no code names a device.
+- **Always a minimum.** "When the system calculates a zero radius, the
+  corner is square" (`concentric(minimum:)`, Apple's documentation), as
+  it does for a tile deep in a grid, far from any rounded corner.
+  Interactive shapes are never sharp, so Brickson's concentric corners
+  have no form without a minimum. `CornerRule.minimum` is 12 points, the
+  corner Home draws today, so a control that adopts the concentric shape
+  is never sharper than it is now; the look may change it, in one place.
+- **Rings inside a tile.** SwiftUI measures every concentric corner from
+  the nearest container shape, never from the shape around it, and
+  `ConcentricRectangle` cannot itself be a container shape. A ring drawn
+  inside a concentric tile therefore uses `CornerRule.minimum(_:insetBy:)`,
+  the tile's minimum less the ring's inset, and stays concentric with the
+  tile both where the tile follows the container and where it has fallen
+  back to its minimum. Every ring a Home control draws today ends less
+  deep than the minimum, so each keeps a round corner.
+- **Room across and down alike.** The rule is written for a shape set
+  the same distance in from its container across and down, as an even
+  padding sets it. What SwiftUI does when the two differ is not measured
+  yet; the change that first pads a concentric shape unevenly measures
+  it with the test below and adds it to the rule.
+- **Tested both ways.** `CornerRuleTests` (Swift Testing, plain numbers;
+  also run on Linux while this was written) pins the rule: the
+  subtraction, the minimum, a ring's concentricity across a sweep of
+  containers, tiles and rings, the capsule, and that no kind is square.
+  `CornerShapesTests` draws each kind with `ImageRenderer` at 2x inside a
+  40-point container and measures the corner SwiftUI drew, as the
+  rounded rectangle of nearby radii, with either curve, that matches its
+  pixels best: a concentric shape 10 points in must measure 30, one 32
+  or 56 points in the minimum, a ring 6 points inside a tile the tile's
+  less 6, a fixed corner its own radius and a capsule half its shorter
+  side, each to half a point. It also pins the minimum to Home's
+  corner.
+- **Not done here, for the change that adopts it:** which controls take
+  which kind (for example capsules for a row of controls, which Apple's
+  guidelines favour for a horizontal row, or tiles concentric with the
+  window), all the owner's look; that a larger corner keeps every label
+  clear of its curve, since a label fits a rectangle (`HomeButtonStyle`
+  keeps its words inside a 12-point curve today); and that a rounder
+  hit shape (`contentShape`) still meets each profile's target floor at
+  its corners. The adopting change measures each of these on CI's
+  simulators before it ships.
+
+Before: one fixed 12-point radius written into Home's button style and
+reused by its message field, the same number written again in Settings'
+card and the Library editor's field, and a capsule drawn round a dimmed
+Settings row. They stay as they are until the look adopts the shapes.
+
 ## Show Borders and the Large Content Viewer on Home
 
 *2026-10-23. Default, adopted 2026-10-23: the owner left these choices to
@@ -5370,7 +5740,7 @@ R0 item 3's accessibility work (docs/ACCESSIBILITY.md, section 6;
   4.5:1 or better (`PaletteTests`) against the lighter screen iPad
   multitasking can give a window, where the accent, control and
   Emergency fills' own edges come to 2.84 to 2.96:1 against `#1C1C1E`,
-  a commonly reported value not read from Apple (docs/HANDOFF.md,
+  UIKit's value as CI read it on 2026-11-15 (docs/HANDOFF.md,
   *Known gaps*). The pressed and selection rings follow it as under Show
   Borders, so in dark mode the pressed ring is 4pt and the selection ring
   black. Light mode with Show Borders off is unchanged. Settings' safety
@@ -5544,6 +5914,167 @@ request merges only when they pass.
   over adding a weekly CI run with animations on, or leaving them on
   and raising the iPad job's time limit (2026-11-13). Record:
   [`log/2026-11-13-ipad-ui-test-stall.md`](log/2026-11-13-ipad-ui-test-stall.md).
+- **2026-11-16, default, reversible:** the UI tests run in three parts
+  per device family, six jobs that run at the same time as GitHub has
+  Macs free, each with 90 minutes; this replaces one job per family
+  (2026-11-03). That morning the iPad's job ran past 90 minutes, on
+  `main` and on pull requests, and the iPhone's took up to 89, so
+  nothing could merge: each job spent 9 to 19 minutes starting the
+  simulator and building, then ran all 81 tests one after another, 48
+  to 70 minutes and more on a slow machine. `scripts/ui-test-parts.py`
+  names the test classes of every part but the last; the last runs
+  every other class, so a new class always runs somewhere and no class
+  can be left out of every part. `scripts/test.sh` runs one part when
+  `UI_TEST_PART` names it and everything without it. The parts are
+  balanced by measured time, about 18 to 28 minutes of tests each on
+  CI; move classes between them when one grows. A part keeps the full
+  run's order where a test depends on it, and the check enforces it
+  (`RUNS_AFTER`): `LibraryTests` runs after `KeyboardProbeTests` in the
+  same part, as it always did. *Corrected 2026-11-17:* the reason first
+  given here, that `KeyboardProbeTests` showing the keyboard first fills
+  its suggestion bar before `LibraryTests` audits New Phrase with the
+  keyboard up, did not hold. On CI that day the bar had its words in
+  `KeyboardProbeTests` and was empty again in `LibraryTests` about two
+  and a half minutes later, and Apple's audit reported its empty
+  buttons. On the Mac, on simulators made new or erased for the check,
+  the keyboard's three suggestion buttons stayed without words, and so
+  without labels, for the whole first showing of the keyboard: 120
+  seconds after typing, and 60 seconds before typing and 20 after, so
+  no wait can fix it. Showing the keyboard again gave the bar its words
+  at once. So `LibraryTests` now waits for the bar's words before that
+  audit and, when the first showing has none, leaves New Phrase and
+  opens it again, then audits once; if the bar is still empty, the test
+  fails saying so (`BricksonUITests/KeyboardSuggestions.swift`). The
+  trade-off: the test no longer audits the empty bar of the keyboard's
+  first showing on a cold simulator. That bar is Apple's keyboard, not
+  Brickson's, and the audit itself is unchanged: no finding is excused
+  or retried. A named exception for the keyboard's suggestion cell was
+  not chosen, because it would let more through the audit. The
+  trade-off is the owner's to accept (AGENTS.md, *Code Review Rules*),
+  by merging the pull request that makes it. The order
+  stays until a change that also edits its check drops it. Record:
+  [`log/2026-11-17-keyboard-suggestion-bar.md`](log/2026-11-17-keyboard-suggestion-bar.md).
+  `scripts/test-runner.py` checks that every UI test class runs in
+  exactly one part, that each family runs every part, and that the six
+  jobs differ only in family and part; "UI tests" passes only when all
+  six passed. Nothing is dropped: every test still runs on both
+  families on every pull request. The cost: each part starts its own
+  simulator and builds the app, so a run uses about a third more Mac
+  time, and GitHub runs at most five Mac jobs at once, so with the unit
+  job two parts wait for a free machine. Running two simulators in one
+  job was not chosen: GitHub's Mac has three processors, and the
+  simulator-load records show one simulator and its tests already
+  keeping them almost fully busy. Revisit when a part's job
+  takes more than about 45 minutes on a normal day (rebalance, or add
+  a part), or when GitHub's Macs get more processors (fewer parts). The
+  same day, a run whose tests all passed failed because its simulator
+  had already shut down when `scripts/test.sh` asked it to: a simulator
+  already shut down now counts as cleaned up, and one still running
+  still fails the run. Record:
+  [`log/2026-11-16-ui-test-parts.md`](log/2026-11-16-ui-test-parts.md).
+
+## Guards for Apple's look
+
+*2026-11-15. Default, under the owner's standing word of 2026-11-15 that
+objective engineering is the threads' to decide; reversible if the owner
+objects ([record](log/2026-11-15-guards-for-apples-look.md)).*
+
+The owner wants Brickson to read as an app Apple made. Some of what
+that takes, from Apple's Human Interface Guidelines and API pages and
+from AGENTS.md, can be decided from the code alone.
+`scripts/forbidden-code.py` checks those rules in the same run as *A
+check for code the app must never contain*, so a review can no longer
+miss such a regression. Each finding names its rule, why it matters to the person using the app, and
+what to do instead. Nothing the app shows or does changed.
+
+- **What it refuses**, in the Swift of the targets that ship: Liquid
+  Glass or a see-through material added by the app (`glassEffect`, the
+  glass button styles, `Material`; invariant 6 and *Solid fills on Home,
+  system glass elsewhere*, whose system bars keep their glass with no
+  code); a `PrimitiveButtonStyle` or a call to its `trigger()`, which
+  decide themselves when a button fires (invariants 1 and 9); a button
+  that repeats while held (invariant 10); a picture that is not an SF
+  Symbol, in code or as a file, the app icon and custom symbols
+  (`.symbolset`, named by a literal) apart; Ultralight, Thin and Light
+  weights; a fixed text size (`.system(size:)` or UIKit's system font
+  with a number, bare or in `CGFloat(…)` or `Double(…)`; a custom font's
+  `fixedSize:`; `UIFont(name:size:)` with a number in a file that never
+  scales a font with `UIFontMetrics`); circular corners and the deprecated
+  `cornerRadius(_:antialiased:)`; an accessibility setting or Bold Text
+  written into the environment, which hides the person's choice; a
+  `ButtonStyle` that never reads `configuration.isPressed` or another
+  value's `isPressed`, in its own code or in a view of its file that it
+  names (another style's press state, or a property of its own called
+  `isPressed`, does not count); `.textCase(.uppercase)`; a context menu, swipe action, swipe to delete, drag to move or drag and
+  drop (invariants 1 and 3); a system alert, confirmation dialog or
+  action sheet (invariants 3, 4 and 10; *Settings is a cover with a fixed
+  safety bar*), since the system places its buttons itself: measured in
+  the iOS 27.2 Simulator, a confirmation dialog opens with its first,
+  destructive item nearest the spot just activated, and on the iPhone
+  directly under it, so a repeated activation by Dwell, Snap to Item or
+  a switch's auto-select meets that item next (docs/EXPERIMENTS.md,
+  SIM-13, measured in pull request #115); a toggle (invariant 10); a view given the button trait,
+  a default accessibility action or "responds to interaction"
+  (invariants 1 and 2); an empty `catch` (invariant 5); the old clocks
+  (`CACurrentMediaTime` and the like; AGENTS.md, *Workflow rules*); a
+  hover effect that lifts. `onTapGesture` and the other gestures were
+  already refused.
+- **Choices made.** Glass is refused in the whole app, not only Home:
+  this decision gives the system's components their own glass and the
+  app none. Repeating is refused on every button, not only the speaking
+  ones, because which control speaks cannot be read from the code and
+  every control can be reached with a held switch or a dwell. Named
+  accessibility actions, escape and magic tap are allowed: they add a
+  way in, not a second meaning for one.
+- **Scope.** The targets that ship: every target that is not a test,
+  except an application target that `project.yml` leaves out of every
+  archive, so it is never uploaded (`SKIP_INSTALL` true for every build, where XcodeGen reads it: under
+  `base`, or straight under `settings` only when it has no `base`,
+  `configs` or `groups`) and naming no settings group, which could turn
+  it back off, such as the experiments' probe app, which keeps every
+  other rule. A framework or extension ships
+  inside the app whatever its own setting says. If every application
+  target is marked so, the check stops with status 2.
+- **Known exceptions.** Where today's code breaks one of these rules and
+  the fix would change what a person sees, the place is named in
+  `KNOWN_EXCEPTIONS` (rule, file and type, with how many times its code
+  breaks the rule) and in docs/HANDOFF.md, *Known gaps*, as an input to
+  the new design. It excuses nothing else, not even one more break of
+  its rule in its type (a call to `trigger()` is a rule of its own, so
+  the exception for a `PrimitiveButtonStyle` never excuses one), and one
+  the code no longer needs as often, or whose file is gone or in no
+  target that ships, is a finding of its own. A file moved with its whole folder is not: the check
+  cannot tell that from another repository's checkout, so its tests fail
+  instead, and the moved code is checked at its new place. There are two,
+  both in Settings: `SettingsRowButtonStyle` and `SettingsPairLabel`.
+  Adding one is an exception, which *Code Review Rules* flags for the
+  owner. These two were proposed in pull request #114, not accepted by
+  it: the owner's merge accepts them until the new design replaces
+  both places, and declining them means that design
+  comes first, since fixing either now changes what a person sees.
+- **Not guarded, and why.** Each needs judgment, a screenshot or a
+  device, or would raise false alarms: two layers and hierarchy;
+  colour's meaning, placement and four appearances (the colour tokens'
+  own tests hold those); concentric and capsule shapes and sharp
+  corners (geometry); symbol meaning and rendering modes; motion and
+  Reduce Motion; sizes and places (the layout engine's tests hold
+  them); words, branding, the app icon and inactive windows; a setting
+  for appearance inside the app (the only `preferredColorScheme` is the
+  UI tests' launch option); system typefaces (Apple allows a custom
+  headline font that follows Dynamic Type and Bold Text; its fixed size
+  is refused); Heavy and Black weights (Apple prefers Regular to Bold
+  but warns only against the light ones); an error interpolated into a
+  crash message (whether it can hold a person's words is judgment);
+  intervals between `Date`s (right for calendar time people read); caps
+  on Dynamic Type (`textSize` caps on purpose); menus, steppers and
+  sliders (allowed on family screens); an empty handler for one kind of
+  error (`catch is SomeError {}`), which can be the recovery, as where
+  removing a draft finds the file already gone and every other error is
+  thrown on (only a bare `catch {}` is refused); words typed in capitals
+  (`Text("DELETE")`), which a script cannot tell from an acronym such as
+  "OK" or "SOS"; a custom UIKit font with a fixed size in a file that
+  scales another font, since `UIFontMetrics` often scales a font in
+  another statement and a script cannot follow which.
 
 ## Personal details stay out of the repository
 
@@ -6069,6 +6600,217 @@ the variable again.
   the built-in patterns do the real work. Never ask Avery for more
   entries; propose a pattern instead when a kind of detail needs one.
 
+## A check for code the app must never contain
+
+*2026-11-13. Owner: the check, approved through the project's coordinator
+as the first recommendation of a read-only audit of which AGENTS.md rules
+a script could enforce. What it checks and how: default, reversible if
+the owner objects
+([`log/2026-11-13-forbidden-code-check.md`](log/2026-11-13-forbidden-code-check.md)).*
+
+AGENTS.md's rules are words. Agents and reviewers read them, but nothing
+stopped a slip before a reviewer happened to see it.
+`scripts/forbidden-code.py` checks the rules a script can decide with no
+judgment and fails when the code breaks one. Its tests,
+`scripts/test-forbidden-code.py`, run it over the checkout, and
+`scripts/test.sh unit` runs them before the build, beside the guard's and
+the privacy check's tests, so the required "Unit tests" check fails on a
+pull request that breaks one. It needs only Python, so a cloud session
+runs it in seconds. On 2026-11-13 `main` broke none of its rules.
+
+- **What it reads.** The Swift files of every `project.yml` target that
+  is not a test (the app, and any extension or framework it would ship),
+  with comments and the words inside strings left out, so a phrase or a
+  comment that names a forbidden thing is never a finding; the test
+  targets' Swift files, for the test rules; `project.yml` and every
+  `.entitlements`, `.plist` and `.xcconfig` file, whatever its name; the
+  workflows and every action kept in the repository (any `action.yml`);
+  `CLAUDE.md`. It reads what git tracks and new files git does not
+  ignore, changes nothing, and prints where and which rule, never a line
+  of the code. It reads YAML's one-line mappings and lists, anchors and
+  tags, and values carried over several lines as their block forms, and
+  a path in `project.yml` written in another letter case as the same
+  path, as the Mac does. A `project.yml` that includes other specs,
+  builds targets from templates, gives a target no type, compiles a
+  source outside the checkout or gives the app target sources that hold
+  no Swift file, or a workflow whose permissions it cannot read, stops it
+  with status 2 rather than passing.
+- **In the app** it refuses, each with the rule it backs: network code,
+  cloud sync, the Keychain, accounts, ads and tracking, and the
+  frameworks that exist for them (invariant 9; AGENTS.md, *The privacy
+  policy is a promise*); system sounds and setting the system volume
+  (invariant 4); a choice by device, screen or orientation (AGENTS.md,
+  *Layout on every device and window*); gestures, hover handlers and
+  tracking code of the app's own (invariants 1 and 9); a hidden Back
+  button, navigation bar (even one hidden only some of the time) or
+  blocked swipe (AGENTS.md, *Design rules for dwell, switch and pointer
+  input*); `ModelContext.rollback()` (invariant 5); `ViewThatFits`
+  (AGENTS.md, *Gotchas*); SwiftData opened without
+  `cloudKitDatabase: .none`, including through `.modelContainer(for:)`,
+  `Self(` in an extension, a container given no configurations or
+  `configurations: []`, or an `.init(` whose type only its context says
+  (a declaration, or a name declared with the type in a scope that holds
+  the use; a typed function, property or closure, written `SwiftData.`
+  or not, and a `return` anywhere in it; each branch of an `#if`; an if
+  or switch expression, a ternary or `??`; an array of configurations),
+  which take the default configuration; and a notification observer not
+  on the main queue inside `MainActor.assumeIsolated`, which one with a
+  selector never is (AGENTS.md, *Workflow rules*).
+- **Frameworks.** The app imports only the frameworks the script lists in
+  `APP_IMPORTS`. A new one fails until the pull request that needs it adds
+  it there, so a reviewer weighs it against the hard stops and the privacy
+  policy. UIKit, SafariServices, Dispatch, notification observers,
+  key-value observation, Combine (its publishers too, which SwiftUI brings
+  in without an import), Core Data, SiriKit and XCTest appear only in an
+  app file that the table in *Apple's current frameworks first* names, in
+  backticks, in the Where cell of a row for it. UIKit's own colours count
+  however they are written (`Color(.systemBackground)`, `.init(.label)`);
+  Foundation's typed notification messages (`addObserver(of:for:)`) are
+  the current way, not legacy observers; the values
+  SwiftUI's `keyboardType` and `textContentType` take do not, as *Apple's
+  current frameworks first* says. The table stays the record; the script
+  reads it.
+- **In `project.yml` and beside it:** any package, SDK, binary framework
+  or git submodule (*No outside packages*); an iCloud, push, Sign in with
+  Apple or network capability, a tracking, App Transport Security, local
+  network or Bonjour key (as an `INFOPLIST_KEY_` setting too), or a
+  background mode that fetches; warnings no longer errors, or silenced
+  (*Warnings are errors*), where keeping one group as warnings
+  (`-Wwarning`, `SWIFT_WARNINGS_AS_WARNINGS_GROUPS`) counts like turning
+  the setting off, and a setting for some builds only (`[config=Debug]`,
+  `[sdk=…]` after its name) counts like one for all, and `compilerFlags`
+  anywhere in `project.yml` count like the build settings; an iOS
+  deployment target, in `project.yml` or an `.xcconfig` file, other than
+  *Minimum iOS, iPhone and iPad*'s (a target for another platform keeps
+  its own).
+- **In the workflows** (AGENTS.md, *Code Review Rules*): a
+  `pull_request_target` or `workflow_run` trigger; a workflow that runs a
+  pull request's code (pull requests, their reviews and comments, the
+  merge queue) without read-only permissions set at its top; event text
+  (`github.event`, `github.head_ref`, the whole `github` context) inside
+  a `run` command, directly or through `env` values read as
+  `${{ env.NAME }}`, however many pass it on; an action not published by
+  GitHub or kept in the repository; a path filter on the workflow that
+  runs "Unit tests" and "UI tests". It reads every `env` value a name is
+  given, in the workflow, its jobs and steps, as one: a name that holds
+  event text anywhere counts as holding it wherever it is read, even
+  where a job or step gives it fixed text. That errs toward a false
+  alarm, never a miss; name such a variable apart rather than weaken the
+  rule. (Resolving each step's own environment, as GitHub does, was a
+  review suggestion on the pull request that added the check, declined
+  for now: a large change to avoid a false alarm no workflow here
+  raises.)
+- **In the tests:** a known issue (`withKnownIssue`, `XCTExpectFailure`)
+  that is not strict or whose comment does not cite its decision as
+  `docs/DECISIONS.md, "<title>"`; a skip, a `.disabled` or an `.enabled`
+  with no reason, which is a string in its own unlabelled message or
+  comment, never one in its condition or in `file:`.
+- **Apple's look**, in the app that ships: *Guards for Apple's look*.
+- **`CLAUDE.md`** holds only `@AGENTS.md`.
+- **Changing what it allows.** Every finding names its rule and what to
+  do. A file that needs a legacy API gets a row of the frameworks table,
+  or its name in one, with why; a new framework goes into `APP_IMPORTS`;
+  the safety fix that turns warnings back into warnings for one target
+  names that target, in backticks, in *Warnings are errors*. Each is a
+  change a reviewer sees. Widening or dropping a rule edits the script and
+  its tests together, and *Code Review Rules* flags it like a weakened
+  guard.
+- **What it cannot catch.** A forbidden API reached by a name built while
+  the app runs, a web address given to an API that loads one
+  (`Data(contentsOf:)`, `AVPlayer`), a value whose type Swift works out
+  from somewhere the check does not look (a parameter, a generic, a
+  typealias, a variable holding `.hidden`, a name declared with both of
+  SwiftData's types and used where neither declaration's scope reaches),
+  a Combine operator or a
+  UIKit-, SiriKit- or CloudKit-style name used in one app file when
+  another app file declares the same name (a declaration is the app's
+  own, file by file it cannot tell), YAML or Swift written in a form its
+  small readers have never seen, code written to get past it, and every
+  rule that needs judgment: placement, contrast, words, dwell chains.
+  Reviews still read every rule.
+- **Scope.** The framework rules hold the app's code only. The UI tests'
+  row of the table does not name every file that uses UIKit today, so
+  holding the test targets to it waits for the owner's decision on two
+  UI-test files, which are not accepted gaps (docs/HANDOFF.md, *Known
+  gaps*). `rollback()` is refused in the app
+  only: a disabled unit test calls it on purpose, to record the crash.
+- **Not built.** The approval covered this check only: no Claude Code
+  hook that runs it after each edit, and no line of AGENTS.md trimmed.
+  Every rule keeps its line there; the script backs some of them and
+  replaces none.
+
+## A probe app for the experiments, kept out of Brickson
+
+*2026-11-14. Default, from the thread that prepared the hands-on
+experiments, on the owner's choice that day of the safe way: public
+sources and public API only, no reverse engineering. 2026-11-15, owner:
+the exceptions below are accepted, for the probe only
+([`log/2026-11-14-experiments-run-sheet-and-probe.md`](log/2026-11-14-experiments-run-sheet-and-probe.md)).*
+
+The research of 14 November 2026 asked for one small test app with one
+test screen, built only to learn and never shipped. Building it in this
+repository, instead of a throwaway project, means CI compiles it with
+Brickson's settings, `scripts/forbidden-code.py` checks it, and the Mac
+session and the owner build it with the commands they already use.
+[`EXPERIMENTS.md`](EXPERIMENTS.md) says how to run it and what each
+station answers.
+
+- **Where.** `BricksonProbe/`, an application target of its own in
+  `project.yml`, with its own bundle identifier (Brickson's with
+  `.probe` after it), so installing it never replaces Brickson on a
+  device. `SKIP_INSTALL` is on, so an archive of it holds no app and it
+  cannot be uploaded. The `Brickson` scheme builds it only for testing:
+  the unit-test job compiles it on every pull request, and no Brickson
+  run, profile or archive includes it. The `BricksonProbe` scheme runs
+  it. Nothing of it is in the `Brickson` target.
+- **Which rules hold.** Everything `scripts/forbidden-code.py` checks
+  holds in the probe as in the app, because it is a target that is not a
+  test: standard SwiftUI controls only; no gestures, hover code, or
+  custom input, switch, head or gaze code; no network code; no
+  third-party packages; no choice by device. Its plain logic is in
+  `BricksonProbe/Logic` and is tested in the unit tests
+  (`ProbeLogicTests`); its speech delegate is tested off the main thread
+  (`OffMainThreadCallbackTests`). It keeps its log in memory only and
+  shares it only when the person chooses Share.
+- **What it does that Brickson must not, on purpose.** Each is what an
+  experiment measures, and each holds for the probe only. On 2026-11-15
+  the owner was asked about the five that matter most (the screen may
+  lock, dimmed and hidden buttons, the main thread held busy, English-only
+  words, no Emergency or Get Attention), said yes to all five, and said
+  that objective coding choices like the rest of this list are the
+  agents' to make; the thread accepted the rest on that basis:
+  - it shows dimmed, hidden, non-responding and trait-only elements, an
+    activation point moved over another button, hover effects, and
+    Apple's own button styles and glass (A-1, A-7, A-8, A-28, D-01 to
+    D-24 in the run sheet);
+  - it keeps the screen on by default but lets the person switch that
+    off, so the screen can lock (A-22, A-23, G-25); Brickson always keeps
+    it on (invariant 12);
+  - it declares Assistive Access's own scene and
+    `UISupportsAssistiveAccess` (D-13); Brickson never does
+    (*Accessibility API coverage*; `AppBundleTests`);
+  - it holds its main thread busy for three seconds when asked (A-43);
+  - its speech does not recover from an interruption or a reset of the
+    system's media services (invariant 4): it only measures speech, and
+    the run sheet says to close and reopen it if speech stops;
+  - it says a Voice Control command and a Siri test sentence aloud, and
+    posts announcements (A-16, A-18, A-31, A-40);
+  - its words are English only, written with `Text(verbatim:)`, with no
+    String Catalog, and a button's words shrink to fit where a fixed
+    size cannot hold them (the Rings station's 44-point button, a
+    phone's narrow slots) rather than break mid-word: only the person
+    running an experiment reads them;
+  - it has no Get Attention, no Emergency and no safety bar, and no
+    chain-engine scoring. Nobody uses it to communicate, and the run
+    sheet says so before every session on a device.
+- **What it never holds.** A person's phrases, Brickson's starter
+  library, anything from the private list, Apple's private API, or
+  anything learned by taking Apple's software apart. It speaks neutral
+  test words only (docs/DEVICE-CHECKS.md, *Keep the repository's rules*).
+- **Revisit when** stage 4's experiments are done: the owner chooses
+  whether the probe is removed or kept to run them again after a new
+  iOS.
+
 ## Reviews, updates and GitHub settings
 
 *2026-10-10. Default; the owner applies the settings in GitHub, so check
@@ -6574,6 +7316,17 @@ reasons behind its rules stay here and in docs/LESSONS.md. The order
 below still holds, and `scripts/test-docs.py` now also fails when the
 whole file passes the 32 KiB Codex reads by default (31,985 bytes and
 556 lines on 2026-11-12).
+
+**2026-11-17: room kept.** With the guards' line for Apple's look and the
+UI test parts' commands, AGENTS.md reached 32,883 bytes, past the limit.
+Its introduction, *Build and test* and *Gotchas* were tightened to 32,349
+bytes, keeping every rule: padding and repeated words went, the two
+bullets on cloud agents and the owner's Mac became one, the Swift Testing
+filter's example is the one in *Build and test*, and the gotcha that
+simulator audio is unreliable went, since *Workflow rules* already says
+simulators prove nothing about sound. The introduction now says the check
+fails when the whole file passes 32 KiB, not only when the sections Codex
+must read end past it.
 
 Its length is deliberate. Claude Code's guidance is under about 200 lines
 per file, but this project's safety, privacy, review and guard rules do

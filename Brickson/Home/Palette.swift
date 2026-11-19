@@ -1,19 +1,38 @@
 import SwiftUI
 import UIKit
 
-/// The fills behind every control on Home, defined in the asset catalog.
-/// Each is measured, not eyeballed (invariant 6): white text on it clears
-/// 4.5:1, and its edge clears 3:1 against both a white and a black screen,
-/// so one value works in light and dark mode. `PaletteTests` holds
-/// the line; recompute before changing a value.
+/// The colours of every control, defined in the asset catalog. Each is a
+/// token with four values, one for each appearance a person can choose:
+/// light, dark, and each with Increase Contrast (Apple's "light and dark
+/// variants, and an increased contrast option for each variant"). SwiftUI
+/// picks the value from the environment's `colorScheme` and
+/// `colorSchemeContrast`; nothing here chooses one. Today each token holds
+/// the same value in all four, so the app looks as it did with one value
+/// (docs/DECISIONS.md, "Colour tokens in four appearances").
 ///
-/// | Asset          | Value     | White text | Against black | Against white |
-/// |----------------|-----------|------------|---------------|---------------|
-/// | AccentColor    | `#0A60D6` | 5.74:1     | 3.66:1        | 5.74:1        |
-/// | ControlFill    | `#5A6474` | 5.98:1     | 3.51:1        | 5.98:1        |
-/// | EmergencyFill  | `#C8161E` | 5.85:1     | 3.59:1        | 5.85:1        |
-/// | AttentionFill  | `#B45309` | 5.02:1     | 4.18:1        | 5.02:1        |
-/// | StopFill       | `#0F766E` | 5.47:1     | 3.84:1        | 5.47:1        |
+/// Each is measured, not eyeballed (invariant 6): `PaletteTests` pins every
+/// token's four values, the words on each fill in each appearance, and
+/// each fill's edge (or the border that carries it) against the screen, in
+/// a contrast budget whose known failures are named there. Recompute
+/// before changing a value.
+///
+/// Every fill is its colour set by name, `Color("Name")`, so it is drawn
+/// as the catalog holds it and as `PaletteTests` measures it. Never
+/// `Color.accentColor`: the system treats the app's accent as a colour for
+/// words and symbols, and with Increase Contrast on draws it darker in
+/// light mode and lighter in dark mode than its colour set says, whatever
+/// the set's slots hold. Under the tiles' white words that lighter blue
+/// measured 3.95:1 (docs/DECISIONS.md, "Colour tokens in four
+/// appearances").
+///
+/// | Asset          | Value (all four) | Fill label on it | Against black | Against white |
+/// |----------------|------------------|------------------|---------------|---------------|
+/// | AccentColor    | `#0A60D6`        | 5.74:1           | 3.66:1        | 5.74:1        |
+/// | ControlFill    | `#5A6474`        | 5.98:1           | 3.51:1        | 5.98:1        |
+/// | EmergencyFill  | `#C8161E`        | 5.85:1           | 3.59:1        | 5.85:1        |
+/// | AttentionFill  | `#B45309`        | 5.02:1           | 4.18:1        | 5.02:1        |
+/// | StopFill       | `#0F766E`        | 5.47:1           | 3.84:1        | 5.47:1        |
+/// | FillLabel      | `#FFFFFF`        | (the words on every fill)        |               |
 ///
 /// Get Attention and Stop each have a colour of their own, unlike any other
 /// control's, so neither is taken for the other or for Emergency at a
@@ -21,8 +40,9 @@ import UIKit
 /// depends on colour alone (docs/DECISIONS.md, "Solid fills on Home,
 /// system glass elsewhere").
 nonisolated enum Palette {
-    /// Phrase tiles and the selected category.
-    static let phraseFill = Color.accentColor
+    /// Phrase tiles and the selected category: the accent's colour set, by
+    /// name like every other fill, never `Color.accentColor` (above).
+    static let phraseFill = Color("AccentColor")
     /// Yes, No, Again, and categories that are not selected.
     static let controlFill = Color("ControlFill")
     /// The Emergency control and the emergency category's tiles.
@@ -33,8 +53,27 @@ nonisolated enum Palette {
     /// Stop, which ends the alarm.
     static let stopFill = Color("StopFill")
 
-    /// Every fill above, by asset name, for `PaletteTests`.
-    static let assetNames = ["AccentColor", "ControlFill", "EmergencyFill", "AttentionFill", "StopFill"]
+    /// The words and icons on every fill above, wherever a control is
+    /// drawn filled: Home's controls (`HomeButtonStyle`), Settings' rows
+    /// (`SettingsRowLabel`, `SettingsPairLabel`) and the Library's
+    /// chosen-picture check (`LibraryQuestions`). A token of its own, so
+    /// each appearance can carry its own words; white in all four today.
+    static let fillLabel = Color("FillLabel")
+
+    /// Every fill above with the colour set it is drawn from, for
+    /// `PaletteTests`, which measures each colour set and checks that each
+    /// fill is that colour set and nothing else.
+    static let fills: [(asset: String, color: Color)] = [
+        ("AccentColor", phraseFill),
+        ("ControlFill", controlFill),
+        ("EmergencyFill", emergencyFill),
+        ("AttentionFill", attentionFill),
+        ("StopFill", stopFill),
+    ]
+    /// Every fill's asset name, for `PaletteTests`.
+    static let assetNames = fills.map { $0.asset }
+    /// `fillLabel`'s asset name, for `PaletteTests`.
+    static let fillLabelAssetName = "FillLabel"
 
     /// The background of Settings and setup: UIKit's system background,
     /// the colour `PaletteTests` measures as "the screen" (and the one Home

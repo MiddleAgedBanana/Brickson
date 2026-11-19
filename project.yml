@@ -112,6 +112,43 @@ targets:
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
 
+  # A separate test app for the experiments in docs/EXPERIMENTS.md: its own
+  # bundle identifier, never archived, never uploaded, never part of
+  # Brickson (docs/DECISIONS.md, "A probe app for the experiments, kept out
+  # of Brickson"). The unit tests build it, so CI compiles it.
+  BricksonProbe:
+    type: application
+    platform: iOS
+    sources:
+      - BricksonProbe
+    info:
+      path: BricksonProbe/Info.plist
+      properties:
+        CFBundleDisplayName: Brickson Probe
+        CFBundleShortVersionString: "1.0"
+        CFBundleVersion: "1"
+        ITSAppUsesNonExemptEncryption: false
+        # The same speech conditions as Brickson's.
+        UIBackgroundModes: [audio]
+        UILaunchScreen: {}
+        UISupportedInterfaceOrientations:
+          - UIInterfaceOrientationPortrait
+        UISupportedInterfaceOrientations~ipad:
+          - UIInterfaceOrientationPortrait
+          - UIInterfaceOrientationPortraitUpsideDown
+          - UIInterfaceOrientationLandscapeLeft
+          - UIInterfaceOrientationLandscapeRight
+        # D-13: the probe declares Assistive Access's own scene to see how
+        # Apple dresses standard controls there. Brickson never does.
+        UISupportsAssistiveAccess: true
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: "$(APP_BUNDLE_ID).probe"
+        PRODUCT_NAME: BricksonProbe
+        SUPPORTS_MACCATALYST: "NO"
+        # An archive of the probe holds no app, so it can never be uploaded.
+        SKIP_INSTALL: "YES"
+
   BricksonTests:
     type: bundle.unit-test
     platform: iOS
@@ -128,9 +165,18 @@ targets:
       - path: BricksonUITests/HomeChains.swift
       - path: BricksonUITests/SettingsChains.swift
       - path: BricksonUITests/LibraryChains.swift
+      # The rule that the gaps a layout makes equal measure equal, which
+      # HomeLayoutTests applies to the running app and EqualGapsTests to
+      # the layout engine's frames and to frames made by hand.
+      - path: BricksonUITests/EqualGaps.swift
       # What launchedApp passes the app, read here with the app's own
       # parser (LaunchArgumentsTests).
       - path: BricksonUITests/LaunchArguments.swift
+      # The probe app's plain logic and its speech delegate, tested here
+      # (ProbeLogicTests, OffMainThreadCallbackTests). The probe itself is a
+      # separate app that the tests do not launch.
+      - path: BricksonProbe/Logic
+      - path: BricksonProbe/System/ProbeSpeechEvents.swift
     dependencies:
       - target: Brickson
     settings:
@@ -168,6 +214,9 @@ schemes:
     build:
       targets:
         Brickson: all
+        # Built with the unit tests, so CI compiles the probe app; never
+        # run, profiled or archived from this scheme.
+        BricksonProbe: [test]
     test:
       # How much of the app the unit tests run; scripts/test.sh prints it.
       gatherCoverageData: true
@@ -175,6 +224,12 @@ schemes:
         - Brickson
       targets:
         - BricksonTests
+  # The experiments' probe app (docs/EXPERIMENTS.md): choose this scheme
+  # to run it on a simulator or a device.
+  BricksonProbe:
+    build:
+      targets:
+        BricksonProbe: all
   # Opt-in: launches the real app on a simulator and drives it.
   Brickson-UI:
     build:
