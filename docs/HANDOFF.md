@@ -870,7 +870,17 @@ release in docs/ROADMAP.md when no thread has it yet.
   27.2's release candidate, so `scripts/select-xcode.py` skipped it and
   took 27.1 with iOS 27.0. Nothing is pinned, on purpose
   (docs/DECISIONS.md, "Build with Apple's current Xcode"), and nothing
-  needs changing: it ends when GitHub finishes the rollout.
+  needs changing: it ends when GitHub finishes the rollout. A new image
+  can also be faulty: on 2026-11-16, from about 00:15 to 10:50 UTC, jobs
+  that landed on image 20261112.0361.1 (macOS 27.2) lost their simulator
+  or crawled to the 90-minute limit, other developers reported the same
+  (`actions/runner-images` issues 15334 and 15337), and GitHub went back
+  to 20261104.0337.1 that day. On 2026-11-19 GitHub published a
+  pre-release image with the same macOS, 20261119.0378. When jobs lose
+  the simulator or stop at their limit, read the image's version at the
+  top of the job's log first ("Runner Image"): a second try may land on
+  the older image
+  ([`log/2026-11-19-ui-tests-wait-for-a-settled-mac.md`](log/2026-11-19-ui-tests-wait-for-a-settled-mac.md)).
 - `HomeAccessibilityOrderTests` failed now and then on CI, always in its
   first state, "just opened", on the iPhone and the iPad, at both text
   sizes, reading Home in screen order (Phrases and Type first). The
@@ -896,9 +906,13 @@ release in docs/ROADMAP.md when no thread has it yet.
   bundles. *(closed 2026-11-17; the next thread whose CI shows it reopens
   it)*
 - `SettingsTests.testAnIdleSettingsReturnsToItsFirstScreenAndStaysOpen`
-  has failed once each on 2026-10-22, 2026-11-08 and 2026-11-12, on
-  branches that did not touch it, and passed on each re-run: Family
-  Setup did not open, or its tap found no hit point. The 2026-11-12
+  has failed once each on 2026-10-22, 2026-11-08, 2026-11-12 and
+  2026-11-17 (on `main`), on commits that did not touch it, and passed
+  on each re-run: Family Setup did not open, or its tap found no hit
+  point. The 2026-11-12 failure came 38 minutes into its job, on a
+  settled Mac (a load of 26), so the simulator's busy start
+  (docs/DECISIONS.md, "Tests", 2026-11-19) is not its cause; the
+  2026-11-17 one came ten minutes in, at a load of about 510. The 2026-11-12
   recording stays on Settings' first screen throughout. A likely cause,
   not proven: under `--short-timeouts` Settings' idle limit is 3
   seconds, an untouched Settings resets every 3 seconds, and each reset
@@ -906,6 +920,27 @@ release in docs/ROADMAP.md when no thread has it yet.
   even on its first screen, so a tap can land on a rebuild
   ([`log/2026-11-12-ci-claims-narrowed.md`](log/2026-11-12-ci-claims-narrowed.md)).
   *(a Settings thread, in its own pull request)*
+- Thirteen CI jobs from 2026-11-13 to 2026-11-19, nine "Unit tests" and
+  four iPad UI jobs, were cancelled by nobody: only "The operation was
+  canceled." in the log, no new push, far from any time limit, and the
+  rest of the run carried on. Each was cancelled 8.5 to 13 minutes after
+  its simulator began to start, at a load of 550 to 870 where 500 is
+  usual. A lead, not proved: GitHub's agent on the machine, starved for
+  about ten minutes, cannot tell GitHub's service it still holds the
+  job, and the service takes the job back. The wait before the UI tests
+  (docs/DECISIONS.md, "Tests", 2026-11-19) does not fix it, because it
+  happens before the tests. Until a fix is tried, a second try of that
+  job is the remedy. What to try, in order, is in
+  [`log/2026-11-19-ui-tests-wait-for-a-settled-mac.md`](log/2026-11-19-ui-tests-wait-for-a-settled-mac.md),
+  *Follow-ups*. *(the owner chooses whether a thread takes it up)*
+- Whether the wait before the UI tests ends the waits that ran out on a
+  busy Mac is measured on one CI run so far: six UI jobs, all passed,
+  no step stalled, at a cost of about eight minutes a job. After about
+  twenty runs
+  with it on `main`, count again with the script in
+  [`log/2026-11-19-ui-tests-wait-for-a-settled-mac.md`](log/2026-11-19-ui-tests-wait-for-a-settled-mac.md):
+  a wait that ran out in a test started on a settled Mac has another
+  cause and needs its own look. *(the next thread on CI)*
 - Settings' Get Attention place is still empty, although AGENTS.md's
   design rules say "Settings opens on a large way back and a start-only
   Get Attention". Scored on 2026-10-24, Get Attention there would sound
@@ -1635,7 +1670,18 @@ settings, date) and summarise it here.
   Setup's title appeared. In one of those runs, the screen recording
   already showed Family Setup without the row. That wait is now 60
   seconds, a CI timing allowance that loosens no check
-  ([`log/2026-11-17-phrase-start-limit.md`](log/2026-11-17-phrase-start-limit.md)). Home's
+  ([`log/2026-11-17-phrase-start-limit.md`](log/2026-11-17-phrase-start-limit.md)).
+  Since 2026-11-19 the UI tests also wait, after the warm-up launch and
+  before the first test, until the Mac's load has stayed under 50 for
+  each of its processors (150 on GitHub's Mac) or twenty minutes have
+  passed. A week of CI records, read side by side, showed that the
+  waits that ran out on pull requests that had not touched the failing
+  test were in tests started while the Mac was still busy with the
+  simulator's first start, and almost never in tests started later
+  (docs/DECISIONS.md, "Tests", 2026-11-19; [`log/2026-11-19-ui-tests-wait-for-a-settled-mac.md`](log/2026-11-19-ui-tests-wait-for-a-settled-mac.md),
+  which sorts that week's failures into their kinds). The wait writes
+  its start and end into the simulator's record: when a UI test's wait
+  runs out, read there first whether the Mac had settled. Home's
   layout test uses bounded live queries while retaining every tile's
   visibility and position checks. After incorporating `main` at `d79d836`,
   its audit helper also keeps issue-time captures and native XCTest
@@ -1669,6 +1715,13 @@ settings, date) and summarise it here.
 - CodeQL scans the workflow files and the Python scripts, not the Swift
   code, on purpose (docs/DECISIONS.md, *Code scanning*); the failed Swift
   attempt of 2026-10-10 was deleted from the Tool status page on 2026-11-08.
+  SonarQube Cloud also analyses every pull request and `main`, Swift
+  included, and sends its security findings to the same code scanning
+  page. Its four open alerts of 2026-11-17, all in the helper scripts,
+  were answered: in two, git is now given the folder as an absolute
+  path and a real gap beside one of them is closed; the other two are
+  false positives, dismissed by the owner (docs/DECISIONS.md,
+  "SonarQube Cloud's alerts").
   The root [SECURITY.md](../SECURITY.md) gives Codex Security context for
   the app, tooling and website from the existing rules and decisions;
   [.github/SECURITY.md](../.github/SECURITY.md) remains the private-reporting
@@ -1727,13 +1780,54 @@ settings, date) and summarise it here.
   isolation outside the agent is not built
   ([record](log/2026-11-08-agent-bridge.md), *Known limits*). Since #99,
   an agy job runs only with agy's hook exactly as installed, and if the
-  job changes the hook, the bridge puts it back and the job fails; the
-  guard's own code in agy's folder is not put back
-  ([record](log/2026-11-12-bridge-safety-gaps.md)). A Codex write job
-  cannot commit yet: Codex keeps a worktree's git folder read-only in its
-  sandbox on purpose, and `--add-dir` does not change that (found on the
-  Mac on 2026-11-12); the next bridge pull request settles how its work
-  gets committed (same record, *Follow-ups*).
+  job changes the hook, the bridge puts it back and the job fails
+  ([record](log/2026-11-12-bridge-safety-gaps.md)); the bridge now does
+  the same for the guard's own code in agy's folder (`guard.py` and the
+  `privacy-check.py` it loads, with the bytecode caches beside them
+  removed), however the job ended, even after a stop once agy has
+  exited, and a write job
+  whose commits change that code leaves the folder unclean, so the next
+  agy job is refused until a thread has dealt with them. Codex keeps a
+  worktree's git folder read-only in its sandbox on purpose, so a Codex
+  write job leaves its work uncommitted and the bridge commits it, in one
+  commit, once Codex has exited 0 and the privacy check beside the bridge
+  has passed that commit, made first as an object, with its files,
+  message, author and committer, before the branch moves to it;
+  otherwise nothing is committed and the job says why; the bridge's own
+  git, its privacy check and its jobs run without git's
+  repository-location variables; the bridge's own git and its privacy
+  check also run with every git filter the settings define turned off,
+  as hooks and `core.fsmonitor` already were (the settings git uses to
+  reach a remote are not turned off); and a job that leaves git
+  unreadable still ends with `summary.json` and `done`, saying what
+  could not be read
+  ([record](log/2026-11-12-bridge-commits-and-guard-code.md)).
+  CodeRabbit's finding that #99's record should again list the Mac check
+  under *Not verified* was declined, and CodeRabbit then withdrew it: the
+  check was made before #99 merged (same record, *CodeRabbit's review of
+  the second push*). Of the eleven findings CodeRabbit left on #108,
+  which did this bridge work another way, five are fixed in this bridge,
+  four were already fixed in it, so nothing was ported for them, and two
+  were about #108's own record (same record, *Brought over from pull
+  request #108*). The reviews of that push found six more faults in the
+  bridge, fixed in the same pull request: a job could keep a bytecode
+  cache folder the bridge never clears, commits that changed the guard's
+  code and put it back were reported as unchanged, a stop was dropped
+  while the agent's processes were being stopped, a failed listing of a
+  job's commits read as none, a status claimed a put-back that had
+  failed, and a refusal that could not unstage the job's files did not
+  say so. Eight findings were not changed, one of them a security
+  finding that the owner decided on 2026-11-19 stays a known limit: the
+  bridge reads which filters are set a moment before its git runs, so a
+  job outside any sandbox could add one in between, which gains it
+  nothing it could not already do (same record, *The reviews of the
+  fifth push*). A review made when that pull request was marked ready
+  found that it had stopped refusing a start whose environment sets a
+  push URL (`GIT_CONFIG_COUNT` or `GIT_CONFIG_PARAMETERS`), which a job's
+  push would have reached; the bridge refuses such a start again (same
+  record, *After it was marked ready*). None of this
+  has been run through a real Codex or agy job on the Mac yet (same
+  record, *Not verified*).
   Jules, Google's cloud coding agent, is no longer one of Brickson's
   agents: Google made it read-only after 2026-11-11 and shuts it down on
   2026-12-31, so the documents no longer name it, and no other agent
