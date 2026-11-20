@@ -170,6 +170,10 @@ the simulator's processes kept the Mac's processors busy during the run.
 On a simulator the script started itself, it also pauses the lock-screen
 wallpaper extensions, which iOS otherwise starts a few minutes after the
 simulator boots and which slowed GitHub's machines until tests failed.
+Before the first UI test the script waits until the Mac is no longer busy
+with the simulator's start, and says so as it waits: a few seconds on
+most Macs, and up to twenty minutes on GitHub's small ones, where tests
+that started sooner ran out of time.
 
 GitHub Actions runs unit and UI tests for pull requests and pushes to
 `main`. The UI tests run in three parts on the iPad and three on the
@@ -216,7 +220,9 @@ commit; changes made without Xcode remain untested until CI or a Mac run
 passes. The maintainer merges pull requests after review and passing CI.
 
 CodeQL scans the GitHub workflow files and the Python scripts in
-`scripts/`, not Swift. AI reviewers read pull-request changes, Swift
+`scripts/`, not Swift. SonarQube Cloud analyses every pull request and
+`main`, Swift included, and reports its security findings on the same
+code scanning page. AI reviewers read pull-request changes, Swift
 included, and their findings are answered during review; they do not
 enforce a merge gate. See
 [Code scanning](docs/DECISIONS.md#code-scanning) for the coverage,

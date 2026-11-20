@@ -52,7 +52,8 @@ struct AppAudio {
             notificationCenter: .default,
             personalVoice: personalVoice,
             personalVoiceAskPolicy: personalVoiceAskPolicy(for: personalVoiceTrial),
-            sleep: sleep
+            sleep: sleep,
+            now: { ContinuousClock.now }
         )
         let attention = AttentionAlertPlayer(
             audioSession: session,

@@ -193,13 +193,44 @@ because of this change:
   text read Home in plain screen order, the same gap as on the first
   push. #119's re-read, merged since, is the answer to it.
 
+## Merging main after #123
+
+`main` then held pull requests #123, #124, #125's keyboard suggestion
+wait and #128. They brought six new bare waits into the UI tests.
+Four are converted here; the other two stay on the allowance list:
+
+- `HomeSizesTests.open` (a conflict): `main` had lengthened the wait for
+  the chosen row to leave the hierarchy to 60 seconds, because iOS
+  redraws its wallpapers on GitHub's runners. It keeps 60 seconds on
+  every machine, as a limit the CI scale does not stretch, since it was
+  already sized for those runners. The wait for the new screen's title
+  uses `.response`, as every other screen opening does.
+- `LibraryTests`: the second showing of New Phrase's keyboard uses
+  `waitToAppear`, as the first showing above it does.
+- `KeyboardSuggestions.swift` keeps its own half-second look at the
+  suggestion bar, with its deadline, exactly as it merged: it is the
+  fix for a flaky audit and was not run here. Its 2 waits join
+  `NOT_YET_CONVERTED`.
+
+`docs/DECISIONS.md` keeps both 2026-11-17 and 2026-11-19 entries under
+"Tests" (a conflict between them, resolved by keeping each whole).
+
+CI on the third push (run 44124581091, the merge of #119) failed three
+UI jobs, one test each, none because of this change: iPhone part 3 was
+the stuck speech #123 answers ("Speaking" for 90 seconds, every look
+quick); iPhone part 1's launch of the app hung inside XCTest for about
+4.7 minutes after a simulator service error; and iPad part 1's runner
+lost its iOS simulator runtime mid-run. Both Home order tests passed on
+the iPhone and the iPad with #119's re-read.
+
 ## Not verified
 
 - **The UI tests were not compiled or run here.** `Waiting.swift`, the
   converted tests and the changes to `LaunchHelpers.swift` need XCTest's
   UI automation, which only a Mac has. CI built and ran them on the
-  first two pushes (*CI on the first push*, *CI on the second push*);
-  the merge of #119 after them is untested until CI runs it.
+  first three pushes (*CI on the first push*, *CI on the second push*);
+  the merge after #123 (*Merging main after #123*) is untested until CI
+  runs it.
 - Whether 90 seconds covers the simulator's slowest speech on CI: one
   phrase above still showed "Speaking" after 64 seconds, and its end was
   not seen. On the first push's run (*CI on the first push*),
@@ -212,8 +243,9 @@ because of this change:
 ## Follow-ups
 
 - Now that #119 has merged, the next pull request to touch the UI tests moves
-  `HomeAccessibilityOrderTests.swift`'s 9 waits onto the helpers and
-  removes it from `NOT_YET_CONVERTED` in `scripts/ui-test-waits.py`
+  `HomeAccessibilityOrderTests.swift`'s 9 waits and
+  `KeyboardSuggestions.swift`'s 2 onto the helpers and removes both from
+  `NOT_YET_CONVERTED` in `scripts/ui-test-waits.py`
   (docs/HANDOFF.md, *Repository, CI and website*). Owner: whichever
   thread takes it.
 - If a stretched limit runs out on CI with only quick looks, that is a

@@ -21,6 +21,13 @@ nonisolated struct SpeechRequest: Equatable, Sendable {
 
 /// What the synthesizer reported about an utterance.
 nonisolated enum SpeechSynthesisEvent: Equatable, Sendable {
+    /// It began speaking the utterance: Apple documents this report as the
+    /// moment speech begins. `instant` is when the report arrived, taken
+    /// before it crossed to the main actor. An utterance that sends neither
+    /// this nor a word report by `SpokenUtteranceTracker.startLimit` is
+    /// treated as one that will not be heard (docs/DECISIONS.md, "A phrase
+    /// that does not start").
+    case started(at: ContinuousClock.Instant)
     /// It is about to speak the text up to `offset`: the end of the unit
     /// (generally a word) it reported, in UTF-16 units of the utterance's
     /// text, which is what `NSRange` counts. `instant` is when the report
@@ -95,6 +102,13 @@ final class SystemSpeechSynthesizer: SpeechSynthesizing {
 @MainActor
 final class SpeechSynthesizerEvents: NSObject, AVSpeechSynthesizerDelegate {
     var onEvent: (@MainActor (AVSpeechUtterance, SpeechSynthesisEvent) -> Void)?
+
+    nonisolated func speechSynthesizer(
+        _ synthesizer: AVSpeechSynthesizer,
+        didStart utterance: AVSpeechUtterance
+    ) {
+        forward(utterance, .started(at: ContinuousClock.now))
+    }
 
     nonisolated func speechSynthesizer(
         _ synthesizer: AVSpeechSynthesizer,

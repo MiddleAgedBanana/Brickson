@@ -37,7 +37,10 @@ HELPERS = frozenset({"UIWait.swift", "Waiting.swift"})
 # the 7 it had before the helpers and the 2 that pull request #119's
 # re-read added (a five-second deadline and a quarter-second pause); they
 # move onto the helpers in a later pull request (docs/HANDOFF.md).
-NOT_YET_CONVERTED = {"HomeAccessibilityOrderTests.swift": 9}
+# KeyboardSuggestions.swift arrived from main with pull request #125's own
+# look at the suggestion bar (a deadline and a half-second pause), kept as
+# it merged until the same later pull request moves it onto the helpers.
+NOT_YET_CONVERTED = {"HomeAccessibilityOrderTests.swift": 9, "KeyboardSuggestions.swift": 2}
 
 # The words a report gives for each kind of bare wait.
 SECONDS = "a number of seconds as a timeout"

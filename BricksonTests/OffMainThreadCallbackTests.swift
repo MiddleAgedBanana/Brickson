@@ -52,6 +52,7 @@ struct OffMainThreadCallbackTests {
         let utterance = Unchecked(AVSpeechUtterance(string: "Hello there."))
 
         await Task.detached {
+            events.speechSynthesizer(synthesizer.value, didStart: utterance.value)
             events.speechSynthesizer(
                 synthesizer.value,
                 willSpeakRangeOfSpeechString: NSRange(location: 6, length: 5),
@@ -60,9 +61,10 @@ struct OffMainThreadCallbackTests {
             events.speechSynthesizer(synthesizer.value, didFinish: utterance.value)
             events.speechSynthesizer(synthesizer.value, didCancel: utterance.value)
         }.value
-        let arrived = await waitUntil { received.count == 3 }
+        let arrived = await waitUntil { received.count == 4 }
 
         #expect(arrived)
+        #expect(received.contains { if case .started = $0 { true } else { false } })
         #expect(received.contains { if case .willSpeak(through: 11, at: _) = $0 { true } else { false } })
         #expect(received.contains { if case .finished = $0 { true } else { false } })
         #expect(received.contains(.cancelled))

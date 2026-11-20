@@ -41,8 +41,10 @@
 # boots is shut down after its run, before the next family starts; a device
 # that was already running is left running.
 # Before UI tests it turns off the keyboard's minimized bar, so typing tests
-# see the full software keyboard people actually use, and launches the app
-# once so the first test doesn't pay for a cold simulator.
+# see the full software keyboard people actually use, launches the app
+# once so the first test doesn't pay for a cold simulator, and waits (up to
+# twenty minutes on a slow machine, a few seconds on a fast one) until the
+# Mac is no longer busy with the simulator's start.
 #
 # Every test run keeps its results, with a screenshot of each UI test
 # failure, in build/TestResults/<mode>-<family>.xcresult (open it in Xcode;
@@ -314,6 +316,23 @@ with open(sys.argv[1], "rb") as file:
     fi
 }
 
+# A simulator that starts for the first time, as every simulator on GitHub's
+# machines does, starts hundreds of background tasks, and on GitHub's
+# three-processor Mac they keep every processor busy for a quarter of an
+# hour and more. UI tests that started inside that time are the ones whose
+# waits ran out: in a week of CI no test step stalled once the Mac had
+# settled (docs/log/2026-11-19-ui-tests-wait-for-a-settled-mac.md). So the
+# UI tests start only once the Mac's load has stayed under 50 for each of
+# its processors, or after twenty minutes, whichever comes first
+# (scripts/simulator-load.py says how it is measured). On a Mac with more
+# processors the wait is a few seconds. This only waits: no test is
+# retried, skipped or given more time, a Mac that does not settle is tested
+# anyway, and so is one whose wait could not run, with a warning.
+settle() {
+    /usr/bin/python3 -I scripts/simulator-load.py settle --out "$watcher_record" ||
+        echo "warning: could not wait for the Mac to settle; the UI tests run anyway." >&2
+}
+
 # Prints how many tests ran, and fails when none did: a filter that matches
 # no test (a Swift Testing name without its parentheses, say) otherwise
 # reports success. A summary that cannot be read fails the run too, since
@@ -487,6 +506,8 @@ run_tests_on_simulator() {
         build-for-testing || return $?
     if [ "$mode" = ui ] && [ -n "$udid" ]; then
         warm_up "$udid"
+        # Last before the tests, so what the warm-up started has settled too.
+        settle
     fi
     # The tests run even when the catalog is out of date, so one run shows
     # both.

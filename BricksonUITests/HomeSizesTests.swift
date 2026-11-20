@@ -90,13 +90,25 @@ final class HomeSizesTests: XCTestCase {
         return touch
     }
 
+    /// How long `open` waits for the chosen row to leave the accessibility
+    /// hierarchy once the new screen's title is there. It usually takes
+    /// about a second. On GitHub's three-processor runners iOS redraws its
+    /// lock-screen wallpapers a few minutes after the simulator starts;
+    /// twice, during that redraw, the row Family Setup was opened from
+    /// stayed in the hierarchy more than 10 seconds, once while the screen
+    /// recording already showed Family Setup without it (docs/HANDOFF.md,
+    /// "Repository, CI and website"). A screen that never finishes opening
+    /// still fails here. Already sized for those runners, so the CI scale
+    /// does not stretch it: 60 seconds on every machine.
+    private static let previousScreenGone = UIWait(normalSeconds: 60, stretches: false)
+
     /// Chooses `row` and waits for the screen titled `title`, and for `row`
     /// to have gone with the screen it was on.
     @MainActor
     private func open(_ row: XCUIElement, waitingFor title: String, in app: XCUIApplication, context: String) {
         row.tap()
         waitToAppear(app.navigationBars[title], "\(title) did not open (\(context))")
-        waitToDisappear(row, "\(title) did not finish opening (\(context))")
+        waitToDisappear(row, within: Self.previousScreenGone, "\(title) did not finish opening (\(context))")
     }
 
     /// Whether `window` holds Eye Tracking's sizes at every text size, by

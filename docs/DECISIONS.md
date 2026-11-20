@@ -1078,6 +1078,130 @@ nothing new: "Audio failed" is already showing, and replacing it with
 "Stopped — Again" sent the reference app round a loop of Again activations
 that failed the same way (code audit L3).
 
+## A phrase that does not start
+
+*2026-11-17. Default: an objective safety call the owner left to the
+project. Reversible if the owner objects.*
+
+The system's speech service can accept a phrase and never begin it, while
+the synthesizer goes on saying it is speaking. On CI (pull request #122,
+run 44037184309, iPad part 3) Yes was tapped at 07:49:21; the synthesizer's
+voice lookup for it did not answer until 07:52:09, no audio started before
+the test relaunched the app at 07:52:49, and Home showed "Speaking" throughout,
+because the missed-finish watchdog only acts on a synthesizer that has gone
+quiet. On a device that would be a phrase the person never heard, with
+nothing on screen to say so (invariants 4 and 5). Pull request #120's
+`LaunchTests` failure at the older 30-second wait looked the same: the
+same test, with "Speaking" still showing.
+
+**The rule.** The speech watchdog (`SpeechService`) also checks each
+utterance against `SpokenUtteranceTracker.startLimit`, 15 seconds from the
+moment the app is asked to speak it, before it stops any earlier phrase,
+activates audio, looks up the voice and hands it to the synthesizer. An
+utterance that by then has sent
+neither a start report (`speechSynthesizer(_:didStart:)`, which Apple
+documents as the moment speech begins) nor a word report
+(`willSpeakRangeOfSpeechString`) is stopped and treated as cut off, after
+a second look half a second later so a report already on its way can land,
+as for a synthesizer gone quiet:
+
+- a phrase shows the existing warning that names the way back: "Stopped —
+  Again", "Stopped: Phrases" while typing, "Stopped — Back" under a screen
+  over Home, with their full sentences for VoiceOver;
+- a Settings voice sample only clears "Speaking", since it cannot be
+  repeated with Again;
+- when the audio session never activated, "Audio failed" stays, as in
+  "A phrase the system cuts off" (code audit L3).
+
+A phrase that began in time is never stopped by the limit, however long
+it then speaks.
+
+**When the watchdog cannot look.** A slow audio activation or voice
+lookup holds the main thread, where the watchdog runs; on CI a voice
+lookup took almost three minutes. So the limit is also checked outside
+the watchdog, against the start limit and its half-second second look
+(`SpeechService.latestStart`, 15.5 seconds): a phrase held up that long
+or longer before the synthesizer has it is never handed over, and one
+whose first start or word report is stamped that late is stopped as soon
+as the report reaches the main thread. Both
+show the same warning as above. Without this, a phrase held up past the
+limit could begin before the watchdog's next look and be kept, sounding
+minutes after it was chosen (a review on the pull request found it).
+
+**Why it is stopped, not left to sound later.** A phrase heard minutes
+after it was chosen can answer a question nobody is asking any more (Yes
+to a different question), and nothing may sound without the person's
+action (invariant 4). Stopped, it can be said again with one activation:
+Again, or the same tile, which is no longer absorbed as a repeat of a
+phrase still "speaking".
+
+**Why 15 seconds.** Long enough for a slow first phrase: in the same CI
+run, on an overloaded iPad simulator, the first sound of each of five
+later launches came 1.9 to 4.9 seconds after the phrase's voice lookup
+and 3.1 to 5.4 seconds after the test began its tap or press (from the
+app's and the test's own logs in the result bundle). The limit counts
+from the moment the app asks for the phrase, which falls between the
+two, so the slowest healthy start took between 4.9 and 5.4 seconds. The
+2026-10-25 simulator controls
+([speech diagnostic](evidence/2026-10-25-duo-design/speech-diagnostic/README.md))
+reported their start 0.03 to 0.08 seconds after asking and their first
+word 0.6 to 1 second after. Fifteen seconds is nearly three times the
+slowest healthy start (2.8 times 5.4 seconds). Short enough that the person learns a
+phrase will not be heard before the 20 seconds after which the app
+already treats a synthesizer that reports nothing as possibly stuck
+(`SpokenUtteranceTracker.repeatWindow`). `SpokenUtteranceTrackerTests`
+pins both bounds: at least twice the slowest healthy start, and under the
+repeat window.
+
+**Why a start report or a word, not words alone.** Brickson already
+trusts a phrase that reports no words at all ("A phrase the system cuts
+off"); if only words counted, a voice that reports none would have every
+message longer than the limit stopped while it was being heard.
+
+**Counted from the ask, audio and voice lookup included.** Stopping an
+earlier phrase, activating the audio session and looking up the chosen
+voice all happen on the main thread before the synthesizer has the
+phrase, and the voice lookup can wait on the system's voice service. That
+time counts against the limit,
+because what the limit guards is how late after the person's choice a
+phrase would sound: one that has not started 15 seconds after it was
+asked for is late whatever held it up, and stopping it follows the rule
+above. A review on the pull request proposed starting the count after
+the lookup; declined for that reason, and because the synthesizer looks
+the voice up again as it takes the phrase (`SystemSpeechSynthesizer`), so
+the count could not start after every lookup anyway. A later review found
+that the first version started the count after the audio session
+activated, contrary to this rule; it now starts before
+(`SpeechServiceTests`, `aSlowAudioActivationCountsAgainstTheStartLimit`).
+
+**Evidence kept for the limit.** A start of one second or more is
+logged at notice level as "Speech began N ms after it was asked for",
+whichever report shows it first (the start report, or a word from a
+voice that sends no start), and
+a phrase the limit stops at error level, numbers only and never the
+words, so a CI result bundle or a device's log shows how close real
+starts come. A start of 7.5 seconds or more (half the limit) is new
+evidence to revisit the limit with. The measurement is taken from the
+first report the app handles. A review proposed ordering the reports by
+the time each was stamped instead, in case the start report is handled
+after a word; declined, because each report is stamped as it arrives and
+passed to the main queue in arrival order, so the two can differ by at
+most the moments it takes to pass one along, against a log threshold of
+one second and a limit of 15.
+
+**What it does not catch.** A phrase the synthesizer begins after
+`latestStart`, while its own voice lookup held the main thread, can be
+heard for the moment it takes to stop it. A start report sent for speech
+that is never heard, and a phrase that began and then stays "speaking" with no finish
+(the 2026-10-25 diagnostic) still show "Speaking": the first is not
+known to happen, and the second is the open gap the diagnostic records.
+
+**The words on screen.** The limit reuses "Stopped — Again" and its
+sentence, "Speech stopped unexpectedly. Choose Again to repeat it." A
+plainer warning for a phrase that never began (such as "Not spoken —
+Again") would be new words on Home, which is the owner's call; it is
+recorded as a proposal in docs/HANDOFF.md, not built.
+
 ## Audio session notices
 
 *2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
@@ -2747,7 +2871,16 @@ R0 item 3's accessibility work (docs/ACCESSIBILITY.md, sections 1 and 3;
   *2026-10-23:* Again is in C, reached after Emergency, and Settings in
   B, after the categories (*Settings on Home*). Get Attention is in C,
   after Emergency and before Again; Stop, while it shows, is reached
-  first in B (*Get Attention and Stop on Home*).
+  first in B (*Get Attention and Stop on Home*). *2026-11-17:* the
+  priorities alone were not enough. Until SwiftUI had applied them, the
+  accessibility tree XCTest read on CI's simulators listed elements in the
+  order they are declared, which matched Home's screen order, Phrases
+  and Type before Yes, No and Emergency, for seconds at a time on a still
+  Home (at least 3.9 in one launch). So Home also declares its
+  regions, and the safety row its controls, in the order they are
+  reached (`HomeRegion.allCases`, `HomeRegion.safetyRowOrder`), each
+  placed at the engine's frame; nothing moves
+  ([`log/2026-11-17-home-order-before-sorting.md`](log/2026-11-17-home-order-before-sorting.md)).
 - **Each region is an accessibility container** (`.contain`), so its
   controls are reached together and Switch Control can offer it as a
   group when Group Items is on. The regions carry identifiers for tests
@@ -5920,10 +6053,31 @@ request merges only when they pass.
   balanced by measured time, about 18 to 28 minutes of tests each on
   CI; move classes between them when one grows. A part keeps the full
   run's order where a test depends on it, and the check enforces it
-  (`RUNS_AFTER`): `LibraryTests` audits a screen with the keyboard up,
-  and on a simulator whose keyboard has never shown, the empty
-  suggestion bar fails Apple's audit, so `LibraryTests` runs after
-  `KeyboardProbeTests` in the same part, as it always did.
+  (`RUNS_AFTER`): `LibraryTests` runs after `KeyboardProbeTests` in the
+  same part, as it always did. *Corrected 2026-11-17:* the reason first
+  given here, that `KeyboardProbeTests` showing the keyboard first fills
+  its suggestion bar before `LibraryTests` audits New Phrase with the
+  keyboard up, did not hold. On CI that day the bar had its words in
+  `KeyboardProbeTests` and was empty again in `LibraryTests` about two
+  and a half minutes later, and Apple's audit reported its empty
+  buttons. On the Mac, on simulators made new or erased for the check,
+  the keyboard's three suggestion buttons stayed without words, and so
+  without labels, for the whole first showing of the keyboard: 120
+  seconds after typing, and 60 seconds before typing and 20 after, so
+  no wait can fix it. Showing the keyboard again gave the bar its words
+  at once. So `LibraryTests` now waits for the bar's words before that
+  audit and, when the first showing has none, leaves New Phrase and
+  opens it again, then audits once; if the bar is still empty, the test
+  fails saying so (`BricksonUITests/KeyboardSuggestions.swift`). The
+  trade-off: the test no longer audits the empty bar of the keyboard's
+  first showing on a cold simulator. That bar is Apple's keyboard, not
+  Brickson's, and the audit itself is unchanged: no finding is excused
+  or retried. A named exception for the keyboard's suggestion cell was
+  not chosen, because it would let more through the audit. The
+  trade-off is the owner's to accept (AGENTS.md, *Code Review Rules*),
+  by merging the pull request that makes it. The order
+  stays until a change that also edits its check drops it. Record:
+  [`log/2026-11-17-keyboard-suggestion-bar.md`](log/2026-11-17-keyboard-suggestion-bar.md).
   `scripts/test-runner.py` checks that every UI test class runs in
   exactly one part, that each family runs every part, and that the six
   jobs differ only in family and part; "UI tests" passes only when all
@@ -5997,11 +6151,64 @@ request merges only when they pass.
   expectation, a sleep, a run loop held for a time or a deadline of the
   test's own. `HomeAccessibilityOrderTests.swift` keeps its 9 bare waits
   (7 from before the helpers, 2 that pull request #119's re-read added)
-  until a later pull request moves them onto the helpers, and may not
-  gain one.
+  and `KeyboardSuggestions.swift` its 2 (pull request #125's own look at
+  the keyboard's suggestion bar, which came in from `main`) until a
+  later pull request moves them onto the helpers, and neither may gain
+  one.
   Revisit if a stretched limit runs out on CI with only quick looks: that
   is a stuck app, or a limit too short for that step. Record:
   [`log/2026-11-17-ui-test-waits.md`](log/2026-11-17-ui-test-waits.md).
+- **2026-11-19, default, reversible:** on a simulator, `scripts/test.sh
+  ui` waits before its first test until the Mac has settled. After the
+  build and the warm-up launch, `scripts/simulator-load.py settle` reads
+  the Mac's load (its own count of tasks running or waiting for a
+  processor, averaged over a minute) every five seconds, and the tests
+  start once three readings in a row are under 50 for each of the Mac's
+  processors, 150 on GitHub's three, or after twenty minutes, whichever
+  comes first. Why: every simulator on GitHub's machines starts for the
+  first time, a first start begins hundreds of iOS's own background
+  tasks, and on that Mac they held the load at 400 to 550 and brought it
+  under 150 only about 15 to 20 minutes after the start, while the
+  tests began at about minute five. In the 320 UI test jobs of
+  2026-11-12 to 11-19, one test in 10,504 that started under a load of
+  150 failed with a wait run out, against about 8 in 1,000 that started
+  above 350; no test step stalled in about 7,400 minutes of tests under
+  a load of 250, and 50 did in about 2,520 minutes above it. So the
+  nineteen jobs that week whose waits ran out were not nineteen faults
+  but tests run on a starved Mac, and a longer wait in one test only
+  left the next test to fail the same way. The wait changes when the
+  tests start and nothing they check: no test is retried, skipped or
+  given a longer limit, an accessibility audit runs as before, a Mac
+  that never settles is tested anyway with a warning, and so is one
+  whose wait could not run. The unit tests do not wait: none of their
+  failures that week was a wait run out. The cost is minutes in every
+  UI job: on the first CI run with it the wait was 3.8 to 13.2 minutes,
+  a middle of 8, the tests were not measurably quicker, and a part's
+  job took 34 to 45 minutes where it took 28 to 35. On a Mac with more
+  processors the limit is higher and the wait is the ten seconds its
+  three readings take.
+  Not chosen: longer waits in the tests that failed; stopping iOS's
+  background tasks, which changes the system the tests run on; a larger
+  paid machine, which hides the cause; and keeping a started
+  simulator's data between runs, which would remove the start-up work
+  instead of waiting for it but needs a workflow change, a new action
+  and its own experiment, so it is the follow-up if the wait proves
+  long. The wait runs in the foreground, as the build and the tests
+  do, so a TERM signal sent to `scripts/test.sh` alone is answered when
+  the wait ends, as it is for them. CodeRabbit's review of pull request
+  #128 asked for the wait to be made interruptible; declined, because
+  the build before it and the tests after it, each longer, would still
+  hold the script the same way, and a change to how the script answers
+  signals belongs to all its steps together. The wallpaper pausing
+  (2026-11-03) is unchanged: measure it
+  again now that the tests start settled, one change at a time. This
+  does not explain the jobs GitHub cancelled before their tests began
+  (docs/HANDOFF.md, *Known gaps*). Revisit when a wait often reaches its
+  twenty minutes, when a part's job often takes more than about 45
+  minutes (the slowest of the first six took 44.7, so this is close),
+  or when a wait runs out in a test that started settled, which would
+  show the cause is another for that test. Record:
+  [`log/2026-11-19-ui-tests-wait-for-a-settled-mac.md`](log/2026-11-19-ui-tests-wait-for-a-settled-mac.md).
 
 ## Guards for Apple's look
 
@@ -7257,8 +7464,9 @@ itself once `scripts/test-site.py` landed; checks "Analyze (actions)" and
   `autobuild` and `manual` build modes; no mode that skips the build has
   been announced. It probably meant AI Scan, below.
 - **Since 2026-11-08 AI Scan is off** (the owner: it used most of the
-  month's AI credits and found nothing; *Code review* above), so no scan
-  reads the Swift code; Copilot's review of each code pull request and
+  month's AI credits and found nothing; *Code review* above), so no
+  GitHub scan reads the Swift code (SonarQube Cloud does:
+  *SonarQube Cloud's alerts*, below); Copilot's review of each code pull request and
   Copilot Autofix's suggestions for CodeQL alerts remain. Before, in
   the bullet below:
 - *Until 2026-11-08.* GitHub's **AI Scan for pull requests** (a public
@@ -7299,6 +7507,75 @@ turns AI Scan back on, when it stops reading Swift or leaves the
 preview with new terms; or when a Swift error appears on the Tool
 status page again.
 
+### SonarQube Cloud's alerts
+
+*2026-11-17, default, reversible.* SonarQube Cloud analyses `main` and
+every pull request by itself (its automatic analysis, set up on its
+website; the repository holds no settings file for it), Swift included,
+and sends its security findings to GitHub's code scanning page beside
+CodeQL's. On a pull request they arrive as review comments, so each one
+needs an answer before a merge (*`main` ruleset*, below). They do not
+block a merge otherwise: the ruleset's code scanning rule names CodeQL
+only.
+
+On 2026-11-17 four of its findings stood open on `main`, all of one
+kind: a value from outside a Python helper script (an argument, or a
+file's text) handed to another program, which could read it as an
+option of its own ("argument injection"). None is in the app. Each was
+checked against the code:
+
+- **Alert 7, `scripts/privacy-check.py`: fixed.** The path it named, the
+  folder after `git -C`, was safe: git reads the word after `-C` as a
+  folder even when it starts with a dash. The same call had a gap it did
+  not name: a `--commits` range went to `git log` as given, so
+  `--commits=--output=<file>` emptied that file before the check
+  stopped. A range that starts with a dash is now refused before git
+  runs, and the folder is resolved to an absolute path first, which
+  never reads as an option whatever git does. Tests:
+  `test_a_range_that_starts_with_a_dash_is_refused_before_git_reads_it`
+  and `test_git_is_given_the_repository_as_an_absolute_folder`.
+- **Alert 4, `scripts/forbidden-code.py`: hardened.** The same safe
+  path; the folder is now resolved first too
+  (`test_git_is_given_the_checkout_as_an_absolute_folder`).
+- **Alert 6, `scripts/agent-bridge.py`, the brief's text: declined, a
+  false positive.** The brief reaches `codex exec` and `agy -p` as the
+  prompt only after the bridge's fixed preamble ("You are working on
+  Brickson…"), so that argument never starts with a dash.
+- **Alert 5, `scripts/agent-bridge.py`, `--background`: declined, a
+  false positive.** The bridge starts itself again with the arguments its
+  own parser already accepted, minus `--background`. They reach no other
+  program and allow nothing its user could not type.
+
+The owner dismissed alerts 5 and 6 on GitHub as false positives with
+these reasons on 2026-11-17, and SonarQube Cloud's own API then showed
+both as resolved false positives, so a dismissal on GitHub reaches it.
+An agent's dismissal through the owner's `gh` on the Mac was refused by
+Claude Code's permission check there, so dismissing stays with the
+owner. If alert 4 or 7 is still open after this change reaches `main`,
+SonarQube Cloud does not count a resolved path as safe; the owner then
+dismisses it with the reason above.
+
+**How a script hands a value to another program**, so the finding does
+not return: a folder or file goes as an absolute path
+(`Path(...).resolve()`); any other value from outside (an argument, a
+file's text, an environment variable) is refused if it starts with a
+dash, or with any other character the receiving program reads
+specially (some programs read `@name` as a file of more arguments),
+checked after any prefix the script strips; a dash may instead be
+answered by putting the value after `--` where the program reads that
+as the end of its options; and no script builds a shell command from
+it. The repeated answers to this finding on pull
+request #119 came from new measuring scripts that took their arguments
+from the command line.
+
+**Answering one on a pull request.** Check it like any reviewer's
+finding (AGENTS.md, *Code Review Rules*). Where the code follows the rule
+above, answer once, naming this section, and ask the owner to dismiss
+the alert on GitHub as a false positive with that reason, in the
+thread's report rather than in a comment. An alert reported again after a fix
+means the fix missed a path: look again before answering it a second
+time.
+
 ### Security review context
 
 *2026-11-08, approved by the owner in the security-policy chat.* The root
@@ -7323,7 +7600,7 @@ through its API on 2026-10-15:
 | Require a pull request before merging | 0 approvals; merge commits only | Nobody pushes to `main`. The owner cannot approve pull requests that show them as author, so any approval count would block every merge. Merge commits keep the commit hashes HANDOFF cites on `main`. |
 | Require status checks to pass | "Unit tests" and "UI tests" | The job names in `tests.yml`. Renaming a job blocks every pull request until the ruleset is changed to match. |
 | Require branches to be up to date | Off | Each update reruns the Mac tests; `main` is tested again after every merge anyway. |
-| Require conversation resolution | On | Every reviewer's comment (Codex, CodeRabbit, Greptile, cubic, Copilot), and every CodeQL alert posted on the pull request, gets an answer before a merge. AI Scan findings were answered too, by practice, while it was on (until 2026-11-08, *Code scanning* above). |
+| Require conversation resolution | On | Every reviewer's comment (Codex, CodeRabbit, Greptile, cubic, Copilot), and every CodeQL or SonarQube Cloud alert posted on the pull request, gets an answer before a merge. AI Scan findings were answered too, by practice, while it was on (until 2026-11-08, *Code scanning* above). |
 | Require code scanning results | CodeQL: errors, high or higher | A workflow change that CodeQL flags as an error, or as a high or critical security problem, cannot merge. It did not cover Dependabot's first pull request, which got no CodeQL analysis before merging (*Code scanning* above). |
 | Automatically request Copilot code review | Off since 2026-11-03 (on before, with new pushes and drafts off) | The agent asks for Copilot's review once per code pull request, after Codex's review is answered (since 2026-11-08, *Code review* above). |
 | Block force pushes, restrict deletions | On | History on `main` never changes. |

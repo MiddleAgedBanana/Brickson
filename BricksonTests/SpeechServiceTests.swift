@@ -445,6 +445,222 @@ struct SpeechServiceTests {
         #expect(harness.speech.speechInterruptionState == .idle)
     }
 
+    // MARK: A phrase that does not start
+
+    /// The system's speech service can take a phrase and never begin it,
+    /// while the synthesizer says it is speaking: on CI it stayed silent for
+    /// about three minutes after Yes. "Speaking" must not stay on screen
+    /// over that silence (invariants 4 and 5). Fails before the start
+    /// limit: the phrase stays "Speaking", with nothing to say it was not
+    /// heard and nothing stopping it from sounding minutes later.
+    @Test func aPhraseThatNeverBeginsNamesAgainOnceTheStartLimitPasses() async {
+        let harness = AudioHarness()
+        harness.speech.speak("Yes.")
+        #expect(await waitUntil { harness.speechSleeper.isAnyoneSleeping })
+
+        harness.clock.advance(by: SpokenUtteranceTracker<UtteranceToken>.startLimit)
+        #expect(await harness.speechSleeper.wakeAll())
+        #expect(harness.speechSleeper.pendingDurations == [.milliseconds(500)])
+        #expect(harness.speech.isSpeaking)
+
+        #expect(await harness.speechSleeper.wakeAll())
+        #expect(!harness.speechSleeper.isAnyoneSleeping)
+        #expect(!harness.speech.isSpeaking)
+        #expect(harness.speech.speechInterruptionState == .stoppedUnexpectedly)
+        #expect(harness.issue == .speechStopped)
+        #expect(harness.synthesizer.stopCount == 1)
+        #expect(!harness.coordinator.isHeld(by: .speech))
+    }
+
+    /// The limit counts from the moment the phrase is asked for, so time
+    /// spent activating audio before the synthesizer has it counts too: the
+    /// person has been waiting all along. Fails if the count starts after
+    /// the audio session activates, which would leave this phrase
+    /// "Speaking" 15 seconds after it was chosen.
+    @Test func aSlowAudioActivationCountsAgainstTheStartLimit() async {
+        let harness = AudioHarness()
+        let clock = harness.clock
+        let activation: Duration = .seconds(10)
+        harness.audioSession.onActivate = { clock.advance(by: activation) }
+        harness.speech.speak("Yes.")
+        harness.audioSession.onActivate = nil
+        #expect(await waitUntil { harness.speechSleeper.isAnyoneSleeping })
+
+        harness.clock.advance(by: SpokenUtteranceTracker<UtteranceToken>.startLimit - activation)
+        #expect(await harness.speechSleeper.wakeAll())
+        #expect(harness.speechSleeper.pendingDurations == [.milliseconds(500)])
+
+        #expect(await harness.speechSleeper.wakeAll())
+        #expect(!harness.speech.isSpeaking)
+        #expect(harness.issue == .speechStopped)
+        #expect(harness.synthesizer.stopCount == 1)
+    }
+
+    /// A slow audio activation or voice lookup holds the main thread, where
+    /// the watchdog cannot look, and can last past the limit (on CI a voice
+    /// lookup took almost three minutes). The phrase is then too late to be
+    /// heard in turn, so it is never handed to the synthesizer, and Home
+    /// names Again at once. Fails if it is handed over regardless, where it
+    /// could begin minutes after it was chosen.
+    @Test func aPhraseHeldUpPastTheLimitIsNeverHandedToTheSynthesizer() async {
+        let harness = AudioHarness()
+        let clock = harness.clock
+        harness.audioSession.onActivate = { clock.advance(by: SpeechService.latestStart) }
+        harness.speech.speak("Yes.")
+        harness.audioSession.onActivate = nil
+
+        #expect(harness.synthesizer.requests.isEmpty)
+        #expect(!harness.speech.isSpeaking)
+        #expect(harness.issue == .speechStopped)
+        #expect(!harness.coordinator.isHeld(by: .speech))
+    }
+
+    /// A phrase handed over just before the main thread is held can begin
+    /// after the limit, before the watchdog gets to look. A start reported
+    /// that late stops it as it begins, and Home names Again. Fails if a
+    /// late start is kept, where the phrase would sound out of turn.
+    @Test func aStartReportedPastTheLimitStopsThePhraseAsItBegins() async {
+        let harness = AudioHarness()
+        harness.speech.speak("Yes.")
+        #expect(await waitUntil { harness.speechSleeper.isAnyoneSleeping })
+
+        harness.clock.advance(by: SpeechService.latestStart)
+        harness.synthesizer.reportStart()
+
+        #expect(!harness.speech.isSpeaking)
+        #expect(harness.issue == .speechStopped)
+        #expect(harness.synthesizer.stopCount == 1)
+        #expect(!harness.coordinator.isHeld(by: .speech))
+        #expect(await harness.speechSleeper.wakeAll())
+        #expect(!harness.speechSleeper.isAnyoneSleeping)
+    }
+
+    /// A voice that sends no start report shows its start with its first
+    /// word, so a first word reported past the limit stops the phrase too.
+    /// Fails if only the start report is checked against the limit.
+    @Test func aFirstWordReportedPastTheLimitStopsThePhraseToo() async {
+        let harness = AudioHarness()
+        harness.speech.speak("Yes, please.")
+        harness.clock.advance(by: SpeechService.latestStart)
+        harness.synthesizer.reportProgress(through: 3)
+
+        #expect(!harness.speech.isSpeaking)
+        #expect(harness.issue == .speechStopped)
+        #expect(harness.synthesizer.stopCount == 1)
+    }
+
+    /// A slow first phrase is not cut off: on CI a healthy first phrase took
+    /// about five seconds to begin. Fails if the limit acts before it is
+    /// reached, or ever stops a phrase that began.
+    @Test func aSlowStartInsideTheLimitKeepsSpeaking() async {
+        let harness = AudioHarness()
+        harness.speech.speak("Yes.")
+        #expect(await waitUntil { harness.speechSleeper.isAnyoneSleeping })
+        harness.clock.advance(by: SpokenUtteranceTracker<UtteranceToken>.startLimit - .milliseconds(1))
+        #expect(await harness.speechSleeper.wakeAll())
+        #expect(harness.speechSleeper.pendingDurations == [.seconds(1)])
+
+        harness.synthesizer.reportStart()
+        harness.clock.advance(by: .seconds(60))
+        #expect(await harness.speechSleeper.wakeAll())
+
+        #expect(harness.speechSleeper.pendingDurations == [.seconds(1)])
+        #expect(harness.speech.isSpeaking)
+        #expect(harness.speech.speechInterruptionState == .idle)
+        #expect(harness.synthesizer.stopCount == 0)
+    }
+
+    /// A word is reported only once speech is under way. Fails if a phrase
+    /// whose start report never came is stopped though its words are being
+    /// spoken.
+    @Test func aPhraseThatReportsAWordIsNeverStoppedByTheStartLimit() async {
+        let harness = AudioHarness()
+        harness.speech.speak("I need help now.")
+        #expect(await waitUntil { harness.speechSleeper.isAnyoneSleeping })
+
+        harness.synthesizer.reportProgress(through: 1)
+        harness.clock.advance(by: .seconds(60))
+        #expect(await harness.speechSleeper.wakeAll())
+
+        #expect(harness.speechSleeper.pendingDurations == [.seconds(1)])
+        #expect(harness.speech.isSpeaking)
+        #expect(harness.speech.speechInterruptionState == .idle)
+    }
+
+    /// Once the limit has stopped a phrase, the next activation speaks it
+    /// again at once. Fails before the start limit, when Again at that
+    /// moment was absorbed as a repeat of the phrase still "speaking".
+    @Test func againSpeaksAtOnceAfterTheStartLimitStoppedThePhrase() async {
+        let harness = AudioHarness()
+        harness.speech.speak("Yes.")
+        #expect(await waitUntil { harness.speechSleeper.isAnyoneSleeping })
+        harness.clock.advance(by: SpokenUtteranceTracker<UtteranceToken>.startLimit)
+        #expect(await harness.speechSleeper.wakeAll())
+        #expect(await harness.speechSleeper.wakeAll())
+
+        harness.speech.repeatLast()
+
+        #expect(harness.synthesizer.requests.map(\.text) == ["Yes.", "Yes."])
+        #expect(harness.speech.isSpeaking)
+        #expect(harness.speech.speechInterruptionState == .idle)
+    }
+
+    /// A start report that lands between the two looks wins, as a finish
+    /// does for the missed-finish watchdog. Fails if the second look does
+    /// not check again.
+    @Test func aStartThatLandsDuringTheGraceKeepsThePhrase() async {
+        let harness = AudioHarness()
+        harness.speech.speak("Yes.")
+        #expect(await waitUntil { harness.speechSleeper.isAnyoneSleeping })
+        harness.clock.advance(by: SpokenUtteranceTracker<UtteranceToken>.startLimit)
+        #expect(await harness.speechSleeper.wakeAll())
+        #expect(harness.speechSleeper.pendingDurations == [.milliseconds(500)])
+
+        harness.synthesizer.reportStart()
+        #expect(await harness.speechSleeper.wakeAll())
+
+        #expect(harness.speechSleeper.pendingDurations == [.seconds(1)])
+        #expect(harness.speech.isSpeaking)
+        #expect(harness.speech.speechInterruptionState == .idle)
+        #expect(harness.synthesizer.stopCount == 0)
+    }
+
+    /// A Settings voice sample cannot be repeated with Again, so one that
+    /// never begins only clears the indicator, as when it goes quiet.
+    /// Fails if a sample leaves "Stopped — Again", or keeps "Speaking".
+    @Test func aVoiceSampleThatNeverBeginsOnlyClearsTheIndicator() async {
+        let harness = AudioHarness()
+        harness.speech.preview(from: .previewVoice)
+        #expect(await waitUntil { harness.speechSleeper.isAnyoneSleeping })
+
+        harness.clock.advance(by: SpokenUtteranceTracker<UtteranceToken>.startLimit)
+        #expect(await harness.speechSleeper.wakeAll())
+        #expect(await harness.speechSleeper.wakeAll())
+
+        #expect(!harness.speech.isSpeaking)
+        #expect(harness.speech.speechInterruptionState == .idle)
+        #expect(harness.synthesizer.stopCount == 1)
+    }
+
+    /// When the session could not activate, "Audio failed" is already the
+    /// true message (code audit L3). Fails if the start limit replaces it
+    /// with "Stopped — Again".
+    @Test func whenAudioNeverStartedTheStartLimitLeavesAudioFailedShowing() async {
+        let harness = AudioHarness()
+        harness.audioSession.refusesActivation = true
+        harness.speech.speak("I need help now.")
+        #expect(harness.issue == .audioSessionUnavailable)
+        #expect(await waitUntil { harness.speechSleeper.isAnyoneSleeping })
+
+        harness.clock.advance(by: SpokenUtteranceTracker<UtteranceToken>.startLimit)
+        #expect(await harness.speechSleeper.wakeAll())
+        #expect(await harness.speechSleeper.wakeAll())
+
+        #expect(!harness.speech.isSpeaking)
+        #expect(harness.speech.speechInterruptionState == .idle)
+        #expect(harness.issue == .audioSessionUnavailable)
+    }
+
     // MARK: Audio that never started (code audit L3)
 
     /// When the session could not activate, Home shows "Audio failed". The

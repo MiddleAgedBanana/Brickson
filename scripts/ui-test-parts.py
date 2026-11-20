@@ -44,11 +44,14 @@ PARTS = (
 
 # Classes that must run after another class in the same part, as they do
 # in the full run (XCTest runs a target's classes in name order).
-# LibraryTests audits the New Phrase screen with the keyboard up. On a
-# simulator whose keyboard has never shown, the keyboard's suggestion bar
-# is still empty, and Apple's audit reports its empty cells as elements
-# with no description (CI, iPhone, 2026-11-17). In the full run
-# KeyboardProbeTests always raised the keyboard first.
+# LibraryTests runs after KeyboardProbeTests, as in the full run. The order
+# was kept so the keyboard had shown before LibraryTests audits New Phrase
+# with it up, but it does not fill the keyboard's suggestion bar: on CI
+# the bar was empty again in LibraryTests after KeyboardProbeTests had
+# shown it with words (2026-11-17). LibraryTests now shows the keyboard
+# again itself when the bar is empty (BricksonUITests/KeyboardSuggestions.swift;
+# docs/DECISIONS.md, "Tests"). The order stays until a change that also
+# edits its check drops it.
 RUNS_AFTER = {"LibraryTests": "KeyboardProbeTests"}
 
 CLASS = re.compile(r"^\s*(?:final\s+)?class\s+(\w+)\s*:\s*XCTestCase\b", re.M)

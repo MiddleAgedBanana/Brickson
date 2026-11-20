@@ -61,6 +61,12 @@ nonisolated enum UtteranceEnding: Equatable, Sendable {
 /// can report that before its interruption notice arrives; without this, the
 /// person's sentence would stop half-way with nothing on screen.
 ///
+/// And it decides when an utterance has gone too long without beginning:
+/// the system's speech service can accept a phrase and never start it while
+/// the synthesizer reports that it is speaking, which would leave
+/// "Speaking" on screen over silence (docs/DECISIONS.md, "A phrase that
+/// does not start").
+///
 /// Time is `ContinuousClock`, never `Date`: the wall clock can jump (time
 /// zones, manual changes, network time), and a jump backwards would stretch
 /// the recovery window (docs/LESSONS.md, "Timers use ContinuousClock").
@@ -79,9 +85,26 @@ nonisolated struct SpokenUtteranceTracker<ID: Equatable & Sendable>: Sendable {
     /// that skips reporting its last word never shows a false warning.
     static var cutOffCorrelationWindow: Duration { .seconds(3) }
 
+    /// How long an utterance may go, from the moment the app is asked to
+    /// speak it (before any earlier phrase is stopped, audio is activated,
+    /// its voice is looked up and it is handed to the synthesizer),
+    /// without a start or word report before it is treated as one that will
+    /// not be heard. Long enough for a slow first phrase (the slowest healthy
+    /// one measured took at most 5.4 seconds on an overloaded CI simulator),
+    /// and shorter than `repeatWindow`, so the person learns of it before the app
+    /// would treat the silence as a stuck synthesizer anyway
+    /// (docs/DECISIONS.md, "A phrase that does not start").
+    static var startLimit: Duration { .seconds(15) }
+
     private struct Active: Sendable {
         let id: ID
         let source: UtteranceSource
+        /// When the app was asked to speak the utterance, before any earlier
+        /// phrase was stopped, audio was activated, its voice was looked up
+        /// and it was handed to the synthesizer.
+        let beganAt: ContinuousClock.Instant
+        /// True once the synthesizer said it began, or reported a word.
+        var hasBegun: Bool
         var lastProgressAt: ContinuousClock.Instant
         /// UTF-16 offset of the final word of a phrase; nil for a sample, or
         /// for text with no letters or digits, which is never judged short.
@@ -121,6 +144,8 @@ nonisolated struct SpokenUtteranceTracker<ID: Equatable & Sendable>: Sendable {
         active = Active(
             id: id,
             source: source,
+            beganAt: instant,
+            hasBegun: false,
             lastProgressAt: instant,
             finalWordStart: finalWordStart,
             spokenThrough: nil
@@ -131,24 +156,65 @@ nonisolated struct SpokenUtteranceTracker<ID: Equatable & Sendable>: Sendable {
     /// Word callbacks refresh only the current utterance's recovery window.
     /// They can cross onto the main actor out of order, so an older callback
     /// must neither revive a replaced utterance nor shorten the current window.
-    mutating func recordProgress(_ id: ID, at instant: ContinuousClock.Instant) {
-        guard var current = active, current.id == id else { return }
+    /// Returns how long after `began` the utterance started, when this is
+    /// the first sign that it did (`recordStart`).
+    @discardableResult
+    mutating func recordProgress(_ id: ID, at instant: ContinuousClock.Instant) -> Duration? {
+        guard var current = active, current.id == id else { return nil }
         current.lastProgressAt = max(current.lastProgressAt, instant)
+        let delay = Self.markBegun(&current, at: instant)
         active = current
+        return delay
     }
 
     /// A word callback that also says how far the synthesizer has got: the
     /// end of the spoken range, as a UTF-16 offset into the utterance's text
     /// (`NSRange`'s units). Out-of-order callbacks never move it backwards.
+    /// Returns how long after `began` the utterance started, when this is
+    /// the first sign that it did (`recordStart`).
+    @discardableResult
     mutating func recordProgress(
         _ id: ID,
         reaching offset: Int,
         at instant: ContinuousClock.Instant
-    ) {
-        guard var current = active, current.id == id else { return }
+    ) -> Duration? {
+        guard var current = active, current.id == id else { return nil }
         current.lastProgressAt = max(current.lastProgressAt, instant)
         current.spokenThrough = max(current.spokenThrough ?? offset, offset)
+        let delay = Self.markBegun(&current, at: instant)
         active = current
+        return delay
+    }
+
+    /// The synthesizer said it began speaking the utterance. Returns how long
+    /// after `began` that was, when this is the first sign that the current
+    /// utterance started, so the app can log slow starts; nil once a start
+    /// or word report has already said so, and for any other utterance.
+    /// A voice may report a word first, or never report a start at all, so
+    /// the word reports return the same measurement.
+    @discardableResult
+    mutating func recordStart(_ id: ID, at instant: ContinuousClock.Instant) -> Duration? {
+        guard var current = active, current.id == id, !current.hasBegun else { return nil }
+        current.lastProgressAt = max(current.lastProgressAt, instant)
+        let delay = Self.markBegun(&current, at: instant)
+        active = current
+        return delay
+    }
+
+    /// Marks `utterance` as begun, returning how long after `began` that
+    /// was, or nil if it had already begun.
+    private static func markBegun(_ utterance: inout Active, at instant: ContinuousClock.Instant) -> Duration? {
+        guard !utterance.hasBegun else { return nil }
+        utterance.hasBegun = true
+        return instant - utterance.beganAt
+    }
+
+    /// Whether the current utterance `id` has gone `startLimit` since the
+    /// app asked for it with no start report and no word report.
+    /// False for any utterance that is not the current one.
+    func hasFailedToStart(_ id: ID, at now: ContinuousClock.Instant) -> Bool {
+        guard let active, active.id == id, !active.hasBegun else { return false }
+        return now - active.beganAt >= Self.startLimit
     }
 
     /// The synthesizer said the utterance finished. Ignores reports for
