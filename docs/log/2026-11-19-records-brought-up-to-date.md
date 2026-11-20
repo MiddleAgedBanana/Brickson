@@ -76,7 +76,11 @@ records, corrected*, and Gitar's "Approved" label in docs/DECISIONS.md);
 then this file's pull request number and the three pull requests opened
 since in docs/HANDOFF.md's state line; then `main` brought in after #128
 merged, with the state line moved to it and a known gap for a drawing
-test that failed twice on this branch's third push.
+test that failed twice on this branch's third push; then `main` brought
+in again after #124 merged, keeping both edits to the ruleset table's
+"Require conversation resolution" row in docs/DECISIONS.md (this
+branch's Gitar and Graphify, and #124's SonarQube Cloud alerts), with
+the state line moved to it.
 
 ## Verified
 

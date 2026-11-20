@@ -6,14 +6,14 @@ edits this page in place and writes its record in [`docs/log/`](log/README.md);
 nothing is appended here. Plan: [`docs/ROADMAP.md`](ROADMAP.md). How the
 project runs: [`docs/SDLC.md`](SDLC.md).
 
-**State as of 2026-11-20: `main` is at `730f4d8`, pull request #128,
-merged 2026-11-20.** Open pull requests: #108 (a draft) and #109, two
-versions of one change to the agent bridge; #115, the record of the
-simulator experiments; #120, four more windows for Home's layout tests;
-#122, UI test waits; #123, a phrase the speech service never begins;
-#124, the code scanning alerts; #129 (a draft), logging the speech
-service's pause and carry-on reports after #123; and #130, a design
-review sheet. Device checks wait for the Team ID (*Next steps, in
+**State as of 2026-11-20: `main` is at `d34e5df`, pull request #124,
+the code scanning alerts, merged 2026-11-20.** Open pull requests: #108
+(a draft) and #109, two versions of one change to the agent bridge;
+#115, the record of the simulator experiments; #120, four more windows
+for Home's layout tests; #122, UI test waits; #123, a phrase the speech
+service never begins; #129 (a draft), logging the speech service's
+pause and carry-on reports after #123; and #130, a design review
+sheet. Device checks wait for the Team ID (*Next steps, in
 order*, step 4).
 
 ## What the app does today
@@ -1704,6 +1704,13 @@ settings, date) and summarise it here.
 - CodeQL scans the workflow files and the Python scripts, not the Swift
   code, on purpose (docs/DECISIONS.md, *Code scanning*); the failed Swift
   attempt of 2026-10-10 was deleted from the Tool status page on 2026-11-08.
+  SonarQube Cloud also analyses every pull request and `main`, Swift
+  included, and sends its security findings to the same code scanning
+  page. Its four open alerts of 2026-11-17, all in the helper scripts,
+  were answered: in two, git is now given the folder as an absolute
+  path and a real gap beside one of them is closed; the other two are
+  false positives, dismissed by the owner (docs/DECISIONS.md,
+  "SonarQube Cloud's alerts").
   The root [SECURITY.md](../SECURITY.md) gives Codex Security context for
   the app, tooling and website from the existing rules and decisions;
   [.github/SECURITY.md](../.github/SECURITY.md) remains the private-reporting
