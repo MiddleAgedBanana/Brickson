@@ -74,7 +74,9 @@ On `claude/project-thread-zsjz76`: `d07d433`, the records brought up to
 date; then the answers to the first review round (this file's *Older
 records, corrected*, and Gitar's "Approved" label in docs/DECISIONS.md);
 then this file's pull request number and the three pull requests opened
-since in docs/HANDOFF.md's state line.
+since in docs/HANDOFF.md's state line; then `main` brought in after #128
+merged, with the state line moved to it and a known gap for a drawing
+test that failed twice on this branch's third push.
 
 ## Verified
 
