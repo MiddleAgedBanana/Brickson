@@ -119,8 +119,10 @@ print(json.dumps(devices))
 esac
 """
 
-# Stands in for scripts/simulator-load.py: records each start and stop
-# among the simulator commands, and the test run's pid it was given.
+# Stands in for scripts/simulator-load.py: records each start, wait for the
+# Mac to settle and stop among the simulator commands, and the test run's
+# pid it was given. The wait is also recorded among xcodebuild's runs, to
+# show where it comes between them.
 FAKE_SIMULATOR_LOAD = """\
 import os, sys
 from pathlib import Path
@@ -128,6 +130,14 @@ arguments = sys.argv[1:]
 def value(name):
     return arguments[arguments.index(name) + 1]
 with Path(os.environ["RUNNER_SIMCTL"]).open("a") as log:
+    if arguments[0] == "settle":
+        log.write(f"load settle {Path(value('--out')).name}\\n")
+        with Path(os.environ["RUNNER_EVENTS"]).open("a") as events:
+            events.write("settle\\n")
+        status = int(os.environ.get("FIXTURE_LOAD_SETTLE_STATUS", "0"))
+        if status == 0:
+            print("The Mac has settled (fixture).")
+        sys.exit(status)
     if arguments[0] == "start":
         Path(os.environ["RUNNER_LOAD_PARENT"]).write_text(value("--parent"))
         pausing = "pausing" if "--pause-posters" in arguments else "watching"
@@ -607,16 +617,19 @@ class DestinationTests(unittest.TestCase):
 
 
 class PreparationTests(unittest.TestCase):
-    """Before UI tests: the full software keyboard, and one warm-up launch
-    of the app on test-only storage."""
+    """Before UI tests: the full software keyboard, one warm-up launch of
+    the app on test-only storage, and a wait for the Mac to settle after
+    the simulator's start
+    (docs/log/2026-11-19-ui-tests-wait-for-a-settled-mac.md)."""
 
     def ui_run(self, build_body="exit 0", **options):
         return run_script(build_body, destination=None,
                           devices={runtime("27.1"): [device("iPad Pro 13-inch (M5)", "PAD")]},
                           family="ipad", **options)
 
-    # Dropping either keyboard setting or the warm-up, warming up on the
-    # person's own storage, or warming up after the tests, fails this test.
+    # Dropping either keyboard setting, the warm-up or the wait for the
+    # Mac to settle, warming up on the person's own storage, or warming up
+    # after the tests, fails this test.
     def test_ui_tests_get_the_full_keyboard_and_a_warm_simulator(self):
         result = self.ui_run()
         self.assertEqual(result.returncode, 0, result.stderr)
@@ -633,6 +646,7 @@ class PreparationTests(unittest.TestCase):
             "simctl launch PAD fixture.brickson --fresh-test-storage",
             "sleep 15",
             "simctl terminate PAD fixture.brickson",
+            "load settle simulator-load-ipad.txt",
             "load stop 4242 simulator-load-ipad.txt",
             "simctl shutdown PAD",
         ])
@@ -641,12 +655,41 @@ class PreparationTests(unittest.TestCase):
         self.assertLess(result.stdout.index("Building Brickson-UI for testing"), warmed)
         self.assertLess(warmed, result.stdout.index("Testing Brickson-UI on: id=PAD"))
 
-    # Unit tests changing the keyboard or launching the app fails this.
+    # The UI tests starting before the Mac has settled (the wait dropped,
+    # or moved before the build or after the tests), or the wait's own
+    # words kept out of the log, fails this test. The tests' first minutes
+    # are when a simulator that has just started for the first time keeps
+    # GitHub's Mac busiest
+    # (docs/log/2026-11-19-ui-tests-wait-for-a-settled-mac.md).
+    def test_ui_tests_start_only_after_the_wait_for_the_mac_to_settle(self):
+        result = self.ui_run()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.events, ["build-for-testing", "settle", "test-without-building"])
+        settled = result.stdout.index("The Mac has settled (fixture).")
+        self.assertLess(result.stdout.index("Warm-up:"), settled)
+        self.assertLess(settled, result.stdout.index("Testing Brickson-UI on: id=PAD"))
+
+    # A wait that cannot run (its command fails) stopping the tests, or
+    # passing silently, fails this test.
+    def test_a_failed_wait_to_settle_is_reported_and_the_tests_still_run(self):
+        os.environ["FIXTURE_LOAD_SETTLE_STATUS"] = "1"
+        try:
+            result = self.ui_run()
+        finally:
+            del os.environ["FIXTURE_LOAD_SETTLE_STATUS"]
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("could not wait for the Mac to settle", result.stderr)
+        self.assertIn(("test-without-building", "id=PAD"), actions(result))
+
+    # Unit tests changing the keyboard, launching the app or waiting for
+    # the Mac to settle fails this.
     def test_unit_tests_only_wait_for_the_simulator(self):
         result = run_script("exit 0", mode="unit", destination=None, devices=IPAD_AND_IPHONE)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual([call for call in result.simctl if call.startswith("simctl")],
                          ["simctl boot PAD", "simctl bootstatus PAD -b", "simctl shutdown PAD"])
+        self.assertFalse(any(call.startswith("load settle") for call in result.simctl),
+                         result.simctl)
 
     # A failed warm-up that stops the run, or one that passes silently,
     # fails this test.
@@ -666,6 +709,7 @@ class PreparationTests(unittest.TestCase):
         self.assertEqual(result.returncode, 65)
         self.assertEqual([name for name, _ in actions(result)], ["build-for-testing"])
         self.assertNotIn("simctl launch PAD fixture.brickson --fresh-test-storage", result.simctl)
+        self.assertNotIn("load settle simulator-load-ipad.txt", result.simctl)
 
 
 class SimulatorLifecycleTests(unittest.TestCase):
@@ -917,8 +961,8 @@ class WatcherTests(unittest.TestCase):
                           **options)
 
     def load_calls(self, result):
-        return [call for call in result.simctl if call.startswith(("load ", "simctl boot ",
-                                                                   "simctl shutdown "))]
+        return [call for call in result.simctl
+                if call.startswith(("load start ", "load stop ", "simctl boot ", "simctl shutdown "))]
 
     # Pausing processes of a simulator someone else started, or not
     # pausing them on one this run started, in either mode, fails this test.
@@ -1670,6 +1714,123 @@ class SimulatorLoadTests(unittest.TestCase):
         self.assertEqual(fields, {"ppid": (4, 4), "status": (12, 4), "comm": (16, 16),
                                   "total_user": (16, 8), "total_system": (24, 8),
                                   "numer": (0, 4), "denom": (4, 4)})
+
+
+class SettleTests(unittest.TestCase):
+    """Before the UI tests start, scripts/simulator-load.py waits until
+    the Mac's load has stayed under 50 for each of its processors, for at
+    most twenty minutes, and says what it did in the log and in the
+    simulator's record
+    (docs/log/2026-11-19-ui-tests-wait-for-a-settled-mac.md)."""
+
+    def setUp(self):
+        self.module = simulator_load()
+        folder = tempfile.TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        self.record = Path(folder.name) / "record.txt"
+
+    def settle(self, loads, processors=3, arguments=()):
+        """Waits on a Mac whose load reads `loads`, one a reading and the
+        last one from then on (an OSError is raised, not returned), with a
+        clock only the wait's own sleeps move. Returns the status, what
+        was printed and the warnings."""
+        self.now = 0.0
+        readings = list(loads)
+
+        def load():
+            reading = readings.pop(0) if len(readings) > 1 else readings[0]
+            if isinstance(reading, OSError):
+                raise reading
+            return reading
+
+        def sleep(seconds):
+            self.now += seconds
+
+        printed, warnings = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(printed), contextlib.redirect_stderr(warnings):
+            status = self.module.settle(
+                self.module.parse(["settle", "--out", str(self.record), *arguments]),
+                load=load, processors=lambda: processors, clock=lambda: self.now, sleep=sleep)
+        return status, printed.getvalue(), warnings.getvalue()
+
+    # Ending the wait on the first reading under the limit (149), counting
+    # readings under it that are not in a row (149, then 140 and 120), a
+    # limit that is not 50 for each processor, or leaving the wait out of
+    # the simulator's record, fails this test.
+    def test_the_wait_ends_once_the_load_has_stayed_under_the_limit(self):
+        status, printed, warnings = self.settle([500, 400, 160, 149, 151, 140, 120, 100])
+        self.assertEqual((status, warnings), (0, ""))
+        self.assertEqual(self.now, 35.0)
+        self.assertIn("its load is 500, and they start once it has stayed under 150 "
+                      "(50 for each of its 3 processors), or after 20 min", printed)
+        self.assertIn("The Mac settled after 35 s: load 100.", printed)
+        record = self.record.read_text().splitlines()
+        self.assertRegex(record[0], r"^\d\d:\d\d:\d\d waiting for the Mac to settle before the tests: "
+                                    r"load 500\.0, wanted under 150$")
+        self.assertRegex(record[1], r"^\d\d:\d\d:\d\d the Mac settled after 35 s: load 100\.0$")
+        self.assertEqual(len(record), 2)
+
+    # A fixed limit, which would hold up every run on a Mac with more
+    # processors than GitHub's three while its simulator starts, or a
+    # reading at the limit counted as under it, fails this test.
+    def test_the_limit_follows_the_macs_processors(self):
+        status, printed, warnings = self.settle([400], processors=14)
+        self.assertEqual((status, warnings, self.now), (0, "", 10.0))
+        self.assertIn("under 700 (50 for each of its 14 processors)", printed)
+        status, printed, warnings = self.settle([150, 150, 150, 149])
+        self.assertEqual((status, warnings, self.now), (0, "", 25.0))
+
+    # Waiting without end, stopping the run, staying silent while it
+    # waits (a log with no line for twenty minutes reads as a hung job),
+    # or giving up without a warning, fails this test. So does a limit
+    # other than twenty minutes, which the record of the decision counts
+    # on for a job's longest time (docs/DECISIONS.md, "Tests").
+    def test_a_mac_that_does_not_settle_is_reported_and_the_tests_wait_no_longer(self):
+        status, printed, warnings = self.settle([500])
+        self.assertEqual(status, 0)
+        self.assertEqual(self.now, 20 * 60.0)
+        self.assertEqual(warnings, "warning: the Mac had not settled after 20 min (load 500, wanted "
+                                   "under 150); the tests run anyway.\n")
+        self.assertEqual(re.findall(r"still settling after (\d+) min: load 500\n", printed),
+                         [str(minute) for minute in range(1, 20)])
+        self.assertRegex(self.record.read_text().splitlines()[-1],
+                         r"^\d\d:\d\d:\d\d the Mac had not settled after 1200 s: load 500\.0; "
+                         r"the tests run anyway$")
+
+    # A load the Mac cannot give (os.getloadavg raises OSError) ending the
+    # run, holding the tests, or passing without a word, fails this test.
+    def test_a_load_that_cannot_be_read_neither_holds_nor_stops_the_tests(self):
+        status, printed, warnings = self.settle([400, OSError("unobtainable")])
+        self.assertEqual((status, self.now), (0, 5.0))
+        self.assertIn("warning: the Mac's load could not be read (unobtainable), so the tests "
+                      "start without waiting for it to settle.", warnings)
+        self.assertIn("the Mac's load could not be read", self.record.read_text())
+
+    # A sleep before the limit is looked at, or `--limit` not reaching the
+    # wait, fails this test: with no time allowed the wait reads the load
+    # once and does not sleep at all.
+    def test_the_wait_is_no_longer_than_its_limit(self):
+        status, printed, warnings = self.settle([400], arguments=("--limit", "0"))
+        self.assertEqual((status, self.now), (0, 0.0))
+        self.assertIn("or after 0 s.", printed)
+        self.assertEqual(warnings, "warning: the Mac had not settled after 0 s (load 400, wanted "
+                                   "under 150); the tests run anyway.\n")
+
+    # The command missing from the script's own, or its `--limit` not
+    # reaching the wait, fails this test: with no time allowed, the real
+    # command reads this machine's load once and says it did not wait. How
+    # long that took is the machine's to say (a busy one can take a second
+    # over one reading), so the seconds are not pinned here; the test
+    # above pins them on its own clock.
+    def test_the_command_reads_the_real_load_and_its_limit(self):
+        ran = subprocess.run([sys.executable, "-I", str(SCRIPT.with_name("simulator-load.py")),
+                              "settle", "--out", str(self.record), "--limit", "0"],
+                             capture_output=True, text=True, timeout=60)
+        self.assertEqual(ran.returncode, 0, ran.stderr)
+        self.assertIn("Waiting for the Mac to settle before the tests", ran.stdout)
+        self.assertRegex(ran.stderr, r"the Mac had not settled after \d+ s \(load \d+, ")
+        self.assertRegex(self.record.read_text(),
+                         r"the Mac had not settled after \d+ s: load \d+\.\d; the tests run anyway")
 
 
 @unittest.skipUnless(sys.platform == "darwin",
