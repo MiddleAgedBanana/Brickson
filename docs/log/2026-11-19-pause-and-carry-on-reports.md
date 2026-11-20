@@ -101,7 +101,9 @@ simulator with iOS 27.2:
 - **The stamp**: the background-thread test checks each report's instant
   falls between the moment before the calls and the moment the
   background task finished them, in order, so a stamp taken after the
-  hop to the main thread would fall outside it.
+  hop to the main thread would usually fall outside it: always when the
+  main thread handles the reports after the background task reads its
+  clock, which is likely but not certain.
 - **Each new test fails without what it guards** (one change at a time,
   the test run alone, then put back):
   - a pause report acted on as a cut-off:

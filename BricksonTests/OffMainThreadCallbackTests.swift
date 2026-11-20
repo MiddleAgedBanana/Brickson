@@ -76,8 +76,10 @@ struct OffMainThreadCallbackTests {
     /// synthesizer can tell whether it is the current one, and stamped
     /// when it arrived rather than when the main actor got to it
     /// (docs/LESSONS.md, "Timers use ContinuousClock"). Fails if either is
-    /// not forwarded, is stamped after the hop, or becomes main-actor
-    /// isolated, which traps there.
+    /// not forwarded or becomes main-actor isolated, which traps there,
+    /// and usually if it is stamped after the hop: that stamp falls outside
+    /// the window whenever the main actor handles the reports after the
+    /// background task reads its clock.
     @Test @MainActor func pauseAndCarryOnReportsCanArriveOnABackgroundThread() async {
         let events = SpeechSynthesizerEvents()
         var received: [(utterance: AVSpeechUtterance, event: SpeechSynthesisEvent)] = []
