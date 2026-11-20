@@ -2335,6 +2335,26 @@ class CheckoutTests(unittest.TestCase):
                 self.assertIn('could not run', err)
                 self.assertIn(why, err)
 
+    def test_git_is_given_the_checkout_as_an_absolute_folder(self):
+        # git reads the folder after -C as a folder even when it starts
+        # with a dash; resolving it first makes that so whatever git does.
+        checkout = fixture_checkout()
+        self.addCleanup(checkout.close)
+        seen, real = [], subprocess.run
+
+        def recording(argv, *args, **kwargs):
+            seen.append([str(part) for part in argv])
+            return real(argv, *args, **kwargs)
+
+        here = os.getcwd()
+        os.chdir(checkout.root.parent)
+        self.addCleanup(os.chdir, here)
+        with unittest.mock.patch.object(forbidden.subprocess, 'run', recording):
+            self.assertEqual(forbidden.check(Path(checkout.root.name)), [])
+        folders = [argv[argv.index('-C') + 1] for argv in seen if '-C' in argv]
+        self.assertTrue(folders)
+        self.assertTrue(all(Path(folder).is_absolute() for folder in folders), folders)
+
     def test_outside_a_git_checkout_it_stops_with_status_2(self):
         # The fixture's files, in a folder git does not know: the check
         # cannot tell what is ignored, so it does not guess.

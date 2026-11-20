@@ -2266,7 +2266,9 @@ def listed_files(root):
 
 def check(root=ROOT):
     """Every finding in the checkout at root, in order of place."""
-    root = Path(root)
+    # An absolute folder can never read as an option, whatever git does
+    # with the word after -C (docs/DECISIONS.md, "SonarQube Cloud's alerts").
+    root = Path(root).resolve()
 
     def exists(path):
         return (root / path).is_file()
