@@ -1078,6 +1078,130 @@ nothing new: "Audio failed" is already showing, and replacing it with
 "Stopped — Again" sent the reference app round a loop of Again activations
 that failed the same way (code audit L3).
 
+## A phrase that does not start
+
+*2026-11-17. Default: an objective safety call the owner left to the
+project. Reversible if the owner objects.*
+
+The system's speech service can accept a phrase and never begin it, while
+the synthesizer goes on saying it is speaking. On CI (pull request #122,
+run 44037184309, iPad part 3) Yes was tapped at 07:49:21; the synthesizer's
+voice lookup for it did not answer until 07:52:09, no audio started before
+the test relaunched the app at 07:52:49, and Home showed "Speaking" throughout,
+because the missed-finish watchdog only acts on a synthesizer that has gone
+quiet. On a device that would be a phrase the person never heard, with
+nothing on screen to say so (invariants 4 and 5). Pull request #120's
+`LaunchTests` failure at the older 30-second wait looked the same: the
+same test, with "Speaking" still showing.
+
+**The rule.** The speech watchdog (`SpeechService`) also checks each
+utterance against `SpokenUtteranceTracker.startLimit`, 15 seconds from the
+moment the app is asked to speak it, before it stops any earlier phrase,
+activates audio, looks up the voice and hands it to the synthesizer. An
+utterance that by then has sent
+neither a start report (`speechSynthesizer(_:didStart:)`, which Apple
+documents as the moment speech begins) nor a word report
+(`willSpeakRangeOfSpeechString`) is stopped and treated as cut off, after
+a second look half a second later so a report already on its way can land,
+as for a synthesizer gone quiet:
+
+- a phrase shows the existing warning that names the way back: "Stopped —
+  Again", "Stopped: Phrases" while typing, "Stopped — Back" under a screen
+  over Home, with their full sentences for VoiceOver;
+- a Settings voice sample only clears "Speaking", since it cannot be
+  repeated with Again;
+- when the audio session never activated, "Audio failed" stays, as in
+  "A phrase the system cuts off" (code audit L3).
+
+A phrase that began in time is never stopped by the limit, however long
+it then speaks.
+
+**When the watchdog cannot look.** A slow audio activation or voice
+lookup holds the main thread, where the watchdog runs; on CI a voice
+lookup took almost three minutes. So the limit is also checked outside
+the watchdog, against the start limit and its half-second second look
+(`SpeechService.latestStart`, 15.5 seconds): a phrase held up that long
+or longer before the synthesizer has it is never handed over, and one
+whose first start or word report is stamped that late is stopped as soon
+as the report reaches the main thread. Both
+show the same warning as above. Without this, a phrase held up past the
+limit could begin before the watchdog's next look and be kept, sounding
+minutes after it was chosen (a review on the pull request found it).
+
+**Why it is stopped, not left to sound later.** A phrase heard minutes
+after it was chosen can answer a question nobody is asking any more (Yes
+to a different question), and nothing may sound without the person's
+action (invariant 4). Stopped, it can be said again with one activation:
+Again, or the same tile, which is no longer absorbed as a repeat of a
+phrase still "speaking".
+
+**Why 15 seconds.** Long enough for a slow first phrase: in the same CI
+run, on an overloaded iPad simulator, the first sound of each of five
+later launches came 1.9 to 4.9 seconds after the phrase's voice lookup
+and 3.1 to 5.4 seconds after the test began its tap or press (from the
+app's and the test's own logs in the result bundle). The limit counts
+from the moment the app asks for the phrase, which falls between the
+two, so the slowest healthy start took between 4.9 and 5.4 seconds. The
+2026-10-25 simulator controls
+([speech diagnostic](evidence/2026-10-25-duo-design/speech-diagnostic/README.md))
+reported their start 0.03 to 0.08 seconds after asking and their first
+word 0.6 to 1 second after. Fifteen seconds is nearly three times the
+slowest healthy start (2.8 times 5.4 seconds). Short enough that the person learns a
+phrase will not be heard before the 20 seconds after which the app
+already treats a synthesizer that reports nothing as possibly stuck
+(`SpokenUtteranceTracker.repeatWindow`). `SpokenUtteranceTrackerTests`
+pins both bounds: at least twice the slowest healthy start, and under the
+repeat window.
+
+**Why a start report or a word, not words alone.** Brickson already
+trusts a phrase that reports no words at all ("A phrase the system cuts
+off"); if only words counted, a voice that reports none would have every
+message longer than the limit stopped while it was being heard.
+
+**Counted from the ask, audio and voice lookup included.** Stopping an
+earlier phrase, activating the audio session and looking up the chosen
+voice all happen on the main thread before the synthesizer has the
+phrase, and the voice lookup can wait on the system's voice service. That
+time counts against the limit,
+because what the limit guards is how late after the person's choice a
+phrase would sound: one that has not started 15 seconds after it was
+asked for is late whatever held it up, and stopping it follows the rule
+above. A review on the pull request proposed starting the count after
+the lookup; declined for that reason, and because the synthesizer looks
+the voice up again as it takes the phrase (`SystemSpeechSynthesizer`), so
+the count could not start after every lookup anyway. A later review found
+that the first version started the count after the audio session
+activated, contrary to this rule; it now starts before
+(`SpeechServiceTests`, `aSlowAudioActivationCountsAgainstTheStartLimit`).
+
+**Evidence kept for the limit.** A start of one second or more is
+logged at notice level as "Speech began N ms after it was asked for",
+whichever report shows it first (the start report, or a word from a
+voice that sends no start), and
+a phrase the limit stops at error level, numbers only and never the
+words, so a CI result bundle or a device's log shows how close real
+starts come. A start of 7.5 seconds or more (half the limit) is new
+evidence to revisit the limit with. The measurement is taken from the
+first report the app handles. A review proposed ordering the reports by
+the time each was stamped instead, in case the start report is handled
+after a word; declined, because each report is stamped as it arrives and
+passed to the main queue in arrival order, so the two can differ by at
+most the moments it takes to pass one along, against a log threshold of
+one second and a limit of 15.
+
+**What it does not catch.** A phrase the synthesizer begins after
+`latestStart`, while its own voice lookup held the main thread, can be
+heard for the moment it takes to stop it. A start report sent for speech
+that is never heard, and a phrase that began and then stays "speaking" with no finish
+(the 2026-10-25 diagnostic) still show "Speaking": the first is not
+known to happen, and the second is the open gap the diagnostic records.
+
+**The words on screen.** The limit reuses "Stopped — Again" and its
+sentence, "Speech stopped unexpectedly. Choose Again to repeat it." A
+plainer warning for a phrase that never began (such as "Not spoken —
+Again") would be new words on Home, which is the owner's call; it is
+recorded as a proposal in docs/HANDOFF.md, not built.
+
 ## Audio session notices
 
 *2026-10-21. Default, adopted 2026-10-21: the owner left these choices to

@@ -25,6 +25,8 @@ final class FakeAudioSession: AudioSessionControlling {
     /// Refuses every activation.
     var refusesActivation = false
     var refusesCategory = false
+    /// Runs as each activation begins, so a test can make one slow.
+    var onActivate: (() -> Void)?
     private(set) var categoryCalls: [CategoryCall] = []
     private(set) var activeCalls: [Bool] = []
     private(set) var isActive = false
@@ -41,6 +43,7 @@ final class FakeAudioSession: AudioSessionControlling {
     func setActive(_ active: Bool, notifyingOthersOnDeactivation: Bool) throws {
         activeCalls.append(active)
         if active {
+            onActivate?()
             if refusesActivation { throw FakeAudioSessionError() }
             let mixes = categoryCalls.last?.options.contains(.mixWithOthers) ?? false
             if refusesUnmixedActivation && !mixes { throw FakeAudioSessionError() }
@@ -56,6 +59,13 @@ final class FakeSpeechSynthesizer: SpeechSynthesizing {
     var onEvent: (@MainActor (UtteranceToken, SpeechSynthesisEvent) -> Void)?
     private(set) var requests: [SpeechRequest] = []
     private(set) var stopCount = 0
+    /// Where each report's instant comes from: the harness's clock, so
+    /// reports and the speech service read the same time.
+    private let now: @MainActor () -> ContinuousClock.Instant
+
+    init(now: @escaping @MainActor () -> ContinuousClock.Instant = { .now }) {
+        self.now = now
+    }
 
     var latestToken: UtteranceToken? { requests.last?.token }
 
@@ -74,12 +84,17 @@ final class FakeSpeechSynthesizer: SpeechSynthesizing {
     /// Reports that the latest request (or `token`) is about to speak the
     /// text up to `offset`.
     func reportProgress(through offset: Int, for token: UtteranceToken? = nil) {
-        send(.willSpeak(through: offset, at: .now), for: token)
+        send(.willSpeak(through: offset, at: now()), for: token)
+    }
+
+    /// Reports that the latest request (or `token`) began speaking.
+    func reportStart(_ token: UtteranceToken? = nil) {
+        send(.started(at: now()), for: token)
     }
 
     func finish(_ token: UtteranceToken? = nil) {
         if token == nil || token == latestToken { isSpeaking = false }
-        send(.finished(at: .now), for: token)
+        send(.finished(at: now()), for: token)
     }
 
     func cancel(_ token: UtteranceToken? = nil) {
@@ -104,6 +119,11 @@ final class FakeSpeechSynthesizer: SpeechSynthesizing {
 @MainActor
 final class FakeSynthesizerFactory {
     private(set) var made: [FakeSpeechSynthesizer] = []
+    private let now: @MainActor () -> ContinuousClock.Instant
+
+    init(now: @escaping @MainActor () -> ContinuousClock.Instant = { .now }) {
+        self.now = now
+    }
 
     var latest: FakeSpeechSynthesizer {
         guard let last = made.last else {
@@ -113,7 +133,7 @@ final class FakeSynthesizerFactory {
     }
 
     func make() -> any SpeechSynthesizing {
-        let synthesizer = FakeSpeechSynthesizer()
+        let synthesizer = FakeSpeechSynthesizer(now: now)
         made.append(synthesizer)
         return synthesizer
     }
@@ -235,6 +255,22 @@ final class ManualSleeper {
     }
 }
 
+/// A clock the test moves by hand. It starts at the real time, so the
+/// instants it gives compare sensibly with any a test builds from
+/// `ContinuousClock.now`, and stands still until `advance(by:)`.
+@MainActor
+final class ManualClock {
+    private(set) var now = ContinuousClock.now
+
+    var closure: @MainActor () -> ContinuousClock.Instant {
+        { [self] in self.now }
+    }
+
+    func advance(by duration: Duration) {
+        now = now.advanced(by: duration)
+    }
+}
+
 /// Lets main-actor tasks run until `condition` holds. Returns whether it
 /// did; a test expects that, so a change that never happens fails rather
 /// than passing by not waiting.
@@ -309,6 +345,8 @@ struct AudioHarness {
     let personalVoice: FakePersonalVoice
     let speechSleeper: ManualSleeper
     let alarmSleeper: ManualSleeper
+    /// The time speech reads, which only the test moves.
+    let clock: ManualClock
     let settings: UserDefaults
     let speech: SpeechService
     let attention: AttentionAlertPlayer
@@ -340,7 +378,8 @@ struct AudioHarness {
             policy: policy
         )
         let catalog = FakeVoiceCatalog(voices: voices, holdsAnswers: holdsVoiceLists)
-        let synthesizers = FakeSynthesizerFactory()
+        let clock = ManualClock()
+        let synthesizers = FakeSynthesizerFactory(now: clock.closure)
         let personalVoice = FakePersonalVoice(status: personalVoiceStatus)
         let speechSleeper = ManualSleeper()
         let alarmSleeper = ManualSleeper()
@@ -356,6 +395,7 @@ struct AudioHarness {
         self.personalVoice = personalVoice
         self.speechSleeper = speechSleeper
         self.alarmSleeper = alarmSleeper
+        self.clock = clock
         self.settings = settings
         self.tones = tones
         speech = SpeechService(
@@ -367,7 +407,8 @@ struct AudioHarness {
             notificationCenter: center,
             personalVoice: personalVoice,
             personalVoiceAskPolicy: askPolicy,
-            sleep: speechSleeper.closure
+            sleep: speechSleeper.closure,
+            now: clock.closure
         )
         attention = AttentionAlertPlayer(
             audioSession: coordinator,
