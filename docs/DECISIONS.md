@@ -6096,6 +6096,57 @@ request merges only when they pass.
   already shut down now counts as cleaned up, and one still running
   still fails the run. Record:
   [`log/2026-11-16-ui-test-parts.md`](log/2026-11-16-ui-test-parts.md).
+- **2026-11-19, default, reversible:** on a simulator, `scripts/test.sh
+  ui` waits before its first test until the Mac has settled. After the
+  build and the warm-up launch, `scripts/simulator-load.py settle` reads
+  the Mac's load (its own count of tasks running or waiting for a
+  processor, averaged over a minute) every five seconds, and the tests
+  start once three readings in a row are under 50 for each of the Mac's
+  processors, 150 on GitHub's three, or after twenty minutes, whichever
+  comes first. Why: every simulator on GitHub's machines starts for the
+  first time, a first start begins hundreds of iOS's own background
+  tasks, and on that Mac they held the load at 400 to 550 and brought it
+  under 150 only about 15 to 20 minutes after the start, while the
+  tests began at about minute five. In the 320 UI test jobs of
+  2026-11-12 to 11-19, one test in 10,504 that started under a load of
+  150 failed with a wait run out, against about 8 in 1,000 that started
+  above 350; no test step stalled in about 7,400 minutes of tests under
+  a load of 250, and 50 did in about 2,520 minutes above it. So the
+  nineteen jobs that week whose waits ran out were not nineteen faults
+  but tests run on a starved Mac, and a longer wait in one test only
+  left the next test to fail the same way. The wait changes when the
+  tests start and nothing they check: no test is retried, skipped or
+  given a longer limit, an accessibility audit runs as before, a Mac
+  that never settles is tested anyway with a warning, and so is one
+  whose wait could not run. The unit tests do not wait: none of their
+  failures that week was a wait run out. The cost is minutes in every
+  UI job: on the first CI run with it the wait was 3.8 to 13.2 minutes,
+  a middle of 8, the tests were not measurably quicker, and a part's
+  job took 34 to 45 minutes where it took 28 to 35. On a Mac with more
+  processors the limit is higher and the wait is the ten seconds its
+  three readings take.
+  Not chosen: longer waits in the tests that failed; stopping iOS's
+  background tasks, which changes the system the tests run on; a larger
+  paid machine, which hides the cause; and keeping a started
+  simulator's data between runs, which would remove the start-up work
+  instead of waiting for it but needs a workflow change, a new action
+  and its own experiment, so it is the follow-up if the wait proves
+  long. The wait runs in the foreground, as the build and the tests
+  do, so a TERM signal sent to `scripts/test.sh` alone is answered when
+  the wait ends, as it is for them. CodeRabbit's review of pull request
+  #128 asked for the wait to be made interruptible; declined, because
+  the build before it and the tests after it, each longer, would still
+  hold the script the same way, and a change to how the script answers
+  signals belongs to all its steps together. The wallpaper pausing
+  (2026-11-03) is unchanged: measure it
+  again now that the tests start settled, one change at a time. This
+  does not explain the jobs GitHub cancelled before their tests began
+  (docs/HANDOFF.md, *Known gaps*). Revisit when a wait often reaches its
+  twenty minutes, when a part's job often takes more than about 45
+  minutes (the slowest of the first six took 44.7, so this is close),
+  or when a wait runs out in a test that started settled, which would
+  show the cause is another for that test. Record:
+  [`log/2026-11-19-ui-tests-wait-for-a-settled-mac.md`](log/2026-11-19-ui-tests-wait-for-a-settled-mac.md).
 
 ## Guards for Apple's look
 
