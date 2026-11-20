@@ -170,6 +170,10 @@ the simulator's processes kept the Mac's processors busy during the run.
 On a simulator the script started itself, it also pauses the lock-screen
 wallpaper extensions, which iOS otherwise starts a few minutes after the
 simulator boots and which slowed GitHub's machines until tests failed.
+Before the first UI test the script waits until the Mac is no longer busy
+with the simulator's start, and says so as it waits: a few seconds on
+most Macs, and up to twenty minutes on GitHub's small ones, where tests
+that started sooner ran out of time.
 
 GitHub Actions runs unit and UI tests for pull requests and pushes to
 `main`. The UI tests run in three parts on the iPad and three on the
