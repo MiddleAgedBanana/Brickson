@@ -70,7 +70,7 @@ TITLES = {
     "dark-increase-contrast": "Dark, Increase Contrast",
     "reduce-transparency": "Reduce Transparency",
     "show-borders": "Show Borders",
-    "differentiate-without-colour": "Differentiate Without Colour",
+    "differentiate-without-colour": "Differentiate Without Color",
     "bold-text": "Bold Text",
     "largest-text": "Largest text (AX5)",
     "inactive-light": "Inactive window, light",
@@ -625,7 +625,7 @@ ROLES = {"AccentColor": "Phrase", "ControlFill": "Control", "EmergencyFill": "Em
          "AttentionFill": "Get Attention", "StopFill": "Stop"}
 STATES = ["on", "selected", "off", "pressed"]
 SECTIONS = [
-    ("colours", "Colour tokens: the words on each fill, and words on the screen", ("review.colour.", "review.ink.")),
+    ("colours", "Color tokens: the words on each fill, and words on the screen", ("review.colour.", "review.ink.")),
     ("spacing-and-corners", "The spacing scale and the three kinds of corner", ("review.spacing.", "review.corner.")),
     ("home-controls", "Home's controls in each state, and phrase tiles", ("review.control.", "review.tile.")),
     ("settings-rows", "Settings' rows: the system's bordered prominent button", ("review.settings.",)),

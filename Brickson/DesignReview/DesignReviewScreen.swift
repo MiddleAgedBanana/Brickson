@@ -56,7 +56,7 @@ struct DesignReviewScreen: View {
         ScrollView {
             VStack(alignment: .leading, spacing: Spacing.xLarge) {
                 DesignReviewReadout(window: window)
-                section("Colour tokens: words on each fill") {
+                section("Color tokens: words on each fill") {
                     grid(Catalogue.roles) { role in
                         specimen(role.asset) { swatch(role) }
                     }
