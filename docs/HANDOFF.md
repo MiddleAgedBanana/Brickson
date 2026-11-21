@@ -938,7 +938,9 @@ release in docs/ROADMAP.md when no thread has it yet.
   happens before the tests. A cancelled Mac job now keeps
   `github-agent-log.txt` in its results: what the agent logged about
   its hold on the job and the cancel (`scripts/github-agent-log.sh`).
-  The next such job's copy settles the lead; how to read it is in
+  The next such job's copy settles the lead. How to read it, and what
+  an ordinary cancel wrote on GitHub's Macs ("Job cancellation request
+  ... received" with the hold renewed before and after), is in
   [`log/2026-11-21-github-agent-log.md`](log/2026-11-21-github-agent-log.md).
   Until a fix is tried, a second try of that job is the remedy. What to
   try, in order, is in

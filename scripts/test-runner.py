@@ -4,6 +4,7 @@ simulator, check the simulator watcher it starts (simulator-load.py),
 check that CI runs it with the newest released Xcode, and check what a
 cancelled CI job keeps of GitHub's agent's log (github-agent-log.sh)."""
 import argparse
+import calendar
 import contextlib
 import ctypes
 import importlib.util
@@ -13,6 +14,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import signal
 import subprocess
 import sys
@@ -3116,6 +3118,8 @@ steps:
 AGENT_RUNNER_LOG = """\
 [2026-11-21 14:00:00Z INFO JobDispatcher] Job request 0 for plan p1 job j1 received.
 [2026-11-21 14:00:00Z INFO MessageListener] Unrelated: the listener's own business
+[2026-11-21 14:00:00Z INFO ProcessInvokerWrapper]   Force kill process on cancellation: 'True'
+   at System.Threading.CancellationToken.ThrowOperationCanceledException() in a stack trace
 [2026-11-21 14:00:01Z INFO JobDispatcher] Successfully renew job j1, job is valid till 2026-11-21 14:10:01Z
 [2026-11-21 14:01:01Z ERR  JobDispatcher] Catch exception during renew runner job j1.
 [2026-11-21 14:01:02Z INFO JobDispatcher] Retrying lock renewal for job j1. Job is valid until 2026-11-21 14:10:01Z.
@@ -3129,6 +3133,9 @@ AGENT_RUNNER_LOG = """\
 
 AGENT_WORKER_LOG = """\
 [2026-11-21 14:00:02Z INFO Worker] Unrelated: the worker's own business
+      "condition": "cancelled()", in the job's description
+                      "v": "pull request text that mentions a cancel"
+[2026-11-21 14:00:03Z INFO ProcessInvokerWrapper]   Force kill process on cancellation: 'False'
 [2026-11-21 14:05:01Z INFO Worker] Cancellation/Shutdown message received.
 [2026-11-21 14:05:02Z INFO StepsRunner] Job was CANCELLED by the user.
 """
@@ -3199,7 +3206,9 @@ class GitHubAgentLogTests(unittest.TestCase):
     # and their failures), the service's cancel request or the job's end,
     # matching them only in one case, reading a file other than the
     # agent's Runner_ and Worker_ logs, copying lines that say nothing
-    # about the job, or leaving out the job's ids, the time or the load,
+    # about the job (the agent's note on every program it starts, a stack
+    # trace, the job's description and the pull request text the Worker
+    # log holds), a wrong time, or leaving out the job's ids or the load,
     # fails this test.
     def test_the_lines_about_the_hold_and_the_cancelling_are_kept(self):
         results = self.folder / "results"
@@ -3218,7 +3227,9 @@ class GitHubAgentLogTests(unittest.TestCase):
                 self.assertIn(line, saved)
         for line in ["Unrelated: the listener's own business",
                      "Unrelated: the worker's own business",
-                     "renew from a page"]:
+                     "renew from a page", "Force kill process on cancellation",
+                     "in a stack trace", "in the job's description",
+                     "pull request text"]:
             with self.subTest(left_out=line):
                 self.assertNotIn(line, saved)
         # The Runner log's last 40 lines come whole; its earlier quiet
@@ -3229,7 +3240,10 @@ class GitHubAgentLogTests(unittest.TestCase):
         self.assertIn(str(self.agent), saved)
         for field in ["unit", "1234", "attempt 2"]:
             self.assertIn(field, saved)
-        self.assertRegex(saved, r"Written: \d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ")
+        written = re.search(r"Written: (\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ)", saved)
+        self.assertIsNotNone(written, saved)
+        stamp = calendar.timegm(time.strptime(written.group(1), "%Y-%m-%dT%H:%M:%SZ"))
+        self.assertLess(abs(stamp - time.time()), 120, written.group(1))
         self.assertRegex(saved, r"Load[^\n]*: \S")
         # The answer the record is for, ahead of the lines it comes from.
         self.assertRegex(saved, r"(?s)Last successful renewal: [^\n]*14:11:20Z.*"
@@ -3315,28 +3329,42 @@ class GitHubAgentLogTests(unittest.TestCase):
         self.assertIn(f"Agent folder: {self.agent}", (results / "github-agent-log.txt").read_text())
         self.assertFalse(self.ps_calls.exists(), self.ps_calls.read_text() if self.ps_calls.exists() else "")
 
-    # Waiting for a ps that does not answer, past a third of the script's
-    # time, fails this test.
+    # Waiting for a ps that does not answer past its limit fails this
+    # test.
     def test_a_ps_that_does_not_answer_is_given_up(self):
         results = self.folder / "results"
         started = time.monotonic()
-        ran = self.run_log(str(results), GITHUB_AGENT_FOLDER=None, GITHUB_AGENT_LOG_SECONDS="3",
+        ran = self.run_log(str(results), GITHUB_AGENT_FOLDER=None, GITHUB_AGENT_PS_SECONDS="1",
                            FIXTURE_PS_SLEEP="30")
         self.assertLess(time.monotonic() - started, 20)
         self.assertEqual(ran.returncode, 0, ran.stdout + ran.stderr)
         self.assertIn("No folder of GitHub's agent", (results / "github-agent-log.txt").read_text())
 
-    # Going on past the script's time, so the results' upload after it
-    # waits, or ending with an error or losing what was already written
-    # when it stops, fails this test.
-    def test_it_stops_when_its_time_is_up_and_keeps_what_it_wrote(self):
+    # Starting any program but sysctl and awk where the agent's folder is
+    # known fails this test. After a cancel GitHub gives a job's last
+    # steps five minutes, and on its busy Macs each program started took
+    # seconds: a first version, starting about forty, kept the results'
+    # upload after it from finishing in two jobs of five
+    # (docs/log/2026-11-21-github-agent-log.md).
+    def test_only_sysctl_and_awk_are_started_where_the_folder_is_known(self):
         results = self.folder / "results"
-        ran = self.run_log(str(results), GITHUB_AGENT_LOG_SECONDS="0")
+        results.mkdir()
+        only = self.folder / "only"
+        only.mkdir()
+        for tool in ("sysctl", "awk"):
+            found = shutil.which(tool, path=os.environ.get("PATH", "") + ":/usr/sbin:/sbin")
+            if found:
+                (only / tool).symlink_to(found)
+        ran = self.run_log(str(results), PATH=str(only), GITHUB_AGENT_FOLDER=None,
+                           GITHUB_AGENT_KNOWN_FOLDERS=str(self.agent))
         self.assertEqual(ran.returncode, 0, ran.stdout + ran.stderr)
+        self.assertEqual(ran.stderr, "")
         saved = (results / "github-agent-log.txt").read_text()
-        self.assertIn(f"Agent folder: {self.agent}", saved)
-        self.assertIn("Stopped after", saved)
-        self.assertNotIn("Job cancellation request", saved)
+        self.assertEqual(ran.stdout, saved)
+        for line in [f"Agent folder: {self.agent}", "Written: ",
+                     "Job cancellation request j1 received", "quiet line 50",
+                     "Job was CANCELLED by the user."]:
+            self.assertIn(line, saved)
 
     # Copying a token, a credential or a signed address's signature from
     # the agent's log into the public download or the job's log fails
