@@ -931,22 +931,26 @@ release in docs/ROADMAP.md when no thread has it yet.
   canceled." in the log, no new push, far from any time limit, and the
   rest of the run carried on. Each was cancelled 8.5 to 13 minutes after
   its simulator began to start, at a load of 550 to 870 where 500 is
-  usual. A lead, not proved: GitHub's agent on the machine, starved for
-  about ten minutes, cannot tell GitHub's service it still holds the
-  job, and the service takes the job back. The wait before the UI tests
-  (docs/DECISIONS.md, "Tests", 2026-11-19) does not fix it, because it
-  happens before the tests. A cancelled Mac job now keeps
-  `github-agent-log.txt` in its results: what the agent logged about
-  its hold on the job and the cancel (`scripts/github-agent-log.sh`).
-  The next such job's copy settles the lead. How to read it, and what
-  an ordinary cancel wrote on GitHub's Macs ("Job cancellation request
-  ... received" with the hold renewed before and after), is in
-  [`log/2026-11-21-github-agent-log.md`](log/2026-11-21-github-agent-log.md).
-  Until a fix is tried, a second try of that job is the remedy. What to
-  try, in order, is in
+  usual. A cancelled Mac job now keeps `github-agent-log.txt` in its
+  results: what GitHub's agent on the machine logged about its hold on
+  the job and the cancel (`scripts/github-agent-log.sh`). On 2026-11-21
+  it caught one (iPad part 1 of #131's run 44916610210, ten minutes into
+  the simulator's start, at a load of 812 on three processors). GitHub's
+  service had not asked for a cancel and the job's hold was renewed, but
+  two of the agent's requests to GitHub timed out after 100 seconds;
+  when it got through, GitHub answered that its session was no longer
+  valid ("Runner session is invalid"), and the agent shut down,
+  cancelling the job itself. So the cause is on our side: the Mac is too
+  busy in those minutes for GitHub's agent to stay in touch. The wait
+  before the UI tests (docs/DECISIONS.md, "Tests", 2026-11-19) does not
+  fix it, because it happens before the tests. Until a fix is tried, a
+  second try of that job is the remedy. How to read the record is in
+  [`log/2026-11-21-github-agent-log.md`](log/2026-11-21-github-agent-log.md);
+  what to try, in order, is in
   [`log/2026-11-19-ui-tests-wait-for-a-settled-mac.md`](log/2026-11-19-ui-tests-wait-for-a-settled-mac.md),
-  *Follow-ups*. *(the next thread on CI reads the next cancelled job's
-  copy; the owner chooses whether a thread takes up a fix)*
+  *Follow-ups*: each cuts what the Mac does in its first ten minutes.
+  *(the owner chooses whether a thread takes up a fix; a later
+  cancelled job's record says whether it is always this)*
 - Whether the wait before the UI tests ends the waits that ran out on a
   busy Mac is measured on one CI run so far: six UI jobs, all passed,
   no step stalled, at a cost of about eight minutes a job. After about

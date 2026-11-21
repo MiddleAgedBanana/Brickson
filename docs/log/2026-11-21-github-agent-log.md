@@ -43,6 +43,13 @@ the log's last 40 lines. The wording below is that of GitHub's runner
   48 seconds after. For a job nobody cancelled, nothing in this
   repository can stop that: the next step is a report to GitHub with
   the run's and the job's ids.
+- **The agent lost its session with GitHub** when the lines end with
+  "Runner session is invalid", "Non-retriable exception" and "Shutting
+  down JobDispatcher ... cancel any running job", after requests that
+  "timed out after 100 seconds". The job's hold may still be renewed,
+  and there is no cancellation request: the agent cancels the job
+  itself as it shuts down. This is what the cancel GitHub made by
+  itself during this pull request wrote (below).
 - **The agent lost its hold on the job** when *First trouble renewing*
   ("Catch exception during renew", "Retrying lock renewal", "Lock
   renewal has run out of retry", "job is no longer valid") comes before
@@ -121,6 +128,42 @@ step ran in all five.
   of its forty programs took about 30 seconds more. Hence the rewrite
   above.
 
+## A cancel GitHub made by itself, captured
+
+During the run of the third commit (44916610210, `d8d2975`), "UI tests
+on iPad, part 1 of 3" was cancelled with no push and nobody cancelling,
+ten minutes after its simulator began to start, like the thirteen
+before it. Its record (in `ui-test-results-ipad-part1`):
+
+- Load 812 on three processors. The simulator's own record began only
+  at 15:09:47, ten minutes after it was started, as in the thirteen.
+- The job's hold was renewed at 14:59, 15:00, 15:01 and 15:02. At
+  15:06:38 a renewal "timed out after 100 seconds", and at 15:06:46 so
+  did the agent's request for its next message from GitHub. At 15:09:21
+  both "timed out after 00:01:40" again and were retried; at 15:09:29
+  the hold was renewed, but the request for messages "failed. HTTP
+  Status: BadRequest", and at 15:09:30: "Runner session is invalid",
+  "Non-retriable exception", "Shutting down JobDispatcher. Make sure
+  all WorkerDispatcher has finished.", "Ensure WorkerDispatcher for job
+  ... run to finish, cancel any running job." and "Send job
+  cancellation message to worker".
+- *Cancellation request*: none. *First trouble renewing*: none (the
+  timeouts are not the renewal's own error lines).
+
+So it is neither a cancel GitHub's service asked for nor a lost hold on
+the job: the starved agent lost its session with GitHub's service, and
+cancelled the job itself as it shut down. The cause is the Mac's load
+in the first ten minutes, which is ours to cut. The rewritten script's
+step took 19 seconds there and the results were uploaded.
+
+## The rewrite under a cancel
+
+A separate run of the third commit, started by hand on the branch
+(44916772349, so the pull request's own run went on), was cancelled on
+purpose with three UI jobs in their tests, at loads of 135 to 554. The
+step took 5, 4 and 65 seconds, found the agent without `ps` and copied
+no pull request text, and all three jobs uploaded their results.
+
 ## Commits
 
 - `c8d5c17`: the script, its tests (`scripts/test-runner.py`,
@@ -129,9 +172,14 @@ step ran in all five.
 - `064d303`: this record, `docs/HANDOFF.md` (the cancelled-jobs
   bullet, and the state line, which still listed pull requests that
   have merged as open) and `README.md`, *Tests*.
-- The next commit: the script rewritten to start two programs and to
-  match only the agent's timestamped lines, its tests, and what the
+- `d8d2975`: the script rewritten to start two programs and to match
+  only the agent's timestamped lines, its tests, and what the
   deliberate cancel showed.
+- `f3378f7`: a base64 token with no dots is removed as well (Gitar's
+  review). `c915a2e`: the script, this record and its test say that a
+  job cancelled before its results folder existed also starts `mkdir`
+  (the report-only verifier). The next commit: the cancel GitHub made by
+  itself, and the rewrite under a cancel, in these records.
 
 ## Verified
 
@@ -151,8 +199,13 @@ step ran in all five.
   that are not the agent's own, and starting one more program. The
   awk's UTC time was checked against `date -u` on leap days and year
   ends from 1970 to 2100.
-- On GitHub's Macs, the first version (*What the deliberate cancel
-  showed*).
+- On GitHub's Macs: the first version (*What the deliberate cancel
+  showed*), and the rewrite under a deliberate cancel and under a
+  cancel GitHub made by itself (*The rewrite under a cancel*, *A cancel
+  GitHub made by itself, captured*).
+- The report-only verifier (`.claude/agents/verifier.md`) on the owner's
+  Mac: every `scripts/test-*.py` suite passed on `f3378f7`, the privacy
+  check passed with the private list read, and `shellcheck` was clean.
 - `codex review --base origin/main` on the owner's Mac before the pull
   request opened: four findings. Fixed: `ps` could hold up the results
   upload (known folders first, time limits); raw lines could carry a
@@ -162,26 +215,23 @@ step ran in all five.
 
 ## Not verified
 
-- The rewritten script under a cancel on GitHub's Macs: how long its
-  step takes there, and so how much of the five minutes it leaves the
-  upload. No script can save the step's own start, part of the 28
-  seconds before the first version's first line in the fastest job
-  above. The pull request's description says whether a cancelled run
-  of its last commit measured it.
-- A cancel GitHub makes by itself: none has been captured yet.
+- Whether every cancel GitHub makes by itself is this one: one has been
+  captured.
+- `f3378f7` and the commits after it on GitHub's CI.
 - On Linux: the script's Linux fallbacks (`/proc/loadavg`, `getconf`)
   and GNU or mawk `awk` have not run. The Mac jobs are the only ones
   that run the script.
 
 ## Follow-ups
 
+- **Cut the Mac's load in a job's first ten minutes,** so GitHub's agent
+  stays in touch: the fixes in the 2026-11-19 record's *Follow-ups*, in
+  its order *(the owner chooses whether a thread takes it up)*.
 - **The next job GitHub cancels by itself:** download its results, read
-  `github-agent-log.txt` as above, and record which case it was in
-  docs/HANDOFF.md, *Known gaps*. If that job kept no results, check
-  how long the capture step took in its log: a step that still costs
-  the upload goes after "Keep the test results", printing to the job's
-  log only *(the next thread on CI, with the owner)*. If GitHub's service cancelled it,
-  report it to GitHub with the run's and the job's ids; if the agent
-  lost its hold, take up the fixes in
-  [`2026-11-19-ui-tests-wait-for-a-settled-mac.md`](2026-11-19-ui-tests-wait-for-a-settled-mac.md),
-  *Follow-ups* *(the next thread on CI)*.
+  `github-agent-log.txt` as above, and record in docs/HANDOFF.md,
+  *Known gaps*, whether it was the same. If GitHub's service asked for
+  that cancel, report it to GitHub with the run's and the job's ids. If
+  that job kept no results, check how long the capture step took in its
+  log: a step that still costs the upload goes after "Keep the test
+  results", printing to the job's log only *(the next thread on CI,
+  with the owner)*.
