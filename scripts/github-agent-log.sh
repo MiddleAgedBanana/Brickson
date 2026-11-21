@@ -30,7 +30,8 @@
 # script, starting about forty, kept the upload after it from finishing in
 # two jobs of five: docs/log/2026-11-21-github-agent-log.md). So where the
 # agent's folder is where GitHub keeps it, this starts two programs,
-# sysctl and one awk that reads every log; `ps` runs only when the folder
+# sysctl and one awk that reads every log (and mkdir first, when the
+# results folder is not there yet); `ps` runs only when the folder
 # is elsewhere, for at most GITHUB_AGENT_PS_SECONDS (30 by default).
 #
 # The results are a public download, so only the lines below are copied,

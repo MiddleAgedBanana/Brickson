@@ -3365,6 +3365,16 @@ class GitHubAgentLogTests(unittest.TestCase):
                      "Job cancellation request j1 received", "quiet line 50",
                      "Job was CANCELLED by the user."]:
             self.assertIn(line, saved)
+        # A job cancelled before its results folder existed: mkdir too.
+        found = shutil.which("mkdir")
+        if found:
+            (only / "mkdir").symlink_to(found)
+        missing = self.folder / "missing" / "results"
+        ran = self.run_log(str(missing), PATH=str(only), GITHUB_AGENT_FOLDER=None,
+                           GITHUB_AGENT_KNOWN_FOLDERS=str(self.agent))
+        self.assertEqual((ran.returncode, ran.stderr), (0, ""), ran.stdout + ran.stderr)
+        self.assertIn("Job cancellation request j1 received",
+                      (missing / "github-agent-log.txt").read_text())
 
     # Copying a token, a credential or a signed address's signature from
     # the agent's log into the public download or the job's log fails

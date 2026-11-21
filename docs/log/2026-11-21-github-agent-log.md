@@ -79,9 +79,10 @@ the log's last 40 lines. The wording below is that of GitHub's runner
   request's deliberate cancel (below) it kept the upload from finishing
   in two jobs of five. Now, where the agent's folder is where GitHub
   keeps it (`/Users/runner/actions-runner/cached`, found there in every
-  job that kept its results), it starts two programs: `sysctl` for the load, and one `awk`
-  that reads every log, removes secrets and writes the file; the rest is
-  the shell's own. `ps` runs only when the folder is elsewhere, reads
+  job that kept its results), it starts two programs: `sysctl` for the
+  load, and one `awk` that reads every log, removes secrets and writes
+  the file; the rest is the shell's own. A job cancelled before its
+  results folder existed also starts `mkdir`. `ps` runs only when the folder is elsewhere, reads
   program names only, and is stopped after 30 seconds (one `ps` took
   about 160 seconds on these machines: docs/DECISIONS.md, "Tests",
   2026-11-04). A test fails if it starts any other program.
