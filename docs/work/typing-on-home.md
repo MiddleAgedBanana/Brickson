@@ -316,7 +316,7 @@ Linux harness, and nothing else; GitHub CI is the build for the rest.
    typing chains scored on the running app's frames; the draft survives
    a relaunch.
 6. **Words and records:** the String Catalog by hand (this session cannot
-   run `xcstringstool`; the tool in the project files checks it), the
+   run `xcstringstool`; a catalog tool checks it), the
    log, HANDOFF, ROADMAP, DECISIONS ("Typing on Home"), DESIGN.md,
    ACCESSIBILITY.md and the site's accessibility page where their words
    change, and the Mac, simulator and device checks this cannot do,

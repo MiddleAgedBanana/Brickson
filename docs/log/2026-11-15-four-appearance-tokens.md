@@ -1,7 +1,7 @@
 # Colour tokens in four appearances, and a contrast budget
 
 *2026-11-15. Pull request #113 (`claude/project-thread-z3jbgy`). A cloud thread
-(Claude Code), from the project's foundations work, items E-01 and E-02.*
+(Claude Code), for docs/EXPERIMENTS.md's E-01 and E-02.*
 
 ## What changed and why
 
@@ -21,7 +21,7 @@ and its edge, or the border drawn over it, at 3:1 against the screen,
 base and lifted); that Increase Contrast never lowers contrast; and that
 the five fills never look alike to people with typical colour vision or
 any of the three dichromacies (CIEDE2000 15 or more). The arithmetic is
-ported from the stage 5 colour search's Python and checked against it.
+ported from a colour search's Python and checked against it.
 
 Where today's values miss, the test records a named, strict known issue
 instead of failing, and docs/HANDOFF.md, *Known gaps*, lists each for the

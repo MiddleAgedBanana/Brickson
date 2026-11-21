@@ -234,9 +234,9 @@ The new tests, and the change that would make each fail:
 - The owner: the device sessions (Group 2, A-1 first) need the Team ID
   already on the owner's list, and a person at the device. Groups 4 and
   5 wait on the owner too.
-- When stage 4 is done, the owner chooses whether the probe is removed
+- When the experiments are done, the owner chooses whether the probe is removed
   or kept (docs/DECISIONS.md, *A probe app for the experiments, kept out
   of Brickson*, "Revisit when").
-- No document was found wrong while writing this. The studies' own
-  proposed corrections to Brickson's documents stay with the docs pull
-  request the coordinator has queued.
+- No document was found wrong while writing this. Corrections to
+  Brickson's documents that the research proposed wait for a documents
+  pull request.
