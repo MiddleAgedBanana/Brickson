@@ -174,6 +174,9 @@ Before the first UI test the script waits until the Mac is no longer busy
 with the simulator's start, and says so as it waits: a few seconds on
 most Macs, and up to twenty minutes on GitHub's small ones, where tests
 that started sooner ran out of time.
+When GitHub cancels one of its Mac jobs, the job's results also keep
+`github-agent-log.txt`, the lines GitHub's own agent on that machine
+logged about the job's cancelling (`scripts/github-agent-log.sh`).
 
 GitHub Actions runs unit and UI tests for pull requests and pushes to
 `main`. The UI tests run in three parts on the iPad and three on the
