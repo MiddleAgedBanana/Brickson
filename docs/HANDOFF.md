@@ -6,15 +6,16 @@ edits this page in place and writes its record in [`docs/log/`](log/README.md);
 nothing is appended here. Plan: [`docs/ROADMAP.md`](ROADMAP.md). How the
 project runs: [`docs/SDLC.md`](SDLC.md).
 
-**State as of 2026-11-20: `main` is at `d34e5df`, pull request #124,
-the code scanning alerts, merged 2026-11-20.** Open pull requests: #108
-(a draft) and #109, two versions of one change to the agent bridge;
-#115, the record of the simulator experiments; #120, four more windows
-for Home's layout tests; #122, UI test waits; #123, a phrase the speech
-service never begins; #129 (a draft), logging the speech service's
-pause and carry-on reports after #123; and #130, a design review
-sheet. Device checks wait for the Team ID (*Next steps, in
-order*, step 4).
+**State as of 2026-11-21: `main` is at `297a58b`, pull request #129,
+logging the speech service's pause and carry-on reports, merged
+2026-11-21.** Since 2026-11-20, #109 (the agent bridge), #122 (UI test
+waits), #123 (a phrase the speech service never begins), #124, #127 and
+#128 have merged too, and #108, #109's draft twin, was closed. Open pull
+requests: #115, the record of the simulator experiments; #120, four
+more windows for Home's layout tests; #130, a design review sheet; and
+the one keeping what GitHub's agent logged when a Mac job is cancelled
+([`log/2026-11-21-github-agent-log.md`](log/2026-11-21-github-agent-log.md)).
+Device checks wait for the Team ID (*Next steps, in order*, step 4).
 
 ## What the app does today
 
@@ -934,10 +935,18 @@ release in docs/ROADMAP.md when no thread has it yet.
   about ten minutes, cannot tell GitHub's service it still holds the
   job, and the service takes the job back. The wait before the UI tests
   (docs/DECISIONS.md, "Tests", 2026-11-19) does not fix it, because it
-  happens before the tests. Until a fix is tried, a second try of that
-  job is the remedy. What to try, in order, is in
+  happens before the tests. A cancelled Mac job now keeps
+  `github-agent-log.txt` in its results: what the agent logged about
+  its hold on the job and the cancel (`scripts/github-agent-log.sh`).
+  The next such job's copy settles the lead. How to read it, and what
+  an ordinary cancel wrote on GitHub's Macs ("Job cancellation request
+  ... received" with the hold renewed before and after), is in
+  [`log/2026-11-21-github-agent-log.md`](log/2026-11-21-github-agent-log.md).
+  Until a fix is tried, a second try of that job is the remedy. What to
+  try, in order, is in
   [`log/2026-11-19-ui-tests-wait-for-a-settled-mac.md`](log/2026-11-19-ui-tests-wait-for-a-settled-mac.md),
-  *Follow-ups*. *(the owner chooses whether a thread takes it up)*
+  *Follow-ups*. *(the next thread on CI reads the next cancelled job's
+  copy; the owner chooses whether a thread takes up a fix)*
 - Whether the wait before the UI tests ends the waits that ran out on a
   busy Mac is measured on one CI run so far: six UI jobs, all passed,
   no step stalled, at a cost of about eight minutes a job. After about
