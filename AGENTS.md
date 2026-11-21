@@ -312,8 +312,8 @@ path from a real input to the failure.
   observers use `queue: .main` plus `MainActor.assumeIsolated`.
 - Elapsed time uses `ContinuousClock.Instant`; pure types take `now:`;
   `Date` only for times people read.
-- Words people see go through the String Catalog; a person's own words
-  use `Text(verbatim:)`.
+- Words people see go through the String Catalog, in American English;
+  a person's own words use `Text(verbatim:)`.
 - **Run it, don't just read it.** Check layout and flow changes on an iPad
   and an iPhone simulator, default and accessibility text sizes, light and
   dark, and say what each result was measured on. An activation,

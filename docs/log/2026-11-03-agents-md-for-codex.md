@@ -2,9 +2,8 @@
 
 *2026-11-03. Pull request #77 (`claude/project-thread-8do6xw`). The
 "Make AGENTS.md fit what Codex reads" thread, a cloud session that
-cannot build: the owner's consultant notes of 2026-11-03 (from Claude
-Duet, read-only, each claim with its source), as the coordinator
-scoped them. Every claim used here was checked against its source
+cannot build: notes of 2026-11-03 that the owner passed on (read-only,
+each claim with its source), as the coordinator scoped them. Every claim used here was checked against its source
 first; what checking found is below.*
 
 ## What changed and why

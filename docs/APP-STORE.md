@@ -306,6 +306,8 @@ Guideline 2.3.6 asks for honest answers.
 | Social Media | No | — |
 | Messaging and Chat | No | Brickson speaks aloud; it sends nothing to other users (re-answer if caregiver alerts are ever built) |
 | Advertising | No | Invariant 9 |
+| Shared Location (new, 2026-11-16) | No | Brickson has no location code and shares nothing with anyone (re-answer if caregiver alerts ever share a location) |
+| Dating and Relationships (new, 2026-11-16) | No | — |
 | Profanity or Crude Humor; Horror or Fear; Alcohol, Tobacco or Drugs | None | Starter phrases contain none (invariant 7) |
 | **Medical or Treatment Information** | **None** | Apple means content that "provides diagnoses or guidance on managing medical conditions". Phrases such as "I need my medication." or "I can't breathe." are the person's own words to the people nearby, not guidance. Infrequent would make the app 13+; Frequent 16+ plus the medical-device declaration |
 | Health or Wellness Topics | No | No self-care or lifestyle advice |
@@ -314,6 +316,13 @@ Guideline 2.3.6 asks for honest answers.
 | Gambling; Simulated Gambling; Contests; Loot Boxes | No / None | — |
 | Age categories and override | Not Applicable (not Made for Kids, no override) | Made for Kids can never be undone once approved |
 | Age Suitability URL | Blank | — |
+
+Shared Location and Dating and Relationships are new: App Store Connect
+asks them from 2026-11-16 with every submission and every change to the
+questionnaire, and every app must have answered them by 2027-01-12
+([Apple news, 2026-11-02](https://developer.apple.com/news/?id=yxkh08us)).
+Brickson's first submission answers them with the rest; if its App Store
+Connect record exists before 2027-01-12, answer them there by that date.
 
 **Expected result:** 4+ everywhere (Brazil AL, Korea All, Vietnam 00+).
 Re-answer whenever a starter phrase set, an in-app web view or caregiver

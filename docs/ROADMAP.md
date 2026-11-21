@@ -1345,7 +1345,10 @@ owner's decision under invariant 9, as caregiver alerts do.
   request (docs/DECISIONS.md, "Build with Apple's current Xcode"), which
   fixes every warning it adds, since warnings are errors (docs/DECISIONS.md,
   "Warnings are errors").
-- Localization through the String Catalog, once its sync check is in CI.
+- Localization through the String Catalog. Its sync check is in place:
+  every unit run on CI fails when the catalog and the code differ
+  (`scripts/test.sh`). The app's own text is American English
+  (docs/DECISIONS.md, "Text people read is in American English").
 - The device-check log: every result recorded with what it was measured on.
 - The documents: each pull request edits the handoff's front page in
   place and adds one file to `docs/log/`.
@@ -1400,7 +1403,9 @@ Apple's design guidelines and Liquid Glass adoption were reviewed on
   the privacy policy saying what happens to the call's audio, and a device
   check with a real call heard on both ends.
 - **Xcode's JSON project format.** Held since 2026-10-25 until Apple
-  releases Xcode 27.2 and its first fix release, as the owner required in
+  releases Xcode 27.2 and one release after it (a 27.2 fix release or
+  27.3; on 2026-11-19 Apple had released only betas of 27.3), as the
+  owner required in
   the later Mac handoff. Then a trial on the owner's Mac converts a copy of
   the generated project and compares it with XcodeGen's, and Brickson
   switches in one pull request only when the gates hold

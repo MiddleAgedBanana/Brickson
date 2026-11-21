@@ -91,18 +91,12 @@ final class HomeLayoutTests: XCTestCase {
         }
         let first = tiles.element(boundBy: 0)
         let last = tiles.element(boundBy: count - 1)
-        let settled = NSPredicate { _, _ in
-            MainActor.assumeIsolated {
-                let window = app.windows.firstMatch.frame
-                guard (window.width > window.height) == landscape else { return false }
-                guard Self.gridMustFit(textSize, in: window) else { return true }
-                return window.contains(first.frame) && window.contains(last.frame)
-            }
+        waitUntil("Home did not finish laying out (\(textSize.name), landscape: \(landscape))") {
+            let window = app.windows.firstMatch.frame
+            guard (window.width > window.height) == landscape else { return false }
+            guard Self.gridMustFit(textSize, in: window) else { return true }
+            return window.contains(first.frame) && window.contains(last.frame)
         }
-        XCTAssertEqual(
-            XCTWaiter.wait(for: [expectation(for: settled, evaluatedWith: nil)], timeout: 10),
-            .completed, "Home did not finish laying out (\(textSize.name), landscape: \(landscape))"
-        )
     }
 
     @MainActor
@@ -155,11 +149,7 @@ final class HomeLayoutTests: XCTestCase {
                     button.tap()
                     // The old category's tiles already fit, so wait for the
                     // new one to be selected before reading its tiles.
-                    let selected = expectation(for: NSPredicate(format: "isSelected == true"), evaluatedWith: button)
-                    XCTAssertEqual(
-                        XCTWaiter.wait(for: [selected], timeout: 10), .completed,
-                        "\(category) was not selected (\(context))"
-                    )
+                    waitUntil("\(category) was not selected (\(context))") { button.isSelected }
                     waitForLayout(in: app, landscape: isLandscape, textSize: textSize)
                     let frames = try tileFrames(in: app)
                     XCTAssertFalse(frames.isEmpty, "\(category) shows no tiles (\(context))")

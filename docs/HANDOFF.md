@@ -6,10 +6,15 @@ edits this page in place and writes its record in [`docs/log/`](log/README.md);
 nothing is appended here. Plan: [`docs/ROADMAP.md`](ROADMAP.md). How the
 project runs: [`docs/SDLC.md`](SDLC.md).
 
-**State as of 2026-10-23: PR #14 (the library core), PR #33 (Settings
-on Home), PR #35 (Show Borders on Home) and PR #17 (agent guardrails)
-are merged; PR #17 landed as `7bff8f0`.**
-Ten threads are working in parallel on the first release, R0.
+**State as of 2026-11-20: `main` is at `d34e5df`, pull request #124,
+the code scanning alerts, merged 2026-11-20.** Open pull requests: #108
+(a draft) and #109, two versions of one change to the agent bridge;
+#115, the record of the simulator experiments; #120, four more windows
+for Home's layout tests; #122, UI test waits; #123, a phrase the speech
+service never begins; #129 (a draft), logging the speech service's
+pause and carry-on reports after #123; and #130, a design review
+sheet. Device checks wait for the Team ID (*Next steps, in
+order*, step 4).
 
 ## What the app does today
 
@@ -63,7 +68,10 @@ speaks at once, in the person's Personal Voice when one exists and is
 allowed (in the system's voice while the voice list is being read,
 which nothing waits for: docs/DECISIONS.md, "The voice list never holds
 up launch"); the sentence stays on screen in the message's reserved lines,
-and a longer message scrolls inside them. The phrase grid keeps native
+and a longer message scrolls inside them. A phrase the system's speech
+service has not begun 15 seconds after it was chosen is stopped, and Home
+shows "Stopped — Again" in place of "Speaking" (docs/DECISIONS.md, "A
+phrase that does not start"). The phrase grid keeps native
 pan cancellation even when its tiles fit, so a deliberate vertical drag
 can bounce only its content rather than speak. Static Home controls stay
 fixed, and fitting tiles must return to their frames when the drag
@@ -784,7 +792,7 @@ release in docs/ROADMAP.md when no thread has it yet.
   chains with the one chain engine"); how iPadOS moves a pointer when a
   window is resized is not known until a device shows it (*Checks that
   need a real device*). Found
-  2026-11-03 from the owner's consultant notes
+  2026-11-03 in a review of the project's documents
   ([log](log/2026-11-03-agents-md-for-codex.md)). *(R0, docs/ROADMAP.md,
   *The quality bar*, Q10; no thread has it yet)*
 - Typing on Home (since 2026-10-24) has automated coverage on CI's iPad and
@@ -941,6 +949,15 @@ release in docs/ROADMAP.md when no thread has it yet.
   [`log/2026-11-19-ui-tests-wait-for-a-settled-mac.md`](log/2026-11-19-ui-tests-wait-for-a-settled-mac.md):
   a wait that ran out in a test started on a settled Mac has another
   cause and needs its own look. *(the next thread on CI)*
+- `CornerShapesTests.aConcentricShapeTakesItsContainersCurveLessTheRoom()`
+  failed twice in a row on 2026-11-19, on pull request #127, which
+  changes documents only: it measured a 26-point corner where the rule
+  gives 30, after the renderer timed out ("image provider ... timed out
+  while waiting for phase 6"). The same app and test code passed it on
+  that branch's previous push and on #130's run the same evening. 26 is
+  what the test's own note says measuring along the diagonal would give.
+  Cause unknown; a second try did not clear it. *(the next thread on
+  corners or CI)*
 - Settings' Get Attention place is still empty, although AGENTS.md's
   design rules say "Settings opens on a large way back and a start-only
   Get Attention". Scored on 2026-10-24, Get Attention there would sound
@@ -1070,8 +1087,6 @@ release in docs/ROADMAP.md when no thread has it yet.
   device check. *(owner, with a device build)*
 - If SwiftData cannot create even an in-memory library, the app stops
   (`fatalError` in `PhraseLibraryStore.openForApp`). *(owner)*
-- `cloudKitDatabase: .none` and the absence of an iCloud capability are
-  privacy-policy promises no test pins. *(Test seams and CI evidence)*
 - Personal Voice permission is still asked at first launch without
   explanation. Voice Settings' explained Ask button is built
   (docs/DECISIONS.md, "Asking for Personal Voice from Voice Settings") but
@@ -1232,6 +1247,16 @@ release in docs/ROADMAP.md when no thread has it yet.
   the owner decides between that and changing the test
   ([record](log/2026-11-13-forbidden-code-check.md), *Follow-ups*).
   *(owner)*
+- A phrase the speech service never begins is stopped after 15 seconds
+  and shows "Stopped — Again", whose sentence says speech "stopped
+  unexpectedly". A plainer warning for a phrase that never began, such as
+  "Not spoken — Again", would be new words on Home and is not built
+  (docs/DECISIONS.md, "A phrase that does not start", *The words on
+  screen*). The limit also cannot catch a start report sent for speech
+  that is never heard, and a phrase that began and then stays "speaking"
+  with no finish still shows "Speaking" (*Verification*, the 2026-10-25
+  diagnostic). *(owner, for the words; the limit is checked against real
+  starts in device check P3)*
 - Two places in Settings break a guard of Apple's look on purpose, each a
   named known exception in `scripts/forbidden-code.py`
   (docs/DECISIONS.md, "Guards for Apple's look"), kept as inputs to the
@@ -1337,11 +1362,8 @@ docs/ROADMAP.md, *The quality bar*, Q24):
 9. Settings for the reviewers and GitHub's machines, from 2026-11-07
    (docs/DECISIONS.md, *Code review* and *Dependencies*), once that
    pull request has merged:
-   - **Install cubic** from
-     [its Marketplace page](https://github.com/marketplace/cubic-ai-code-reviews):
-     sign in at cubic.dev with GitHub, and give its app **Only select
-     repositories**, with Brickson alone. Success: the next pull request
-     gets a review from `cubic-dev-ai`.
+   - **Install cubic:** done. Its app has reviewed pull requests since
+     #114 (2026-11-15).
    - **Allow only GitHub's actions (and your own):** done. GitHub's API
      showed it on 2026-11-07, with "Allow actions created by GitHub"
      ticked and nothing else.
@@ -1541,7 +1563,7 @@ settings, date) and summarise it here.
 | D1: with no question at launch, a Personal Voice allowed after a phrase has been spoken speaks in the next phrase, after a voice-list refresh, a rebuilt synthesizer or only a relaunch (docs/recon/2026-10-15/directions/onboarding-and-settings.md, 2.5). Run from Xcode with `--personal-voice=ask-from-settings` added to the scheme's arguments (Product > Scheme > Edit Scheme > Run > Arguments), and ask with Voice Settings' Ask to Use Personal Voice | Whether the app may switch to `PersonalVoiceAskPolicy.fromSettings` (docs/DECISIONS.md, "Personal Voice permission is asked at launch, for now") |
 | In the same run: iOS's question appears over Voice Settings, which is still there after a wait of over 90 seconds; after Allow or Don't Allow the card shows the answer, "Answered. …" sits where the button was, nothing below the card moved, and Open Personal Voice Settings appears only after leaving and reopening Voice Settings; and, under Dwell or Head Tracking, a look kept where iOS's answer button was meets nothing that speaks, changes the voice or leaves Brickson | "Asking for Personal Voice from Voice Settings", "Voice Settings, reached with a held look" |
 | D4: Personal Voice access turned off in the Settings app while Brickson waits in the background; on return a phrase speaks in another voice, and turning access back on brings the Personal Voice back | "A Personal Voice is used only while it is allowed" |
-| Restart the device, then open Brickson at once: Home appears without waiting; a phrase chosen straight away speaks at once (in the system's voice if the voice list has not arrived); how long the list takes; the first phrase after it is in the chosen voice or Personal Voice; whether that first phrase itself waits | "The voice list never holds up launch" |
+| Restart the device, then open Brickson at once: Home appears without waiting; a phrase chosen straight away speaks at once (in the system's voice if the voice list has not arrived); how long the list takes; the first phrase after it is in the chosen voice or Personal Voice; whether that first phrase itself waits, and how long phrases take to begin against the 15-second start limit | "The voice list never holds up launch", "A phrase that does not start" |
 | D5: with two Personal Voices, the order the system lists them in, and whether each keeps its identifier across a relaunch, a restore and Share Across Devices | "Automatic keeps the person's Personal Voice" |
 | Personal Voice appears and is chosen once permission is given, and keeps speaking after the screen locks | Voice choice and when to ask |
 | Opening Settings by a stray dwell, and leaving it by Back to Talking, lands on nothing that speaks or alarms (`SettingsOnHomeTests` scores it on the simulator's frames); Voice Settings opened by a stray dwell, from Family Setup scrolled or not, lands on Back to Family Setup and changes nothing; the idle reset under real dwell. Physical iPad and iPhone checks remain unverified; use the [2026-10-26 mounted-device procedure](log/2026-10-26-settings-simulator-checks.md#environment-and-settings-for-the-physical-run), including the phone at AX5. | Settings' safety bar and root (docs/DECISIONS.md, "Settings is a cover with a fixed safety bar") |
@@ -1557,7 +1579,7 @@ settings, date) and summarise it here.
 | Typing on Home by touch, Switch Control, Voice Control ("Tap Type"), Full Keyboard Access and Dwell with Snap to Item: Type brings the cursor and Apple's keyboard at once; Speak and Return say the message; Clear, then Put Back; Phrases puts the keyboard away and keeps the message; a look slipping off the keyboard's top row meets nothing that speaks or changes the message; Snap to Item stops on the dimmed phrase tiles and categories while typing; and, on an iPhone SE with Display Zoom and at AX3 without it, where Type is dimmed, whether the real keyboard would cover Speak or Get Attention | docs/DECISIONS.md, "Typing on Home" (*The keyboard's room, measured*; *Open: by centre, dimmed phrases border Clear and Put Back*) and "Return speaks" |
 | Get Attention heard from the next room, on the speaker and over Bluetooth | The alarm's sound and level, and the replacement tone |
 | A phrase spoken while Get Attention sounds is understood over the tone at 0.32 | `AttentionAlertStatus.toneVolumeWhileSpeaking` |
-| A phone call, Siri and another app's alarm during a phrase and during Get Attention: each stops and shows "Stopped — Again" or "Alert stopped", and nothing restarts by itself, on iOS 26 and iOS 27 | Interruption handling and the iOS 27 notices (docs/DECISIONS.md, "Audio session notices") |
+| A phone call, Siri and another app's alarm during a phrase and during Get Attention: each stops and shows "Stopped — Again" or "Alert stopped", and nothing restarts by itself, on iOS 26 and iOS 27; whether the synthesizer reports a pause, before or after the notice, and whether a carry-on report follows | Interruption handling and the iOS 27 notices (docs/DECISIONS.md, "Audio session notices"); whether a pause report may be read as a cut-off ("A phrase the system cuts off", *Pause and carry-on reports are logged, not acted on yet*) |
 | Lock the device during a long phrase and while Get Attention sounds: both carry on | Background audio, before the App Review notes promise it |
 | Get Attention from Home's own control, by touch, Dwell with Snap to Item, Switch Control and Voice Control ("Tap Help"): it sounds with the silent switch on; a look held on Get Attention never stops it; a look still resting where Stop was after Stop meets a category; with Switch Control's Auto Tap, where the cursor goes once Stop's element leaves | "Get Attention and Stop on Home" (`GetAttentionOnHomeTests` scores the simulator's frames) |
 | Whether a voice reports its final word before finishing, and whether the system reports a cut-off phrase as finished | How often "A phrase the system cuts off" relies on its 3-second window |
@@ -1608,7 +1630,23 @@ settings, date) and summarise it here.
   Each result bundle and record now names its part
   (`ui-<family>-part<n>.xcresult`, `simulator-load-<family>-part<n>.txt`).
   A simulator that has already shut down when the run ends counts as
-  cleaned up. On 2026-11-12
+  cleaned up. Since 2026-11-17 every UI test wait goes through
+  `BricksonUITests/Waiting.swift` with a limit from `UIWait.swift`, three
+  times as long on CI except the strict ones that prove a safety
+  control's first response, and a wait that runs out says how long it
+  waited and how long its slowest look at the app took; a look over 5
+  seconds prints a `UI-WAIT` line even when the wait ends well, so search
+  a slow job's log for it (docs/DECISIONS.md, "Tests";
+  [`log/2026-11-17-ui-test-waits.md`](log/2026-11-17-ui-test-waits.md)).
+  `scripts/ui-test-waits.py` refuses any other wait.
+  `HomeAccessibilityOrderTests.swift` still holds 9 bare waits: the 7 it
+  had before the helpers and the 2 that pull request #119's re-read
+  added (a five-second deadline and a quarter-second pause).
+  `KeyboardSuggestions.swift` holds 2 (the deadline and half-second
+  pause of pull request #125's look at the keyboard's suggestion bar).
+  The next pull request to touch the UI tests moves both files' waits
+  onto the helpers and takes them off the script's `NOT_YET_CONVERTED`
+  list. On 2026-11-12
   the iPad job took 87 of its 90 minutes (pull request #103: about five
   minutes of new check-in tests, and one Home typing test whose taps
   each waited 120 seconds for the app to go idle), and the same day it
@@ -1654,6 +1692,13 @@ settings, date) and summarise it here.
   inside that burst). Each "paused" line says what the instance had
   used
   ([`log/2026-11-04-watcher-without-ps.md`](log/2026-11-04-watcher-without-ps.md)).
+  Pausing the extensions does not stop PosterBoard's own redraw. On
+  #123, twice while it ran, `HomeSizesTests` still found Settings' Family
+  Setup row in the accessibility hierarchy 10 seconds after Family
+  Setup's title appeared. In one of those runs, the screen recording
+  already showed Family Setup without the row. That wait is now 60
+  seconds, a CI timing allowance that loosens no check
+  ([`log/2026-11-17-phrase-start-limit.md`](log/2026-11-17-phrase-start-limit.md)).
   Since 2026-11-19 the UI tests also wait, after the warm-up launch and
   before the first test, until the Mac's load has stayed under 50 for
   each of its processors (150 on GitHub's Mac) or twenty minutes have
@@ -1698,6 +1743,13 @@ settings, date) and summarise it here.
 - CodeQL scans the workflow files and the Python scripts, not the Swift
   code, on purpose (docs/DECISIONS.md, *Code scanning*); the failed Swift
   attempt of 2026-10-10 was deleted from the Tool status page on 2026-11-08.
+  SonarQube Cloud also analyses every pull request and `main`, Swift
+  included, and sends its security findings to the same code scanning
+  page. Its four open alerts of 2026-11-17, all in the helper scripts,
+  were answered: in two, git is now given the folder as an absolute
+  path and a real gap beside one of them is closed; the other two are
+  false positives, dismissed by the owner (docs/DECISIONS.md,
+  "SonarQube Cloud's alerts").
   The root [SECURITY.md](../SECURITY.md) gives Codex Security context for
   the app, tooling and website from the existing rules and decisions;
   [.github/SECURITY.md](../.github/SECURITY.md) remains the private-reporting
@@ -1721,13 +1773,18 @@ settings, date) and summarise it here.
   opening it, its local Codex review answered (since 2026-11-08; AI
   Scan is off since that day);
   Greptile reviews when a pull request opens, as far as its free plan's
-  credits allow; cubic, once the owner installs its app, reviews when
-  one opens and after each push; CodeRabbit reviews only when a comment
+  credits allow; cubic reviews when one opens and after each push (its
+  app since 2026-11-15); CodeRabbit reviews only when a comment
   asks, `@coderabbitai review`, since the owner's trial ended. Since
   2026-11-07 each one's settings are in the repository
   (`.coderabbit.yaml`, `cubic.yaml`, `.greptile/`), with every feature
   that writes code and has a setting turned off, and AGENTS.md's rule
   holds the rest (docs/DECISIONS.md, *Code review*).
+  Three more of the owner's reviewers comment by themselves, never
+  approve, and no agent asks them: Gitar (its auto-apply off), Graphify
+  (one summary review per pull request so far) and SonarQube Cloud (a
+  quality-gate comment and check runs of its own, none of them
+  required); docs/DECISIONS.md, *Code review*, 2026-11-19.
   None reviews Dependabot's pull requests by itself. The AI credits
   Copilot's reviews use show only in Settings → Billing → AI usage;
   the owner budgets 35 to 50 reviews a month (docs/DECISIONS.md,
@@ -1756,13 +1813,54 @@ settings, date) and summarise it here.
   isolation outside the agent is not built
   ([record](log/2026-11-08-agent-bridge.md), *Known limits*). Since #99,
   an agy job runs only with agy's hook exactly as installed, and if the
-  job changes the hook, the bridge puts it back and the job fails; the
-  guard's own code in agy's folder is not put back
-  ([record](log/2026-11-12-bridge-safety-gaps.md)). A Codex write job
-  cannot commit yet: Codex keeps a worktree's git folder read-only in its
-  sandbox on purpose, and `--add-dir` does not change that (found on the
-  Mac on 2026-11-12); the next bridge pull request settles how its work
-  gets committed (same record, *Follow-ups*).
+  job changes the hook, the bridge puts it back and the job fails
+  ([record](log/2026-11-12-bridge-safety-gaps.md)); the bridge now does
+  the same for the guard's own code in agy's folder (`guard.py` and the
+  `privacy-check.py` it loads, with the bytecode caches beside them
+  removed), however the job ended, even after a stop once agy has
+  exited, and a write job
+  whose commits change that code leaves the folder unclean, so the next
+  agy job is refused until a thread has dealt with them. Codex keeps a
+  worktree's git folder read-only in its sandbox on purpose, so a Codex
+  write job leaves its work uncommitted and the bridge commits it, in one
+  commit, once Codex has exited 0 and the privacy check beside the bridge
+  has passed that commit, made first as an object, with its files,
+  message, author and committer, before the branch moves to it;
+  otherwise nothing is committed and the job says why; the bridge's own
+  git, its privacy check and its jobs run without git's
+  repository-location variables; the bridge's own git and its privacy
+  check also run with every git filter the settings define turned off,
+  as hooks and `core.fsmonitor` already were (the settings git uses to
+  reach a remote are not turned off); and a job that leaves git
+  unreadable still ends with `summary.json` and `done`, saying what
+  could not be read
+  ([record](log/2026-11-12-bridge-commits-and-guard-code.md)).
+  CodeRabbit's finding that #99's record should again list the Mac check
+  under *Not verified* was declined, and CodeRabbit then withdrew it: the
+  check was made before #99 merged (same record, *CodeRabbit's review of
+  the second push*). Of the eleven findings CodeRabbit left on #108,
+  which did this bridge work another way, five are fixed in this bridge,
+  four were already fixed in it, so nothing was ported for them, and two
+  were about #108's own record (same record, *Brought over from pull
+  request #108*). The reviews of that push found six more faults in the
+  bridge, fixed in the same pull request: a job could keep a bytecode
+  cache folder the bridge never clears, commits that changed the guard's
+  code and put it back were reported as unchanged, a stop was dropped
+  while the agent's processes were being stopped, a failed listing of a
+  job's commits read as none, a status claimed a put-back that had
+  failed, and a refusal that could not unstage the job's files did not
+  say so. Eight findings were not changed, one of them a security
+  finding that the owner decided on 2026-11-19 stays a known limit: the
+  bridge reads which filters are set a moment before its git runs, so a
+  job outside any sandbox could add one in between, which gains it
+  nothing it could not already do (same record, *The reviews of the
+  fifth push*). A review made when that pull request was marked ready
+  found that it had stopped refusing a start whose environment sets a
+  push URL (`GIT_CONFIG_COUNT` or `GIT_CONFIG_PARAMETERS`), which a job's
+  push would have reached; the bridge refuses such a start again (same
+  record, *After it was marked ready*). None of this
+  has been run through a real Codex or agy job on the Mac yet (same
+  record, *Not verified*).
   Jules, Google's cloud coding agent, is no longer one of Brickson's
   agents: Google made it read-only after 2026-11-11 and shuts it down on
   2026-12-31, so the documents no longer name it, and no other agent

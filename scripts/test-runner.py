@@ -190,7 +190,7 @@ def run_script(build_body, mode="ui", destination="id=fixture-simulator",
                sync_status=0, on_ci=True, boot_status=0, part=None,
                bootstatus_status=0, shutdown_status=0, shutdown_leaves="",
                docs_status=0, hooks_status=0,
-               privacy_status=0, bridge_status=0, forbidden_status=0):
+               privacy_status=0, bridge_status=0, forbidden_status=0, wait_scale=None):
     with tempfile.TemporaryDirectory() as directory:
         # Exercise the exact checked-in runner and selector in an isolated
         # checkout. Preflights are dependencies, like the mocked Apple tools:
@@ -256,8 +256,11 @@ def run_script(build_body, mode="ui", destination="id=fixture-simulator",
                            STRING_CATALOG=str(catalog_path),
                            DERIVED_DATA_DIR=f"{directory}/DerivedData",
                            TEST_RESULTS_DIR=f"{directory}/TestResults")
-        for name in ("DESTINATION", "SIMULATOR_FAMILY", "UI_TEST_PART"):
+        for name in ("DESTINATION", "SIMULATOR_FAMILY", "UI_TEST_PART",
+                     "BRICKSON_UI_WAIT_SCALE", "TEST_RUNNER_BRICKSON_UI_WAIT_SCALE"):
             environment.pop(name, None)
+        if wait_scale is not None:
+            environment["BRICKSON_UI_WAIT_SCALE"] = wait_scale
         if part is not None:
             environment["UI_TEST_PART"] = part
         if destination is not None:
@@ -946,6 +949,184 @@ class UITestPartTests(unittest.TestCase):
                 self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
                 self.assertEqual(result.invocations, 0)
                 self.assertEqual(result.simctl, [])
+
+
+class UITestWaitTests(unittest.TestCase):
+    """Every wait in the UI tests goes through BricksonUITests/Waiting.swift,
+    with a limit from UIWait.swift that stretches on CI
+    (scripts/ui-test-waits.py; docs/DECISIONS.md, "Tests")."""
+
+    @staticmethod
+    def waits_module():
+        spec = importlib.util.spec_from_file_location(
+            "ui_test_waits", SCRIPT.with_name("ui-test-waits.py"))
+        module = importlib.util.module_from_spec(spec)
+        writes, sys.dont_write_bytecode = sys.dont_write_bytecode, True
+        try:
+            spec.loader.exec_module(module)
+        finally:
+            sys.dont_write_bytecode = writes
+        return module
+
+    def problems_in(self, files, not_yet_converted=None):
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            for name, text in files.items():
+                (folder / name).write_text(textwrap.dedent(text))
+            return self.waits_module().problems(folder, not_yet_converted or {})
+
+    # A bare wait added anywhere in the UI tests, or a file not yet
+    # converted that gains one, fails this test.
+    def test_the_ui_tests_wait_only_through_the_helpers(self):
+        self.assertEqual(self.waits_module().problems(), [])
+
+    # Dropping any pattern from the check lets its wait through and fails
+    # here: each line is one way XCTest, Foundation or Swift can wait for a
+    # number of seconds.
+    def test_each_kind_of_bare_wait_is_found(self):
+        bare = [
+            "XCTAssertTrue(button.waitForExistence(timeout: 5))",
+            "_ = button.waitForExistence(timeout: limit)",
+            "_ = button.waitForNonExistence(timeout: limit)",
+            "_ = XCTWaiter.wait(for: [seen], timeout: limit)",
+            "await fulfillment(of: [seen], timeout: limit)",
+            "waitForExpectations(timeout: limit)",
+            "wait(for: [seen], timeout: limit)",
+            "_ = button.wait(for: \\.isHittable, toEqual: true, timeout: limit)",
+            "let seen = expectation(for: shown, evaluatedWith: button)",
+            "let seen = XCTNSPredicateExpectation(predicate: shown, object: button)",
+            "sleep(2)",
+            "usleep(500)",
+            "Thread.sleep(forTimeInterval: pause)",
+            "try await Task.sleep(for: pause)",
+            "RunLoop.current.run(until: end)",
+            "let end = clock.now + .seconds(5)",
+            "let end = Date().addingTimeInterval(pause)",
+            'XCTFail("seen: \\(button.waitForExistence(timeout: 1))")',
+        ]
+        for line in bare:
+            with self.subTest(line=line):
+                found = self.problems_in({"SomeTests.swift": f"func test() {{\n    {line}\n}}\n"})
+                self.assertEqual(len(found), 1, found)
+                self.assertTrue(found[0].startswith("SomeTests.swift:2: "), found)
+
+    # Reading comments, the words of strings or a gesture's own length as a
+    # wait, or the named strict limit, fails here: none of them waits.
+    def test_comments_strings_gestures_and_the_helpers_waits_are_not_bare(self):
+        found = self.problems_in({"SomeTests.swift": """\
+            // _ = button.waitForExistence(timeout: 5)
+            /* sleep(1) /* nested */ Thread.sleep(forTimeInterval: 1) */
+            XCTFail("waitForExistence(timeout: 5) ran out after sleep(2)")
+            let words = \"\"\"
+                XCTWaiter.wait(for: [seen], timeout: 3)
+                \"\"\"
+            button.press(forDuration: 1.2)
+            button.press(forDuration: 0.1, thenDragTo: other, withVelocity: .slow, thenHoldForDuration: 1)
+            waitToAppear(button, "Settings did not open")
+            waitUntil(within: .strict(seconds: 10), "Again stayed off") { again.isEnabled }
+            _ = appears(message, within: .observation)
+            """})
+        self.assertEqual(found, [])
+
+    # Reading one line at a time (a wait whose arguments run onto the next
+    # line), counting one wait per line, not reading the code inside a raw
+    # string's interpolation, or reading a raw string's words as code, fails
+    # here.
+    def test_waits_over_several_lines_beside_another_or_in_raw_strings_are_found(self):
+        over_lines = self.problems_in({"SomeTests.swift": """\
+            func test() {
+                wait(
+                    for: [seen],
+                    timeout: limit
+                )
+            }
+            """})
+        self.assertEqual(over_lines, ["SomeTests.swift:2: XCTest's waiter; wait with Waiting.swift "
+                                      "and a UIWait limit"])
+        split_call = self.problems_in({"SomeTests.swift": """\
+            func test() {
+                _ = button.waitForExistence
+                    (timeout: limit)
+            }
+            """})
+        self.assertEqual(split_call, ["SomeTests.swift:2: XCTest's own wait for an element; wait with "
+                                      "Waiting.swift and a UIWait limit"])
+        both = "XCTAssertTrue(a.waitForExistence(timeout: 1) && b.waitForExistence(timeout: 1))\n"
+        self.assertEqual(len(self.problems_in({"SomeTests.swift": both})), 2)
+        grown = self.problems_in({"OldTests.swift": both}, {"OldTests.swift": 1})
+        self.assertIn("OldTests.swift: 2 bare waits, more than the 1", grown[0])
+        raw = self.problems_in({"SomeTests.swift": """\
+            func test() {
+                XCTFail(#"a \\" sleep(1) \\(sleep(1))"#)
+                XCTFail(#"seen: \\#(button.waitForExistence(timeout: 1))"#)
+            }
+            """})
+        self.assertEqual(len(raw), 1, raw)
+        self.assertTrue(raw[0].startswith("SomeTests.swift:3: "), raw)
+
+    # Checking the helpers themselves, or letting a file not yet converted
+    # gain a wait, fails here; it may lose them. Only the helpers at the
+    # top of the folder are exempt, not another file with the same name.
+    def test_only_the_helpers_wait_directly_and_old_files_may_not_grow(self):
+        two = "button.waitForExistence(timeout: 5)\nsleep(1)\n"
+        self.assertEqual(self.problems_in({"Waiting.swift": two, "UIWait.swift": two}), [])
+        with tempfile.TemporaryDirectory() as directory:
+            nested = Path(directory) / "Probes"
+            nested.mkdir()
+            (nested / "Waiting.swift").write_text(two)
+            found = self.waits_module().problems(Path(directory), {})
+        self.assertEqual(found, ["Probes/Waiting.swift:1: XCTest's own wait for an element; wait with "
+                                 "Waiting.swift and a UIWait limit",
+                                 "Probes/Waiting.swift:2: a sleep; wait with Waiting.swift and a UIWait limit"])
+        self.assertEqual(self.problems_in({"OldTests.swift": two}, {"OldTests.swift": 2}), [])
+        self.assertEqual(self.problems_in({"OldTests.swift": two}, {"OldTests.swift": 3}), [])
+        grown = self.problems_in({"OldTests.swift": two}, {"OldTests.swift": 1})
+        self.assertEqual(len(grown), 1, grown)
+        self.assertIn("OldTests.swift: 2 bare waits, more than the 1", grown[0])
+        gone = self.problems_in({"NewTests.swift": "\n"}, {"OldTests.swift": 1})
+        self.assertEqual(len(gone), 1, gone)
+        self.assertIn("OldTests.swift: listed as not yet converted, but there is no such file", gone[0])
+
+    def test_the_check_exits_with_a_failure_when_it_finds_one(self):
+        result = subprocess.run([sys.executable, "-I", str(SCRIPT.with_name("ui-test-waits.py"))],
+                                capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("Every UI test wait goes through Waiting.swift.", result.stdout)
+        module = self.waits_module()
+        with mock.patch.object(module, "problems", return_value=["SomeTests.swift:2: a sleep"]), \
+                contextlib.redirect_stdout(io.StringIO()) as out, \
+                contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(module.main(), 1)
+        self.assertIn("SomeTests.swift:2: a sleep", out.getvalue())
+
+    def scale_run(self, mode="ui", **options):
+        return run_script(
+            'if [ "$action" = test-without-building ]; then\n'
+            '    echo "scale ${TEST_RUNNER_BRICKSON_UI_WAIT_SCALE-unset}" >> "$RUNNER_EVENTS"\n'
+            'fi', mode=mode, **options)
+
+    # Not passing the scale to the test runner, passing it on a Mac, or
+    # ignoring a chosen one fails here; so does a scale that reaches the
+    # build rather than the test run.
+    def test_the_ui_tests_get_three_times_their_limits_on_ci_only(self):
+        for on_ci, chosen, expected in [(True, None, "3"), (False, None, "1"),
+                                        (True, "2", "2"), (False, "4", "4")]:
+            with self.subTest(on_ci=on_ci, chosen=chosen):
+                result = self.scale_run(on_ci=on_ci, wait_scale=chosen)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                scales = [event for event in result.events if event.startswith("scale ")]
+                self.assertEqual(scales, [f"scale {expected}"], result.events)
+                self.assertIn(f"UI test waits: a scale of {expected} asked for", result.stdout)
+
+    # Renaming the variable on one side only leaves the UI tests at their
+    # normal limits on CI, silently; this test fails instead.
+    def test_the_script_and_the_tests_name_the_same_variable(self):
+        swift = (UI_TESTS / "UIWait.swift").read_text()
+        name = re.search(r'static let scaleVariable = "([A-Z_]+)"', swift)
+        self.assertIsNotNone(name)
+        script = SCRIPT.read_text()
+        self.assertIn(f'export TEST_RUNNER_{name.group(1)}="$ui_wait_scale"', script)
+        self.assertIn(f"${{{name.group(1)}:-}}", script)
 
 
 class WatcherTests(unittest.TestCase):

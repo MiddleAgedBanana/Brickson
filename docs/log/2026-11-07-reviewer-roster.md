@@ -2,15 +2,14 @@
 
 *2026-11-07. Pull request #85 (`claude/project-thread-cguht9`). The
 thread "Harden CI and add CodeRabbit and cubic config", in a cloud
-session, from the consultant's brief of 2026-11-06 and the owner's
-answer to it.*
+session, from a brief of 2026-11-06 and the owner's answer to it.*
 
 ## What changed and why
 
 Nothing in the app changes. This is about who reviews Brickson's pull
 requests and what GitHub's machines may run.
 
-The consultant's brief of 2026-11-06 made seven recommendations. The
+The brief of 2026-11-06 made seven recommendations. The
 owner agreed to all of them but one: rather than replace Greptile with
 cubic, keep Greptile and add cubic, because reviewers built on
 different models see different things, and one can stand in when
