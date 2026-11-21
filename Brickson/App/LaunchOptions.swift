@@ -21,6 +21,8 @@ import SwiftData
 ///   (`AppTimeouts`), so tests don't wait minutes.
 /// - `--screen=keyboard-probe`: start on the typing work's keyboard probe
 ///   instead of Home.
+/// - `--screen=design-review`: start on the design review sheet
+///   (`DesignReviewScreen`) instead of Home.
 /// - `--screen=settings`: open Settings over Home at launch.
 /// - `--appearance=light|dark`: request the app's colour scheme for this
 ///   test launch. Without it, the app follows the system appearance.
@@ -82,6 +84,7 @@ nonisolated struct LaunchOptions: Equatable, Sendable {
         case home
         case keyboardProbe = "keyboard-probe"
         case settings
+        case designReview = "design-review"
     }
 
     nonisolated enum Appearance: String, Equatable, Sendable {

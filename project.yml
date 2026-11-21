@@ -180,6 +180,10 @@ targets:
       # separate app that the tests do not launch.
       - path: BricksonProbe/Logic
       - path: BricksonProbe/System/ProbeSpeechEvents.swift
+      # The design review sheet's pixel arithmetic, which its capture tool
+      # also compiles (scripts/design-review/), tested here
+      # (ReviewPixelsTests).
+      - path: scripts/design-review/ReviewPixels.swift
     dependencies:
       - target: Brickson
     settings:
