@@ -2744,6 +2744,25 @@ docs/work/layout-engine.md; the record is
   `theStarterLibraryFitsWhereTheTableSays` pins both modes.
   *2026-10-24:* Home has Phrases and Type, so the slot plan's column is
   Home's (*Typing on Home*, *Where the starter library fits, measured*).
+  *2026-11-17, more windows:* the iPhone Air (420 by 912 points, 68
+  and 34 at the top and bottom), the 13-inch iPad Air (1024 by 1366),
+  the 820 by 1180 iPads (iPad Air 11-inch and iPad (A16)) and the iPad
+  mini (A20 Pro) (756 by 1158), as the iOS 27.2 simulators gave them in
+  portrait, iPads with 32 and 20, join the table, the iPads turned to
+  landscape too with the same insets, as every iPad in it has (the
+  landscape insets are not measured). Every check the engine tests run
+  over the swept windows now also runs on each window of the table with
+  its own safe areas. By the engine: the iPhone Air holds the starter
+  library through AX3, Bold Text on or off, as the iPhone 16e does, and
+  every new iPad window at every text size. Without Phrases and Type
+  (`HomeLayout.Modes.phrasesOnly`, the arrangement kept for comparison,
+  not Home's), the iPad mini (A20 Pro) in landscape holds it through AX3
+  only, 28 points short at AX5, as the other iPad mini in landscape (40
+  points short there). The safety row ends above
+  the keyboard's room on each at every size but the 820 by 1180 iPad in
+  landscape at AX5 and the iPad mini (A20 Pro) in landscape from AX3,
+  as on the other iPad mini, where Home does not offer typing
+  (*Typing on Home*, *The keyboard's room, measured*).
 - **The message on the narrowest windows.** Known limit, not accepted:
   below 345 points with Bold Text on, the message beside Phrases and Type
   is narrower than "understand." in its font at the default size, so the
@@ -4670,6 +4689,18 @@ Talking keeps touch's frame*). The work file is
   tracking's to AX3 and touch's at AX5; the iPad mini in landscape takes
   touch's (head tracking's are 30 to 58 points short). The full table is in
   the work file and pinned in `ProfileChoiceTests`.
+  *2026-11-17:* of the windows added to the table (*The layout engine*,
+  *Where the starter library fits*), the iPhone Air takes touch's (head
+  tracking's leave the starter library 134 to 162 points short, Eye
+  Tracking's 354); the 13-inch iPad Air in both orientations, and the
+  820 by 1180 iPad and the iPad mini (A20 Pro) in portrait, take Eye
+  Tracking's at every text size, the iPad mini (A20 Pro) with Bold Text
+  too (its window, 12 points wider, leaves five columns of 132.8
+  points); the 820 by 1180 iPad in landscape takes touch's through AX3
+  and head tracking's at AX5 (head tracking's hold at every size but
+  leave no room for typing until touch's leave none either, as on the
+  zoomed 13-inch iPad in landscape); and the iPad mini (A20 Pro) in
+  landscape takes touch's (head tracking's are 18 to 46 points short).
 - **The arrangement is touch's.** Whether Home is regular or compact,
   how the categories sit and the grid's columns are chosen at touch's
   gap, so every profile in a window has the same arrangement and only
@@ -4959,6 +4990,15 @@ Step by Step. The work file is
   Bold Text) and not in others (the 375 by 667 window at AX3 and AX5,
   the zoomed 320-point window, AX5 with Bold Text). The owner can cap the growth, or keep touch's on the Pro Max,
   instead.
+  *2026-11-17:* of the windows added to the table (*The layout engine*,
+  *Where the starter library fits*), the 13-inch iPad Air in both
+  orientations and the 820 by 1180 iPad in portrait take the late
+  stage's at every text size; the iPad mini (A20 Pro) in portrait Eye
+  Tracking's, with Bold Text too; the 820 by 1180 iPad in landscape
+  touch's through AX3 and head tracking's at AX5; and the iPad mini (A20
+  Pro) in landscape and the iPhone Air touch's (on the iPhone Air, head
+  tracking's leave a board of six 12 points short at the default size
+  and 40 at AX5). Both boards take the same sizes on each.
 - **A fold or a camera across Home** shows the board in every
   category's frames at touch's sizes, because no fold check has
   measured the board's (*iPhone Duo*).
