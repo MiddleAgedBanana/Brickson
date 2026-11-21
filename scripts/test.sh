@@ -28,6 +28,14 @@
 #
 #   UI_TEST_PART=2 SIMULATOR_FAMILY=ipad scripts/test.sh ui
 #
+# How long the UI tests wait. Each wait ends as soon as what it waits for
+# happens; its limit only decides when a stuck app fails. On CI (CI=true)
+# the limits are three times their normal length, since GitHub's Macs are
+# sometimes overloaded; strict limits never stretch. To choose another
+# multiple:
+#
+#   BRICKSON_UI_WAIT_SCALE=2 scripts/test.sh ui
+#
 # The script says which simulator it chose, starts it and waits until it has
 # finished starting (a DESTINATION's simulator too). A device this script
 # boots is shut down after its run, before the next family starts; a device
@@ -75,6 +83,24 @@ fi
 # Which tools made this run, for anyone reading the log later.
 echo "Xcode: $(xcodebuild -version | tr '\n' ' ')"
 echo "XcodeGen: $(xcodegen --version)"
+
+# How long the UI tests' waits may last, as a multiple of their normal
+# limits (BricksonUITests/UIWait.swift; docs/DECISIONS.md, "Tests"): 3 on
+# CI, where GitHub's Macs are sometimes so overloaded that a working app
+# answers after a normal limit, and 1 elsewhere. BRICKSON_UI_WAIT_SCALE
+# chooses another. xcodebuild hands each TEST_RUNNER_ variable to the
+# tests without the prefix. Limits marked strict never stretch.
+if [ -n "${BRICKSON_UI_WAIT_SCALE:-}" ]; then
+    ui_wait_scale="$BRICKSON_UI_WAIT_SCALE"
+elif [ "${CI:-}" = true ]; then
+    ui_wait_scale=3
+else
+    ui_wait_scale=1
+fi
+export TEST_RUNNER_BRICKSON_UI_WAIT_SCALE="$ui_wait_scale"
+if [ "$mode" = ui ]; then
+    echo "UI test waits: a scale of $ui_wait_scale asked for; the tests hold it between 1 and 5 and never stretch a strict limit (BricksonUITests/UIWait.swift)"
+fi
 
 # The Xcode project is generated from project.yml every time, so it always
 # matches the files on disk.

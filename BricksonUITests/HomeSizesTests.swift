@@ -74,17 +74,17 @@ final class HomeSizesTests: XCTestCase {
     @MainActor
     private func openFirstStep(_ app: XCUIApplication, context: String) throws -> XCUIElement {
         app.buttons["Settings"].tap()
-        XCTAssertTrue(app.buttons["backToTalking"].waitForExistence(timeout: 10), "Settings did not open (\(context))")
+        waitToAppear(app.buttons["backToTalking"], "Settings did not open (\(context))")
         let familySetup = app.buttons["familySetup"].firstMatch
-        XCTAssertTrue(familySetup.waitForExistence(timeout: 10), "Settings shows no Family Setup (\(context))")
+        waitToAppear(familySetup, "Settings shows no Family Setup (\(context))")
         try assertPassesAccessibilityAudit(app, context: "Settings, \(context)")
         open(familySetup, waitingFor: "Family Setup", in: app, context: context)
         let guided = app.buttons["guidedSetup"].firstMatch
-        XCTAssertTrue(guided.waitForExistence(timeout: 10), "Family Setup shows no Set Up Step by Step (\(context))")
+        waitToAppear(guided, "Family Setup shows no Set Up Step by Step (\(context))")
         try assertPassesAccessibilityAudit(app, context: "Family Setup, \(context)")
         open(guided, waitingFor: "Step 1 of 6", in: app, context: context)
         let touch = app.buttons["Touch"]
-        XCTAssertTrue(touch.waitForExistence(timeout: 10), "the first step shows no Touch (\(context))")
+        waitToAppear(touch, "the first step shows no Touch (\(context))")
         attachCapture(app, name: "the first step, \(context)")
         try assertPassesAccessibilityAudit(app, context: "Step 1 of 6, \(context)")
         return touch
@@ -98,21 +98,17 @@ final class HomeSizesTests: XCTestCase {
     /// stayed in the hierarchy more than 10 seconds, once while the screen
     /// recording already showed Family Setup without it (docs/HANDOFF.md,
     /// "Repository, CI and website"). A screen that never finishes opening
-    /// still fails here.
-    private static let previousScreenGoneTimeout: TimeInterval = 60
+    /// still fails here. Already sized for those runners, so the CI scale
+    /// does not stretch it: 60 seconds on every machine.
+    private static let previousScreenGone = UIWait(normalSeconds: 60, stretches: false)
 
     /// Chooses `row` and waits for the screen titled `title`, and for `row`
     /// to have gone with the screen it was on.
     @MainActor
     private func open(_ row: XCUIElement, waitingFor title: String, in app: XCUIApplication, context: String) {
         row.tap()
-        XCTAssertTrue(app.navigationBars[title].waitForExistence(timeout: 10), "\(title) did not open (\(context))")
-        let gone = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: row)
-        XCTAssertEqual(
-            XCTWaiter.wait(for: [gone], timeout: Self.previousScreenGoneTimeout),
-            .completed,
-            "\(title) did not finish opening (\(context))"
-        )
+        waitToAppear(app.navigationBars[title], "\(title) did not open (\(context))")
+        waitToDisappear(row, within: Self.previousScreenGone, "\(title) did not finish opening (\(context))")
     }
 
     /// Whether `window` holds Eye Tracking's sizes at every text size, by
@@ -207,18 +203,15 @@ final class HomeSizesTests: XCTestCase {
         let touch = try openFirstStep(app, context: context)
         XCTAssertTrue(text(Self.sizesSentence, in: app).exists, "the first step does not say what the answers do (\(context))")
         touch.tap()
-        let chosen = expectation(for: NSPredicate(format: "isSelected == true"), evaluatedWith: touch)
-        XCTAssertEqual(XCTWaiter.wait(for: [chosen], timeout: 10), .completed, "Touch was not chosen (\(context))")
+        waitUntil("Touch was not chosen (\(context))") { touch.isSelected }
         app.buttons["backToTalking"].tap()
-        let closed = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: app.buttons["backToTalking"])
-        XCTAssertEqual(XCTWaiter.wait(for: [closed], timeout: 10), .completed, "Settings did not close (\(context))")
+        waitToDisappear(app.buttons["backToTalking"], "Settings did not close (\(context))")
 
         let yes = app.buttons["Yes"]
         let touchYes = touchFrames["Yes"]
-        let touchSized = expectation(for: NSPredicate { _, _ in
-            MainActor.assumeIsolated { Self.same(yes.frame, touchYes) }
-        }, evaluatedWith: nil)
-        XCTAssertEqual(XCTWaiter.wait(for: [touchSized], timeout: 10), .completed, "Yes kept other sizes than touch's after Touch was chosen (\(context))")
+        waitUntil("Yes kept other sizes than touch's after Touch was chosen (\(context))") {
+            Self.same(yes.frame, touchYes)
+        }
         attachCapture(app, name: "Home after Touch, \(context)")
         for (name, frame) in quickFrames(in: app) {
             XCTAssertTrue(Self.same(frame, touchFrames[name]), "\(name) at \(frame) after Touch, touch's \(String(describing: touchFrames[name])) (\(context))")

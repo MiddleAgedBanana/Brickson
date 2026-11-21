@@ -172,6 +172,9 @@ targets:
       # What launchedApp passes the app, read here with the app's own
       # parser (LaunchArgumentsTests).
       - path: BricksonUITests/LaunchArguments.swift
+      # The UI tests' wait limits, the CI scale and a wait's report
+      # (UIWaitTests); the waits that use them need XCTest and stay out.
+      - path: BricksonUITests/UIWait.swift
       # The probe app's plain logic and its speech delegate, tested here
       # (ProbeLogicTests, OffMainThreadCallbackTests). The probe itself is a
       # separate app that the tests do not launch.
