@@ -191,7 +191,7 @@ function scrub(s, pattern, prefix,    done, start, length_, text, keep) {
 # Tokens (JSON web tokens, GitHub's), and the values of credentials and
 # signed addresses.
 function redact(s) {
-    s = scrub(s, "eyj[a-z0-9_-]+\\.[a-z0-9_.-]+", "")
+    s = scrub(s, "eyj[a-z0-9_-]+(\\.[a-z0-9_-]*)*", "")
     s = scrub(s, "gh[opsur]_[a-z0-9]+", "")
     s = scrub(s, "(bearer|basic) [^ \t\"',;]+", "^(bearer|basic) ")
     s = scrub(s, "authorization[\":= ]+[^ \t\"',;]+", "^authorization[\":= ]+")

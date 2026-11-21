@@ -3124,7 +3124,7 @@ AGENT_RUNNER_LOG = """\
 [2026-11-21 14:01:01Z ERR  JobDispatcher] Catch exception during renew runner job j1.
 [2026-11-21 14:01:02Z INFO JobDispatcher] Retrying lock renewal for job j1. Job is valid until 2026-11-21 14:10:01Z.
 [2026-11-21 14:01:20Z INFO JobDispatcher] Successfully renew job j1, job is valid till 2026-11-21 14:11:20Z
-[2026-11-21 14:01:21Z ERR  JobDispatcher] HttpRequestException: Authorization: Bearer SECRET-ONE at https://x.example/up?sv=1&sig=SECRET-TWO&se=2 eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJTRUNSRVQifQ.c2lnbmF0dXJl ghs_SECRETTHREE0123456789abcdEF token=SECRET-FOUR
+[2026-11-21 14:01:21Z ERR  JobDispatcher] HttpRequestException: Authorization: Bearer SECRET-ONE at https://x.example/up?sv=1&sig=SECRET-TWO&se=2 eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJTRUNSRVQifQ.c2lnbmF0dXJl ghs_SECRETTHREE0123456789abcdEF token=SECRET-FOUR eyJydW5uZXIiOiJTRUNSRVQifQ
 [2026-11-21 14:05:00Z INFO JobDispatcher] Job cancellation request j1 received, cancellation timeout 5 minutes.
 [2026-11-21 14:05:01Z INFO JobDispatcher] Send job cancellation message to worker for job j1.
 """ + "".join(f"[2026-11-21 14:05:02Z INFO Terminal] quiet line {n}\n" for n in range(1, 51)) + """\
@@ -3380,6 +3380,7 @@ class GitHubAgentLogTests(unittest.TestCase):
         for text in (saved, ran.stdout):
             self.assertNotIn("SECRET", text)
             self.assertNotIn("eyJzdWIi", text)
+            self.assertNotIn("eyJydW5u", text)
 
     # A job that runs scripts/test.sh without the step, the step running
     # whenever the job ends (or never), after the results are uploaded, on
