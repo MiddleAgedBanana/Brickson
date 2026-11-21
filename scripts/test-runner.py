@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Exercise test.sh's error reporting and simulator choice without booting a
-simulator, check the simulator watcher it starts (simulator-load.py), and
-check that CI runs it with the newest released Xcode."""
+simulator, check the simulator watcher it starts (simulator-load.py),
+check that CI runs it with the newest released Xcode, and check what a
+cancelled CI job keeps of GitHub's agent's log (github-agent-log.sh)."""
 import argparse
 import contextlib
 import ctypes
@@ -26,6 +27,7 @@ WORKFLOW = SCRIPT.parent.parent / ".github" / "workflows" / "tests.yml"
 WORKFLOWS = WORKFLOW.parent
 VERIFY_LOCKFILE = WORKFLOWS / "verify-lockfile.yml"
 UI_TESTS = SCRIPT.parent.parent / "BricksonUITests"
+AGENT_LOG = SCRIPT.with_name("github-agent-log.sh")
 
 # Answers the version and build-settings queries from the fixture, and
 # records every other xcodebuild run, one line of tab-separated arguments
@@ -2164,13 +2166,14 @@ def workflow_jobs(text):
 
 
 def job_steps(lines):
-    """A job's steps, in order: each step's name or action, its `with` and
-    `env` values, and its script. Reads the layout tests.yml uses."""
+    """A job's steps, in order: each step's name or action, its condition,
+    its `with` and `env` values, and its script. Reads the layout tests.yml
+    uses."""
     steps, step, block, script_indent = [], None, None, None
     for line in lines:
         start = re.match(r"      - (.*)$", line)
         if start:
-            step = {"name": None, "uses": None, "with": {}, "env": {}, "run": []}
+            step = {"name": None, "uses": None, "if": None, "with": {}, "env": {}, "run": []}
             steps.append(step)
             line, block, script_indent = "        " + start.group(1), None, None
         if step is None:
@@ -2189,7 +2192,7 @@ def job_steps(lines):
                     script_indent = 10
                 else:
                     step["run"].append(value)
-            elif key in ("name", "uses"):
+            elif key in ("name", "uses", "if"):
                 step[key] = value
             continue
         nested = re.match(r"          ([\w-]+): *(.*)$", line)
@@ -3103,6 +3106,272 @@ steps:
                   if not line.lstrip().startswith("#")
                   and re.search(r"Xcode_\d|DEVELOPER_DIR|xcode-version", line)]
         self.assertEqual(pinned, [])
+
+
+# What GitHub's agent on the machine logs, as runner 2.338's
+# Runner.Listener writes it (actions/runner, JobDispatcher.cs): the job
+# arrives, its hold is renewed every minute, the service asks for the
+# cancel, and the job ends. Between them, lines that say nothing about
+# the job.
+AGENT_RUNNER_LOG = """\
+[2026-11-21 14:00:00Z INFO JobDispatcher] Job request 0 for plan p1 job j1 received.
+[2026-11-21 14:00:00Z INFO MessageListener] Unrelated: the listener's own business
+[2026-11-21 14:00:01Z INFO JobDispatcher] Successfully renew job j1, job is valid till 2026-11-21 14:10:01Z
+[2026-11-21 14:01:01Z ERR  JobDispatcher] Catch exception during renew runner job j1.
+[2026-11-21 14:01:02Z INFO JobDispatcher] Retrying lock renewal for job j1. Job is valid until 2026-11-21 14:10:01Z.
+[2026-11-21 14:01:20Z INFO JobDispatcher] Successfully renew job j1, job is valid till 2026-11-21 14:11:20Z
+[2026-11-21 14:01:21Z ERR  JobDispatcher] HttpRequestException: Authorization: Bearer SECRET-ONE at https://x.example/up?sv=1&sig=SECRET-TWO&se=2 eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJTRUNSRVQifQ.c2lnbmF0dXJl ghs_SECRETTHREE0123456789abcdEF token=SECRET-FOUR
+[2026-11-21 14:05:00Z INFO JobDispatcher] Job cancellation request j1 received, cancellation timeout 5 minutes.
+[2026-11-21 14:05:01Z INFO JobDispatcher] Send job cancellation message to worker for job j1.
+""" + "".join(f"[2026-11-21 14:05:02Z INFO Terminal] quiet line {n}\n" for n in range(1, 51)) + """\
+[2026-11-21 14:06:00Z INFO JobDispatcher] finish job request for job j1 with result: Canceled
+"""
+
+AGENT_WORKER_LOG = """\
+[2026-11-21 14:00:02Z INFO Worker] Unrelated: the worker's own business
+[2026-11-21 14:05:01Z INFO Worker] Cancellation/Shutdown message received.
+[2026-11-21 14:05:02Z INFO StepsRunner] Job was CANCELLED by the user.
+"""
+
+
+class GitHubAgentLogTests(unittest.TestCase):
+    """When GitHub cancels a job, scripts/github-agent-log.sh saves, beside
+    the job's test results, what GitHub's agent on the machine logged about
+    its hold on the job and its cancelling. It only reads, and always ends
+    with status 0, so it never changes how a job ended."""
+
+    def setUp(self):
+        holder = tempfile.TemporaryDirectory()
+        self.addCleanup(holder.cleanup)
+        self.folder = Path(holder.name)
+        self.agent = self.folder / "agent"
+        diag = self.agent / "_diag"
+        diag.mkdir(parents=True)
+        (diag / "Runner_20261121-140000-utc.log").write_text(AGENT_RUNNER_LOG)
+        (diag / "Worker_20261121-140001-utc.log").write_text(AGENT_WORKER_LOG)
+        (diag / "pages").mkdir()
+        (diag / "pages" / "Unrelated.log").write_text("renew from a page, not the agent's log\n")
+        # A stand-in for ps, so a run here never finds the real agent of
+        # the machine it runs on (GitHub's own, when CI runs these tests).
+        # It records each call, lists FIXTURE_PS, or a program's arguments
+        # with a secret in them when asked for those, and with
+        # FIXTURE_PS_SLEEP set never answers in time.
+        stubs = self.folder / "stubs"
+        stubs.mkdir()
+        self.ps_calls = self.folder / "ps-calls.txt"
+        ps = stubs / "ps"
+        ps.write_text('#!/bin/bash\n'
+                      'echo "$*" >> "$FIXTURE_PS_CALLS"\n'
+                      '[ -z "$FIXTURE_PS_SLEEP" ] || exec sleep "$FIXTURE_PS_SLEEP"\n'
+                      'case "$*" in\n'
+                      '    *args*|*command*) printf "%s" "  41 01:02 /opt/agent/bin/Runner.Listener '
+                      'run --jitconfig SECRET-ARGUMENT\n" ;;\n'
+                      '    *) printf "%s" "$FIXTURE_PS" ;;\n'
+                      'esac\n')
+        ps.chmod(0o755)
+        self.environment = {
+            "PATH": f"{stubs}{os.pathsep}{os.environ.get('PATH', '/usr/bin:/bin')}",
+            "HOME": str(self.folder), "LANG": "C",
+            "GITHUB_JOB": "unit", "GITHUB_RUN_ID": "1234", "GITHUB_RUN_ATTEMPT": "2",
+            "GITHUB_AGENT_FOLDER": str(self.agent),
+            "GITHUB_AGENT_KNOWN_FOLDERS": str(self.folder / "not-there"),
+            "FIXTURE_PS": "", "FIXTURE_PS_CALLS": str(self.ps_calls),
+        }
+
+    def run_log(self, *arguments, cwd=None, **environment):
+        variables = dict(self.environment, **environment)
+        variables = {key: value for key, value in variables.items() if value is not None}
+        return subprocess.run([str(AGENT_LOG), *arguments], cwd=cwd or self.folder,
+                              env=variables, capture_output=True, text=True, timeout=60)
+
+    def snapshot(self, folder):
+        return {path: (path.stat().st_size, path.stat().st_mtime_ns)
+                for path in sorted(folder.rglob("*"))}
+
+    # Committing the script without its executable bit, so the workflow's
+    # `scripts/github-agent-log.sh` fails with 126 behind its `|| true`,
+    # fails this test.
+    def test_the_script_can_be_run(self):
+        self.assertTrue(os.access(AGENT_LOG, os.X_OK),
+                        f"{AGENT_LOG.name} is not executable (git update-index --chmod=+x).")
+
+    # Leaving out the lines about the agent's hold on the job (its renewals
+    # and their failures), the service's cancel request or the job's end,
+    # matching them only in one case, reading a file other than the
+    # agent's Runner_ and Worker_ logs, copying lines that say nothing
+    # about the job, or leaving out the job's ids, the time or the load,
+    # fails this test.
+    def test_the_lines_about_the_hold_and_the_cancelling_are_kept(self):
+        results = self.folder / "results"
+        ran = self.run_log(str(results))
+        self.assertEqual(ran.returncode, 0, ran.stdout + ran.stderr)
+        saved = (results / "github-agent-log.txt").read_text()
+        for line in ["Successfully renew job j1, job is valid till 2026-11-21 14:10:01Z",
+                     "Catch exception during renew runner job j1.",
+                     "Retrying lock renewal for job j1.",
+                     "Job cancellation request j1 received, cancellation timeout 5 minutes.",
+                     "Send job cancellation message to worker for job j1.",
+                     "finish job request for job j1 with result: Canceled",
+                     "Cancellation/Shutdown message received.",
+                     "Job was CANCELLED by the user."]:
+            with self.subTest(line=line):
+                self.assertIn(line, saved)
+        for line in ["Unrelated: the listener's own business",
+                     "Unrelated: the worker's own business",
+                     "renew from a page"]:
+            with self.subTest(left_out=line):
+                self.assertNotIn(line, saved)
+        # The Runner log's last 40 lines come whole; its earlier quiet
+        # lines do not.
+        self.assertIn("quiet line 50", saved)
+        self.assertIn("quiet line 12", saved)
+        self.assertNotIn("quiet line 11\n", saved)
+        self.assertIn(str(self.agent), saved)
+        for field in ["unit", "1234", "attempt 2"]:
+            self.assertIn(field, saved)
+        self.assertRegex(saved, r"Written: \d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ")
+        self.assertRegex(saved, r"Load[^\n]*: \S")
+        # The answer the record is for, ahead of the lines it comes from.
+        self.assertRegex(saved, r"(?s)Last successful renewal: [^\n]*14:11:20Z.*"
+                                r"First trouble renewing: [^\n]*Catch exception during renew.*"
+                                r"Cancellation request: [^\n]*Job cancellation request j1 received")
+
+    # Printing nothing, or something other than what was saved, so a
+    # cancelled job's own log does not show it, fails this test.
+    def test_what_is_saved_is_also_printed(self):
+        results = self.folder / "results"
+        ran = self.run_log(str(results))
+        self.assertEqual(ran.returncode, 0, ran.stdout + ran.stderr)
+        self.assertEqual(ran.stdout, (results / "github-agent-log.txt").read_text())
+
+    # Writing anywhere but the one file in the results folder it is given
+    # (or build/TestResults with none), or changing anything in the
+    # agent's folder, fails this test.
+    def test_it_writes_one_file_in_the_results_folder_and_only_reads_the_agents(self):
+        before = self.snapshot(self.agent)
+        results = self.folder / "deep" / "results"
+        ran = self.run_log(str(results))
+        self.assertEqual(ran.returncode, 0, ran.stdout + ran.stderr)
+        self.assertEqual([path.name for path in results.iterdir()], ["github-agent-log.txt"])
+        self.assertEqual(self.snapshot(self.agent), before)
+        workspace = self.folder / "workspace"
+        workspace.mkdir()
+        ran = self.run_log(cwd=workspace)
+        self.assertEqual(ran.returncode, 0, ran.stdout + ran.stderr)
+        self.assertEqual(sorted(str(path.relative_to(workspace)) for path in workspace.rglob("*")),
+                         ["build", "build/TestResults", "build/TestResults/github-agent-log.txt"])
+
+    # Stopping, or ending with an error, when the results folder cannot be
+    # written fails this test; the record still reaches the job's log.
+    def test_a_results_folder_that_cannot_be_written_still_ends_0(self):
+        blocker = self.folder / "a-file"
+        blocker.write_text("not a folder\n")
+        ran = self.run_log(str(blocker / "results"))
+        self.assertEqual(ran.returncode, 0, ran.stdout + ran.stderr)
+        self.assertIn("could not be written", ran.stdout + ran.stderr)
+        self.assertIn("Job cancellation request j1 received", ran.stdout)
+
+    # Ending with an error, or saying nothing, when the agent's folder is
+    # not found, listing processes by a "runner" anywhere in their path
+    # (every path under GitHub's home folder holds one) rather than in
+    # their own name, or printing their arguments (GitHub's agent can be
+    # started with its credentials in them), fails this test.
+    def test_no_agent_folder_is_said_and_still_ends_0(self):
+        results = self.folder / "results"
+        ran = self.run_log(str(results), GITHUB_AGENT_FOLDER=str(self.folder / "nowhere"),
+                           FIXTURE_PS="  41 01:02 /opt/agent/bin/Runner.Listener\n"
+                                      "  42 00:10 /Users/runner/work/tool\n")
+        self.assertEqual(ran.returncode, 0, ran.stdout + ran.stderr)
+        saved = (results / "github-agent-log.txt").read_text()
+        self.assertIn("No folder of GitHub's agent", saved)
+        self.assertIn(str(self.folder / "nowhere"), saved)
+        self.assertIn("41 01:02 /opt/agent/bin/Runner.Listener", saved)
+        self.assertNotIn("/Users/runner/work/tool", saved)
+        self.assertNotIn("SECRET", saved)
+        self.assertNotIn("Job cancellation request", saved)
+
+    # Not finding the agent from its running Runner.Worker or
+    # Runner.Listener, as on GitHub's machines, where no variable names
+    # its folder, fails this test.
+    def test_the_agents_folder_is_found_from_its_running_process(self):
+        results = self.folder / "results"
+        ran = self.run_log(str(results), GITHUB_AGENT_FOLDER=None,
+                           FIXTURE_PS=f"  77 03:00 {self.agent}/bin/Runner.Worker\n")
+        self.assertEqual(ran.returncode, 0, ran.stdout + ran.stderr)
+        saved = (results / "github-agent-log.txt").read_text()
+        self.assertIn(f"Agent folder: {self.agent}", saved)
+        self.assertIn("Job cancellation request j1 received", saved)
+
+    # Starting ps before trying the folders GitHub's agent is known to
+    # use, when one of them holds its log, fails this test: on GitHub's
+    # busy Macs one `ps` has taken minutes (docs/DECISIONS.md, "Tests",
+    # 2026-11-04), and the results' upload waits for this step.
+    def test_a_known_folder_is_read_without_starting_ps(self):
+        results = self.folder / "results"
+        ran = self.run_log(str(results), GITHUB_AGENT_FOLDER=None,
+                           GITHUB_AGENT_KNOWN_FOLDERS=f"{self.folder / 'not-there'}:{self.agent}",
+                           FIXTURE_PS="  77 03:00 /elsewhere/bin/Runner.Worker\n")
+        self.assertEqual(ran.returncode, 0, ran.stdout + ran.stderr)
+        self.assertIn(f"Agent folder: {self.agent}", (results / "github-agent-log.txt").read_text())
+        self.assertFalse(self.ps_calls.exists(), self.ps_calls.read_text() if self.ps_calls.exists() else "")
+
+    # Waiting for a ps that does not answer, past a third of the script's
+    # time, fails this test.
+    def test_a_ps_that_does_not_answer_is_given_up(self):
+        results = self.folder / "results"
+        started = time.monotonic()
+        ran = self.run_log(str(results), GITHUB_AGENT_FOLDER=None, GITHUB_AGENT_LOG_SECONDS="3",
+                           FIXTURE_PS_SLEEP="30")
+        self.assertLess(time.monotonic() - started, 20)
+        self.assertEqual(ran.returncode, 0, ran.stdout + ran.stderr)
+        self.assertIn("No folder of GitHub's agent", (results / "github-agent-log.txt").read_text())
+
+    # Going on past the script's time, so the results' upload after it
+    # waits, or ending with an error or losing what was already written
+    # when it stops, fails this test.
+    def test_it_stops_when_its_time_is_up_and_keeps_what_it_wrote(self):
+        results = self.folder / "results"
+        ran = self.run_log(str(results), GITHUB_AGENT_LOG_SECONDS="0")
+        self.assertEqual(ran.returncode, 0, ran.stdout + ran.stderr)
+        saved = (results / "github-agent-log.txt").read_text()
+        self.assertIn(f"Agent folder: {self.agent}", saved)
+        self.assertIn("Stopped after", saved)
+        self.assertNotIn("Job cancellation request", saved)
+
+    # Copying a token, a credential or a signed address's signature from
+    # the agent's log into the public download or the job's log fails
+    # this test.
+    def test_tokens_and_signatures_are_removed(self):
+        results = self.folder / "results"
+        ran = self.run_log(str(results))
+        self.assertEqual(ran.returncode, 0, ran.stdout + ran.stderr)
+        saved = (results / "github-agent-log.txt").read_text()
+        self.assertIn("HttpRequestException: Authorization: ", saved)
+        self.assertIn("sig=[removed]&se=2", saved)
+        self.assertIn("token=[removed]", saved)
+        for text in (saved, ran.stdout):
+            self.assertNotIn("SECRET", text)
+            self.assertNotIn("eyJzdWIi", text)
+
+    # A job that runs scripts/test.sh without the step, the step running
+    # whenever the job ends (or never), after the results are uploaded, on
+    # another folder than the one uploaded, or able to fail the job, fails
+    # this test.
+    def test_every_job_that_runs_the_tests_keeps_the_agents_log_when_cancelled(self):
+        testing = {job: lines for job, lines in workflow_jobs(WORKFLOW.read_text()).items()
+                   if any("scripts/test.sh" in line for line in lines)}
+        self.assertEqual(len(testing), 1 + 2 * ui_test_part_count(), sorted(testing))
+        for job, lines in testing.items():
+            with self.subTest(job=job):
+                steps = job_steps(lines)
+                names = [step["name"] for step in steps]
+                self.assertIn("Keep what GitHub's agent logged about the cancelling", names)
+                index = names.index("Keep what GitHub's agent logged about the cancelling")
+                step, upload = steps[index], steps[index + 1]
+                self.assertRegex(step["if"] or "", r"^(\$\{\{ *)?cancelled\(\)( *\}\})?$")
+                self.assertEqual(upload["name"], "Keep the test results")
+                self.assertEqual(step["run"], "scripts/github-agent-log.sh build/TestResults || true\n")
+                self.assertEqual(upload["with"].get("path"), "build/TestResults")
 
 
 if __name__ == "__main__":
