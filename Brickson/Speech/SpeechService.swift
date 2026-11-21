@@ -330,6 +330,27 @@ final class SpeechService {
             // which then finds nothing speaking; record the cut-off now.
             recordCutOff(utterances.cancelled(token))
             releaseSessionIfIdle()
+        case let .paused(at: instant):
+            // Logged only, for device check S2: whether the system pauses
+            // speech for a call, Siri or an alarm, and when, decides what a
+            // pause means (docs/DECISIONS.md, "A phrase the system cuts
+            // off", *Pause and carry-on reports are logged, not acted on
+            // yet*). Until then the watchdog finds a paused phrase. The
+            // wait says when the report really arrived, since a notice
+            // handled meanwhile is logged before it.
+            let waited = Self.milliseconds(now() - instant)
+            if utterances.activeID == token {
+                logger.notice("The synthesizer paused the current utterance (report waited \(waited) ms)")
+            } else {
+                logger.notice("The synthesizer paused an utterance that is no longer current (report waited \(waited) ms)")
+            }
+        case let .continued(at: instant):
+            let waited = Self.milliseconds(now() - instant)
+            if utterances.activeID == token {
+                logger.notice("The synthesizer carried on with the current utterance (report waited \(waited) ms)")
+            } else {
+                logger.notice("The synthesizer carried on with an utterance that is no longer current (report waited \(waited) ms)")
+            }
         }
     }
 
@@ -338,6 +359,8 @@ final class SpeechService {
     private func handle(_ event: AudioSessionEvent) {
         switch event {
         case .interrupted:
+            // For device check S2, beside the synthesizer's pause report.
+            logger.notice("An audio interruption began")
             // A call, Siri or another app's alarm leaves the synthesizer
             // paused on an inactive session, and the end of the interruption
             // is not guaranteed. Stop for a clean state; the phrase stays in
@@ -364,6 +387,8 @@ final class SpeechService {
             recordCutOff(cutOff)
             refreshVoices()
         case .previousOutputUnavailable:
+            // For device check S2, beside the synthesizer's pause report.
+            logger.notice("The audio output in use became unavailable")
             // Headphones unplugged or a Bluetooth speaker switched off. A
             // phrase still speaking carries on through the new output; one
             // the system ended early as the output vanished needs Again.

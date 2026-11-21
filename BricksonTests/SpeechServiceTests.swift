@@ -156,6 +156,33 @@ struct SpeechServiceTests {
         #expect(requests[0].token != requests[1].token)
     }
 
+    /// A real synthesizer queues an utterance handed to it while it still
+    /// holds another, speaking or paused, and speaks it only once that one
+    /// ends: late, and out of context. So a new phrase must stop the last
+    /// one before it is handed over, and the last one's late cancel must
+    /// leave the new one current. Fails if the phrase is handed over while
+    /// the last is still held, as when the stop is skipped for a paused
+    /// phrase because it is not audible.
+    @Test(arguments: [false, true])
+    func aNewPhraseIsNeverQueuedBehindTheLastOne(lastIsPaused: Bool) {
+        let harness = AudioHarness()
+        harness.speech.speak("Yes.")
+        harness.synthesizer.reportStart()
+        if lastIsPaused {
+            harness.synthesizer.reportPause()
+        }
+        let first = harness.synthesizer.latestToken
+
+        harness.speech.speak("No.")
+
+        #expect(harness.synthesizer.queuedRequestCount == 0)
+        #expect(harness.synthesizer.requests.map(\.text) == ["Yes.", "No."])
+        #expect(harness.synthesizer.stopCount == 1)
+        harness.synthesizer.cancel(first)
+        #expect(harness.speech.isSpeaking)
+        #expect(harness.speech.speechInterruptionState == .idle)
+    }
+
     // MARK: Tokens (code audit L1)
 
     /// The reference app keyed utterances by ObjectIdentifier, which the
@@ -305,6 +332,53 @@ struct SpeechServiceTests {
 
         #expect(harness.speech.speechInterruptionState == .idle)
         #expect(harness.speech.lastSpokenText == nil)
+    }
+
+    // MARK: Pause and carry-on reports (docs/DECISIONS.md, "A phrase the system cuts off")
+
+    /// The synthesizer's pause and carry-on reports are logged and act on
+    /// nothing until device check S2 shows when the system sends them
+    /// (docs/DECISIONS.md, *Pause and carry-on reports are logged, not
+    /// acted on yet*). Fails if a report, for the phrase speaking now or
+    /// for the one it replaced, stops a phrase, shows a warning, lets go
+    /// of the audio session or speaks.
+    @Test func pauseAndCarryOnReportsChangeNothingYet() {
+        let harness = AudioHarness()
+        harness.speech.speak("Yes.")
+        let replaced = harness.synthesizer.latestToken
+        harness.speech.speak("I need help now.")
+        harness.synthesizer.reportStart()
+
+        harness.synthesizer.reportPause(replaced)
+        harness.synthesizer.reportContinue(replaced)
+        harness.synthesizer.reportPause()
+        harness.synthesizer.reportContinue()
+
+        #expect(harness.speech.isSpeaking)
+        #expect(harness.speech.speechInterruptionState == .idle)
+        #expect(harness.synthesizer.requests.count == 2)
+        #expect(harness.synthesizer.stopCount == 1)
+        #expect(harness.coordinator.isHeld(by: .speech))
+    }
+
+    /// A phrase paused with a report is still found by the watchdog, as
+    /// one left paused without a report is: stopped, with Again named.
+    /// Fails if the report makes the service forget the phrase without a
+    /// warning, which would leave the watchdog nothing to find.
+    @Test func theWatchdogStillStopsAPhrasePausedWithAReport() async {
+        let harness = AudioHarness()
+        harness.speech.speak("I need help now.")
+        #expect(await waitUntil { harness.speechSleeper.isAnyoneSleeping })
+        harness.synthesizer.reportStart()
+        harness.synthesizer.reportPause()
+
+        #expect(await harness.speechSleeper.wakeAll())
+        #expect(harness.speechSleeper.pendingDurations == [.milliseconds(500)])
+        #expect(await harness.speechSleeper.wakeAll())
+
+        #expect(harness.speech.speechInterruptionState == .stoppedUnexpectedly)
+        #expect(harness.synthesizer.stopCount == 1)
+        #expect(!harness.synthesizer.isPaused)
     }
 
     // MARK: Voice samples
@@ -659,6 +733,30 @@ struct SpeechServiceTests {
         #expect(!harness.speech.isSpeaking)
         #expect(harness.speech.speechInterruptionState == .idle)
         #expect(harness.issue == .audioSessionUnavailable)
+    }
+
+    /// Once the start limit has stopped a phrase and Home names Again, a
+    /// start or word report that arrives after all must not bring
+    /// "Speaking" back, or start the watchdog again, over a phrase
+    /// Brickson has stopped. Fails if a report for a phrase that is no
+    /// longer current revives it.
+    @Test func aStartReportedAfterTheLimitStoppedThePhraseDoesNotBringItBack() async {
+        let harness = AudioHarness()
+        harness.speech.speak("Yes, please.")
+        #expect(await waitUntil { harness.speechSleeper.isAnyoneSleeping })
+        harness.clock.advance(by: SpokenUtteranceTracker<UtteranceToken>.startLimit)
+        #expect(await harness.speechSleeper.wakeAll())
+        #expect(await harness.speechSleeper.wakeAll())
+        #expect(harness.speech.speechInterruptionState == .stoppedUnexpectedly)
+
+        harness.synthesizer.reportStart()
+        harness.synthesizer.reportProgress(through: 3)
+
+        #expect(!harness.speech.isSpeaking)
+        #expect(harness.speech.speechInterruptionState == .stoppedUnexpectedly)
+        #expect(harness.speech.speechInterruptionSequence == 1)
+        #expect(harness.issue == .speechStopped)
+        #expect(!harness.speechSleeper.isAnyoneSleeping)
     }
 
     // MARK: Audio that never started (code audit L3)

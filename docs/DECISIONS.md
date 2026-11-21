@@ -1007,6 +1007,14 @@ the alarm. When an activation is refused (during a phone or FaceTime call),
 it is retried mixing with other audio, so the sound plays rather than
 failing silently; a refusal of both shows "Audio failed".
 
+*2026-11-19.* That retry mixes but does not duck other audio
+(`.duckOthers`). Apple's documentation for the option says ducking lasts
+from activation until the session is deactivated, and to use it only for
+a few seconds at a time; with `.keepActive` the session is never
+deactivated, so other audio, a call included, would stay lowered after
+the phrase. Ducking is decided together with `.releaseWhenIdle`, after
+that device check.
+
 Before: "Open, decide with the Get Attention port (step 1): when to release
 the audio session." The reference app activated before speaking and never
 deactivated; Brickson keeps that behaviour, now in one place.
@@ -1081,6 +1089,26 @@ If the session could not activate for the phrase, an unexpected end shows
 nothing new: "Audio failed" is already showing, and replacing it with
 "Stopped — Again" sent the reference app round a loop of Again activations
 that failed the same way (code audit L3).
+
+**Pause and carry-on reports are logged, not acted on yet.** *2026-11-19.
+Default: an objective safety call the owner left to the project.
+Reversible if the owner objects.* The synthesizer's pause and carry-on
+reports (`speechSynthesizer(_:didPause:)` and
+`speechSynthesizer(_:didContinue:)`) are forwarded like its other reports
+and logged, without the phrase's words, saying whether each was for the
+phrase still current and how long it waited to reach the main thread
+(it is stamped as it arrives); nothing else changes. Brickson never calls
+`pauseSpeaking(at:)`, and Apple documents the pause report for a pause
+made that way, so whether the system also sends one when a call, Siri or
+another app's alarm pauses speech, in which order with the interruption
+notice, and whether such a pause is ever lifted a moment later, are not
+known. Device check S2, step 4, reads the log for them. Until then a
+paused synthesizer is found as before: by the interruption notice, or by
+the speech watchdog within one and a half seconds
+(`theWatchdogStopsASynthesizerLeftPaused`). Treating a pause report as a
+cut-off waits for that check: acting on it now could show "Stopped —
+Again" over a phrase that would have carried on, or rely on a report
+that never comes.
 
 ## A phrase that does not start
 

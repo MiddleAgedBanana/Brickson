@@ -652,7 +652,23 @@ person's words.
 4. **Thread:** from the log during (a): whether the system reported the
    cut-off phrase as finished ("A phrase was reported finished before
    its final word"), for the row on how often the 3-second window is
-   relied on.
+   relied on. From the log during (a), (b) and (c), with the time of
+   each line: whether the synthesizer reported a pause (a line starting
+   "The synthesizer paused", for the current utterance or for one no
+   longer current, which it is once the interruption has stopped the
+   phrase) and whether it came before or after the interruption ("An
+   audio interruption began", which iOS 27 may log twice, once for each
+   notice), and whether a carry-on report ("The synthesizer carried on
+   with", either kind) followed, and when. A report's line says how long
+   it waited to be handled: subtract that from the line's time to find
+   when it arrived, because a notice handled meanwhile is logged first.
+   Keep watching until the call, Siri or the alarm has ended, before
+   choosing Again: once a new phrase starts, reports for the old one are
+   no longer logged. Also unplug headphones during a long phrase and
+   compare any pause report with "The audio output in use became
+   unavailable". These decide whether a pause report may be read as a
+   cut-off (docs/DECISIONS.md, "A phrase the system cuts off", *Pause and
+   carry-on reports are logged, not acted on yet*).
 5. **Owner:** speak several phrases to the end, uninterrupted, in the
    default voice, a Personal Voice and each other voice offered.
    **Thread:** for each voice, reads the log for "A phrase was reported
