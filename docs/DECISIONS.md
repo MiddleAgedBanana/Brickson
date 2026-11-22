@@ -6273,8 +6273,10 @@ request merges only when they pass.
   band (darwin background, which `taskpolicy -b` sets) from the moment
   it has finished starting, or a minute after its boot, whichever comes
   first, until the build (and the UI tests' warm-up launch) is done;
-  every one of its processes is then returned to normal priority, and
-  checked, and only then does the wait for the Mac to settle begin. The
+  that setting is then taken off every one of its processes (iOS's own
+  background processes stay as iOS runs them), launchd_sim, SpringBoard
+  and backboardd are read back at normal priority, and only then does
+  the wait for the Mac to settle begin. The
   unit tests now wait for the Mac to settle too. Why: at least twenty Mac jobs from 2026-11-13 to 2026-11-22
   (twelve "Unit tests", eight iPad UI jobs, never an iPhone one) were
   cancelled by GitHub's own agent on the machine, and the three whose
@@ -6359,7 +6361,20 @@ request merges only when they pass.
   chosen: `nice` on GitHub's agent (above); the band from the boot
   (above); stopping iOS's background tasks, declined on 2026-11-19;
   keeping a started simulator between runs, which needs a new action and
-  would remove less than half the work (above). Revisit if a job is
+  would remove less than half the work (above). Review findings
+  declined on pull request #132: that `setpriority` with
+  `PRIO_DARWIN_PROCESS` can change only the calling process (the
+  zero-only rule is `PRIO_DARWIN_THREAD`'s; the record shows lowered
+  processes at priority 4, and every CI return was confirmed by its
+  read-back); that `restore` could signal a process given a dead
+  watcher's number (macOS numbers processes in sequence, so the number
+  would have to come round during the build, and `stop` already signals
+  the same number); that a return that fails when the watcher stops
+  early is only written to the record (no test runs on that path, the
+  run shuts down the simulator it started, and `restore`, the only path
+  to a test, fails the run on anything it cannot confirm); and that the
+  record names the Mac and simulator it measured on (AGENTS.md asks for
+  that). Revisit if a job is
   cancelled by itself again (read its `github-agent-log.txt` and the
   agent's lines in the simulator's record), if a return fails on CI, or
   when GitHub's Macs get more processors. Record:

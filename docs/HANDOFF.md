@@ -948,15 +948,17 @@ release in docs/ROADMAP.md when no thread has it yet.
   [`log/2026-11-22-simulator-start-in-the-background.md`](log/2026-11-22-simulator-start-in-the-background.md)
   runs that start-up work in macOS's background band from the moment
   the simulator has started (a minute after its boot at the latest)
-  until the build is done, then returns every process to normal
-  priority, checked, and waits for the Mac to settle before the first
+  until the build is done, then takes that setting off every one of its
+  processes, checked, and waits for the Mac to settle before the first
   test (docs/DECISIONS.md, "Tests", 2026-11-22). No job cancelled itself
   in that pull request's three CI runs on its last code change, but
-  whether that ends the cancels needs about twenty runs on `main`; a job
-  cancelled by itself
-  after it merges means the agent starves on something else, and its
-  `github-agent-log.txt` and the agent's lines in the simulator's record
-  are where to start. Until then, a second try of such a job is the
+  whether that ends the cancels needs about twenty runs on `main`. For a
+  job cancelled by itself after it merges, first check that its
+  simulator's record shows the start-up work was put in the background:
+  the script carries on without it when the watcher did not start or
+  could not claim the simulator. If it was, the agent starves on
+  something else, and the job's `github-agent-log.txt` and the agent's
+  lines in the record are where to start. Until then, a second try of such a job is the
   remedy. How to read the agent's log is in
   [`log/2026-11-21-github-agent-log.md`](log/2026-11-21-github-agent-log.md).
   *(the next thread on CI, after about twenty runs on `main`)*
@@ -1732,9 +1734,9 @@ settings, date) and summarise it here.
   2026-11-22 the unit tests wait too; on a simulator the script started,
   the simulator's start-up work runs in macOS's background band from the
   moment it has started (a minute after its boot at the latest) until
-  the build is done, so GitHub's agent keeps in touch, and every process
-  is then returned to normal priority, checked, before that wait; a run
-  whose check fails stops there. The
+  the build is done, so GitHub's agent keeps in touch, and that setting
+  is then taken off every one of its processes, checked, before that
+  wait; a run whose check fails stops there. The
   watcher now starts before the simulator, so its record covers the
   first minutes, and each line says how much of a processor GitHub's
   agent got (docs/DECISIONS.md, "Tests", 2026-11-22;
