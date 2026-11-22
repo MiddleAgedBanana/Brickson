@@ -42,14 +42,14 @@
 # that was already running is left running.
 # Before UI tests it turns off the keyboard's minimized bar, so typing tests
 # see the full software keyboard people actually use, and launches the app
-# once so the first test doesn't pay for a cold simulator. Before any tests
-# it waits (up to twenty minutes on a slow machine, a few seconds on a fast
-# one) until the Mac is no longer busy with the simulator's start. On a
-# simulator this script started, that start-up work runs in macOS's
-# background band from the moment the simulator has started until that
-# wait ends, so GitHub's agent and the build come first; every one of its
-# processes is then returned to normal priority, and that is checked,
-# before the first test. A run whose check fails stops there.
+# once so the first test doesn't pay for a cold simulator. On a simulator
+# this script started, the simulator's start-up work runs in macOS's
+# background band from the moment it has started until the build (and
+# that launch) are done, so GitHub's agent and the build come first; every
+# one of its processes is then returned to normal priority, and that is
+# checked; a run whose check fails stops there. Before any tests it then
+# waits (up to twenty minutes on a slow machine, a few seconds on a fast
+# one) until the Mac is no longer busy with the simulator's start.
 #
 # Every test run keeps its results, with a screenshot of each UI test
 # failure, in build/TestResults/<mode>-<family>.xcresult (open it in Xcode;
@@ -237,9 +237,10 @@ cleanup_simulator() {
 # simulator this run started, the watcher also puts the simulator's
 # processes in macOS's background band from the moment the simulator has
 # finished starting (or a minute after its boot, whichever comes first)
-# until the Mac has settled, so GitHub's agent, the build and the watcher
-# come first; restore_priority returns every one of them to normal
-# priority, and checks it, before the first test. The watcher is started
+# until the build is done, so GitHub's agent, the build and the watcher
+# come first; restore_priority then returns every one of them to normal
+# priority, and checks it, before the wait to settle, since the Mac's load
+# leaves out work in the background band. The watcher is started
 # before the simulator, so its record covers the first minutes, and does
 # nothing to it until claim_simulator says this run started it. The claim
 # and the word that the simulator has started are files this script
@@ -394,15 +395,11 @@ with open(sys.argv[1], "rb") as file:
 # retried, skipped or given more time, a Mac that does not settle is tested
 # anyway, and so is one whose wait could not run, with a warning. The unit
 # tests wait too since 2026-11-22: the simulator's start-up work is held in
-# the background until the wait ends, so without it the unit tests would
-# meet that work at full priority (docs/DECISIONS.md, "Tests", 2026-11-22).
-# Given the simulator's id, the wait also counts the simulator's threads
-# held in the background, which the Mac's load leaves out.
+# the background until the build is done, and once returned to normal
+# priority the rest of it would meet the unit tests (docs/DECISIONS.md,
+# "Tests", 2026-11-22).
 settle() {
-    local lowered=()
-    [ -z "${1:-}" ] || lowered=(--udid "$1")
-    /usr/bin/python3 -I scripts/simulator-load.py settle --out "$watcher_record" \
-        "${lowered[@]+"${lowered[@]}"}" ||
+    /usr/bin/python3 -I scripts/simulator-load.py settle --out "$watcher_record" ||
         echo "warning: could not wait for the Mac to settle; the tests run anyway." >&2
 }
 
@@ -595,13 +592,14 @@ run_tests_on_simulator() {
         if [ "$mode" = ui ]; then
             warm_up "$udid"
         fi
-        # Last before the tests, so what the warm-up started has settled too.
+        # The return first: the Mac's load leaves out work in the
+        # background band, so a wait with the simulator still lowered ended
+        # at once on CI, and the start-up work then met the tests.
         if [ "$udid" = "$owned_simulator" ]; then
-            settle "$udid"
             restore_priority "$udid" || return 1
-        else
-            settle
         fi
+        # Last before the tests, so what the warm-up started has settled too.
+        settle
     fi
     # The tests run even when the catalog is out of date, so one run shows
     # both.

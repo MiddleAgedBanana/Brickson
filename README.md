@@ -175,10 +175,10 @@ with the simulator's start, and says so as it waits: a few seconds on
 most Macs, and up to twenty minutes on GitHub's small ones, where tests
 that started sooner ran out of time. On a simulator it started itself,
 the simulator's own start-up work runs at macOS's background priority
-until that wait ends, so GitHub's agent on the machine keeps in touch
+until the build is done, so GitHub's agent on the machine keeps in touch
 with GitHub and the job is not cancelled; every one of its processes is
-then returned to normal priority, and checked, before the first test,
-and a run whose check fails stops there rather than test a throttled
+then returned to normal priority, and checked, before that wait, and a
+run whose check fails stops there rather than test a throttled
 simulator.
 When GitHub cancels one of its Mac jobs, the job's results also keep
 `github-agent-log.txt`, the lines GitHub's own agent on that machine

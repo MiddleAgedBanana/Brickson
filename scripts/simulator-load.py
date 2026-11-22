@@ -90,9 +90,9 @@ log and in the record. It only waits: it never fails a run, and a Mac
 that does not settle is tested anyway, with a warning. The load is the
 one-minute average of tasks running or waiting for a processor
 (os.getloadavg), the "load" of each of the record's lines. It leaves out
-tasks in the background band, so with --udid, on a simulator held there
-(below), each reading adds the simulator's own threads running or
-waiting, averaged over a minute in the same way.
+tasks in macOS's background band, so on a simulator held there (below)
+the wait comes after `restore`: the load then counts the simulator's
+start-up work again, as when the wait was calibrated.
 
 The simulator's start in the background. GitHub cancelled Mac test jobs
 by itself 8.5 to 13 minutes after their simulator began to start: its
@@ -119,8 +119,9 @@ the network only when nothing outside it is waiting to, so GitHub's
 agent, the build and the watcher come first, and the start-up work
 still gets every moment they leave. iOS itself runs about two thirds of
 a started simulator's processes in that band; this adds the rest for
-the start-up only. `restore`, after `settle` and before the first test,
-tells the watcher to stop lowering, waits for it to say it has, then
+the start-up only. `restore`, after the build (and the warm-up launch)
+and before the wait to settle (the load leaves out work in the band, so
+a wait while lowered would end at once), tells the watcher to stop lowering, waits for it to say it has, then
 returns launchd_sim and every process under it to normal priority, in
 passes until a pass finds no process it had not returned (so one started
 during a pass is returned too). It then reads launchd_sim, SpringBoard
@@ -147,7 +148,6 @@ the agent's credentials.
 import argparse
 import ctypes
 import json
-import math
 import os
 import re
 import signal
@@ -964,100 +964,46 @@ def add_to_record(path, line):
         print(f"warning: could not write to {path}: {error}", file=sys.stderr)
 
 
-def simulator_waiting(system, udid):
-    """A function that counts the simulator's threads running or waiting
-    for a processor now, or raises OSError; it reads launchd_sim's
-    arguments again only once that launchd_sim has gone."""
-    found = [None]
-
-    def count():
-        table = system.table()
-        if not (found[0] in table and table[found[0]][2] == LAUNCHD_SIM):
-            found[0] = find_root(system, table, udid)
-        if found[0] is None:
-            return 0
-        total = 0
-        for pid in descendants(found[0], table):
-            state = system.state(pid)
-            if state is not None:
-                total += state[2]
-        return total
-    return count
-
-
 def settle(arguments, load=one_minute_load, processors=os.cpu_count, clock=time.monotonic,
-           sleep=time.sleep, waiting=None):
+           sleep=time.sleep):
     """Waits until the Mac has settled (the module's description says
     what that is and why), or until the limit, and says which in the log
     and in the record. Its status is 0 however the wait ends: the tests
-    run either way.
-
-    With --udid, the simulator is held in the background band while it
-    waits, and the Mac's load leaves out threads in that band: on pull
-    request #132's first CI run the load fell to 21 to 90 while the
-    simulator was lowered, every wait ended on its first readings, and
-    the start-up work, returned to normal priority, then ran during the
-    tests at loads up to 454. So each reading adds the simulator's
-    threads running or waiting for a processor, averaged over a minute as
-    the load is (an exponential average, five seconds a reading), to the
-    load. That counts iOS's own background threads too, which the load
-    always left out, so the wait is if anything longer than before."""
+    run either way."""
     count = processors() or 1
     wanted = SETTLED_LOAD * count
-    udid = getattr(arguments, "udid", None)
-    if waiting is None and udid:
-        system = (ProcessFile(arguments.processes) if getattr(arguments, "processes", None)
-                  else MacProcesses())
-        waiting = simulator_waiting(system, udid)
-    decay = math.exp(-INTERVAL / 60.0)
 
     def note(line):
         add_to_record(arguments.out, line)
 
     began = said = clock()
-    under, first, average = 0, True, None
+    under, first = 0, True
     while True:
         try:
-            reading = mac = load()
+            reading = load()
         except OSError as error:
             print(f"warning: the Mac's load could not be read ({error}), so the tests start "
                   "without waiting for it to settle.", file=sys.stderr)
             note(f"the Mac's load could not be read ({error}); the tests run without the wait")
             break
-        detail = ""
-        if waiting is not None:
-            try:
-                threads = waiting()
-            except OSError as error:
-                print(f"warning: the simulator's threads in the background could not be counted "
-                      f"({error}), so the wait reads the Mac's load alone.", file=sys.stderr)
-                note(f"the simulator's threads in the background could not be counted ({error}); "
-                     "the wait reads the load alone")
-                waiting = None
-            else:
-                average = threads if average is None else average * decay + threads * (1 - decay)
-                reading = mac + average
-                detail = f" (the Mac's {mac:.1f} and {average:.1f} of the simulator's threads in the background)"
         now = clock()
         waited = now - began
         if first:
             first = False
-            print(f"Waiting for the Mac to settle before the tests: its load is {reading:.0f}"
-                  + (", counting the simulator's threads in the background" if detail else "")
-                  + f", and they start once it has stayed under {wanted:.0f} ({SETTLED_LOAD:.0f} "
-                  f"for each of its {count} processors), or after {spell(arguments.limit)}.",
-                  flush=True)
-            note(f"waiting for the Mac to settle before the tests: load {reading:.1f}{detail}, "
+            print(f"Waiting for the Mac to settle before the tests: its load is {reading:.0f}, and "
+                  f"they start once it has stayed under {wanted:.0f} ({SETTLED_LOAD:.0f} for each "
+                  f"of its {count} processors), or after {spell(arguments.limit)}.", flush=True)
+            note(f"waiting for the Mac to settle before the tests: load {reading:.1f}, "
                  f"wanted under {wanted:.0f}")
         under = under + 1 if reading < wanted else 0
         if under >= SETTLED_READINGS:
             print(f"The Mac settled after {spell(waited)}: load {reading:.0f}.", flush=True)
-            note(f"the Mac settled after {waited:.0f} s: load {reading:.1f}{detail}")
+            note(f"the Mac settled after {waited:.0f} s: load {reading:.1f}")
             break
         if waited >= arguments.limit:
             print(f"warning: the Mac had not settled after {spell(waited)} (load {reading:.0f}, "
                   f"wanted under {wanted:.0f}); the tests run anyway.", file=sys.stderr)
-            note(f"the Mac had not settled after {waited:.0f} s: load {reading:.1f}{detail}; "
+            note(f"the Mac had not settled after {waited:.0f} s: load {reading:.1f}; "
                  "the tests run anyway")
             break
         if now - said >= SETTLE_SAYS:
@@ -1224,8 +1170,6 @@ def parse(arguments=None):
     settling = commands.add_parser("settle")
     settling.add_argument("--out", required=True)
     settling.add_argument("--limit", type=float, default=SETTLE_LIMIT)
-    settling.add_argument("--udid")
-    settling.add_argument("--processes", help=argparse.SUPPRESS)
     return parser.parse_args(arguments)
 
 

@@ -6272,10 +6272,10 @@ request merges only when they pass.
   started, the simulator's own start-up work runs in macOS's background
   band (darwin background, which `taskpolicy -b` sets) from the moment
   it has finished starting, or a minute after its boot, whichever comes
-  first, until the Mac has settled, and
+  first, until the build (and the UI tests' warm-up launch) is done;
   every one of its processes is then returned to normal priority, and
-  checked, before the first test. The unit tests now wait for the Mac to
-  settle too. Why: at least twenty Mac jobs from 2026-11-13 to 2026-11-22
+  checked, and only then does the wait for the Mac to settle begin. The
+  unit tests now wait for the Mac to settle too. Why: at least twenty Mac jobs from 2026-11-13 to 2026-11-22
   (twelve "Unit tests", eight iPad UI jobs, never an iPhone one) were
   cancelled by GitHub's own agent on the machine, and the three whose
   agent log was kept say the same: the agent's requests to GitHub timed
@@ -6328,14 +6328,17 @@ request merges only when they pass.
   runs in the background. Returning a process clears only the setting the
   script made: on the owner's Mac a round trip left every one of a
   settled simulator's 209 processes at the priority it had before.
-  The load average leaves threads in the background band out, so on a
-  lowered simulator the wait to settle adds the simulator's threads
-  running or waiting for a processor, averaged over a minute as the load
-  is: without it, on pull request #132's first CI run, every wait ended
-  on its first readings and the start-up work ran during the tests, back
-  at normal priority. That count includes iOS's own background threads,
-  which the load always left out, so the wait is if anything stricter
-  than on 2026-11-19. A watcher that has not begun when the return
+  The return comes before the wait because the load average leaves out
+  threads in the background band: on pull request #132's first CI run,
+  with the wait before the return, every wait ended on its first
+  readings and the start-up work, back at normal priority, ran during
+  the tests (loads of 203 to 454). Adding the lowered simulator's
+  threads running or waiting to the load, tried on the second run, did
+  not hold the wait either (14 to 35 of them at the wait, and loads up
+  to 388 in the tests): work held in the band also waits on the disk
+  and the network, which a count of runnable threads does not see. With
+  the return first, the wait reads the load as it was calibrated on
+  2026-11-19, with the rest of the start-up work counted in it. A watcher that has not begun when the return
   comes is ended (it would lower the simulator once it began), and one
   that does not answer is asked to stop before it is killed. The same
   run showed GitHub's agent at priority 20, the utility band, below the

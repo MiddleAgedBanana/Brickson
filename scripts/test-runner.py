@@ -141,8 +141,7 @@ def value(name):
     return arguments[arguments.index(name) + 1]
 with Path(os.environ["RUNNER_SIMCTL"]).open("a") as log:
     if arguments[0] == "settle":
-        lowered = f" lowered {value('--udid')}" if "--udid" in arguments else ""
-        log.write(f"load settle {Path(value('--out')).name}{lowered}\\n")
+        log.write(f"load settle {Path(value('--out')).name}\\n")
         with Path(os.environ["RUNNER_EVENTS"]).open("a") as events:
             events.write("settle\\n")
         status = int(os.environ.get("FIXTURE_LOAD_SETTLE_STATUS", "0"))
@@ -692,8 +691,8 @@ class PreparationTests(unittest.TestCase):
             "simctl launch PAD fixture.brickson --fresh-test-storage",
             "sleep 15",
             "simctl terminate PAD fixture.brickson",
-            "load settle simulator-load-ipad.txt lowered PAD",
             "load restore PAD 4242 simulator-load-ipad.txt",
+            "load settle simulator-load-ipad.txt",
             "load stop 4242 simulator-load-ipad.txt",
             "simctl shutdown PAD",
         ])
@@ -712,12 +711,16 @@ class PreparationTests(unittest.TestCase):
         result = self.ui_run()
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(result.events,
-                         ["build-for-testing", "settle", "restore", "test-without-building"])
-        settled = result.stdout.index("The Mac has settled (fixture).")
-        self.assertLess(result.stdout.index("Warm-up:"), settled)
+                         ["build-for-testing", "restore", "settle", "test-without-building"])
+        # The return comes before the wait: the Mac's load leaves out work
+        # in the background band, so on pull request #132's first two CI
+        # runs a wait with the simulator still lowered ended at once, and
+        # the start-up work then met the tests.
         returned = result.stdout.index("Returned the simulator's processes to normal priority")
-        self.assertLess(settled, returned)
-        self.assertLess(returned, result.stdout.index("Testing Brickson-UI on: id=PAD"))
+        self.assertLess(result.stdout.index("Warm-up:"), returned)
+        settled = result.stdout.index("The Mac has settled (fixture).")
+        self.assertLess(returned, settled)
+        self.assertLess(settled, result.stdout.index("Testing Brickson-UI on: id=PAD"))
 
     # Testing a simulator whose processes cannot be confirmed back at
     # normal priority, in either mode, or stopping without saying why,
@@ -763,7 +766,7 @@ class PreparationTests(unittest.TestCase):
         self.assertEqual([call for call in result.simctl if call.startswith("simctl")],
                          ["simctl boot PAD", "simctl bootstatus PAD -b", "simctl shutdown PAD"])
         self.assertEqual([event for event in result.events if event not in result.preflights],
-                         ["build-for-testing", "settle", "restore", "test-without-building"])
+                         ["build-for-testing", "restore", "settle", "test-without-building"])
         self.assertEqual(result.markers, [
             "bootstatus: simulator-load-ipad.txt.claimed",
             "build: simulator-load-ipad.txt.claimed simulator-load-ipad.txt.started"])
@@ -1246,10 +1249,7 @@ class WatcherTests(unittest.TestCase):
                                      ".claimed" if owned else "bootstatus:")
                     self.assertEqual(
                         "load restore PHONE 4242 simulator-load-destination.txt" in result.simctl, owned)
-                    # The wait counts the simulator's lowered threads only
-                    # where they were lowered.
-                    self.assertIn("load settle simulator-load-destination.txt"
-                                  + (" lowered PHONE" if owned else ""), result.simctl)
+                    self.assertIn("load settle simulator-load-destination.txt", result.simctl)
 
     # A watcher left running after its simulator stops, or started after
     # the simulator, which leaves its first minutes out of the record,
@@ -2405,53 +2405,6 @@ class SettleTests(unittest.TestCase):
                                     r"load 500\.0, wanted under 150$")
         self.assertRegex(record[1], r"^\d\d:\d\d:\d\d the Mac settled after 35 s: load 100\.0$")
         self.assertEqual(len(record), 2)
-
-    # With the simulator held in the background band, the Mac's load
-    # leaves its threads out: on pull request #132's first CI run every
-    # wait then ended on its first readings, and the start-up work ran
-    # during the tests. Reading the load alone there, counting the
-    # simulator's threads at once rather than averaged over a minute as
-    # the load is, or a count that cannot be read stopping the wait or
-    # passing silently, fails this test.
-    def test_a_lowered_simulators_waiting_threads_count_too(self):
-        counts = [300.0] * 6 + [0.0] * 100
-
-        def waiting():
-            return counts.pop(0)
-
-        self.now = 0.0
-
-        def sleep(seconds):
-            self.now += seconds
-
-        arguments = self.module.parse(["settle", "--out", str(self.record), "--udid", "PAD"])
-        printed, warnings = io.StringIO(), io.StringIO()
-        with contextlib.redirect_stdout(printed), contextlib.redirect_stderr(warnings):
-            status = self.module.settle(arguments, load=lambda: 40.0, processors=lambda: 3,
-                                        clock=lambda: self.now, sleep=sleep, waiting=waiting)
-        self.assertEqual((status, warnings.getvalue()), (0, ""))
-        # 300 for half a minute, then none: the minute's average falls
-        # under 110 (150 less the load of 40) from the nineteenth reading,
-        # 13 readings after the last 300, so the third in a row is the
-        # twenty-first, 100 s in. Counted at once, the wait would end 15 s
-        # after the last 300.
-        self.assertEqual(self.now, 100.0)
-        self.assertIn("its load is 340, counting the simulator's threads in the background", printed.getvalue())
-        self.assertRegex(self.record.read_text().splitlines()[-1],
-                         r"the Mac settled after 100 s: load 1\d\d\.\d \(the Mac's 40\.0 and \d+\.\d "
-                         r"of the simulator's threads in the background\)$")
-
-        def unreadable():
-            raise OSError("no such table")
-
-        printed, warnings = io.StringIO(), io.StringIO()
-        with contextlib.redirect_stdout(printed), contextlib.redirect_stderr(warnings):
-            status = self.module.settle(arguments, load=lambda: 40.0, processors=lambda: 3,
-                                        clock=lambda: self.now, sleep=sleep, waiting=unreadable)
-        self.assertEqual(status, 0)
-        self.assertIn("could not be counted (no such table), so the wait reads the Mac's load alone",
-                      warnings.getvalue())
-        self.assertIn("The Mac settled after 10 s: load 40.", printed.getvalue())
 
     # A fixed limit, which would hold up every run on a Mac with more
     # processors than GitHub's three while its simulator starts, or a

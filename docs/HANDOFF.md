@@ -948,9 +948,9 @@ release in docs/ROADMAP.md when no thread has it yet.
   [`log/2026-11-22-simulator-start-in-the-background.md`](log/2026-11-22-simulator-start-in-the-background.md)
   runs that start-up work in macOS's background band from the moment
   the simulator has started (a minute after its boot at the latest)
-  until the Mac has settled, and returns every
-  process to normal priority, checked, before the first test
-  (docs/DECISIONS.md, "Tests", 2026-11-22). Whether that ends the cancels
+  until the build is done, then returns every process to normal
+  priority, checked, and waits for the Mac to settle before the first
+  test (docs/DECISIONS.md, "Tests", 2026-11-22). Whether that ends the cancels
   is measured on that pull request's runs only; a job cancelled by itself
   after it merges means the agent starves on something else, and its
   `github-agent-log.txt` and the agent's lines in the simulator's record
@@ -1730,9 +1730,9 @@ settings, date) and summarise it here.
   2026-11-22 the unit tests wait too; on a simulator the script started,
   the simulator's start-up work runs in macOS's background band from the
   moment it has started (a minute after its boot at the latest) until
-  that wait ends, so GitHub's agent keeps in
-  touch, and every process is then returned to normal priority, checked,
-  before the first test; a run whose check fails stops there. The
+  the build is done, so GitHub's agent keeps in touch, and every process
+  is then returned to normal priority, checked, before that wait; a run
+  whose check fails stops there. The
   watcher now starts before the simulator, so its record covers the
   first minutes, and each line says how much of a processor GitHub's
   agent got (docs/DECISIONS.md, "Tests", 2026-11-22;

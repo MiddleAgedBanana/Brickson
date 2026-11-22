@@ -30,14 +30,14 @@ starving.
    said so by then, it puts every process of the simulator in macOS's
    **background band**, its `launchd_sim` first, and each new one within
    a second;
-3. after the build (and, for UI tests, the warm-up launch), waits for the
-   Mac to settle, for the unit tests too now, counting the simulator's
-   threads held in the background, which the Mac's load leaves out
-   (*What this pull request's CI runs showed*);
-4. returns every process of the simulator to normal priority, **checks
-   that it is there**, and writes the result into the record
-   (`restore`); if that cannot be confirmed, the run stops before its
-   first test and fails, saying why;
+3. after the build (and, for UI tests, the warm-up launch), returns every
+   process of the simulator to normal priority, **checks that it is
+   there**, and writes the result into the record (`restore`); if that
+   cannot be confirmed, the run stops before its first test and fails,
+   saying why;
+4. then waits for the Mac to settle, for the unit tests too now: the
+   Mac's load leaves out work in the background band, so the wait comes
+   after the return (*What this pull request's CI runs showed*);
 5. tests, as before.
 
 Each line of the record now also says how much of a processor GitHub's
@@ -162,10 +162,10 @@ could run out and read as the app's fault, while a failed job that says
 why is seen and run again. If the watcher stops first (a failed build,
 say), it returns what it lowered itself.
 
-**Unit tests now wait for the Mac to settle.** With the start-up held in
-the band until that wait ends, unit tests started before it would meet
-that work at full priority, and twelve of the twenty jobs cancelled this
-way since 2026-11-13 were "Unit tests". This reverses the 2026-11-19
+**Unit tests now wait for the Mac to settle.** Once the simulator is
+returned to normal priority after the build, the rest of its start-up
+work would meet the unit tests at full priority, and twelve of the
+twenty jobs cancelled this way since 2026-11-13 were "Unit tests". This reverses the 2026-11-19
 line "the unit tests do not wait" (docs/DECISIONS.md, "Tests").
 
 **What the gauge is.** The load average counts work in the band too, so
@@ -216,14 +216,31 @@ Lowering from the boot: far too slow on a Mac with efficiency cores
   after the boot, and the start-up work, back at normal priority, ran
   during the tests: loads of 203 to 454 in minutes 6 to 16. Every test
   passed, but that is where 2026-11-19 found failures eight times as
-  often. Fixed in the next commit: on a lowered simulator, the wait adds
-  the simulator's threads running or waiting for a processor, averaged
-  over a minute as the load is (`simulator-load.py settle --udid`).
+  often. The second commit tried adding the lowered simulator's threads
+  running or waiting for a processor to the load; the third moves the
+  return before the wait instead (below).
 - **Job times** were 20.6 to 30.1 minutes (iPad 22.2, 30.1 and 22.3;
   iPhone 27.4, 20.6 and 28.4), against 28 to 45 before, because the
   tests started at once; the wait as fixed gives some of that back.
 
-*(The second run, and the two runs on the same commit, follow.)*
+**The second run** (45004753307, on `e47b8d9`): **green, and again no
+job cancelled itself**; GitHub's agent at 20 in every job; lowering 60 to
+64 seconds after the claim; returns of 194 to 282 processes in one or two
+passes, all read-backs at 31. "Unit tests" ran 1112 tests (1099 passed,
+none failed, 1 skipped, 12 expected failures) in 33.9 minutes. But the
+added count did not hold the wait: at the wait the lowered simulator had
+only 14 to 35 threads running or waiting, so every UI wait ended in 10
+seconds (the unit job's in 30), and after the return the loads during
+the tests reached 179 to 419 in the UI jobs and 527 in the unit job.
+Work held in the band also waits on the disk and the network, which a
+count of runnable threads does not see. So the third commit returns the
+simulator to normal priority first, after the build and the warm-up
+launch, and then waits on the plain load, as calibrated on 2026-11-19:
+the rest of the start-up work is then counted in the load, and the tests
+start after it. Job times on this run: iPad 32.8, 23.6 and 25.6 minutes;
+iPhone 32.0, 25.8 and 26.3.
+
+*(The third commit's run, and the two runs on the same commit, follow.)*
 
 ## Commits
 
@@ -232,19 +249,25 @@ Lowering from the boot: far too slow on a Mac with efficiency cores
   their tests in `scripts/test-runner.py`, these records,
   docs/DECISIONS.md, docs/HANDOFF.md (with its state line) and
   `README.md`.
-- The next commit: from the first CI run, the wait to settle counts a
-  lowered simulator's threads, and the test that saw GitHub's agent
-  allows its line; from the reviews (Codex, CodeRabbit and Gitar),
-  `restore` ends a watcher that has not begun (it would lower the
-  simulator once it began), asks a silent watcher to stop before
-  killing it (so it lets the wallpaper extensions it paused run again),
-  and a watcher that stops first returns every process now under the
-  simulator, not only the ones it lowered; and the commit list here.
+- `e47b8d9`: from the first CI run, the wait to settle counted a
+  lowered simulator's threads (since removed), and the test that saw
+  GitHub's agent allows its line; from the reviews (Codex, CodeRabbit
+  and Gitar), `restore` ends a watcher that has not begun (it would
+  lower the simulator once it began), asks a silent watcher to stop
+  before killing it (so it lets the wallpaper extensions it paused run
+  again), and a watcher that stops first returns every process now under
+  the simulator, not only the ones it lowered; and a test the first
+  commit dropped by mistake is back.
+- The next commit: from the second CI run, the return to normal priority
+  comes before the wait to settle, which reads the plain load again; the
+  lowered-thread count is removed (CodeRabbit's review of `e47b8d9` also
+  found it counted the simulator twice when the watcher had not
+  started).
 
 ## Verified
 
 - On the owner's Mac (macOS 27.2, Xcode 27.2, `/usr/bin/python3` 3.9):
-  `python3 scripts/test-runner.py`, 153 tests, OK, 18 of them new and
+  `python3 scripts/test-runner.py`, 152 tests, OK, 17 of them new and
   several changed (one renamed, with its checks kept); `test-docs`, `test-hooks`, `test-privacy`,
   `test-forbidden-code`, `test-agent-bridge`, `test-site` and
   `test-select-xcode`, all OK; `shellcheck scripts/test.sh` clean.
@@ -256,14 +279,13 @@ Lowering from the boot: far too slow on a Mac with efficiency cores
   pass; no read-back; the agent found by a looser name; no return when
   the watcher stops first; lowering after `restore` asked it to stop; a
   silent watcher left running; a refused process tried at every reading;
-  a newcomer lowered only at the next line; and, in the second commit,
-  the wait reading the load alone, or without the minute's average; a
+  a newcomer lowered only at the next line; and, in the later commits, a
   watcher that has not begun left running; a silent one killed without
   being asked; an early stop returning only what it lowered; the wait
-  not told the simulator's id.
-- The second commit also puts back
+  before the return.
+- `e47b8d9` also puts back
   `test_a_failed_wait_to_settle_is_reported_and_the_tests_still_run`,
-  which the first dropped by mistake.
+  which the first commit dropped by mistake.
 - The real commands on a real simulator, on the owner's Mac: the watcher
   started before the boot, lowering (44 processes at once, then every
   new one; the simulator ran at priority 4), and `restore` (above).
