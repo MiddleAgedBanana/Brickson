@@ -52,6 +52,8 @@ done
 action="${!#}"
 echo "$action" >> "$RUNNER_EVENTS"
 if [ "$action" = build-for-testing ]; then
+    # Which of the watcher's files test.sh had created by now.
+    echo "build: $(cd "$TEST_RESULTS_DIR" 2>/dev/null && ls *.claimed *.started 2>/dev/null | tr '\n' ' ')" >> "$RUNNER_MARKERS"
     app="$DERIVED_DATA_DIR/Build/Products/Debug-iphonesimulator/Brickson.app"
     mkdir -p "$app"
     cp "$FIXTURE_INFO_PLIST" "$app/Info.plist"
@@ -95,7 +97,10 @@ print(json.dumps(devices))
             boot)
                 [ "$FIXTURE_BOOT_STATUS" != 0 ] || echo "$3 Booted" >> "$RUNNER_STATES"
                 exit "$FIXTURE_BOOT_STATUS" ;;
-            bootstatus) exit "$FIXTURE_BOOTSTATUS_STATUS" ;;
+            bootstatus)
+                # Which of the watcher's files test.sh had created by now.
+                echo "bootstatus: $(cd "$TEST_RESULTS_DIR" 2>/dev/null && ls *.claimed *.started 2>/dev/null | tr '\n' ' ')" >> "$RUNNER_MARKERS"
+                exit "$FIXTURE_BOOTSTATUS_STATUS" ;;
             shutdown)
                 if [ "$FIXTURE_SHUTDOWN_STATUS" = 0 ]; then
                     echo "$3 Shutdown" >> "$RUNNER_STATES"
@@ -123,10 +128,11 @@ print(json.dumps(devices))
 esac
 """
 
-# Stands in for scripts/simulator-load.py: records each start, wait for the
-# Mac to settle and stop among the simulator commands, and the test run's
-# pid it was given. The wait is also recorded among xcodebuild's runs, to
-# show where it comes between them.
+# Stands in for scripts/simulator-load.py: records each start, wait for
+# the Mac to settle, return to normal priority and stop among the
+# simulator commands, and the test run's pid it was given. The wait and the
+# return are also recorded among xcodebuild's runs, to show where they come
+# between them.
 FAKE_SIMULATOR_LOAD = """\
 import os, sys
 from pathlib import Path
@@ -142,10 +148,26 @@ with Path(os.environ["RUNNER_SIMCTL"]).open("a") as log:
         if status == 0:
             print("The Mac has settled (fixture).")
         sys.exit(status)
+    if arguments[0] == "restore":
+        watcher = f" {value('--pid')}" if "--pid" in arguments else ""
+        log.write(f"load restore {value('--udid')}{watcher} {Path(value('--out')).name}\\n")
+        with Path(os.environ["RUNNER_EVENTS"]).open("a") as events:
+            events.write("restore\\n")
+        status = int(os.environ.get("FIXTURE_LOAD_RESTORE_STATUS", "0"))
+        if status == 0:
+            print("Returned the simulator's processes to normal priority (fixture).")
+        else:
+            print("error: could not confirm (fixture)", file=sys.stderr)
+        sys.exit(status)
     if arguments[0] == "start":
         Path(os.environ["RUNNER_LOAD_PARENT"]).write_text(value("--parent"))
-        pausing = "pausing" if "--pause-posters" in arguments else "watching"
-        log.write(f"load start {value('--udid')} {pausing} {Path(value('--out')).name}\\n")
+        if "--claim-file" in arguments:
+            out = value("--out")
+            files = value("--claim-file") == out + ".claimed" and value("--started-file") == out + ".started"
+            plan = "claiming" if files and {"--pause-posters", "--background"} <= set(arguments) else "?"
+        else:
+            plan = "pausing" if "--pause-posters" in arguments else "watching"
+        log.write(f"load start {value('--udid')} {plan} {Path(value('--out')).name}\\n")
         status = int(os.environ.get("FIXTURE_LOAD_START_STATUS", "0"))
         if status == 0:
             print(4242)
@@ -243,6 +265,7 @@ def run_script(build_body, mode="ui", destination="id=fixture-simulator",
                            RUNNER_EVENTS=f"{directory}/events",
                            RUNNER_SIMCTL=f"{directory}/simctl",
                            RUNNER_LOAD_PARENT=f"{directory}/load-parent",
+                           RUNNER_MARKERS=f"{directory}/markers",
                            FIXTURE_DEVICES=str(devices_path),
                            FIXTURE_INFO_PLIST=str(plist_path),
                            FIXTURE_TARGET=target, FIXTURE_SDK=sdk,
@@ -285,6 +308,9 @@ def run_script(build_body, mode="ui", destination="id=fixture-simulator",
         result.calls = lines(Path(directory, "invocations"))
         result.invocations = len(result.calls)
         result.simctl = lines(Path(directory, "simctl"))
+        result.markers = [line.rstrip() for line in lines(Path(directory, "markers"))]
+        result.markers_left = sorted(path.name for pattern in ("*.claimed", "*.started")
+                                     for path in Path(directory, "TestResults").glob(pattern))
         result.stale_bundle_kept = stale.exists()
         result.stale_record_kept = stale_record.exists()
         result.results_dir = f"{directory}/TestResults"
@@ -566,7 +592,8 @@ class DestinationTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(actions(result), [("build-for-testing", "id=PHONE"),
                                            ("test-without-building", "id=PHONE")])
-        self.assertEqual(result.simctl[:2], ["simctl boot PHONE", "simctl bootstatus PHONE -b"])
+        self.assertEqual([call for call in result.simctl if call.startswith("simctl")][:2],
+                         ["simctl boot PHONE", "simctl bootstatus PHONE -b"])
         self.assertIn("simctl spawn PHONE defaults write com.apple.keyboard.preferences "
                       "AutomaticMinimizationEnabled -bool false", result.simctl)
         self.assertIn("simctl spawn PHONE defaults write com.apple.keyboard.preferences "
@@ -624,26 +651,37 @@ class DestinationTests(unittest.TestCase):
 
 
 class PreparationTests(unittest.TestCase):
-    """Before UI tests: the full software keyboard, one warm-up launch of
-    the app on test-only storage, and a wait for the Mac to settle after
-    the simulator's start
-    (docs/log/2026-11-19-ui-tests-wait-for-a-settled-mac.md)."""
+    """Before UI tests: the full software keyboard and one warm-up launch
+    of the app on test-only storage. Before any tests: a wait for the Mac
+    to settle after the simulator's start
+    (docs/log/2026-11-19-ui-tests-wait-for-a-settled-mac.md), and, on a
+    simulator this run started, its processes returned from the background
+    band and checked (docs/log/2026-11-22-simulator-start-in-the-background.md)."""
 
     def ui_run(self, build_body="exit 0", **options):
         return run_script(build_body, destination=None,
                           devices={runtime("27.1"): [device("iPad Pro 13-inch (M5)", "PAD")]},
                           family="ipad", **options)
 
-    # Dropping either keyboard setting, the warm-up or the wait for the
-    # Mac to settle, warming up on the person's own storage, or warming up
-    # after the tests, fails this test.
+    # Dropping either keyboard setting, the warm-up, the wait for the Mac
+    # to settle or the return to normal priority, warming up on the
+    # person's own storage, warming up after the tests, starting the
+    # watcher after the simulator, claiming the simulator only once it has
+    # finished starting (on GitHub's busy Macs `bootstatus` began up to
+    # five minutes after the boot), saying it has started before
+    # `bootstatus` does, or leaving the watcher's files behind, fails this
+    # test.
     def test_ui_tests_get_the_full_keyboard_and_a_warm_simulator(self):
         result = self.ui_run()
         self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.markers, [
+            "bootstatus: simulator-load-ipad.txt.claimed",
+            "build: simulator-load-ipad.txt.claimed simulator-load-ipad.txt.started"])
+        self.assertEqual(result.markers_left, [])
         self.assertEqual(result.simctl, [
+            "load start PAD claiming simulator-load-ipad.txt",
             "simctl boot PAD",
             "simctl bootstatus PAD -b",
-            "load start PAD pausing simulator-load-ipad.txt",
             "simctl spawn PAD defaults write com.apple.keyboard.preferences "
             "AutomaticMinimizationEnabled -bool false",
             "simctl spawn PAD defaults write com.apple.keyboard.preferences "
@@ -654,6 +692,7 @@ class PreparationTests(unittest.TestCase):
             "sleep 15",
             "simctl terminate PAD fixture.brickson",
             "load settle simulator-load-ipad.txt",
+            "load restore PAD 4242 simulator-load-ipad.txt",
             "load stop 4242 simulator-load-ipad.txt",
             "simctl shutdown PAD",
         ])
@@ -671,32 +710,50 @@ class PreparationTests(unittest.TestCase):
     def test_ui_tests_start_only_after_the_wait_for_the_mac_to_settle(self):
         result = self.ui_run()
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertEqual(result.events, ["build-for-testing", "settle", "test-without-building"])
+        self.assertEqual(result.events,
+                         ["build-for-testing", "settle", "restore", "test-without-building"])
         settled = result.stdout.index("The Mac has settled (fixture).")
         self.assertLess(result.stdout.index("Warm-up:"), settled)
-        self.assertLess(settled, result.stdout.index("Testing Brickson-UI on: id=PAD"))
+        returned = result.stdout.index("Returned the simulator's processes to normal priority")
+        self.assertLess(settled, returned)
+        self.assertLess(returned, result.stdout.index("Testing Brickson-UI on: id=PAD"))
 
-    # A wait that cannot run (its command fails) stopping the tests, or
-    # passing silently, fails this test.
-    def test_a_failed_wait_to_settle_is_reported_and_the_tests_still_run(self):
-        os.environ["FIXTURE_LOAD_SETTLE_STATUS"] = "1"
+    # Testing a simulator whose processes cannot be confirmed back at
+    # normal priority, in either mode, or stopping without saying why,
+    # fails this test. The tests would run throttled, and a strict limit
+    # that ran out there would read as the app's fault (docs/DECISIONS.md,
+    # "Tests", 2026-11-22). The simulator is still shut down.
+    def test_a_simulator_not_confirmed_back_at_normal_priority_is_not_tested(self):
+        os.environ["FIXTURE_LOAD_RESTORE_STATUS"] = "1"
         try:
-            result = self.ui_run()
+            for mode in ("ui", "unit"):
+                with self.subTest(mode=mode):
+                    result = self.ui_run(mode=mode)
+                    self.assertEqual(result.returncode, 1, result.stderr)
+                    self.assertNotIn("test-without-building", [name for name, _ in actions(result)])
+                    self.assertIn("could not be confirmed back at normal priority, so no test runs "
+                                  "on it", result.stderr)
+                    self.assertEqual(result.simctl[-2:], ["load stop 4242 simulator-load-ipad.txt",
+                                                          "simctl shutdown PAD"])
         finally:
-            del os.environ["FIXTURE_LOAD_SETTLE_STATUS"]
-        self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("could not wait for the Mac to settle", result.stderr)
-        self.assertIn(("test-without-building", "id=PAD"), actions(result))
+            del os.environ["FIXTURE_LOAD_RESTORE_STATUS"]
 
-    # Unit tests changing the keyboard, launching the app or waiting for
-    # the Mac to settle fails this.
-    def test_unit_tests_only_wait_for_the_simulator(self):
+    # Unit tests changing the keyboard or launching the app fails this;
+    # so does a unit run that does not wait for the Mac to settle and
+    # return the simulator's processes to normal priority before its
+    # tests. Held in the background until then, the start-up work would
+    # otherwise meet the unit tests at full priority (docs/DECISIONS.md,
+    # "Tests", 2026-11-22).
+    def test_unit_tests_wait_for_the_mac_and_leave_the_keyboard_and_app_alone(self):
         result = run_script("exit 0", mode="unit", destination=None, devices=IPAD_AND_IPHONE)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual([call for call in result.simctl if call.startswith("simctl")],
                          ["simctl boot PAD", "simctl bootstatus PAD -b", "simctl shutdown PAD"])
-        self.assertFalse(any(call.startswith("load settle") for call in result.simctl),
-                         result.simctl)
+        self.assertEqual([event for event in result.events if event not in result.preflights],
+                         ["build-for-testing", "settle", "restore", "test-without-building"])
+        self.assertEqual(result.markers, [
+            "bootstatus: simulator-load-ipad.txt.claimed",
+            "build: simulator-load-ipad.txt.claimed simulator-load-ipad.txt.started"])
 
     # A failed warm-up that stops the run, or one that passes silently,
     # fails this test.
@@ -761,12 +818,17 @@ class SimulatorLifecycleTests(unittest.TestCase):
                 self.assertNotIn("simctl boot PHONE", result.simctl)
                 self.assertNotIn("simctl shutdown PHONE", result.simctl)
 
-    # A boot that fails never gives this invocation ownership of the device.
+    # A boot that fails never gives this invocation ownership of the
+    # device: its watcher, started before the boot, is never claimed, so it
+    # pauses and lowers nothing there, and it is stopped.
     def test_failed_boot_does_not_claim_or_shutdown_the_device(self):
         result = self.phone_run(boot_status=70)
         self.assertNotEqual(result.returncode, 0)
         self.assertNotIn("simctl shutdown PHONE", result.simctl)
         self.assertEqual(result.invocations, 0)
+        self.assertFalse(any(call.startswith("load restore") for call in result.simctl), result.simctl)
+        self.assertEqual((result.markers, result.markers_left), ([], []))
+        self.assertIn("load stop 4242 simulator-load-destination.txt", result.simctl)
 
     # Ignoring cleanup errors can start two simulators and cause UI timeouts.
     def test_failed_shutdown_fails_the_run_and_does_not_start_another_family(self):
@@ -915,7 +977,7 @@ class UITestPartTests(unittest.TestCase):
                          expected)
         bundle = test[test.index("-resultBundlePath") + 1]
         self.assertTrue(bundle.endswith("TestResults/ui-ipad-part1.xcresult"), bundle)
-        self.assertIn("load start PAD pausing simulator-load-ipad-part1.txt", result.simctl)
+        self.assertIn("load start PAD claiming simulator-load-ipad-part1.txt", result.simctl)
         self.assertIn("UI tests, part 1 of", result.stdout)
         self.assertIn("All UI tests in part 1 passed.", result.stdout)
 
@@ -1135,10 +1197,12 @@ class UITestWaitTests(unittest.TestCase):
 
 class WatcherTests(unittest.TestCase):
     """test.sh watches each simulator it tests on with
-    scripts/simulator-load.py, pausing the lock-screen wallpaper
-    extensions only on a simulator it started itself, and stops the
+    scripts/simulator-load.py from before it starts, pausing the
+    lock-screen wallpaper extensions and lowering its processes only on a
+    simulator it started itself, and only once it has, and stops the
     watcher before the simulator in every way a run can end
-    (docs/log/2026-11-03-ui-test-stall.md)."""
+    (docs/log/2026-11-03-ui-test-stall.md,
+    docs/log/2026-11-22-simulator-start-in-the-background.md)."""
 
     def phone_run(self, build_body="exit 0", state="Shutdown", mode="ui", **options):
         return run_script(build_body, mode=mode, destination="platform=iOS Simulator,id=PHONE",
@@ -1149,11 +1213,13 @@ class WatcherTests(unittest.TestCase):
         return [call for call in result.simctl
                 if call.startswith(("load start ", "load stop ", "simctl boot ", "simctl shutdown "))]
 
-    # Pausing processes of a simulator someone else started, or not
-    # pausing them on one this run started, in either mode, fails this test.
+    # Pausing or lowering processes of a simulator someone else started,
+    # claiming it, or returning its processes (a run that never lowered
+    # them has nothing to return), or not doing so on one this run
+    # started, in either mode, fails this test.
     def test_wallpaper_extensions_are_paused_only_on_a_simulator_this_run_started(self):
         for mode in ("ui", "unit"):
-            for state, expected in (("Shutdown", "pausing"), ("Booted", "watching")):
+            for state, expected in (("Shutdown", "claiming"), ("Booted", "watching")):
                 with self.subTest(mode=mode, state=state):
                     result = self.phone_run(state=state, mode=mode)
                     self.assertEqual(result.returncode, 0, result.stderr)
@@ -1162,10 +1228,17 @@ class WatcherTests(unittest.TestCase):
                     self.assertIn("load stop 4242 simulator-load-destination.txt", result.simctl)
                     self.assertIn("Processor time the simulator's processes used while watched",
                                   result.stdout)
+                    owned = state == "Shutdown"
+                    self.assertEqual(result.markers[0], "bootstatus: simulator-load-destination.txt"
+                                     ".claimed" if owned else "bootstatus:")
+                    self.assertEqual(
+                        "load restore PHONE 4242 simulator-load-destination.txt" in result.simctl, owned)
+                    self.assertIn("load settle simulator-load-destination.txt", result.simctl)
 
-    # A watcher left running after its simulator stops, started before the
-    # simulator has finished starting, or still started after a failed
-    # start, fails this test.
+    # A watcher left running after its simulator stops, or started after
+    # the simulator, which leaves its first minutes out of the record,
+    # fails this test; so does one claimed when the simulator did not
+    # finish starting.
     def test_the_watcher_stops_before_the_simulator_however_the_run_ends(self):
         cases = [
             ('if [ "$action" = build-for-testing ]; then exit 65; fi', {}, 65),
@@ -1181,12 +1254,18 @@ class WatcherTests(unittest.TestCase):
                 result = self.phone_run(body, **options)
                 self.assertEqual(result.returncode, status, result.stderr)
                 self.assertEqual(self.load_calls(result), [
-                    "simctl boot PHONE", "load start PHONE pausing simulator-load-destination.txt",
+                    "load start PHONE claiming simulator-load-destination.txt", "simctl boot PHONE",
                     "load stop 4242 simulator-load-destination.txt", "simctl shutdown PHONE"])
-                self.assertLess(result.simctl.index("simctl bootstatus PHONE -b"),
-                                result.simctl.index("load start PHONE pausing simulator-load-destination.txt"))
+                self.assertEqual(result.markers[0],
+                                 "bootstatus: simulator-load-destination.txt.claimed")
         result = self.phone_run(bootstatus_status=70)
-        self.assertEqual(self.load_calls(result), ["simctl boot PHONE", "simctl shutdown PHONE"])
+        self.assertEqual(self.load_calls(result), [
+            "load start PHONE claiming simulator-load-destination.txt", "simctl boot PHONE",
+            "load stop 4242 simulator-load-destination.txt", "simctl shutdown PHONE"])
+        # Claimed when the boot succeeded, never said to have started, and
+        # its files gone with it.
+        self.assertEqual(result.markers, ["bootstatus: simulator-load-destination.txt.claimed"])
+        self.assertEqual(result.markers_left, [])
 
     # A watcher that cannot start stopping the tests, or passing silently,
     # fails this test.
@@ -1200,6 +1279,9 @@ class WatcherTests(unittest.TestCase):
         self.assertIn("the simulator watcher did not start", result.stderr)
         self.assertIn(("test-without-building", "id=PHONE"), actions(result))
         self.assertFalse(any(call.startswith("load stop") for call in result.simctl))
+        self.assertEqual(result.markers, ["bootstatus:", "build:"])
+        # Nothing was lowered, and the return is still made and checked.
+        self.assertIn("load restore PHONE simulator-load-destination.txt", result.simctl)
 
 
 class EvidenceTests(unittest.TestCase):
@@ -1414,11 +1496,14 @@ def launchd_sim_arguments(device):
     return [LAUNCHD_SIM, f"{DEVICES}/{device}/data/var/run/launchd_bootstrap.plist"]
 
 
-def process_table(times, ticks=0, ended=(), without=(), extra=()):
+def process_table(times, ticks=0, ended=(), without=(), extra=(), refuse=(), priorities=None):
     """Two simulators, PAD (launchd_sim 100) and OTHER (200), and the Mac,
     with each process's processor time in seconds and the processors'
     busy ticks. A process in `ended` ended before its details were read;
-    one in `without` is not listed; `extra` adds rows."""
+    one in `without` is not listed; `extra` adds rows, each of which may
+    end with its priority and its threads running; `priorities` gives a
+    listed process another priority than 31; one in `refuse` cannot have
+    its priority changed."""
     rows = [
         (1, 0, "S", "/sbin/launchd", None),
         (100, 1, "S", LAUNCHD_SIM, launchd_sim_arguments("PAD")),
@@ -1432,9 +1517,11 @@ def process_table(times, ticks=0, ended=(), without=(), extra=()):
         (300, 1, "S", "/Applications/Example.app/Contents/MacOS/GradientPosterExtension", None),
     ]
     rows = [row for row in rows if row[0] not in without] + list(extra)
-    return json.dumps({"ticks": ticks, "processes": [
-        [pid, ppid, state, None if pid in ended else times.get(pid, 0.0), path, arguments]
-        for pid, ppid, state, path, arguments in rows]})
+    priorities = priorities or {}
+    return json.dumps({"ticks": ticks, "refuse": list(refuse), "processes": [
+        [pid, ppid, state, None if pid in ended else times.get(pid, 0.0), path, arguments,
+         *(rest or [priorities.get(pid, 31), 0])]
+        for pid, ppid, state, path, arguments, *rest in rows]})
 
 
 def simulator_load():
@@ -1486,14 +1573,19 @@ class SimulatorLoadTests(unittest.TestCase):
     def times(self, times, **options):
         self.processes.write_text(process_table(times, **options))
 
-    def watch(self, pause_posters):
+    def watch(self, pause_posters, **options):
         self.kills, self.now = [], 0.0
         out = self.record.open("w")
         self.addCleanup(out.close)
         self.system = self.module.ProcessFile(str(self.processes))
         return self.module.Watch("PAD", out, pause_posters, self.system,
                                  clock=lambda: self.now,
-                                 kill=lambda pid, number: self.kills.append((pid, number)))
+                                 kill=lambda pid, number: self.kills.append((pid, number)),
+                                 **options)
+
+    def changes(self):
+        """Each change of priority made so far, in order ("on 100")."""
+        return lines(Path(str(self.processes) + ".background"))
 
     def arguments(self, **options):
         values = dict(udid="PAD", out=str(self.record), pause_posters=True,
@@ -1880,6 +1972,305 @@ class SimulatorLoadTests(unittest.TestCase):
                             and "No such file" in line for line in lines), lines)
         self.assertEqual(lines[-1], "Stopped.")
 
+    # Lowering or pausing anything before the run says it started the
+    # simulator, lowering another simulator's or the Mac's own processes,
+    # lowering launchd_sim after its processes (one started in between
+    # would miss the band), or lowering a process twice fails this test.
+    def test_the_simulator_is_lowered_only_once_claimed_and_its_launchd_sim_first(self):
+        # A process whose pid is below its launchd_sim's, as a reused pid
+        # can be.
+        self.times({}, extra=[(90, 100, "S", f"{RUNTIME_ROOT}/usr/libexec/lsd", None)])
+        watcher = self.watch(pause_posters=True, background=True, claimed=False)
+        watcher.sample()
+        self.assertEqual((self.changes(), self.kills), ([], []))
+        watcher.claim()
+        watcher.sample()
+        watcher.sample()
+        self.assertEqual(self.changes(), ["on 100", "on 90", "on 110", "on 120", "on 121", "on 122",
+                                          "on 123"])
+        self.assertEqual(self.kills, [(121, signal.SIGSTOP), (122, signal.SIGSTOP)])
+        record = self.record.read_text()
+        self.assertRegex(record, r"\d\d:\d\d:\d\d this run started the simulator: pausing its "
+                                 r"lock-screen wallpaper extensions and running its processes in "
+                                 r"the background until the tests, from when it has started or in "
+                                 r"60 s\n")
+        self.assertIn("put 7 of the simulator's processes in the background, its launchd_sim first",
+                      record)
+        watcher.summary()
+        self.assertIn("Put 7 of the simulator's processes in the background while it started.",
+                      self.record.read_text())
+
+    # Lowering before the simulator has finished starting, while there is
+    # still time (held in the band from the boot, a first start on the
+    # owner's Mac had not finished after almost seven minutes), or waiting
+    # for it longer than a minute after the claim (GitHub's agent kept in
+    # touch for the first three minutes or so, and `bootstatus` began up to
+    # five minutes after the boot), or not saying which it was, fails this
+    # test.
+    def test_lowering_waits_for_the_start_or_a_minute_whichever_comes_first(self):
+        watcher = self.watch(pause_posters=False, background=True, claimed=False, started=False)
+        watcher.claim()
+        self.now = 59.0
+        watcher.sample()
+        self.assertEqual(self.changes(), [])
+        watcher.mark_started()
+        watcher.sample()
+        self.assertEqual(len(self.changes()), 6)
+        record = self.record.read_text()
+        self.assertRegex(record, r"\d\d:\d\d:\d\d the simulator has finished starting\n")
+        self.assertIn("its launchd_sim first (it had started)", record)
+        self.processes.with_name("processes.json.background").unlink()
+        late = self.watch(pause_posters=False, background=True, claimed=False, started=False)
+        late.claim()
+        self.now = 59.9
+        late.sample()
+        self.assertEqual(self.changes(), [])
+        self.now = 60.0
+        late.sample()
+        self.assertEqual(len(self.changes()), 6)
+        self.assertIn("its launchd_sim first (60 s after the claim, before it had started)",
+                      self.record.read_text())
+
+    # A process that starts after the first batch left at normal priority
+    # until the next line, rather than the next check, fails this test.
+    def test_a_process_started_after_the_first_batch_is_lowered_at_the_next_check(self):
+        watcher = self.watch(pause_posters=False, background=True)
+        watcher.sample()
+        newcomer = [(124, 120, "S", f"{RUNTIME_ROOT}/usr/libexec/chronod", None)]
+        self.times({}, extra=newcomer)
+        watcher.sample(line=False)
+        self.assertEqual(self.changes()[-1], "on 124")
+
+    # Lowering after `restore` has asked the watcher to stop (the process
+    # would run the tests in the background), or the watcher returning
+    # processes itself then, which is `restore`'s to do and check, fails
+    # this test.
+    def test_lowering_stops_when_asked_and_says_so(self):
+        watcher = self.watch(pause_posters=False, background=True)
+        watcher.sample()
+        watcher.stop_lowering()
+        self.times({}, extra=[(124, 120, "S", f"{RUNTIME_ROOT}/usr/libexec/chronod", None)])
+        watcher.sample()
+        watcher.return_lowered()
+        self.assertEqual(len(self.changes()), 6)
+        self.assertRegex(self.record.read_text(),
+                         r"\d\d:\d\d:\d\d stopped putting the simulator's processes in the "
+                         r"background \(it had put 6 there\)\n")
+
+    # A watcher that stops before `restore` ran (a failed build, say)
+    # leaving the simulator in the background, or saying "Stopped." before
+    # it has returned them, fails this test.
+    def test_a_watcher_that_stops_first_returns_what_it_lowered(self):
+        for number in (signal.SIGTERM, signal.SIGINT, signal.SIGUSR1, signal.SIGUSR2):
+            self.addCleanup(signal.signal, number, signal.getsignal(number))
+        arguments = self.arguments(pause_posters=False, background=True)
+        self.assertEqual(self.module.watch(arguments, parent_alive=lambda pid: False), 0)
+        self.assertEqual(self.changes(), ["on 100", "on 110", "on 120", "on 121", "on 122", "on 123",
+                                          "off 100", "off 110", "off 120", "off 121", "off 122",
+                                          "off 123"])
+        lines_ = self.record.read_text().splitlines()
+        self.assertIn("Returned 6 of the 6 processes it had put in the background to normal "
+                      "priority, as the watcher stopped before the tests.", lines_)
+        self.assertEqual(lines_[-1], "Stopped.")
+
+    # A process whose priority cannot be changed stopping the watcher,
+    # passing without a word, or being tried again at every reading fails
+    # this test.
+    def test_a_process_that_cannot_be_lowered_is_written_down_once(self):
+        self.times({}, refuse=(110,))
+        watcher = self.watch(pause_posters=False, background=True)
+        watcher.sample()
+        watcher.sample(line=False)
+        self.assertEqual(self.changes(), ["on 100", "on 120", "on 121", "on 122", "on 123"])
+        record = self.record.read_text()
+        self.assertEqual(record.count("could not put SpringBoard (110) in the background"), 1, record)
+
+    # GitHub's agent's share of a processor, its priority and its threads
+    # waiting left out of the line, the agent found by anything but the
+    # kernel's names for its programs, or its processes not named once
+    # with their priority, fails this test. Where no agent runs, nothing
+    # is said (the tests above).
+    def test_each_line_says_what_githubs_agent_got(self):
+        agent = [(500, 1, "S", "/Users/runner/actions-runner/cached/bin/Runner.Listener", None, 31, 1),
+                 (501, 500, "S", "/Users/runner/actions-runner/cached/bin/Runner.Worker", None, 20, 0),
+                 (502, 1, "S", "/Users/runner/bin/Runner.Listener.helper", None, 31, 0)]
+        watcher = self.watch(pause_posters=False)
+        self.times({500: 1.0}, extra=agent)
+        watcher.sample()
+        self.now = 5.0
+        self.times({500: 2.0, 110: 1.0}, extra=agent)
+        watcher.sample()
+        lines_ = self.record.read_text().splitlines()
+        self.assertEqual([line for line in lines_ if "GitHub's agent" in line][0][9:],
+                         "GitHub's agent: Runner.Listener (500) at priority 31, "
+                         "Runner.Worker (501) at priority 20")
+        self.assertRegex(lines_[-1], r" list [\d.]+ s agent 20% at 31, 1 running \| SpringBoard 20%$")
+
+    # `restore` leaving any process of the simulator in the band, returning
+    # launchd_sim after its processes, another simulator's or the Mac's
+    # processes changed, a result that does not say what it read back, or
+    # a process iOS itself runs in the background (here PosterBoard)
+    # counted as a failure, fails this test.
+    def test_restore_returns_every_process_and_reads_them_back(self):
+        self.times({}, priorities={120: 4},
+                   extra=[(90, 100, "S", f"{RUNTIME_ROOT}/usr/libexec/lsd", None)])
+        system = self.module.ProcessFile(str(self.processes))
+        for pid in (100, 90, 110, 120, 121, 122, 123):
+            system.set_background(pid, True)
+        printed, errors = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(printed), contextlib.redirect_stderr(errors):
+            status = self.module.restore(self.restore_arguments(), system=system)
+        self.assertEqual(status, 0, errors.getvalue())
+        self.assertEqual(self.changes()[7:], ["off 100", "off 90", "off 110", "off 120", "off 121",
+                                              "off 122", "off 123"])
+        self.assertEqual(system.lowered(), set())
+        said = ("returned the simulator's 7 processes to normal priority in 1 pass, until a pass "
+                "found none it had not returned; read back: launchd_sim at 31, SpringBoard at 31, "
+                "backboardd was not running; 1 of the 7 running now are in the background as iOS "
+                "runs them")
+        self.assertEqual(printed.getvalue(), said + "\n")
+        self.assertRegex(self.record.read_text(), r"\A\d\d:\d\d:\d\d " + re.escape(said) + r"\n\Z")
+
+    def restore_arguments(self, **options):
+        values = dict(udid="PAD", out=str(self.record), pid=None, processes=str(self.processes))
+        values.update(options)
+        return argparse.Namespace(**values)
+
+    def restore(self, system, pid=None, **options):
+        printed, errors = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(printed), contextlib.redirect_stderr(errors):
+            status = self.module.restore(self.restore_arguments(pid=pid), system=system, **options)
+        return status, printed.getvalue(), errors.getvalue()
+
+    # A process started under a lowered parent while a pass was returning
+    # the others (it took the band from its parent) left in the band, or a
+    # result that does not say it took another pass, fails this test.
+    def test_a_process_started_during_a_pass_is_returned_by_the_next(self):
+        system = self.module.ProcessFile(str(self.processes))
+        for pid in (100, 110, 120, 121, 122, 123):
+            system.set_background(pid, True)
+        returning = system.set_background
+
+        def set_background(pid, background):
+            returning(pid, background)
+            if pid == 123 and not background:
+                self.times({}, extra=[(130, 110, "S", f"{RUNTIME_ROOT}/usr/libexec/chronod", None)])
+                returning(130, True)
+
+        system.set_background = set_background
+        status, printed, errors = self.restore(system)
+        self.assertEqual(status, 0, errors)
+        self.assertEqual(system.lowered(), set())
+        self.assertIn("returned the simulator's 7 processes to normal priority in 2 passes", printed)
+
+    # A simulator that may still be in the background reported as back
+    # at normal priority, quietly, or without saying why, fails this
+    # test: for each way the return cannot be confirmed, `restore` fails
+    # and says so in the log and the record.
+    def test_a_return_that_cannot_be_confirmed_fails_loudly(self):
+        never_still = self.module.ProcessFile(str(self.processes))
+        cases = {
+            "SpringBoard (110) is still in the background": dict(priorities={110: 4}),
+            "AegirPoster (122) could not be returned: [Errno 1] Operation not permitted":
+                dict(refuse=(122,)),
+            "the simulator PAD's launchd_sim was not found": dict(without=(100,)),
+        }
+        for expected, options in cases.items():
+            with self.subTest(expected=expected):
+                self.times({}, **options)
+                self.record.write_text("")
+                status, printed, errors = self.restore(self.module.ProcessFile(str(self.processes)))
+                self.assertEqual(status, 1, printed)
+                self.assertIn("error: could not confirm that the simulator's processes are back at "
+                              "normal priority: ", errors)
+                self.assertIn(expected, errors)
+                self.assertIn(expected, self.record.read_text())
+        # New processes still appearing after five passes: a sixth reading
+        # would be needed to confirm none was left.
+        self.times({})
+        appearing = itertools.count(600)
+        returning = never_still.set_background
+
+        def set_background(pid, background):
+            returning(pid, background)
+            born = next(appearing)
+            self.times({}, extra=[(born, 100, "S", f"{RUNTIME_ROOT}/usr/libexec/chronod", None)])
+
+        never_still.set_background = set_background
+        status, _, errors = self.restore(never_still)
+        self.assertEqual(status, 1)
+        self.assertIn("after 5 passes new processes were still appearing", errors)
+
+    # `restore` returning processes while the watcher may still lower new
+    # ones, or a watcher that never answers left running (it could lower a
+    # process after the return), fails this test.
+    def test_restore_first_stops_the_watcher_lowering(self):
+        self.record.write_text("Watching simulator PAD, from 00:00:00\n")
+        system = self.module.ProcessFile(str(self.processes))
+        signals = []
+
+        def answering(pid, number):
+            signals.append((pid, number))
+            if number == signal.SIGUSR1:
+                self.module.add_to_record(str(self.record), self.module.STOPPED_LOWERING + " (it had put 0 there)")
+
+        status, printed, errors = self.restore(system, pid=4242, kill=answering,
+                                               is_alive=lambda pid: True)
+        self.assertEqual((status, signals), (0, [(4242, signal.SIGUSR1)]), errors)
+        record = self.record.read_text()
+        self.assertLess(record.index("stopped putting"), record.index("returned the simulator's"))
+        signals.clear()
+        self.record.write_text("Watching simulator PAD, from 00:00:00\n")
+        status, printed, errors = self.restore(
+            system, pid=4242, kill=lambda pid, number: signals.append((pid, number)),
+            is_alive=lambda pid: True, wait=0.2)
+        self.assertEqual((status, signals), (0, [(4242, signal.SIGUSR1), (4242, signal.SIGKILL)]), errors)
+        self.assertIn("the simulator watcher (4242) did not say within 0 s that it had stopped putting "
+                      "processes in the background, so it was stopped", self.record.read_text())
+
+    # The watcher and `restore` as the separate programs scripts/test.sh
+    # runs, with the files it creates: nothing lowered before the claim,
+    # nor after it until the simulator has started, everything then, the
+    # watcher answering `restore`, and every process back at normal
+    # priority before it stops. (Without --pause-posters: the stand-in's
+    # pids may be real processes here.)
+    def test_the_commands_lower_and_return_the_simulator_together(self):
+        claim, begun = Path(f"{self.record}.claimed"), Path(f"{self.record}.started")
+        started = self.run_script("start", "--udid", "PAD", "--out", str(self.record),
+                                  "--parent", str(os.getpid()), "--background",
+                                  "--claim-file", str(claim), "--started-file", str(begun),
+                                  "--processes", str(self.processes))
+        self.assertEqual(started.returncode, 0, started.stderr)
+        pid = int(started.stdout)
+        self.addCleanup(end, pid)
+        self.assertTrue(wait_for(lambda: "simulator " in self.record.read_text()), self.record.read_text())
+        claim.touch()
+        self.assertTrue(wait_for(lambda: "this run started the simulator" in self.record.read_text()),
+                        self.record.read_text())
+        time.sleep(1.5)
+        self.assertEqual(self.changes(), [])
+        begun.touch()
+        self.assertTrue(wait_for(lambda: len(self.changes()) == 6), self.changes())
+        # A newcomer is lowered at the next check, a second later, not at
+        # the next line.
+        self.times({}, extra=[(124, 120, "S", f"{RUNTIME_ROOT}/usr/libexec/chronod", None)])
+        added = time.monotonic()
+        self.assertTrue(wait_for(lambda: "on 124" in self.changes()), self.changes())
+        self.assertLess(time.monotonic() - added, 3.0, self.changes())
+        restored = self.run_script("restore", "--udid", "PAD", "--out", str(self.record),
+                                   "--pid", str(pid), "--processes", str(self.processes))
+        self.assertEqual(restored.returncode, 0, restored.stderr)
+        self.assertEqual(self.module.ProcessFile(str(self.processes)).lowered(), set())
+        stopped = self.run_script("stop", "--pid", str(pid), "--out", str(self.record))
+        self.assertEqual(stopped.returncode, 0, stopped.stderr)
+        record = self.record.read_text()
+        self.assertTrue(record.startswith("Watching simulator PAD, once this run has started it, "
+                                          "running its processes in the background until the tests, "
+                                          "from "), record)
+        self.assertLess(record.index("stopped putting"), record.index("returned the simulator's 7"))
+        self.assertNotIn("Returned ", record)
+        self.assertEqual(record.splitlines()[-1], "Stopped.")
+
     # The structures are read straight from the kernel's bytes, so a field
     # of the wrong size shifts every field after it. A size that differs
     # from xnu's bsd/sys/proc_info.h (struct proc_bsdshortinfo, 64 bytes;
@@ -1893,11 +2284,13 @@ class SimulatorLoadTests(unittest.TestCase):
         # padding can hide a field that is too short from the sizes alone.
         fields = {name: (getattr(structure, name).offset, getattr(structure, name).size)
                   for structure, names in ((self.module.ShortInfo, ("ppid", "status", "comm")),
-                                           (self.module.TaskInfo, ("total_user", "total_system")),
+                                           (self.module.TaskInfo, ("total_user", "total_system",
+                                                                   "numrunning", "priority")),
                                            (self.module.Timebase, ("numer", "denom")))
                   for name in names}
         self.assertEqual(fields, {"ppid": (4, 4), "status": (12, 4), "comm": (16, 16),
                                   "total_user": (16, 8), "total_system": (24, 8),
+                                  "numrunning": (88, 4), "priority": (92, 4),
                                   "numer": (0, 4), "denom": (4, 4)})
 
 
@@ -2078,6 +2471,24 @@ class MacProcessesTests(unittest.TestCase):
         self.assertAlmostEqual(own, used, delta=0.25 * used)
         self.assertGreater(busy, 0.5 * used)
 
+    # A process put in the background band reading back at any priority
+    # but the band's, one returned still reading there, or an ended one
+    # changed without ProcessLookupError (the watcher would write it down
+    # as refused), fails this test.
+    def test_a_process_is_lowered_and_returned_for_real(self):
+        sleeper = self.child("/bin/sleep", "60")
+        before = self.system.state(sleeper.pid)[1]
+        self.assertGreater(before, self.module.BACKGROUND_PRIORITY)
+        self.system.set_background(sleeper.pid, True)
+        self.assertEqual(self.system.state(sleeper.pid)[1], self.module.BACKGROUND_PRIORITY)
+        self.system.set_background(sleeper.pid, False)
+        self.assertEqual(self.system.state(sleeper.pid)[1], before)
+        finished = subprocess.Popen(["/usr/bin/true"])
+        finished.wait()
+        with self.assertRaises(ProcessLookupError):
+            self.system.set_background(finished.pid, True)
+        self.assertIsNone(self.system.state(finished.pid))
+
     # A process that has ended has no details: reading something for it
     # anyway (a reused buffer's last contents, say) fails this test.
     def test_an_ended_process_has_no_details(self):
@@ -2105,6 +2516,8 @@ class MacProcessesTests(unittest.TestCase):
             self.assertIn(os.getpid(), self.system.table())
             self.assertEqual(" ".join(self.system.arguments(os.getpid())), expected)
             self.assertIsNotNone(self.system.details(os.getpid()))
+            self.assertIsNotNone(self.system.state(os.getpid()))
+            self.system.set_background(os.getpid(), False)
             self.assertTrue(self.system.processor_ticks())
             watcher = self.module.Watch("NO-SUCH-SIMULATOR", out, True, self.system)
             watcher.sample()

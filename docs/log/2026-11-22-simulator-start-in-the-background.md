@@ -1,0 +1,260 @@
+# The simulator's start runs in the background, so GitHub's agent keeps in touch
+
+*2026-11-22. Pull request #132 (`claude/ci-start-in-background`).
+Claude, in a project thread, on the owner's Mac.*
+
+## What changed and why
+
+Nothing changes for a person using Brickson. For the people working on
+it: GitHub's Mac test jobs kept being cancelled with nothing in their log
+but "The operation was canceled.", and a second try was the only remedy.
+Pull request #131 caught why: GitHub's own agent on the machine (the
+runner program that holds the job's session with GitHub) had its
+requests time out, lost its session, and cancelled the job itself as it
+shut down ([`2026-11-21-github-agent-log.md`](2026-11-21-github-agent-log.md)).
+This pull request finds what starves the agent and keeps it from
+starving.
+
+`scripts/test.sh` now, on a simulator it starts itself:
+
+1. starts the simulator watcher (`scripts/simulator-load.py`) **before**
+   the simulator, so the record covers its first minutes, which it never
+   did (in the jobs that were cancelled, the watcher began 8 to 11
+   minutes after the boot, or never);
+2. as soon as `simctl boot` has succeeded, tells the watcher this run
+   started the simulator (the claim), and once `simctl bootstatus` says
+   the simulator has started, says that too, each by creating a file
+   with the shell alone, which the watcher reads every second; from the
+   claim the watcher pauses the wallpaper extensions, as before, and
+   from the start, or a minute after the claim if `bootstatus` has not
+   said so by then, it puts every process of the simulator in macOS's
+   **background band**, its `launchd_sim` first, and each new one within
+   a second;
+3. after the build (and, for UI tests, the warm-up launch), waits for the
+   Mac to settle, for the unit tests too now;
+4. returns every process of the simulator to normal priority, **checks
+   that it is there**, and writes the result into the record
+   (`restore`); if that cannot be confirmed, the run stops before its
+   first test and fails, saying why;
+5. tests, as before.
+
+Each line of the record now also says how much of a processor GitHub's
+agent got since the last line, at what priority, and how many of its
+threads were running or waiting; its first lines name the agent's two
+programs and their priority. Decision: docs/DECISIONS.md, "Tests",
+2026-11-22.
+
+### What starves the agent: the simulator's own start, not our work
+
+The brief was to cut what each job does at once in its
+first ten minutes: the build, the simulator's start, indexing and
+background work, parallel jobs. Measured first, before any change:
+
+**Seven self-cancelled jobs whose timeline could be read** (each job's
+own log, times in minutes after the simulator began to start):
+
+| Job | Run | Cancelled at | `bootstatus` began | Build at the cancel |
+| --- | --- | ---: | ---: | --- |
+| iPad, part 2 | 44808545851, 2026-11-20 | 10.3 | never | not started |
+| Unit tests (`main`) | 44902798573, 2026-11-21 | 11.0 | 2.7 | 6 seconds in |
+| Unit tests (#130) | 44904762672, attempt 1 | 8.1 | 2.3 | 12 seconds in |
+| Unit tests (#130) | 44904762672, attempt 2 | 8.4 | 2.5 | 18 seconds in |
+| iPad, part 1 (#131) | 44916610210, 2026-11-21 | 10.1 | 3.6 | not started |
+| iPad, part 1 (#131) | 44978309832, 2026-11-22 | 10.9 | 3.3 | not started |
+| iPad, part 3 (`main`) | 44987905703, 2026-11-22 | 9.3 | 1.4 | not started |
+
+In none of them had the build done anything. In the four UI jobs the
+only programs of ours that had started were `simctl bootstatus`, the
+watcher and, in one of them, the two `simctl spawn` keyboard settings,
+still unfinished six and a half minutes later. The three with an agent log (the
+last three rows) show the agent renewing its hold on the job every
+minute for the first three to four and a half minutes, then **no line
+at all for four to six minutes**, then requests "timed out after 100
+seconds" written minutes late, then "Runner session is invalid": the
+agent's own process was hardly running. Their loads were 752 to 861 on
+three processors. Even `simctl bootstatus`, a small program, took 1.3 to
+5.4 minutes to print its first line after the boot in 70 jobs of six
+recent runs, passed or not.
+
+**What the simulator's start costs**, measured on the owner's Mac (M4
+Pro, 14 processors, Xcode 27.2, a new iPad Pro 13-inch (M5) simulator
+on iOS 27.2, every process's processor time read every five seconds):
+
+- a first start: about 725 processor-seconds of work in 388 processes
+  within about two and a half minutes (on GitHub's three slower
+  processors, five to eight minutes of all of them); wallpaper
+  extensions 20%, widget extensions 9%, logging 7%, and 232 other
+  daemons and apps the rest;
+- a second start of the same simulator: about 417 processor-seconds,
+  the wallpaper extensions again among the busiest; so keeping a
+  started simulator between runs would remove less than half;
+- the device's folder after a first start: 2.8 GB.
+
+So no ordering or limit of our own steps can make the early load clearly
+lower: the load is iOS's, and it arrives within seconds of the boot.
+Neither does raising GitHub's agent with `nice`: on the owner's Mac a
+renice changed the task's priority but not the threads', which carry a
+quality-of-service class (and a program `launchctl` starts ran at 20,
+below a simulator's daemons at 31, whatever its nice value).
+
+### The fix: the start-up work yields
+
+macOS's background band (`setpriority` with `PRIO_DARWIN_PROCESS` and
+`PRIO_DARWIN_BG`, what `taskpolicy -b` sets) is the system's own way to
+say "run this only when nothing else wants to": a process in it runs,
+reads, writes and uses the network only when nothing outside it is
+waiting, so GitHub's agent, the build, `xcrun` and the watcher come
+first, and the start-up work still has every moment they leave. A
+process takes the band from the process it is started from, so with
+`launchd_sim` in it, every process the simulator starts later is in it
+from its first instruction (checked on the owner's Mac: Settings,
+launched under a lowered `launchd_sim`, ran at priority 4).
+
+iOS itself runs about two thirds of a started simulator's processes in
+that band already (on the owner's Mac, 131 of 201 after a start;
+`launchd_sim`, SpringBoard, backboardd, `diagnosticd`, `apsd` and
+`chronod` at 31). The heavy ones on GitHub's Macs, the widget
+extensions, `diagnosticd` and `apsd`, are among the rest. This adds them
+for the start-up only.
+
+**When it begins.** Held in the band from the boot itself, a first start
+on the owner's Mac had not finished after six minutes and 46 seconds,
+and finished two seconds after its return to normal priority (on Apple
+silicon the system runs background work on the efficiency cores when it
+can, here four of fourteen); at normal priority it takes 19 seconds
+there. In the captured jobs the agent kept in touch for the first three
+to four and a half minutes. So the band begins once `bootstatus` says
+the simulator has started, or a minute after the boot, whichever comes
+first: on GitHub's machines `bootstatus` itself began 1.3 to 5.4 minutes
+after the boot, too late in some jobs, so there the minute decides.
+
+**Why files, and not a command.** A first version told the watcher with
+a small command run once `bootstatus` had returned. In the seven jobs
+above, the program in that place (the old watcher's start) came up only
+7.9 to 10.9 minutes after the boot in five, never in a sixth, and at 2.5
+minutes in the seventh: a minute or less before the cancel, or never. A
+running program fares far better: the watcher, once going, wrote its
+lines five to nine seconds apart at a load of 850. So the script, which
+is running too, creates the two files with its own redirection (`: >`),
+starting nothing, and the watcher, started before the boot on a quiet
+Mac, looks for them every second.
+
+**The return is checked, not assumed** (a condition of this plan):
+`restore` first makes the watcher stop lowering and waits for it to say
+so (a watcher that does not answer within 15 seconds is
+stopped, so it can lower nothing after the return). It then returns
+`launchd_sim` and every process under it, in passes, until a pass finds
+no process it had not returned, so a process started during a pass is
+returned by the next; it reads `launchd_sim`, SpringBoard and backboardd
+back, which iOS never runs in the background, and writes what it found.
+Returning a process clears only the setting the watcher made: on the
+owner's Mac, twice, every one of a settled simulator's 209 processes
+read back at the priority it had before a lower-and-return round trip,
+and the real `restore` returned 234 processes of a lowered simulator in
+one pass and 0.2 seconds. If the return cannot be confirmed (no
+`launchd_sim`, a process that could not be returned, one of the three
+still in the band, or new processes still appearing after five passes),
+the run stops before its first test: on a throttled simulator the strict
+limits of the tests that prove a phrase speaks on the first activation
+could run out and read as the app's fault, while a failed job that says
+why is seen and run again. If the watcher stops first (a failed build,
+say), it returns what it lowered itself.
+
+**Unit tests now wait for the Mac to settle.** With the start-up held in
+the band until that wait ends, unit tests started before it would meet
+that work at full priority, and twelve of the twenty jobs cancelled this
+way since 2026-11-13 were "Unit tests". This reverses the 2026-11-19
+line "the unit tests do not wait" (docs/DECISIONS.md, "Tests").
+
+**What the gauge is.** The load average counts work in the band too, so
+it stays high while the simulator starts; the change is judged by no
+job cancelled by itself, by how soon the start-up work is lowered after
+the boot (the record's "put ... in the background" line, a minute at
+most), by how soon an ordinary program starts while the simulator does
+(`bootstatus`'s first line; the agent's share in the record), and by the
+record saying when the simulator was returned.
+
+**Not chosen.** Building before the simulator starts, or with fewer
+parallel tasks: none of the seven jobs had built. Telling the watcher
+with a command, or a signal sent by one: above. Keeping a started
+simulator between runs: a new action and a cache, for less than half the
+work. `nice` on GitHub's agent: no effect on its threads' priority.
+Stopping iOS's own background tasks: declined on 2026-11-19, as it
+changes the system the tests run on; this changes only when the
+start-up work runs, and it is undone, and checked, before any test.
+Lowering from the boot: far too slow on a Mac with efficiency cores
+(above).
+
+## What this pull request's CI runs showed
+
+*(Filled in after the runs.)*
+
+## Commits
+
+- The first commit: the watcher's lowering, its claim and start files
+  and `restore`, the agent's lines, the new order in `scripts/test.sh`,
+  their tests in
+  `scripts/test-runner.py`, these records, docs/DECISIONS.md,
+  docs/HANDOFF.md (with its state line) and `README.md`.
+
+## Verified
+
+- On the owner's Mac (macOS 27.2, Xcode 27.2, `/usr/bin/python3` 3.9):
+  `python3 scripts/test-runner.py`, 151 tests, OK, 13 of them new and
+  several changed; `test-docs`, `test-hooks`, `test-privacy`,
+  `test-forbidden-code`, `test-agent-bridge`, `test-site` and
+  `test-select-xcode`, all OK; `shellcheck scripts/test.sh` clean.
+- Each new test was seen to fail when its rule was broken on purpose:
+  lowering before the claim; lowering at the claim, before the start;
+  a ten-minute deadline; the claim or start file ignored; no claim after
+  the boot; no start file; the files left behind; tests after a failed
+  return; `launchd_sim` not first; `restore` without its confirming
+  pass; no read-back; the agent found by a looser name; no return when
+  the watcher stops first; lowering after `restore` asked it to stop; a
+  silent watcher left running; a refused process tried at every reading;
+  a newcomer lowered only at the next line.
+- The real commands on a real simulator, on the owner's Mac: the watcher
+  started before the boot, lowering (44 processes at once, then every
+  new one; the simulator ran at priority 4), and `restore` (above).
+- `scripts/test.sh unit` on the owner's Mac with Xcode 27.2, on an iPad
+  Pro 13-inch (M5) simulator, iOS 27.2, erased first so its start was a
+  first start, which the run started itself: 1112 tests ran, 1099
+  passed, none failed, 1 skipped, 12 expected failures; the String
+  Catalog was up to date. Its record: the watcher began before the boot
+  and was claimed a second later; the simulator had finished starting
+  17 seconds after that, at normal priority, when 206 of its processes
+  were lowered at once (214 in all); the Mac settled after 10 seconds;
+  and `restore` returned 211 processes in one pass with `launchd_sim`,
+  SpringBoard and backboardd at 31. (A run of the first version, on the
+  same simulator not erased, passed the same way.) This change touches
+  no app code.
+- `codex review --base origin/main` could not run in this session: its
+  permission to send the branch to Codex was refused, so the pull
+  request says so.
+
+## Not verified
+
+- Whether this ends the cancels: that is for CI (*What this pull
+  request's CI runs showed*), and one run cannot prove it.
+- How GitHub starts its agent, and so the priority its threads run at:
+  the record's first lines on CI say.
+- Whether a process GitHub's image or iOS puts in the band by the same
+  setting as this script would be returned by `restore` too: none was
+  seen on the owner's Mac (the round trips above), and iOS's own
+  background processes stayed in the band there.
+
+## Follow-ups
+
+- **After about twenty runs on `main`,** count the jobs cancelled by
+  themselves, and read the agent's lines in the records: a job cancelled
+  again, with the start-up in the band, means the agent starves on
+  something else (memory, say), and its `github-agent-log.txt` and the
+  record's agent lines are where to start *(the next thread on CI)*.
+- **The unit job's Python checks** (about nine minutes before the
+  simulator starts) could run while the simulator starts, which would
+  give back most of the unit job's new wait *(a later thread on CI
+  speed)*.
+- **Measure the wallpaper pausing again,** as 2026-11-19 asked: with the
+  start-up in the band, pausing may cost more (iOS starts new
+  extensions as they are paused) than it saves *(a later thread, one
+  change at a time)*.
