@@ -951,7 +951,7 @@ release in docs/ROADMAP.md when no thread has it yet.
   until the build is done, then takes that setting off every one of its
   processes, checked, and waits for the Mac to settle before the first
   test (docs/DECISIONS.md, "Tests", 2026-11-22). No job cancelled itself
-  in that pull request's three CI runs on its last code change, but
+  in that pull request's four CI runs on its last code change's scripts, but
   whether that ends the cancels needs about twenty runs on `main`. For a
   job cancelled by itself after it merges, first check that its
   simulator's record shows the start-up work was put in the background:

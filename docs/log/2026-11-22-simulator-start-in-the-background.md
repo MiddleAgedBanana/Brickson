@@ -168,8 +168,8 @@ returned to normal priority after the build, the rest of its start-up
 work would meet the unit tests at full priority, and twelve of the
 twenty jobs cancelled this way since 2026-11-13 were "Unit tests". This reverses the 2026-11-19
 line "the unit tests do not wait" (docs/DECISIONS.md, "Tests"). On this
-pull request's three runs on `c362cd0` the wait cost 3.4 to 5.5 minutes
-(*What this pull request's CI runs showed*).
+pull request's four runs on `c362cd0`'s scripts the wait cost 2.8 to 5.5
+minutes (*What this pull request's CI runs showed*).
 
 **What the gauge is.** The load average leaves out work in the band, so
 it reads low while the lowered simulator starts and cannot judge the
@@ -280,10 +280,22 @@ the same three at 31. Job times: iPad 30.9, 16.4 and 27.1 minutes;
 iPhone 31.9, 25.5 and 30.3; "Unit tests" 41.9 (its build-and-test step
 39.3). iPad part 1 and the unit job waited for a machine first.
 
-**What the three runs on `c362cd0` show.** None of their 21 Mac jobs
-cancelled itself. The wait before the unit tests cost 3.4, 5.5 and 5.3
-minutes, about 4.7 on average, and each time it ended with the load
-under 150 after iOS's post-boot work had peaked at 270 to 657.
+**The sixth run** (45047986690, on `747a4d0`, which changed only these
+records, so its scripts were `c362cd0`'s): **green, and no job cancelled
+itself**. In the unit job the load was 155 when the wait began and 238 a
+minute later, and the record reads "The Mac settled after 2 min 45 s:
+load 136", so the wait cost about 2.8 minutes. The return: 250 processes
+in one pass, the same three at 31. `bootstatus` waited on Data Migration
+for four minutes and then printed "Data Migration Failed"; the simulator
+still started and every test passed. Job times: iPad 32, 26 and 34
+minutes; iPhone 37, 27 and 23; "Unit tests" 45.1 (its build-and-test
+step 42.4). iPhone part 2 and the unit job waited for a machine first.
+
+**What the four runs on `c362cd0`'s scripts show.** None of their 28 Mac
+jobs cancelled itself. The wait before the unit tests cost 3.4, 5.5, 5.3
+and 2.8 minutes, about 4.2 on average, and each time it ended with the
+load under 150 after iOS's post-boot work had raised it to between 238
+and 657.
 
 ## Commits
 
@@ -350,10 +362,10 @@ under 150 after iOS's post-boot work had peaked at 270 to 657.
 
 ## Not verified
 
-- Whether this ends the cancels. No job cancelled itself in the three
-  runs on `c362cd0` (*What this pull request's CI runs showed*), but
-  three runs cannot prove it: about twenty runs on `main` decide it
-  (*Follow-ups*).
+- Whether this ends the cancels. No job cancelled itself in the four
+  runs on `c362cd0`'s scripts (*What this pull request's CI runs
+  showed*), but four runs cannot prove it: about twenty runs on `main`
+  decide it (*Follow-ups*).
 - How GitHub starts its agent, and so the priority its threads run at:
   the record's first lines on CI say.
 - Whether a process GitHub's image or iOS puts in the band by the same
