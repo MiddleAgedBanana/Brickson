@@ -15,8 +15,15 @@ final class SettingsActivity {
         clock = SettingsIdleClock(limit: limit, startedAt: .now)
     }
 
+    /// A control was used, a screen opened or closed, or a screen scrolled.
     func recordActivity() {
         clock.recordActivity(at: .now)
+    }
+
+    /// Brickson became active again: the full wait starts again, and
+    /// nothing in Settings changed.
+    func restartWait() {
+        clock.restartWait(at: .now)
     }
 
     func setHold(_ hold: SettingsIdleHold, _ isHeld: Bool) {
@@ -73,12 +80,24 @@ private struct SettingsScrollActivityModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .onScrollPhaseChange { _, phase in
+            .onScrollPhaseChange { old, phase in
+                guard SettingsScrollUse.counts(from: old, to: phase) else { return }
                 activity?.recordActivity()
-                activity?.setHold(.scrolling(id), phase != .idle)
+                activity?.setHold(.scrolling(id), phase.isScrolling)
             }
             .onDisappear {
                 activity?.setHold(.scrolling(id), false)
             }
+    }
+}
+
+/// Which scroll phase changes count as use (`recordsSettingsScrolling()`).
+nonisolated enum SettingsScrollUse {
+    /// A change into, out of or within scrolling. A scroll view that
+    /// appears reports a change from idle to idle, which is not a scroll:
+    /// counted, it made every screen that appeared look used, the first
+    /// screen rebuilt by a reset among them.
+    static func counts(from old: ScrollPhase, to new: ScrollPhase) -> Bool {
+        old.isScrolling || new.isScrolling
     }
 }

@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 import Testing
 @testable import Brickson
 
@@ -8,16 +9,76 @@ import Testing
 struct SettingsIdleClockTests {
     private let start = ContinuousClock.now
 
-    @Test func settingsResetsAfterNinetySecondsWithNothingUsed() {
+    /// A Settings nobody has used since it opened is already what a reset
+    /// would leave, so it never resets: each reset rebuilds every screen,
+    /// and an activation that lands while they are replaced does nothing
+    /// (docs/log/2026-11-22-settings-reset-only-after-use.md). Fails if an
+    /// untouched clock has a deadline again.
+    @Test func anUntouchedSettingsNeverResets() {
         let clock = SettingsIdleClock(startedAt: start)
+
+        #expect(clock.deadline == nil)
+        #expect(!clock.isDue(at: start + .seconds(90)))
+        #expect(!clock.isDue(at: start + .seconds(3600)))
+    }
+
+    /// Settings opened, a screen was opened, then nothing for 90 seconds.
+    private func usedAtStart(limit: Duration = SettingsIdleClock.standardLimit) -> SettingsIdleClock {
+        var clock = SettingsIdleClock(limit: limit, startedAt: start)
+        clock.recordActivity(at: start)
+        return clock
+    }
+
+    @Test func settingsResetsNinetySecondsAfterItWasLastUsed() {
+        let clock = usedAtStart()
 
         #expect(SettingsIdleClock.standardLimit == .seconds(90))
         #expect(!clock.isDue(at: start + .seconds(89.9)))
         #expect(clock.isDue(at: start + .seconds(90)))
     }
 
-    @Test func anyActivityStartsTheWaitAgain() {
+    /// After a reset Settings is as it opened, so it waits for use before
+    /// the next one. Fails if a reset leaves the clock counting down again:
+    /// the first screen would then rebuild itself at every limit.
+    @Test func aResetWaitsForUseBeforeTheNextOne() {
+        var clock = usedAtStart()
+        clock.didReset(at: start + .seconds(90))
+
+        #expect(clock.deadline == nil)
+        #expect(!clock.isDue(at: start + .seconds(3600)))
+
+        clock.recordActivity(at: start + .seconds(4000))
+        #expect(!clock.isDue(at: start + .seconds(4089)))
+        #expect(clock.isDue(at: start + .seconds(4090)))
+    }
+
+    /// Coming back to Brickson starts the full wait again, as before, but
+    /// is not use: an untouched Settings stays untouched. Fails if
+    /// `restartWait` counts as use, or stops moving the deadline.
+    @Test func comingBackToBricksonRestartsTheWaitWithoutBeingUse() {
+        var untouched = SettingsIdleClock(startedAt: start)
+        untouched.restartWait(at: start + .seconds(50))
+        #expect(untouched.deadline == nil)
+
+        var used = usedAtStart()
+        used.restartWait(at: start + .seconds(80))
+        #expect(!used.isDue(at: start + .seconds(169)))
+        #expect(used.isDue(at: start + .seconds(170)))
+    }
+
+    /// A hold that ends on an untouched Settings (the alarm, sounding from
+    /// Home as it opened, say) changes nothing on its screens, so it is not
+    /// use either.
+    @Test func aHoldEndingOnAnUntouchedSettingsIsNotUse() {
         var clock = SettingsIdleClock(startedAt: start)
+        clock.setHold(.alarm, true, at: start)
+        clock.setHold(.alarm, false, at: start + .seconds(10))
+
+        #expect(clock.deadline == nil)
+    }
+
+    @Test func anyActivityStartsTheWaitAgain() {
+        var clock = usedAtStart()
         clock.recordActivity(at: start + .seconds(80))
 
         #expect(!clock.isDue(at: start + .seconds(169)))
@@ -27,7 +88,7 @@ struct SettingsIdleClockTests {
     /// Activity reported out of order (a late scroll callback) must not pull
     /// the deadline earlier.
     @Test func olderActivityNeverBringsTheResetForward() {
-        var clock = SettingsIdleClock(startedAt: start)
+        var clock = usedAtStart()
         clock.recordActivity(at: start + .seconds(60))
         clock.recordActivity(at: start + .seconds(10))
 
@@ -35,7 +96,7 @@ struct SettingsIdleClockTests {
     }
 
     @Test func aHoldStopsTheResetForAsLongAsItLasts() {
-        var clock = SettingsIdleClock(startedAt: start)
+        var clock = usedAtStart()
         clock.setHold(.alarm, true, at: start + .seconds(5))
 
         #expect(clock.deadline == nil)
@@ -45,7 +106,7 @@ struct SettingsIdleClockTests {
     /// One long drag holds the reset for as long as it lasts, and the full
     /// wait starts again when the scroll comes to rest.
     @Test func aScrollHoldsTheResetHoweverLongItLasts() {
-        var clock = SettingsIdleClock(limit: .seconds(90), startedAt: start)
+        var clock = usedAtStart(limit: .seconds(90))
         let scroll = UUID()
         clock.setHold(.scrolling(scroll), true, at: start + .seconds(5))
 
@@ -58,7 +119,7 @@ struct SettingsIdleClockTests {
     /// When a task ends, the family gets the whole wait again rather than a
     /// reset the instant the web page or the alarm closes.
     @Test func endingTheLastHoldRestartsTheFullWait() {
-        var clock = SettingsIdleClock(startedAt: start)
+        var clock = usedAtStart()
         clock.setHold(.webPage, true, at: start)
         clock.setHold(.alarm, true, at: start + .seconds(10))
         clock.setHold(.webPage, false, at: start + .seconds(200))
@@ -73,7 +134,7 @@ struct SettingsIdleClockTests {
     /// Releasing a hold that was never taken is not activity: a screen that
     /// reports "not busy" as it appears must not keep Settings from resetting.
     @Test func releasingAHoldThatWasNotHeldChangesNothing() {
-        var clock = SettingsIdleClock(startedAt: start)
+        var clock = usedAtStart()
         clock.setHold(.screen(UUID()), false, at: start + .seconds(85))
 
         #expect(clock.isDue(at: start + .seconds(90)))
@@ -90,25 +151,38 @@ struct SettingsIdleClockTests {
         #expect(clock.isHeld)
     }
 
-    @Test func aResetStartsTheNextWait() {
-        var clock = SettingsIdleClock(startedAt: start)
+    @Test func aResetStartsTheNextWaitFromUseAfterIt() {
+        var clock = usedAtStart()
         clock.didReset(at: start + .seconds(90))
+        clock.recordActivity(at: start + .seconds(91))
 
-        #expect(clock.deadline == start + .seconds(180))
+        #expect(clock.deadline == start + .seconds(181))
     }
 
     @Test func aShortLimitIsHonoured() {
-        let clock = SettingsIdleClock(limit: .seconds(3), startedAt: start)
+        let clock = usedAtStart(limit: .seconds(3))
 
         #expect(clock.isDue(at: start + .seconds(3)))
     }
 
+    /// The live side: an untouched Settings never resets, a used one does,
+    /// and is untouched again after. Fails if `SettingsActivity` resets
+    /// without use, or if `restartWait` counts as use.
     @Test func settingsActivityTracksResetCountAndHolds() {
         let activity = SettingsActivity(limit: .zero)
         #expect(activity.resetCount == 0)
+        #expect(!activity.resetIfDue(), "nothing was used")
+        activity.restartWait()
+        #expect(!activity.resetIfDue(), "coming back to Brickson is not use")
+        #expect(activity.resetCount == 0)
+
+        activity.recordActivity()
         #expect(activity.resetIfDue())
         #expect(activity.resetCount == 1)
+        #expect(!activity.resetIfDue(), "a reset leaves Settings untouched")
+        #expect(activity.resetCount == 1)
 
+        activity.recordActivity()
         activity.setHold(.alarm, true)
         #expect(activity.clock.isHeld)
         #expect(!activity.resetIfDue())
@@ -119,6 +193,19 @@ struct SettingsIdleClockTests {
         activity.recordActivity()
         #expect(activity.resetIfDue())
         #expect(activity.resetCount == 2)
+    }
+
+    /// A scroll view reports a change from idle to idle as it appears;
+    /// that is not a scroll. Fails if it counts: every screen that appears,
+    /// the first screen rebuilt by a reset among them, would look used, and
+    /// an untouched Settings would reset at every limit again.
+    @Test func aScrollViewAppearingIsNotAScroll() {
+        #expect(!SettingsScrollUse.counts(from: .idle, to: .idle))
+        #expect(SettingsScrollUse.counts(from: .idle, to: .tracking))
+        #expect(SettingsScrollUse.counts(from: .idle, to: .interacting))
+        #expect(SettingsScrollUse.counts(from: .interacting, to: .decelerating))
+        #expect(SettingsScrollUse.counts(from: .decelerating, to: .idle))
+        #expect(SettingsScrollUse.counts(from: .animating, to: .idle))
     }
 
     /// Fails if a step is lost, moved or numbered wrongly: the rest
