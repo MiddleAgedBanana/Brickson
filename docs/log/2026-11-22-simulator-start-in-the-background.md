@@ -1,7 +1,8 @@
 # The simulator's start runs in the background, so GitHub's agent keeps in touch
 
 *2026-11-22. Pull request #132 (`claude/ci-start-in-background`).
-Claude, in a project thread, on the owner's Mac.*
+Claude, in a project thread, on the owner's Mac; the CI results from the
+third commit's runs on were added by Claude in a cloud thread.*
 
 ## What changed and why
 
@@ -166,7 +167,9 @@ say), it returns what it lowered itself.
 returned to normal priority after the build, the rest of its start-up
 work would meet the unit tests at full priority, and twelve of the
 twenty jobs cancelled this way since 2026-11-13 were "Unit tests". This reverses the 2026-11-19
-line "the unit tests do not wait" (docs/DECISIONS.md, "Tests").
+line "the unit tests do not wait" (docs/DECISIONS.md, "Tests"). On this
+pull request's three runs on `c362cd0` the wait cost 3.4 to 5.5 minutes
+(*What this pull request's CI runs showed*).
 
 **What the gauge is.** The load average counts work in the band too, so
 it stays high while the simulator starts; the change is judged by no
@@ -240,7 +243,47 @@ the rest of the start-up work is then counted in the load, and the tests
 start after it. Job times on this run: iPad 32.8, 23.6 and 25.6 minutes;
 iPhone 32.0, 25.8 and 26.3.
 
-*(The third commit's run, and the two runs on the same commit, follow.)*
+**The third run** (45028192794, on `c362cd0`): **green, and no job
+cancelled itself**; the step that keeps GitHub's agent log after a
+cancel was skipped in every job. The return now comes before the wait,
+and the wait waited: in the unit job the load was 134 when the wait
+began, iOS's post-boot work took it to 270 during the wait, and the
+record reads "the Mac settled after 205 s: load 119.6", so the wait cost
+about 3.4 minutes. After it the unit job's load stayed at or under 120
+for its tests, fell to about 20 within nine minutes and ended at 8 to
+14 (527 on `e47b8d9`'s run). The return: 165 processes in three
+passes, `launchd_sim`, SpringBoard and backboardd at 31. Job times: iPad
+35.0, 23.1 and 37.3 minutes; iPhone 17.2, 25.8 and 25.3; "Unit tests"
+28.2 (its build-and-test step 26.5). Two of the seven Mac jobs (iPad
+part 2 and the unit job) waited for a machine first, as they do when a
+run has more jobs than GitHub gives it at once.
+
+**The fourth run** (45033062240, started by hand on `c362cd0`):
+**green, and no job cancelled itself**. The wait cost more this time: in
+the unit job the load was 146 when the wait began, iOS's post-boot work
+took it to 657 during the wait, and the record reads "the Mac settled
+after 330 s: load 123.3", so the wait cost about 5.5 minutes. After it
+the load fell to about 20 within three minutes and ended at 16 to 24.
+The return: 162 processes in two passes, the same three at 31. Job
+times: iPad 31.6, 29.4 and 28.3 minutes; iPhone 29.7, 31.6 and 15.3;
+"Unit tests" 35.0 (its build-and-test step 32.8). iPad part 3 and the
+unit job waited for a machine first.
+
+**The fifth run** (45040621441, started by hand on `c362cd0` after the
+fourth ended): **green, and no job cancelled itself**. In the unit job
+the load was 166 when the wait began, iOS's post-boot work took it to
+391 during the wait, and the record reads "the Mac settled after 315 s:
+load 127.4", so the wait cost about 5.3 minutes. After it the load rose
+once to 163, fell under 50 within five minutes and stayed between 20
+and 84 while the tests ran. The return: 160 processes in four passes,
+the same three at 31. Job times: iPad 30.9, 16.4 and 27.1 minutes;
+iPhone 31.9, 25.5 and 30.3; "Unit tests" 41.9 (its build-and-test step
+39.3). iPad part 1 and the unit job waited for a machine first.
+
+**What the three runs on `c362cd0` show.** None of their 21 Mac jobs
+cancelled itself. The wait before the unit tests cost 3.4, 5.5 and 5.3
+minutes, about 4.7 on average, and each time it ended with the load
+under 150 after iOS's post-boot work had peaked at 270 to 657.
 
 ## Commits
 
@@ -258,7 +301,7 @@ iPhone 32.0, 25.8 and 26.3.
   again), and a watcher that stops first returns every process now under
   the simulator, not only the ones it lowered; and a test the first
   commit dropped by mistake is back.
-- The next commit: from the second CI run, the return to normal priority
+- `c362cd0`: from the second CI run, the return to normal priority
   comes before the wait to settle, which reads the plain load again; the
   lowered-thread count is removed (CodeRabbit's review of `e47b8d9` also
   found it counted the simulator twice when the watcher had not
@@ -307,8 +350,10 @@ iPhone 32.0, 25.8 and 26.3.
 
 ## Not verified
 
-- Whether this ends the cancels: that is for CI (*What this pull
-  request's CI runs showed*), and one run cannot prove it.
+- Whether this ends the cancels. No job cancelled itself in the three
+  runs on `c362cd0` (*What this pull request's CI runs showed*), but
+  three runs cannot prove it: about twenty runs on `main` decide it
+  (*Follow-ups*).
 - How GitHub starts its agent, and so the priority its threads run at:
   the record's first lines on CI say.
 - Whether a process GitHub's image or iOS puts in the band by the same

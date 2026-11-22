@@ -950,8 +950,10 @@ release in docs/ROADMAP.md when no thread has it yet.
   the simulator has started (a minute after its boot at the latest)
   until the build is done, then returns every process to normal
   priority, checked, and waits for the Mac to settle before the first
-  test (docs/DECISIONS.md, "Tests", 2026-11-22). Whether that ends the cancels
-  is measured on that pull request's runs only; a job cancelled by itself
+  test (docs/DECISIONS.md, "Tests", 2026-11-22). No job cancelled itself
+  in that pull request's three CI runs on its last code change, but
+  whether that ends the cancels needs about twenty runs on `main`; a job
+  cancelled by itself
   after it merges means the agent starves on something else, and its
   `github-agent-log.txt` and the agent's lines in the simulator's record
   are where to start. Until then, a second try of such a job is the

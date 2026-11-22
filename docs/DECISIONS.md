@@ -6335,8 +6335,9 @@ request merges only when they pass.
   the tests (loads of 203 to 454). Adding the lowered simulator's
   threads running or waiting to the load, tried on the second run, did
   not hold the wait either (14 to 35 of them at the wait, and loads up
-  to 388 in the tests): work held in the band also waits on the disk
-  and the network, which a count of runnable threads does not see. With
+  to 419 in the UI jobs' tests and 527 in the unit job's): work held in
+  the band also waits on the disk and the network, which a count of
+  runnable threads does not see. With
   the return first, the wait reads the load as it was calibrated on
   2026-11-19, with the rest of the start-up work counted in it. A watcher that has not begun when the return
   comes is ended (it would lower the simulator once it began), and one
