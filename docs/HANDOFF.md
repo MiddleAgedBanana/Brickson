@@ -740,7 +740,10 @@ release in docs/ROADMAP.md when no thread has it yet.
   had, so nothing looks different (docs/DECISIONS.md, "Colour tokens in
   four appearances"). What the measurements leave for the owner's design
   of the app's look, which chooses new values, each a named known issue in
-  `PaletteTests` that fails loudly when its value is fixed:
+  `PaletteTests` that fails loudly when its value is fixed (the design
+  review sheet shows every token, shape and control in each appearance on
+  an iPhone and an iPad, measured from the pixels: `scripts/design-review/`,
+  docs/DECISIONS.md, "A design review sheet in debug builds"):
   - **Fills that look alike** (`theFillsTellApartInEveryVision`, CIEDE2000
     under 15, in all four appearances): Emergency `#C8161E` and Get
     Attention `#B45309` are 2.7 apart for deuteranopia, 9.9 for

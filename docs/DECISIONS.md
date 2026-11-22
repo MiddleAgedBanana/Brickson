@@ -7107,6 +7107,76 @@ station answers.
   owner chooses whether the probe is removed or kept to run them again after a new
   iOS.
 
+## A design review sheet in debug builds
+
+*2026-11-19. Default, under the owner's standing word of 2026-11-15 that
+objective engineering is the threads' to decide; reversible. Nothing a
+person sees changed: the sheet is in debug builds only.*
+
+The app's new design will be judged from a picture of every visual
+building block on `main`, drawn by the app itself in each appearance the
+system offers, and the owner will pick colours from it by eye. So the
+picture must be real renders, never a drawing of them, and every contrast
+it prints must be measured from those renders.
+
+- **Where.** A screen in the `Brickson` target that only debug builds
+  compile, `DesignReviewScreen` (`Brickson/DesignReview/`), opened by the
+  launch argument `--screen=design-review` in place of Home, as the
+  keyboard probe is (`--screen=keyboard-probe`). A release build has no
+  such screen and reads no launch argument (`LaunchOptions`). Not the
+  experiments' probe app: the sheet must draw with Brickson's own
+  `Palette`, `HomeButtonStyle`, `FittedLabel`, `settingsRowStyle` and
+  `CornerRule` shapes, which the probe does not compile.
+- **What it shows.** Built from the app's own lists, so a token or step
+  added to them shows up (`DesignReviewTests` fails if the catalogue's
+  own list of roles leaves out a fill, and the capture script refuses a
+  sheet that never showed one of the specimens it expects): every fill in
+  `Palette.fills` with `Palette.fillLabel`
+  on it, primary ink on the screen at the message's and the status line's
+  sizes, every step of `Spacing.steps`, the three kinds of corner of
+  *Concentric corners*, Home's controls in each fill on, selected, off
+  and pressed, two phrase tiles and Settings' rows on and off.
+- **An exception, the owner's to accept: the sheet's words are English
+  only, `Text(verbatim:)`, outside the String Catalog** (AGENTS.md,
+  *Workflow rules*: words people see go through it). Only the person
+  reviewing the design reads them, in a debug build, as only the person
+  running an experiment reads the probe app's (*A probe app for the
+  experiments, kept out of Brickson*, whose English-only words the owner
+  accepted on 2026-11-15); in the catalog they would be strings to
+  translate and ship in every release for a screen no release has. The
+  owner's merge of the pull request that adds the sheet accepts it;
+  declining it means the sheet's words go through the catalog.
+- **Appearances come from the system, never from the app.** The sheet
+  writes no setting into the environment (*Guards for Apple's look*) and
+  sets no colour scheme. A script on the Mac (`scripts/design-review/`)
+  sets each appearance on the simulator: Apple's `xcrun devicectl device
+  settings appearance` for light and dark, Increase Contrast, Reduce
+  Transparency, Show Borders and the text size, and the simulator's
+  accessibility defaults for Bold Text and Differentiate Without Colour,
+  which devicectl does not offer. The sheet prints the settings the app
+  received at its top, and the script refuses a capture whose line does
+  not name the appearance it set, so "nothing changed" can never be a
+  setting that did not arrive. An inactive window is a real one: an iPad
+  in Windowed Apps with another app's window in front.
+- **Measured from the pixels.** The script reads each specimen's frame
+  from the accessibility tree and measures its fill, words, edge and the
+  screen around it in the screenshot, converted to sRGB, with WCAG 2's
+  formula as `PaletteTests` uses it (`ReviewPixels.swift`, tested in
+  `ReviewPixelsTests`). The sheet itself prints no ratio: a colour the
+  system changes after the token is read, as it once did to
+  `Color.accentColor` (*Colour tokens in four appearances*), shows up only
+  in the pixels. A pressed control is pressed for real, with a touch held
+  while the screenshot is taken.
+- **Side by side.** The script crops each specimen at its own pixels, never
+  scaled, and lays one column for each appearance with the measured ratios
+  under each crop, plus Home, Home while typing (Apple's keyboard),
+  Home with the alarm sounding and Settings in each appearance.
+- **Not in CI.** It needs AXe, `devicectl` and simulators whose settings it
+  changes, so it runs on the Mac when the design changes. Its unit tests
+  (`DesignReviewTests`, `ReviewPixelsTests`) run in CI with the rest; the
+  script's own checks run by hand (`python3 -I
+  scripts/design-review/test_review.py`).
+
 ## Reviews, updates and GitHub settings
 
 *2026-10-10. Default; the owner applies the settings in GitHub, so check
