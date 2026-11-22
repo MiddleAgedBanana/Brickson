@@ -171,9 +171,9 @@ line "the unit tests do not wait" (docs/DECISIONS.md, "Tests"). On this
 pull request's three runs on `c362cd0` the wait cost 3.4 to 5.5 minutes
 (*What this pull request's CI runs showed*).
 
-**What the gauge is.** The load average counts work in the band too, so
-it stays high while the simulator starts; the change is judged by no
-job cancelled by itself, by how soon the start-up work is lowered after
+**What the gauge is.** The load average leaves out work in the band, so
+it reads low while the lowered simulator starts and cannot judge the
+change; the change is judged by no job cancelled by itself, by how soon the start-up work is lowered after
 the boot (the record's "put ... in the background" line, a minute at
 most), by how soon an ordinary program starts while the simulator does
 (`bootstatus`'s first line; the agent's share in the record), and by the

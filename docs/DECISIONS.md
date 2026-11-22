@@ -6311,9 +6311,9 @@ request merges only when they pass.
   started once `bootstatus` returned came up only 7.9 to 10.9 minutes
   after the boot in five of seven and never in a sixth, while the
   watcher, once running, wrote its lines five to nine seconds apart at a
-  load of 850. The load average still counts work in the band, so the
-  fix is judged by no job cancelled by itself, by how soon the start-up work is
-  lowered after the boot (a minute at most), by how soon an ordinary
+  load of 850. While the start-up work is lowered, the load average does
+  not see it (below), so the fix is judged by no job cancelled by itself,
+  by how soon the start-up work is lowered after the boot (a minute at most), by how soon an ordinary
   program starts during the start-up (in 70 jobs before, `simctl bootstatus`
   printed its first line 1.3 to 5.4 minutes after the boot, and the
   watcher began up to eleven minutes after it), and by the record, which
