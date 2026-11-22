@@ -6328,6 +6328,19 @@ request merges only when they pass.
   runs in the background. Returning a process clears only the setting the
   script made: on the owner's Mac a round trip left every one of a
   settled simulator's 209 processes at the priority it had before.
+  The load average leaves threads in the background band out, so on a
+  lowered simulator the wait to settle adds the simulator's threads
+  running or waiting for a processor, averaged over a minute as the load
+  is: without it, on pull request #132's first CI run, every wait ended
+  on its first readings and the start-up work ran during the tests, back
+  at normal priority. That count includes iOS's own background threads,
+  which the load always left out, so the wait is if anything stricter
+  than on 2026-11-19. A watcher that has not begun when the return
+  comes is ended (it would lower the simulator once it began), and one
+  that does not answer is asked to stop before it is killed. The same
+  run showed GitHub's agent at priority 20, the utility band, below the
+  simulator's daemons at 31: before this change the start-up work
+  outranked it.
   **When the return cannot be confirmed, the run stops before its first
   test and fails,** saying what it found in the log and the record.
   Chosen over testing anyway with a warning: on a throttled simulator the

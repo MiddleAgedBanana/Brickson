@@ -89,7 +89,10 @@ after --limit seconds (twenty minutes unless given), saying which in the
 log and in the record. It only waits: it never fails a run, and a Mac
 that does not settle is tested anyway, with a warning. The load is the
 one-minute average of tasks running or waiting for a processor
-(os.getloadavg), the "load" of each of the record's lines.
+(os.getloadavg), the "load" of each of the record's lines. It leaves out
+tasks in the background band, so with --udid, on a simulator held there
+(below), each reading adds the simulator's own threads running or
+waiting, averaged over a minute in the same way.
 
 The simulator's start in the background. GitHub cancelled Mac test jobs
 by itself 8.5 to 13 minutes after their simulator began to start: its
@@ -144,6 +147,7 @@ the agent's credentials.
 import argparse
 import ctypes
 import json
+import math
 import os
 import re
 import signal
@@ -603,7 +607,16 @@ class Watch:
         if not self.lowering or not self.lowered:
             return
         self.lowering = False
-        ordered = ([self.root] if self.root in self.lowered else []) + sorted(self.lowered - {self.root})
+        # Everything running under the simulator now, its launchd_sim
+        # first, since a process started after the last reading took the
+        # band from its parent; then any recorded one not under it.
+        try:
+            table = self.system.table()
+            root = self.simulator_root(table)
+        except OSError:
+            root = None
+        current = root_first(root, descendants(root, table)) if root is not None else []
+        ordered = current + sorted(self.lowered - set(current))
         returned = 0
         for pid in ordered:
             try:
@@ -614,8 +627,9 @@ class Watch:
                 self.write(f"could not return process {pid} to normal priority: {error}")
                 continue
             returned += 1
-        self.write(f"Returned {returned} of the {len(self.lowered)} processes it had put in the "
-                   "background to normal priority, as the watcher stopped before the tests.")
+        self.write(f"Returned {returned} of the simulator's processes to normal priority (it had "
+                   f"put {len(self.lowered)} in the background), as the watcher stopped before "
+                   "the tests.")
 
     def agent_field(self, table, now):
         """GitHub's agent's listener: its share of a processor since the
@@ -950,46 +964,100 @@ def add_to_record(path, line):
         print(f"warning: could not write to {path}: {error}", file=sys.stderr)
 
 
+def simulator_waiting(system, udid):
+    """A function that counts the simulator's threads running or waiting
+    for a processor now, or raises OSError; it reads launchd_sim's
+    arguments again only once that launchd_sim has gone."""
+    found = [None]
+
+    def count():
+        table = system.table()
+        if not (found[0] in table and table[found[0]][2] == LAUNCHD_SIM):
+            found[0] = find_root(system, table, udid)
+        if found[0] is None:
+            return 0
+        total = 0
+        for pid in descendants(found[0], table):
+            state = system.state(pid)
+            if state is not None:
+                total += state[2]
+        return total
+    return count
+
+
 def settle(arguments, load=one_minute_load, processors=os.cpu_count, clock=time.monotonic,
-           sleep=time.sleep):
+           sleep=time.sleep, waiting=None):
     """Waits until the Mac has settled (the module's description says
     what that is and why), or until the limit, and says which in the log
     and in the record. Its status is 0 however the wait ends: the tests
-    run either way."""
+    run either way.
+
+    With --udid, the simulator is held in the background band while it
+    waits, and the Mac's load leaves out threads in that band: on pull
+    request #132's first CI run the load fell to 21 to 90 while the
+    simulator was lowered, every wait ended on its first readings, and
+    the start-up work, returned to normal priority, then ran during the
+    tests at loads up to 454. So each reading adds the simulator's
+    threads running or waiting for a processor, averaged over a minute as
+    the load is (an exponential average, five seconds a reading), to the
+    load. That counts iOS's own background threads too, which the load
+    always left out, so the wait is if anything longer than before."""
     count = processors() or 1
     wanted = SETTLED_LOAD * count
+    udid = getattr(arguments, "udid", None)
+    if waiting is None and udid:
+        system = (ProcessFile(arguments.processes) if getattr(arguments, "processes", None)
+                  else MacProcesses())
+        waiting = simulator_waiting(system, udid)
+    decay = math.exp(-INTERVAL / 60.0)
 
     def note(line):
         add_to_record(arguments.out, line)
 
     began = said = clock()
-    under, first = 0, True
+    under, first, average = 0, True, None
     while True:
         try:
-            reading = load()
+            reading = mac = load()
         except OSError as error:
             print(f"warning: the Mac's load could not be read ({error}), so the tests start "
                   "without waiting for it to settle.", file=sys.stderr)
             note(f"the Mac's load could not be read ({error}); the tests run without the wait")
             break
+        detail = ""
+        if waiting is not None:
+            try:
+                threads = waiting()
+            except OSError as error:
+                print(f"warning: the simulator's threads in the background could not be counted "
+                      f"({error}), so the wait reads the Mac's load alone.", file=sys.stderr)
+                note(f"the simulator's threads in the background could not be counted ({error}); "
+                     "the wait reads the load alone")
+                waiting = None
+            else:
+                average = threads if average is None else average * decay + threads * (1 - decay)
+                reading = mac + average
+                detail = f" (the Mac's {mac:.1f} and {average:.1f} of the simulator's threads in the background)"
         now = clock()
         waited = now - began
         if first:
             first = False
-            print(f"Waiting for the Mac to settle before the tests: its load is {reading:.0f}, and "
-                  f"they start once it has stayed under {wanted:.0f} ({SETTLED_LOAD:.0f} for each "
-                  f"of its {count} processors), or after {spell(arguments.limit)}.", flush=True)
-            note(f"waiting for the Mac to settle before the tests: load {reading:.1f}, "
+            print(f"Waiting for the Mac to settle before the tests: its load is {reading:.0f}"
+                  + (", counting the simulator's threads in the background" if detail else "")
+                  + f", and they start once it has stayed under {wanted:.0f} ({SETTLED_LOAD:.0f} "
+                  f"for each of its {count} processors), or after {spell(arguments.limit)}.",
+                  flush=True)
+            note(f"waiting for the Mac to settle before the tests: load {reading:.1f}{detail}, "
                  f"wanted under {wanted:.0f}")
         under = under + 1 if reading < wanted else 0
         if under >= SETTLED_READINGS:
             print(f"The Mac settled after {spell(waited)}: load {reading:.0f}.", flush=True)
-            note(f"the Mac settled after {waited:.0f} s: load {reading:.1f}")
+            note(f"the Mac settled after {waited:.0f} s: load {reading:.1f}{detail}")
             break
         if waited >= arguments.limit:
             print(f"warning: the Mac had not settled after {spell(waited)} (load {reading:.0f}, "
                   f"wanted under {wanted:.0f}); the tests run anyway.", file=sys.stderr)
-            note(f"the Mac had not settled after {waited:.0f} s: load {reading:.1f}; "
+            note(f"the Mac had not settled after {waited:.0f} s: load {reading:.1f}{detail}; "
                  "the tests run anyway")
             break
         if now - said >= SETTLE_SAYS:
@@ -1026,22 +1094,45 @@ def restore(arguments, system=None, wait=WAIT, is_alive=alive, kill=os.kill):
         add_to_record(arguments.out, line)
 
     pid = arguments.pid
-    if pid is not None and began(record_lines(arguments.out)) and is_alive(pid):
+
+    def end_watcher(why):
+        """Ends the watcher, so it can put nothing in the background after
+        the processes are returned: asked first, so it lets the wallpaper
+        extensions it paused run again and says "Stopped.", then killed if
+        it does not."""
         try:
-            kill(pid, signal.SIGUSR1)
+            kill(pid, signal.SIGTERM)
         except ProcessLookupError:
-            pass
-        else:
-            if (wait_for_line(arguments.out, STOPPED_LOWERING, wait, pid, is_alive) is None
-                    and is_alive(pid)):
-                # Ended, so it can put nothing more in the background
-                # after the processes are returned.
+            return
+        if wait_for_line(arguments.out, STOPPED, wait, pid, is_alive) is None and is_alive(pid):
+            try:
+                kill(pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+        say(f"the simulator watcher ({pid}) {why}, so it was stopped; nothing is paused from now on")
+
+    if pid is not None and is_alive(pid):
+        # A watcher still starting (`start` leaves one to start) would
+        # find the claim and lower the simulator once it began, after the
+        # return: it is given time to begin, or ended.
+        if wait_for_line(arguments.out, "Watching simulator", wait, pid, is_alive) is None:
+            if is_alive(pid):
                 try:
-                    kill(pid, signal.SIGKILL)
+                    kill(pid, signal.SIGKILL)  # It has paused and lowered nothing.
                 except ProcessLookupError:
                     pass
-                say(f"the simulator watcher ({pid}) did not say within {wait:.0f} s that it had "
-                    "stopped putting processes in the background, so it was stopped")
+                say(f"the simulator watcher ({pid}) had not begun within {wait:.0f} s, so it was "
+                    "stopped; it had paused and lowered nothing")
+        else:
+            try:
+                kill(pid, signal.SIGUSR1)
+            except ProcessLookupError:
+                pass
+            else:
+                if (wait_for_line(arguments.out, STOPPED_LOWERING, wait, pid, is_alive) is None
+                        and is_alive(pid)):
+                    end_watcher(f"did not say within {wait:.0f} s that it had stopped putting "
+                                "processes in the background")
     problems, returned, ended = [], set(), set()
     converged, passes, root = False, 0, None
     try:
@@ -1133,6 +1224,8 @@ def parse(arguments=None):
     settling = commands.add_parser("settle")
     settling.add_argument("--out", required=True)
     settling.add_argument("--limit", type=float, default=SETTLE_LIMIT)
+    settling.add_argument("--udid")
+    settling.add_argument("--processes", help=argparse.SUPPRESS)
     return parser.parse_args(arguments)
 
 

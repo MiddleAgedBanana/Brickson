@@ -942,7 +942,8 @@ release in docs/ROADMAP.md when no thread has it yet.
   requests time out, lost its session with GitHub ("Runner session is
   invalid") and cancelled the job itself as it shut down. In all seven
   such jobs whose timeline could be read, our build had run for under 20
-  seconds: the Mac was swamped by iOS's own start of the simulator. The
+  seconds: the Mac was swamped by iOS's own start of the simulator, whose
+  daemons run at priority 31, above GitHub's agent at 20. The
   pull request of
   [`log/2026-11-22-simulator-start-in-the-background.md`](log/2026-11-22-simulator-start-in-the-background.md)
   runs that start-up work in macOS's background band from the moment

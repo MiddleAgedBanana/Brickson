@@ -396,8 +396,13 @@ with open(sys.argv[1], "rb") as file:
 # tests wait too since 2026-11-22: the simulator's start-up work is held in
 # the background until the wait ends, so without it the unit tests would
 # meet that work at full priority (docs/DECISIONS.md, "Tests", 2026-11-22).
+# Given the simulator's id, the wait also counts the simulator's threads
+# held in the background, which the Mac's load leaves out.
 settle() {
-    /usr/bin/python3 -I scripts/simulator-load.py settle --out "$watcher_record" ||
+    local lowered=()
+    [ -z "${1:-}" ] || lowered=(--udid "$1")
+    /usr/bin/python3 -I scripts/simulator-load.py settle --out "$watcher_record" \
+        "${lowered[@]+"${lowered[@]}"}" ||
         echo "warning: could not wait for the Mac to settle; the tests run anyway." >&2
 }
 
@@ -591,9 +596,11 @@ run_tests_on_simulator() {
             warm_up "$udid"
         fi
         # Last before the tests, so what the warm-up started has settled too.
-        settle
         if [ "$udid" = "$owned_simulator" ]; then
+            settle "$udid"
             restore_priority "$udid" || return 1
+        else
+            settle
         fi
     fi
     # The tests run even when the catalog is out of date, so one run shows
