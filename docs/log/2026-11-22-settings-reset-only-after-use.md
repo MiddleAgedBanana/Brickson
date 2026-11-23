@@ -20,7 +20,11 @@ but when they did, Family Setup simply did not respond
 For the people working on it: this was the cause of
 `SettingsTests.testAnIdleSettingsReturnsToItsFirstScreenAndStaysOpen`
 failing now and then with "Family Setup did not open" (five times from
-2026-10-22 to 2026-11-21, on commits that did not touch it). That test
+2026-10-22 to 2026-11-21, on commits that did not touch it). It is
+shown below for the newest failure; the four before it, as recorded
+(Family Setup did not open, or its tap found no hit point, the
+2026-11-12 recording on the first screen throughout), are consistent
+with it but were not examined again. That test
 runs with `--short-timeouts`, so the limit is 3 seconds and the
 untouched first screen rebuilt every 3 seconds; the test's tap on Family
 Setup sometimes landed on a rebuild. The test was right and is
@@ -176,6 +180,11 @@ made for this work, in portrait, light, at the default text size:
   1 skipped (`testOpeningSettingsFromHomeInLandscape`, which skips
   itself on a phone); on an iPad Pro 13-inch (M5) simulator 46 ran and
   46 passed. The idle test passed on both. CI runs the whole UI suite.
+- **A reset from a pushed screen happens once.** With the fix, a throwaway
+  trial like the reproduction opened Family Setup, and then Family Setup
+  and Voice Settings, and let Settings reset under the 3-second limit:
+  each time, one return to the first screen about 2 s later, then no
+  screen update at all in the next 8.7 s (almost three limits).
 - The repository's Python checks pass.
 
 ## Not verified
@@ -188,6 +197,11 @@ made for this work, in portrait, light, at the default text size:
   about it.
 - Under load: the reproduction ran on an otherwise idle Mac. CI runs
   the change under its own load.
+- No committed test notices if the view's wiring goes back: screens
+  changed some other way than through the `screens` binding, or the
+  scroll modifier counting a change `SettingsScrollUse` refuses. The unit
+  tests cover the clock and the scroll rule; only the reproduction, run
+  by hand, covers the wiring.
 - Why the reset in #130's run came 97 s after the push rather than 90.
 
 ## Follow-ups

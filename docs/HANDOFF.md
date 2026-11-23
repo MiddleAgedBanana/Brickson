@@ -922,8 +922,9 @@ release in docs/ROADMAP.md when no thread has it yet.
   failed now and then with "Family Setup did not open" (or its tap found
   no hit point) on commits that did not touch it: 2026-10-22,
   2026-11-08, 2026-11-12, 2026-11-17 and 2026-11-21 (run 44902798573,
-  after the settle wait, at a load of about 125). The cause, found
-  2026-11-22, was in the app, not the test: an untouched Settings
+  after the settle wait, at a load of about 125). The cause, shown on
+  that run on 2026-11-22 and consistent with the four before it as
+  recorded, was in the app, not the test: an untouched Settings
   rebuilt every screen at each idle limit (`.id(activity.resetCount)`),
   for as long as it stayed open, and a tap whose touch spanned a rebuild
   was never delivered. On CI the tap began about 0.18 s before the 3-second
