@@ -6,15 +6,17 @@ edits this page in place and writes its record in [`docs/log/`](log/README.md);
 nothing is appended here. Plan: [`docs/ROADMAP.md`](ROADMAP.md). How the
 project runs: [`docs/SDLC.md`](SDLC.md).
 
-**State as of 2026-11-21: `main` is at `297a58b`, pull request #129,
-logging the speech service's pause and carry-on reports, merged
-2026-11-21.** Since 2026-11-20, #109 (the agent bridge), #122 (UI test
-waits), #123 (a phrase the speech service never begins), #124, #127 and
-#128 have merged too, and #108, #109's draft twin, was closed. Open pull
-requests: #115, the record of the simulator experiments; #120, four
-more windows for Home's layout tests; #130, a design review sheet; and
-the one keeping what GitHub's agent logged when a Mac job is cancelled
-([`log/2026-11-21-github-agent-log.md`](log/2026-11-21-github-agent-log.md)).
+**State as of 2026-11-22: `main` is at `0558fe7`, pull request #131,
+keeping what GitHub's agent logged when a Mac job is cancelled, merged
+2026-11-22, after #130, a design review sheet, the same day.** Since
+2026-11-20, #109 (the agent bridge), #122 (UI test waits), #123 (a phrase
+the speech service never begins), #124, #127, #128 and #129 (the speech
+service's pause and carry-on reports) have merged too, and #108, #109's
+draft twin, was closed. Open pull requests: #115, the record of the
+simulator experiments; #120, four more windows for Home's layout tests;
+and the one running the simulator's start in the background, so GitHub's
+agent keeps in touch
+([`log/2026-11-22-simulator-start-in-the-background.md`](log/2026-11-22-simulator-start-in-the-background.md)).
 Device checks wait for the Team ID (*Next steps, in order*, step 4).
 
 ## What the app does today
@@ -929,31 +931,37 @@ release in docs/ROADMAP.md when no thread has it yet.
   even on its first screen, so a tap can land on a rebuild
   ([`log/2026-11-12-ci-claims-narrowed.md`](log/2026-11-12-ci-claims-narrowed.md)).
   *(a Settings thread, in its own pull request)*
-- Thirteen CI jobs from 2026-11-13 to 2026-11-19, nine "Unit tests" and
-  four iPad UI jobs, were cancelled by nobody: only "The operation was
-  canceled." in the log, no new push, far from any time limit, and the
-  rest of the run carried on. Each was cancelled 8.5 to 13 minutes after
-  its simulator began to start, at a load of 550 to 870 where 500 is
-  usual. A cancelled Mac job now keeps `github-agent-log.txt` in its
-  results: what GitHub's agent on the machine logged about its hold on
-  the job and the cancel (`scripts/github-agent-log.sh`). On 2026-11-21
-  it caught one (iPad part 1 of #131's run 44916610210, ten minutes into
-  the simulator's start, at a load of 812 on three processors). GitHub's
-  service had not asked for a cancel and the job's hold was renewed, but
-  two of the agent's requests to GitHub timed out after 100 seconds;
-  when it got through, GitHub answered that its session was no longer
-  valid ("Runner session is invalid"), and the agent shut down,
-  cancelling the job itself. So the cause is on our side: the Mac is too
-  busy in those minutes for GitHub's agent to stay in touch. The wait
-  before the UI tests (docs/DECISIONS.md, "Tests", 2026-11-19) does not
-  fix it, because it happens before the tests. Until a fix is tried, a
-  second try of that job is the remedy. How to read the record is in
-  [`log/2026-11-21-github-agent-log.md`](log/2026-11-21-github-agent-log.md);
-  what to try, in order, is in
-  [`log/2026-11-19-ui-tests-wait-for-a-settled-mac.md`](log/2026-11-19-ui-tests-wait-for-a-settled-mac.md),
-  *Follow-ups*: each cuts what the Mac does in its first ten minutes.
-  *(the owner chooses whether a thread takes up a fix; a later
-  cancelled job's record says whether it is always this)*
+- At least twenty CI jobs from 2026-11-13 to 2026-11-22, twelve "Unit
+  tests" and eight iPad UI jobs, never an iPhone one, were cancelled by
+  nobody: only "The operation was canceled." in the log, no new push, far
+  from any time limit, and the rest of the run carried on. A cancelled
+  Mac job keeps `github-agent-log.txt` in its results
+  (`scripts/github-agent-log.sh`), and the three caught so far say the
+  same: 9.3 to 10.9 minutes after the simulator began to start, GitHub's
+  agent on the machine, silent for four to six minutes before, had its
+  requests time out, lost its session with GitHub ("Runner session is
+  invalid") and cancelled the job itself as it shut down. In all seven
+  such jobs whose timeline could be read, our build had run for under 20
+  seconds: the Mac was swamped by iOS's own start of the simulator, whose
+  daemons run at priority 31, above GitHub's agent at 20. The
+  pull request of
+  [`log/2026-11-22-simulator-start-in-the-background.md`](log/2026-11-22-simulator-start-in-the-background.md)
+  runs that start-up work in macOS's background band from the moment
+  the simulator has started (a minute after its boot at the latest)
+  until the build is done, then takes that setting off every one of its
+  processes, checked, and waits for the Mac to settle before the first
+  test (docs/DECISIONS.md, "Tests", 2026-11-22). No job cancelled itself
+  in that pull request's four CI runs on its last code change's scripts, but
+  whether that ends the cancels needs about twenty runs on `main`. For a
+  job cancelled by itself after it merges, first check that its
+  simulator's record shows the start-up work was put in the background:
+  the script carries on without it when the watcher did not start or
+  could not claim the simulator. If it was, the agent starves on
+  something else, and the job's `github-agent-log.txt` and the agent's
+  lines in the record are where to start. Until then, a second try of such a job is the
+  remedy. How to read the agent's log is in
+  [`log/2026-11-21-github-agent-log.md`](log/2026-11-21-github-agent-log.md).
+  *(the next thread on CI, after about twenty runs on `main`)*
 - Whether the wait before the UI tests ends the waits that ran out on a
   busy Mac is measured on one CI run so far: six UI jobs, all passed,
   no step stalled, at a cost of about eight minutes a job. After about
@@ -1722,7 +1730,17 @@ settings, date) and summarise it here.
   (docs/DECISIONS.md, "Tests", 2026-11-19; [`log/2026-11-19-ui-tests-wait-for-a-settled-mac.md`](log/2026-11-19-ui-tests-wait-for-a-settled-mac.md),
   which sorts that week's failures into their kinds). The wait writes
   its start and end into the simulator's record: when a UI test's wait
-  runs out, read there first whether the Mac had settled. Home's
+  runs out, read there first whether the Mac had settled. Since
+  2026-11-22 the unit tests wait too; on a simulator the script started,
+  the simulator's start-up work runs in macOS's background band from the
+  moment it has started (a minute after its boot at the latest) until
+  the build is done, so GitHub's agent keeps in touch, and that setting
+  is then taken off every one of its processes, checked, before that
+  wait; a run whose check fails stops there. The
+  watcher now starts before the simulator, so its record covers the
+  first minutes, and each line says how much of a processor GitHub's
+  agent got (docs/DECISIONS.md, "Tests", 2026-11-22;
+  [`log/2026-11-22-simulator-start-in-the-background.md`](log/2026-11-22-simulator-start-in-the-background.md)). Home's
   layout test uses bounded live queries while retaining every tile's
   visibility and position checks. After incorporating `main` at `d79d836`,
   its audit helper also keeps issue-time captures and native XCTest
