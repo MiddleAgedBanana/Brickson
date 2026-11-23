@@ -41,18 +41,25 @@
 # boots is shut down after its run, before the next family starts; a device
 # that was already running is left running.
 # Before UI tests it turns off the keyboard's minimized bar, so typing tests
-# see the full software keyboard people actually use, launches the app
-# once so the first test doesn't pay for a cold simulator, and waits (up to
-# twenty minutes on a slow machine, a few seconds on a fast one) until the
-# Mac is no longer busy with the simulator's start.
+# see the full software keyboard people actually use, and launches the app
+# once so the first test doesn't pay for a cold simulator. On a simulator
+# this script started, the simulator's start-up work runs in macOS's
+# background band from the moment it has started until the build (and
+# that launch) are done, so GitHub's agent and the build come first; every
+# one of its processes is then returned to normal priority, and that is
+# checked; a run whose check fails stops there. Before any tests it then
+# waits (up to twenty minutes on a slow machine, a few seconds on a fast
+# one) until the Mac is no longer busy with the simulator's start.
 #
 # Every test run keeps its results, with a screenshot of each UI test
 # failure, in build/TestResults/<mode>-<family>.xcresult (open it in Xcode;
 # one part of the UI tests writes ui-<family>-part<n>.xcresult),
 # and prints how many tests ran. A run in which no test ran fails. Beside
 # it, simulator-load-<family>.txt records which of the simulator's
-# processes used the Mac's processors while it was tested; on a simulator
-# this script started, the lock-screen wallpaper extensions are paused.
+# processes used the Mac's processors from before it started until it was
+# tested, and GitHub's agent's share; on a simulator this script started,
+# the lock-screen wallpaper extensions are paused and the record says when
+# its processes were lowered and returned.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -220,22 +227,80 @@ cleanup_simulator() {
 # while it is tested, pauses those extensions on a simulator this run
 # started (never on one someone else is using), and writes which processes
 # used the processors to $results_dir/simulator-load-<family>.txt.
+#
+# GitHub cancelled Mac test jobs by itself 8.5 to 13 minutes after their
+# simulator began to start: its agent on the machine, starved by the
+# simulator's own start-up work, lost its session with GitHub and cancelled
+# the job as it shut down. In every such job whose timeline could be read,
+# our build had run for under 20 seconds
+# (docs/log/2026-11-22-simulator-start-in-the-background.md). So on a
+# simulator this run started, the watcher also puts the simulator's
+# processes in macOS's background band from the moment the simulator has
+# finished starting (or a minute after its boot, whichever comes first)
+# until the build is done, so GitHub's agent, the build and the watcher
+# come first; restore_priority then returns every one of them to normal
+# priority, and checks it, before the wait to settle, since the Mac's load
+# leaves out work in the background band. The watcher is started
+# before the simulator, so its record covers the first minutes, and does
+# nothing to it until claim_simulator says this run started it. The claim
+# and the word that the simulator has started are files this script
+# creates with the shell alone: on GitHub's busy machines a program
+# started in those minutes took up to eleven minutes to begin, while the
+# watcher, already running, was never late.
 watcher_pid=""
 watcher_record=""
 
+# A watcher for the simulator; with "owned", one that will pause and lower
+# once claimed.
 start_watcher() {
-    local udid="$1" pause=()
-    [ "$udid" != "$owned_simulator" ] || pause=(--pause-posters)
+    local udid="$1" plans=()
+    [ "${2:-}" != owned ] || plans=(--pause-posters --background
+        --claim-file "$watcher_record.claimed" --started-file "$watcher_record.started")
     if watcher_pid="$(/usr/bin/python3 -I scripts/simulator-load.py start --udid "$udid" \
-        --out "$watcher_record" --parent "$$" "${pause[@]+"${pause[@]}"}")"; then
-        if [ "${#pause[@]}" -gt 0 ]; then
-            echo "Watching the simulator's processes, pausing its lock-screen wallpaper extensions: $watcher_record"
+        --out "$watcher_record" --parent "$$" "${plans[@]+"${plans[@]}"}")"; then
+        if [ "${#plans[@]}" -gt 0 ]; then
+            echo "Watching the simulator's processes from before it starts: $watcher_record"
         else
-            echo "Watching the simulator's processes (nothing paused: this run did not start it): $watcher_record"
+            echo "Watching the simulator's processes (nothing paused or lowered: this run did not start it): $watcher_record"
         fi
     else
         watcher_pid=""
-        echo "warning: the simulator watcher did not start, so nothing is paused; the tests run anyway." >&2
+        echo "warning: the simulator watcher did not start, so nothing is paused or lowered; the tests run anyway." >&2
+    fi
+}
+
+# Tells the watcher this run started the simulator: from then on it pauses
+# the wallpaper extensions, and holds the simulator's processes in the
+# background once simulator_started says so, or a minute from now. Both
+# only create a file, with the shell's own redirection: no program starts.
+claim_simulator() {
+    [ -n "$watcher_pid" ] || return 0
+    if : > "$watcher_record.claimed"; then
+        echo "This run started the simulator: its watcher pauses the lock-screen wallpaper extensions, and runs the simulator's processes in the background once it has started, until the tests."
+    else
+        echo "warning: the simulator watcher was not told this run started the simulator; nothing is paused or lowered, and the tests run anyway." >&2
+    fi
+}
+
+simulator_started() {
+    [ -n "$watcher_pid" ] || return 0
+    : > "$watcher_record.started" ||
+        echo "warning: the simulator watcher was not told the simulator has started; it lowers its processes a minute after the start instead." >&2
+}
+
+# Returns the simulator's processes to normal priority and checks that
+# they are there, including any started after the first were lowered. If
+# that cannot be confirmed the run stops here, before any test: on a
+# simulator held in the background the tests would run throttled, and a
+# strict limit that ran out would read as the app's fault
+# (docs/DECISIONS.md, "Tests", 2026-11-22).
+restore_priority() {
+    local udid="$1" watcher=()
+    [ -z "$watcher_pid" ] || watcher=(--pid "$watcher_pid")
+    if ! /usr/bin/python3 -I scripts/simulator-load.py restore --udid "$udid" \
+        --out "$watcher_record" "${watcher[@]+"${watcher[@]}"}"; then
+        echo "error: the simulator's processes could not be confirmed back at normal priority, so no test runs on it (see above and $watcher_record)." >&2
+        return 1
     fi
 }
 
@@ -245,6 +310,7 @@ stop_watcher() {
     watcher_pid=""
     /usr/bin/python3 -I scripts/simulator-load.py stop --pid "$pid" --out "$watcher_record" ||
         echo "warning: the simulator watcher did not stop cleanly." >&2
+    command rm -f "$watcher_record.claimed" "$watcher_record.started"
 }
 
 finish() {
@@ -327,10 +393,14 @@ with open(sys.argv[1], "rb") as file:
 # (scripts/simulator-load.py says how it is measured). On a Mac with more
 # processors the wait is a few seconds. This only waits: no test is
 # retried, skipped or given more time, a Mac that does not settle is tested
-# anyway, and so is one whose wait could not run, with a warning.
+# anyway, and so is one whose wait could not run, with a warning. The unit
+# tests wait too since 2026-11-22: the simulator's start-up work is held in
+# the background until the build is done, and once returned to normal
+# priority the rest of it would meet the unit tests (docs/DECISIONS.md,
+# "Tests", 2026-11-22).
 settle() {
     /usr/bin/python3 -I scripts/simulator-load.py settle --out "$watcher_record" ||
-        echo "warning: could not wait for the Mac to settle; the UI tests run anyway." >&2
+        echo "warning: could not wait for the Mac to settle; the tests run anyway." >&2
 }
 
 # Prints how many tests ran, and fails when none did: a filter that matches
@@ -458,7 +528,8 @@ run_tests_on_simulator() {
     # Remove the last run's bundle and record first, so a run that stops
     # before testing never leaves old ones that look like its own.
     # (xcodebuild also will not write over a bundle.)
-    command rm -rf "$results" "$watcher_record" || return 1
+    command rm -rf "$results" "$watcher_record" "$watcher_record.claimed" \
+        "$watcher_record.started" || return 1
     if [ "$family" = destination ]; then
         udid="$(destination_simulator)" || return 1
         # The same simulator, by id, for the wait and the build.
@@ -473,12 +544,18 @@ run_tests_on_simulator() {
     fi
     if [ -n "$udid" ]; then
         state="$(simulator_state "$udid")" || return 1
+        mkdir -p "$results_dir" || return 1
         case "$state" in
             Shutdown)
+                # Watched from before it starts. The watcher pauses and
+                # lowers nothing until claimed, below, so a boot that
+                # fails leaves a simulator someone else started alone.
+                start_watcher "$udid" owned
                 xcrun simctl boot "$udid" || return 1
                 owned_simulator="$udid"
+                claim_simulator
                 ;;
-            Booted | Booting) ;;
+            Booted | Booting) start_watcher "$udid" ;;
             *)
                 echo "Simulator $udid is $state; wait for it to finish before testing." >&2
                 return 1
@@ -490,8 +567,15 @@ run_tests_on_simulator() {
         # timed out ("Timed out while launching application via Xcode").
         echo "Starting the simulator $udid and waiting for it"
         xcrun simctl bootstatus "$udid" -b || return 1
-        mkdir -p "$results_dir" || return 1
-        start_watcher "$udid"
+        # Its start-up work is held in the background only once it has
+        # started, or a minute after the boot: held from the boot, a first
+        # start on the owner's Mac had not finished after almost seven
+        # minutes, where it takes 19 seconds at normal priority (on Apple
+        # silicon the system runs background work on the efficiency cores
+        # when it can).
+        if [ "$udid" = "$owned_simulator" ]; then
+            simulator_started
+        fi
         if [ "$mode" = ui ]; then
             show_full_keyboard "$udid" || return 1
         fi
@@ -504,8 +588,16 @@ run_tests_on_simulator() {
         -derivedDataPath "$derived_data" \
         "${extra_arguments[@]+"${extra_arguments[@]}"}" \
         build-for-testing || return $?
-    if [ "$mode" = ui ] && [ -n "$udid" ]; then
-        warm_up "$udid"
+    if [ -n "$udid" ]; then
+        if [ "$mode" = ui ]; then
+            warm_up "$udid"
+        fi
+        # The return first: the Mac's load leaves out work in the
+        # background band, so a wait with the simulator still lowered ended
+        # at once on CI, and the start-up work then met the tests.
+        if [ "$udid" = "$owned_simulator" ]; then
+            restore_priority "$udid" || return 1
+        fi
         # Last before the tests, so what the warm-up started has settled too.
         settle
     fi
