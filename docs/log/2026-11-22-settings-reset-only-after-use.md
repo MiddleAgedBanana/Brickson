@@ -24,7 +24,10 @@ failing now and then with "Family Setup did not open" (five times from
 shown below for the newest failure; the four before it, as recorded
 (Family Setup did not open, or its tap found no hit point, the
 2026-11-12 recording on the first screen throughout), are consistent
-with it but were not examined again. That test
+with it but were not examined again. This closes kind H, "Settings'
+idle test failing on a settled Mac", in
+[`2026-11-19-ui-tests-wait-for-a-settled-mac.md`](2026-11-19-ui-tests-wait-for-a-settled-mac.md),
+whose lead it confirms. That test
 runs with `--short-timeouts`, so the limit is 3 seconds and the
 untouched first screen rebuilt every 3 seconds; the test's tap on Family
 Setup sometimes landed on a rebuild. The test was right and is
@@ -85,6 +88,18 @@ unchanged.
   `.onChange(of: path)`, which would have counted the reset's own return
   to the root as use, so that a reset from a pushed screen would rebuild
   the first screen once more, 90 seconds later.
+
+### The same fault on `main`, 2026-11-23
+
+While this pull request was open, `main`'s run 45119137212 (iPhone, part
+1 of 3, at `eed020f`) failed the idle test the other way: "Failed to
+compute hit point" for Family Setup. In its recording Settings drew at
+10.4 s and the untouched first screen redrew at 14.1, 17.6 and 20.7 s.
+XCTest tried the tap three times; each time its search for the row
+took 1.6 to 2 s and ended before a redraw, and its tap came after it
+(14.26, 17.82 and 20.65 s), when the row it had found was gone. On a
+slow machine nearly every try spans a 3-second redraw, so this form
+needs no unlucky timing at all.
 
 ### The other sighting: `HomeSizesTests` on #130's first push
 

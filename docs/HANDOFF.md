@@ -921,14 +921,21 @@ release in docs/ROADMAP.md when no thread has it yet.
 - `SettingsTests.testAnIdleSettingsReturnsToItsFirstScreenAndStaysOpen`
   failed now and then with "Family Setup did not open" (or its tap found
   no hit point) on commits that did not touch it: 2026-10-22,
-  2026-11-08, 2026-11-12, 2026-11-17 and 2026-11-21 (run 44902798573,
-  after the settle wait, at a load of about 125). The cause, shown on
-  that run on 2026-11-22 and consistent with the four before it as
-  recorded, was in the app, not the test: an untouched Settings
+  2026-11-08, 2026-11-12 (38 minutes into its job, at a load of 26),
+  2026-11-17 (at a load of about 510), 2026-11-21 (run 44902798573,
+  after the settle wait, at a load of about 125) and 2026-11-23 on
+  `main` (run 45119137212), so the machine's load did not explain it.
+  The cause, shown on the 2026-11-21 and 2026-11-23 runs and consistent
+  with the four before them as recorded, was in the app, not the test
+  (this closes kind H in
+  [`log/2026-11-19-ui-tests-wait-for-a-settled-mac.md`](log/2026-11-19-ui-tests-wait-for-a-settled-mac.md)):
+  an untouched Settings
   rebuilt every screen at each idle limit (`.id(activity.resetCount)`),
   for as long as it stayed open, and a tap whose touch spanned a rebuild
-  was never delivered. On CI the tap began about 0.18 s before the 3-second
-  redraw. On the owner's Mac, 2 of 60 taps swept across the first reset
+  was never delivered. On CI on 2026-11-21 the tap began about 0.18 s
+  before the 3-second redraw; on 2026-11-23 each of XCTest's three tries
+  found the row before a redraw and tapped after it, when the row it had
+  found was gone (no hit point). On the owner's Mac, 2 of 60 taps swept across the first reset
   were lost, then 10 of 40 aimed at it, and the app's own log showed no
   attempt to open Family Setup in any lost one. At the real 90-second
   limit the window was narrower but the same: an activation on Family
