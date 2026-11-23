@@ -915,20 +915,28 @@ release in docs/ROADMAP.md when no thread has it yet.
   bundles. *(closed 2026-11-17; the next thread whose CI shows it reopens
   it)*
 - `SettingsTests.testAnIdleSettingsReturnsToItsFirstScreenAndStaysOpen`
-  has failed once each on 2026-10-22, 2026-11-08, 2026-11-12 and
-  2026-11-17 (on `main`), on commits that did not touch it, and passed
-  on each re-run: Family Setup did not open, or its tap found no hit
-  point. The 2026-11-12 failure came 38 minutes into its job, on a
-  settled Mac (a load of 26), so the simulator's busy start
-  (docs/DECISIONS.md, "Tests", 2026-11-19) is not its cause; the
-  2026-11-17 one came ten minutes in, at a load of about 510. The 2026-11-12
-  recording stays on Settings' first screen throughout. A likely cause,
-  not proven: under `--short-timeouts` Settings' idle limit is 3
-  seconds, an untouched Settings resets every 3 seconds, and each reset
-  changes the navigation stack's identity (`.id(activity.resetCount)`)
-  even on its first screen, so a tap can land on a rebuild
-  ([`log/2026-11-12-ci-claims-narrowed.md`](log/2026-11-12-ci-claims-narrowed.md)).
-  *(a Settings thread, in its own pull request)*
+  failed now and then with "Family Setup did not open" (or its tap found
+  no hit point) on commits that did not touch it: 2026-10-22,
+  2026-11-08, 2026-11-12, 2026-11-17 and 2026-11-21 (run 44902798573,
+  after the settle wait, at a load of about 125). The cause, found
+  2026-11-22, was in the app, not the test: an untouched Settings
+  rebuilt every screen at each idle limit (`.id(activity.resetCount)`),
+  for as long as it stayed open, and a tap whose touch spanned a rebuild
+  was never delivered. On CI the tap began about 0.18 s before the 3-second
+  redraw. On the owner's Mac, 2 of 60 taps swept across the first reset
+  were lost, then 10 of 40 aimed at it, and the app's own log showed no
+  attempt to open Family Setup in any lost one. At the real 90-second
+  limit the window was narrower but the same: an activation on Family
+  Setup at that instant did nothing. Settings now resets only after use
+  (docs/DECISIONS.md, "Settings resets when idle and never closes",
+  2026-11-22), and with it 0 of 40 aimed taps were lost
+  ([`log/2026-11-22-settings-reset-only-after-use.md`](log/2026-11-22-settings-reset-only-after-use.md)).
+  `HomeSizesTests`' failure on #130's first push, at Set Up Step by
+  Step, had another cause: Family Setup did open, then XCTest's looks at
+  the app took about 31 s each on a stalled machine (before the settle
+  wait), and Settings' real 90-second reset returned it to its first
+  screen before the tap. *(closed 2026-11-22; the next thread whose CI
+  shows it reopens it)*
 - Thirteen CI jobs from 2026-11-13 to 2026-11-19, nine "Unit tests" and
   four iPad UI jobs, were cancelled by nobody: only "The operation was
   canceled." in the log, no new push, far from any time limit, and the

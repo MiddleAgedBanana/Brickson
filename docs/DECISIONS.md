@@ -4576,6 +4576,20 @@ with unsaved words, its file picker and the reading of a chosen file:
 start again. Time in another app or with the screen off never counts.
 Time is `ContinuousClock`; the pure clock takes `now:`.
 
+*2026-11-22, default, reversible:* it resets **only after use**. Until a
+control is used, a screen is pushed or popped or a screen is scrolled,
+Settings is already as a reset would leave it, so no reset is due; a
+reset leaves it untouched again, so it returns to its root once, 90
+seconds after it was last used. Before, an untouched Settings rebuilt
+every screen at each limit for as long as it stayed open, and an
+activation that landed while the screens were replaced did nothing: a
+UI test's tap on Family Setup was lost that way on CI, and 10 of 40
+taps aimed at a reset on the owner's Mac. Coming back to Brickson, a
+hold ending and a scroll view appearing (its phase changing from idle to
+idle) restart the wait without being use, and the reset's own return to
+the root is not use
+([`log/2026-11-22-settings-reset-only-after-use.md`](log/2026-11-22-settings-reset-only-after-use.md)).
+
 ## Setup answers are kept as offered, never as completed
 
 *2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
