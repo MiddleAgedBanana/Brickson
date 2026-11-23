@@ -52,16 +52,10 @@ final class GetAttentionOnHomeTests: XCTestCase {
     @MainActor
     private func checkTheAlarm(textSize: UITestTextSize, orientation: UIDeviceOrientation) throws {
         let app = launchedApp(textSize: textSize, orientation: orientation, arguments: ["--attention-tone=silent"])
-        let turned = NSPredicate { _, _ in
-            MainActor.assumeIsolated {
-                let frame = app.windows.firstMatch.frame
-                return (frame.width > frame.height) == orientation.isLandscape
-            }
+        waitUntil("the window did not turn to \(orientation.isLandscape ? "landscape" : "portrait")") {
+            let frame = app.windows.firstMatch.frame
+            return (frame.width > frame.height) == orientation.isLandscape
         }
-        XCTAssertEqual(
-            XCTWaiter.wait(for: [expectation(for: turned, evaluatedWith: nil)], timeout: 10), .completed,
-            "the window did not turn to \(orientation.isLandscape ? "landscape" : "portrait")"
-        )
         let isPad = UIDevice.current.userInterfaceIdiom == .pad
         let window = app.windows.firstMatch.frame
         let context = "\(textSize.name), \(orientation.isLandscape ? "landscape" : "portrait"), \(isPad ? "iPad" : "iPhone"), window \(window.size)"
@@ -76,9 +70,11 @@ final class GetAttentionOnHomeTests: XCTestCase {
         let getAttentionSpot = try XCTUnwrap(atRest.first { $0.name == "getAttention" }, "Home has no Get Attention (\(context))")
 
         // Start: Stop appears in its well; nothing else appears or moves.
+        // Strict limits, the same on CI: this is the test that Get
+        // Attention sounds on its first activation (`UIWait.strict`).
         getAttention.tap()
-        XCTAssertTrue(stop.waitForExistence(timeout: 10), "Stop did not appear after Get Attention (\(context))")
-        XCTAssertTrue(sounding.waitForExistence(timeout: 10), "the status line does not say Sounding (\(context))")
+        waitToAppear(stop, within: .strict(seconds: 10), "Stop did not appear after Get Attention (\(context))")
+        waitToAppear(sounding, within: .strict(seconds: 10), "the status line does not say Sounding (\(context))")
         assertReachable("stopAlert", in: app, context: "the alarm sounding; \(context)")
         assertReachable("getAttention", in: app, context: "the alarm sounding; \(context)")
         let whileSounding = try screenControls(in: app)
@@ -103,12 +99,11 @@ final class GetAttentionOnHomeTests: XCTestCase {
 
         // Choosing Get Attention again leaves the alarm sounding.
         getAttention.tap()
-        XCTAssertTrue(stop.waitForExistence(timeout: 5), "a second Get Attention stopped the alarm (\(context))")
+        waitToAppear(stop, within: .quickResponse, "a second Get Attention stopped the alarm (\(context))")
 
         // Stop: its well empties; nothing else moves.
         stop.tap()
-        let stopped = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: stop)
-        XCTAssertEqual(XCTWaiter.wait(for: [stopped], timeout: 10), .completed, "Stop is still showing after Stop (\(context))")
+        waitToDisappear(stop, "Stop is still showing after Stop (\(context))")
         XCTAssertFalse(sounding.exists, "the status line still says Sounding after Stop (\(context))")
         let afterStop = try screenControls(in: app)
         attachCapture(app, name: "home-alarm stopped-\(context)".replacingOccurrences(of: ", ", with: "-"))

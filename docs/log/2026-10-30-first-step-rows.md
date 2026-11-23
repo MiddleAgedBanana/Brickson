@@ -56,7 +56,7 @@ adds the phone at AX5 from PR #56's CI frames.
 
 Also in this pull request, PR #56's leftovers:
 
-- PR #56's wording patch (from the project's files, as its own commit):
+- PR #56's wording patch (as its own commit):
   docs/HANDOFF.md and that pull request's log no longer say the sweep
   covered the first step, and the log notes what the re-run gave.
   *Re-checked here:* the run on PR #56's final head, `f44f17f` (Actions

@@ -36,6 +36,7 @@ struct LaunchOptionsTests {
         #expect(options.unrecognized.isEmpty)
         #expect(LaunchOptions.parse(["--fresh-test-storage"]).storage == .freshTest)
         #expect(LaunchOptions.parse(["--screen=settings"]).startScreen == .settings)
+        #expect(LaunchOptions.parse(["--screen=design-review"]).startScreen == .designReview)
     }
 
     // Release launches use .standard. Giving that default an appearance

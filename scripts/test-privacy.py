@@ -696,6 +696,37 @@ class GitTests(unittest.TestCase):
             privacy.ci_revisions(shallow)
         self.assertIn('fetch-depth: 0', str(raised.exception))
 
+    def test_a_range_that_starts_with_a_dash_is_refused_before_git_reads_it(self):
+        # git log reads a range that starts with a dash as one of its own
+        # options, and --output=<file> writes the log over that file.
+        target = self.folder / 'written.txt'
+        for argv in (['--commits=--output=' + str(target)],
+                     ['--commits', 'main..HEAD', '--commits=--output=' + str(target)]):
+            status, out, err = self.run_here(*argv)
+            self.assertEqual(status, 2)
+            self.assertIn('--commits range cannot start with a dash', err)
+            self.assertFalse(target.exists())
+            self.assertNotIn('output=', out + err)  # what was given is never repeated
+
+    def test_git_is_given_the_repository_as_an_absolute_folder(self):
+        # git reads the folder after -C as a folder even when it starts
+        # with a dash; resolving it first makes that so whatever git does.
+        seen, real = [], subprocess.run
+
+        def recording(argv, *args, **kwargs):
+            seen.append([str(part) for part in argv])
+            return real(argv, *args, **kwargs)
+
+        here = os.getcwd()
+        os.chdir(self.folder)
+        self.addCleanup(os.chdir, here)
+        with mock.patch.object(privacy.subprocess, 'run', recording):
+            status, _, _ = run(['--outgoing', '--no-list', self.repo.name], listed())
+        self.assertEqual(status, 0)
+        folders = [argv[argv.index('-C') + 1] for argv in seen if '-C' in argv]
+        self.assertTrue(folders)
+        self.assertTrue(all(Path(folder).is_absolute() for folder in folders), folders)
+
     def test_a_draft_is_read_from_stdin(self):
         status, out, _ = run(['--text', '-', str(self.repo)], self.environ,
                              stdin=f'Body\n\nThanks {NICK}\n')

@@ -38,8 +38,8 @@ final class PhraseDragTests: XCTestCase {
         XCTAssertTrue(messageRegion.exists)
         XCTAssertFalse(messageRegion.staticTexts[words].exists)
         tile.press(forDuration: 1.5)
-        XCTAssertTrue(
-            messageRegion.staticTexts[words].waitForExistence(timeout: 5),
+        waitToAppear(
+            messageRegion.staticTexts[words], within: .quickResponse,
             "The first 1.5-second hold on a phrase did not speak"
         )
         attachCapture(app, name: "after-held-phrase")
@@ -97,8 +97,8 @@ final class PhraseDragTests: XCTestCase {
         XCTAssertEqual(start.screenPoint.x, frame.midX, accuracy: 0.5)
         XCTAssertEqual(start.screenPoint.y, frame.midY, accuracy: 0.5)
         start.press(forDuration: 0.05, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.1)
-        XCTAssertTrue(
-            messageRegion.staticTexts[words].waitForExistence(timeout: 5),
+        waitToAppear(
+            messageRegion.staticTexts[words], within: .quickResponse,
             "A press on \"\(words)\" that moved by (\(dx), \(dy)) points did not speak it"
         )
         attachCapture(app, name: name)
@@ -127,7 +127,7 @@ final class PhraseDragTests: XCTestCase {
         defer { app.terminate() }
         try assertPassesAccessibilityAudit(app, context: "before phrase drag")
         let view = app.scrollViews["homeRegion.phrases"]
-        XCTAssertTrue(view.waitForExistence(timeout: 10))
+        waitToAppear(view, "Home shows no phrase grid")
         let snapshot = try app.snapshot()
         let beforeFrames = try controlFrames(in: snapshot)
         let located = try SnapshotControlGeometry.locate(
@@ -206,7 +206,7 @@ final class PhraseDragTests: XCTestCase {
         start.press(forDuration: 0.05, thenDragTo: end, withVelocity: .slow, thenHoldForDuration: 0.1)
         // A message remains after speech completes, so this detects an
         // activation even when the transient Speaking line has disappeared.
-        let spoke = message.waitForExistence(timeout: 3)
+        let spoke = appears(message, within: .observation)
         attachCapture(app, name: "after-phrase-drag")
         XCTAssertFalse(spoke, "A vertical phrase-grid drag spoke a phrase")
         XCTAssertFalse(app.staticTexts["Speaking"].exists)
@@ -233,8 +233,8 @@ final class PhraseDragTests: XCTestCase {
         )
         let words = tappedTile.label
         tappedTile.tap()
-        XCTAssertTrue(
-            messageRegion.staticTexts[words].waitForExistence(timeout: 5),
+        waitToAppear(
+            messageRegion.staticTexts[words], within: .quickResponse,
             "The first ordinary phrase tap after the drag did not speak"
         )
     }

@@ -197,7 +197,7 @@ struct SettingsView: View {
 /// (`EachWayCover`; docs/DECISIONS.md, "The first step's own rows").
 struct SettingsSafetyBar: View {
     /// The room between Back to Talking and the screen below it.
-    static let gapBelow: CGFloat = 8
+    static let gapBelow = Spacing.small
 
     /// What the bar's one control does.
     enum Way {
@@ -275,7 +275,7 @@ struct SettingsAudioStatus: View {
         .foregroundStyle(.primary)
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, SettingsMetrics.gutter)
-        .padding(.vertical, 8)
+        .padding(.vertical, Spacing.small)
         .allowsHitTesting(false)
     }
 

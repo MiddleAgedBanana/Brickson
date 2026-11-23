@@ -170,6 +170,21 @@ the simulator's processes kept the Mac's processors busy during the run.
 On a simulator the script started itself, it also pauses the lock-screen
 wallpaper extensions, which iOS otherwise starts a few minutes after the
 simulator boots and which slowed GitHub's machines until tests failed.
+Before the first test the script waits until the Mac is no longer busy
+with the simulator's start, and says so as it waits: a few seconds on
+most Macs, and up to twenty minutes on GitHub's small ones, where tests
+that started sooner ran out of time. On a simulator it started itself,
+the simulator's own start-up work runs at macOS's background priority
+through the build and, for the UI tests, the warm-up launch. That is
+meant to keep GitHub's agent on the machine in touch with GitHub so it
+does not cancel the job; about twenty runs on `main` will show whether
+it does. Before that wait the script takes the background priority it
+set off every one of the simulator's processes and checks that the
+simulator's main processes are back at normal priority, and a run whose
+check fails stops there rather than test a throttled simulator.
+When GitHub cancels one of its Mac jobs, the job's results also keep
+`github-agent-log.txt`, the lines GitHub's own agent on that machine
+logged about the job's cancelling (`scripts/github-agent-log.sh`).
 
 GitHub Actions runs unit and UI tests for pull requests and pushes to
 `main`. The UI tests run in three parts on the iPad and three on the
@@ -216,7 +231,9 @@ commit; changes made without Xcode remain untested until CI or a Mac run
 passes. The maintainer merges pull requests after review and passing CI.
 
 CodeQL scans the GitHub workflow files and the Python scripts in
-`scripts/`, not Swift. AI reviewers read pull-request changes, Swift
+`scripts/`, not Swift. SonarQube Cloud analyses every pull request and
+`main`, Swift included, and reports its security findings on the same
+code scanning page. AI reviewers read pull-request changes, Swift
 included, and their findings are answered during review; they do not
 enforce a merge gate. See
 [Code scanning](docs/DECISIONS.md#code-scanning) for the coverage,

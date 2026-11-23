@@ -165,14 +165,25 @@ targets:
       - path: BricksonUITests/HomeChains.swift
       - path: BricksonUITests/SettingsChains.swift
       - path: BricksonUITests/LibraryChains.swift
+      # The rule that the gaps a layout makes equal measure equal, which
+      # HomeLayoutTests applies to the running app and EqualGapsTests to
+      # the layout engine's frames and to frames made by hand.
+      - path: BricksonUITests/EqualGaps.swift
       # What launchedApp passes the app, read here with the app's own
       # parser (LaunchArgumentsTests).
       - path: BricksonUITests/LaunchArguments.swift
+      # The UI tests' wait limits, the CI scale and a wait's report
+      # (UIWaitTests); the waits that use them need XCTest and stay out.
+      - path: BricksonUITests/UIWait.swift
       # The probe app's plain logic and its speech delegate, tested here
       # (ProbeLogicTests, OffMainThreadCallbackTests). The probe itself is a
       # separate app that the tests do not launch.
       - path: BricksonProbe/Logic
       - path: BricksonProbe/System/ProbeSpeechEvents.swift
+      # The design review sheet's pixel arithmetic, which its capture tool
+      # also compiles (scripts/design-review/), tested here
+      # (ReviewPixelsTests).
+      - path: scripts/design-review/ReviewPixels.swift
     dependencies:
       - target: Brickson
     settings:

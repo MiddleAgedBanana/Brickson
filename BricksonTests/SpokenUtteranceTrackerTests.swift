@@ -366,6 +366,159 @@ struct SpokenUtteranceTrackerTests {
         ))
     }
 
+    // MARK: A phrase that does not start
+    //
+    // The system's speech service can take a phrase and never begin it,
+    // while the synthesizer says it is speaking: on CI it stayed silent for
+    // about three minutes after Yes. A phrase that has said nothing by the
+    // start limit is treated as not spoken (docs/DECISIONS.md, "A phrase
+    // that does not start").
+
+    /// Fails if a phrase is called not started before the limit, or never.
+    @Test func aPhraseWithNoStartReportFailsOnlyOnceTheStartLimitHasPassed() {
+        var tracker = SpokenUtteranceTracker<Int>()
+        tracker.began(1, text: "Yes.", at: start)
+        let limit = SpokenUtteranceTracker<Int>.startLimit
+
+        #expect(!tracker.hasFailedToStart(1, at: start))
+        #expect(!tracker.hasFailedToStart(1, at: start + limit - .milliseconds(1)))
+        #expect(tracker.hasFailedToStart(1, at: start + limit))
+    }
+
+    /// Apple documents the start report as the moment speech begins. A long
+    /// typed message may then speak for minutes. Fails if a phrase that
+    /// began is ever called not started.
+    @Test func aPhraseThatReportedItsStartNeverFailsToStart() {
+        var tracker = SpokenUtteranceTracker<Int>()
+        tracker.began(1, text: Self.helpNow, at: start)
+
+        tracker.recordStart(1, at: start + .seconds(14))
+
+        #expect(!tracker.hasFailedToStart(1, at: start + .seconds(600)))
+    }
+
+    /// A word is reported only once speech is under way, so it counts as a
+    /// start even if the start report itself never came. Fails if only the
+    /// start report counts.
+    @Test func aWordReportAlsoCountsAsAStart() {
+        var tracker = SpokenUtteranceTracker<Int>()
+        tracker.began(1, text: Self.helpNow, at: start)
+
+        tracker.recordProgress(1, reaching: 1, at: start + .seconds(2))
+
+        #expect(!tracker.hasFailedToStart(1, at: start + .seconds(600)))
+    }
+
+    /// The plain word report, without an offset, counts the same way.
+    @Test func aWordReportWithoutAnOffsetAlsoCountsAsAStart() {
+        var tracker = SpokenUtteranceTracker<Int>()
+        tracker.began(1, text: Self.helpNow, at: start)
+
+        tracker.recordProgress(1, at: start + .seconds(2))
+
+        #expect(!tracker.hasFailedToStart(1, at: start + .seconds(600)))
+    }
+
+    /// Reports for the phrase it replaced must not vouch for the new one.
+    /// Fails if a late report for an earlier utterance counts as a start.
+    @Test func reportsForAReplacedUtteranceDoNotStartTheNewOne() {
+        var tracker = SpokenUtteranceTracker<Int>()
+        tracker.began(1, text: "Yes.", at: start)
+        tracker.began(2, text: "No.", at: start + .seconds(1))
+
+        tracker.recordStart(1, at: start + .seconds(2))
+        tracker.recordProgress(1, reaching: 3, at: start + .seconds(2))
+
+        #expect(tracker.hasFailedToStart(2, at: start + .seconds(1) + SpokenUtteranceTracker<Int>.startLimit))
+    }
+
+    /// Only the current utterance can fail to start: one replaced, ended or
+    /// forgotten is no longer the app's to recover. Fails if a stale token
+    /// could stop the phrase now speaking.
+    @Test func onlyTheCurrentUtteranceCanFailToStart() {
+        var tracker = SpokenUtteranceTracker<Int>()
+        tracker.began(1, text: "Yes.", at: start)
+        tracker.began(2, text: "No.", at: start)
+        #expect(!tracker.hasFailedToStart(1, at: start + .seconds(600)))
+
+        tracker.ended(2, at: start + .seconds(1))
+        #expect(!tracker.hasFailedToStart(2, at: start + .seconds(600)))
+
+        tracker.began(3, text: "Maybe.", at: start)
+        tracker.reset()
+        #expect(!tracker.hasFailedToStart(3, at: start + .seconds(600)))
+    }
+
+    /// The first start report says how long the phrase took to begin, which
+    /// the app logs so the limit can be checked against real starts. Fails if
+    /// it reports a repeat, another utterance, or the wrong length.
+    @Test func theFirstStartReportSaysHowLongThePhraseTookToBegin() {
+        var tracker = SpokenUtteranceTracker<Int>()
+        tracker.began(1, text: "Yes.", at: start)
+
+        #expect(tracker.recordStart(2, at: start + .seconds(1)) == nil)
+        #expect(tracker.recordStart(1, at: start + .milliseconds(5_100)) == .milliseconds(5_100))
+        #expect(tracker.recordStart(1, at: start + .seconds(6)) == nil)
+    }
+
+    /// A voice may report its first word before its start, or never report
+    /// a start at all; the slow start must still be measured, once. Fails
+    /// if only a start report returns the measurement, or if a later report
+    /// returns it again.
+    @Test func aWordReportThatComesFirstSaysHowLongThePhraseTookToBegin() {
+        var tracker = SpokenUtteranceTracker<Int>()
+        tracker.began(1, text: "Yes, please.", at: start)
+
+        #expect(tracker.recordProgress(2, reaching: 3, at: start + .seconds(1)) == nil)
+        #expect(tracker.recordProgress(1, reaching: 3, at: start + .seconds(8)) == .seconds(8))
+        #expect(tracker.recordStart(1, at: start + .milliseconds(8_100)) == nil)
+        #expect(tracker.recordProgress(1, reaching: 5, at: start + .seconds(9)) == nil)
+
+        var withoutOffsets = SpokenUtteranceTracker<Int>()
+        withoutOffsets.began(1, text: "Yes, please.", at: start)
+        #expect(withoutOffsets.recordProgress(1, at: start + .seconds(2)) == .seconds(2))
+        #expect(withoutOffsets.recordProgress(1, at: start + .seconds(3)) == nil)
+    }
+
+    /// A phrase that began late is still audibly playing for a while after
+    /// its start, so a lingering dwell on its tile is absorbed for the
+    /// repeat window counted from the start, not from the moment it was
+    /// handed over. Fails if a start report does not count as progress.
+    @Test func aLateStartKeepsAbsorbingARepeatFromWhenItBegan() {
+        var tracker = SpokenUtteranceTracker<Int>()
+        tracker.began(1, text: "Yes.", at: start)
+        tracker.recordStart(1, at: start + .seconds(5))
+
+        let window = SpokenUtteranceTracker<Int>.repeatWindow
+        #expect(tracker.absorbsRepeat(
+            of: "Yes.",
+            synthesizerIsSpeaking: true,
+            now: start + window + .seconds(2)
+        ))
+        #expect(!tracker.absorbsRepeat(
+            of: "Yes.",
+            synthesizerIsSpeaking: true,
+            now: start + .seconds(5) + window
+        ))
+    }
+
+    /// The limit comes from evidence. On an overloaded CI simulator the
+    /// slowest healthy first phrase measured took at most 5.4 seconds from
+    /// the test's tap to its first audio (the app hands the phrase over
+    /// between the two), so the limit leaves room for twice that and more;
+    /// and the person learns of a phrase that will not be heard before the
+    /// 20 seconds after which the app already treats a synthesizer that says
+    /// nothing as possibly stuck
+    /// (`repeatWindow`). Fails if the limit is shortened into the range of
+    /// slow healthy starts, or stretched past that window.
+    @Test func theStartLimitLeavesRoomForASlowFirstPhrase() {
+        let slowestHealthyStartMeasured: Duration = .milliseconds(5_400)
+        let limit = SpokenUtteranceTracker<Int>.startLimit
+
+        #expect(limit >= slowestHealthyStartMeasured * 2)
+        #expect(limit < SpokenUtteranceTracker<Int>.repeatWindow)
+    }
+
     // MARK: A phrase the system cuts off
     //
     // The system can stop a phrase (a call, Siri) and report it as finished,

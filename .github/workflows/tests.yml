@@ -12,7 +12,9 @@
 # Each job keeps its result bundles (build/TestResults: every test,
 # screenshots of failures, the screens UI tests capture, and which
 # simulator processes used the machine) as a download on the run's page
-# for 14 days, whether the tests passed or failed.
+# for 14 days, whether the tests passed or failed. A cancelled job also
+# keeps github-agent-log.txt there: what GitHub's agent on the machine
+# logged about the job's cancelling (scripts/github-agent-log.sh).
 #
 # Every job that tests builds with Apple's newest released Xcode, never a
 # pinned one (docs/DECISIONS.md, "Build with Apple's current Xcode").
@@ -144,6 +146,12 @@ jobs:
         run: python3 scripts/test-runner.py
       - name: Build and run the unit tests
         run: scripts/test.sh unit
+      # GitHub has cancelled jobs by itself, with only "The operation was
+      # canceled." in the log. This keeps what its agent logged about it;
+      # it only reads, and never changes how the job ended.
+      - name: Keep what GitHub's agent logged about the cancelling
+        if: cancelled()
+        run: scripts/github-agent-log.sh build/TestResults || true
       - name: Keep the test results
         if: always()
         uses: actions/upload-artifact@v7.0.2
@@ -200,6 +208,12 @@ jobs:
           SIMULATOR_FAMILY: ipad
           UI_TEST_PART: "1"
         run: scripts/test.sh ui
+      # GitHub has cancelled jobs by itself, with only "The operation was
+      # canceled." in the log. This keeps what its agent logged about it;
+      # it only reads, and never changes how the job ended.
+      - name: Keep what GitHub's agent logged about the cancelling
+        if: cancelled()
+        run: scripts/github-agent-log.sh build/TestResults || true
       - name: Keep the test results
         if: always()
         uses: actions/upload-artifact@v7.0.2
@@ -232,6 +246,12 @@ jobs:
           SIMULATOR_FAMILY: ipad
           UI_TEST_PART: "2"
         run: scripts/test.sh ui
+      # GitHub has cancelled jobs by itself, with only "The operation was
+      # canceled." in the log. This keeps what its agent logged about it;
+      # it only reads, and never changes how the job ended.
+      - name: Keep what GitHub's agent logged about the cancelling
+        if: cancelled()
+        run: scripts/github-agent-log.sh build/TestResults || true
       - name: Keep the test results
         if: always()
         uses: actions/upload-artifact@v7.0.2
@@ -264,6 +284,12 @@ jobs:
           SIMULATOR_FAMILY: ipad
           UI_TEST_PART: "3"
         run: scripts/test.sh ui
+      # GitHub has cancelled jobs by itself, with only "The operation was
+      # canceled." in the log. This keeps what its agent logged about it;
+      # it only reads, and never changes how the job ended.
+      - name: Keep what GitHub's agent logged about the cancelling
+        if: cancelled()
+        run: scripts/github-agent-log.sh build/TestResults || true
       - name: Keep the test results
         if: always()
         uses: actions/upload-artifact@v7.0.2
@@ -296,6 +322,12 @@ jobs:
           SIMULATOR_FAMILY: iphone
           UI_TEST_PART: "1"
         run: scripts/test.sh ui
+      # GitHub has cancelled jobs by itself, with only "The operation was
+      # canceled." in the log. This keeps what its agent logged about it;
+      # it only reads, and never changes how the job ended.
+      - name: Keep what GitHub's agent logged about the cancelling
+        if: cancelled()
+        run: scripts/github-agent-log.sh build/TestResults || true
       - name: Keep the test results
         if: always()
         uses: actions/upload-artifact@v7.0.2
@@ -328,6 +360,12 @@ jobs:
           SIMULATOR_FAMILY: iphone
           UI_TEST_PART: "2"
         run: scripts/test.sh ui
+      # GitHub has cancelled jobs by itself, with only "The operation was
+      # canceled." in the log. This keeps what its agent logged about it;
+      # it only reads, and never changes how the job ended.
+      - name: Keep what GitHub's agent logged about the cancelling
+        if: cancelled()
+        run: scripts/github-agent-log.sh build/TestResults || true
       - name: Keep the test results
         if: always()
         uses: actions/upload-artifact@v7.0.2
@@ -360,6 +398,12 @@ jobs:
           SIMULATOR_FAMILY: iphone
           UI_TEST_PART: "3"
         run: scripts/test.sh ui
+      # GitHub has cancelled jobs by itself, with only "The operation was
+      # canceled." in the log. This keeps what its agent logged about it;
+      # it only reads, and never changes how the job ended.
+      - name: Keep what GitHub's agent logged about the cancelling
+        if: cancelled()
+        run: scripts/github-agent-log.sh build/TestResults || true
       - name: Keep the test results
         if: always()
         uses: actions/upload-artifact@v7.0.2

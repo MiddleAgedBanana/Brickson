@@ -192,7 +192,7 @@ status line, and this record's *Not verified* brought up to date.
   "Typing on Home" come from there.
 - **The String Catalog** was edited by hand (this session cannot run
   `xcstringstool`): "Phrases", "Type", "Clear", "Put Back", "Message" and
-  Type's dimmed hint added with their comments; the project files' catalog tool found every
+  Type's dimmed hint added with their comments; a catalog tool found every
   key the code uses and none it does not. CI's catalog check is the
   proof.
 - `scripts/test-docs.py`, `scripts/test-site.py` and

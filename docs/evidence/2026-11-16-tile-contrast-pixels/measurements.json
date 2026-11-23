@@ -1,0 +1,2675 @@
+[
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "dark",
+  "increaseContrast": "off",
+  "screen": "home",
+  "control": "tile:Maybe.",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.323,
+    "onFill": 5.74,
+    "onPage": 21
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "dark",
+  "increaseContrast": "off",
+  "screen": "home",
+  "control": "tile:I don't know.",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.323,
+    "onFill": 5.74,
+    "onPage": 21
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "dark",
+  "increaseContrast": "off",
+  "screen": "home",
+  "control": "tile:Please.",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.323,
+    "onFill": 5.74,
+    "onPage": 21
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "dark",
+  "increaseContrast": "off",
+  "screen": "home",
+  "control": "Basics",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#000000",
+    "share": 0.497,
+    "onFill": 3.66,
+    "onPage": 1
+   },
+   {
+    "colour": "#FFFFFF",
+    "share": 0.308,
+    "onFill": 5.74,
+    "onPage": 21
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "dark",
+  "increaseContrast": "off",
+  "screen": "pressed",
+  "control": "pressed:I don't know.",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.654,
+    "onFill": 5.74,
+    "onPage": 21
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "dark",
+  "increaseContrast": "off",
+  "screen": "settings",
+  "control": "Back to Talking",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.309,
+    "onFill": 5.74,
+    "onPage": 21
+   },
+   {
+    "colour": "#000000",
+    "share": 0.033,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "dark",
+  "increaseContrast": "off",
+  "screen": "setup-chosen",
+  "control": "Back to Talking",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.456,
+    "onFill": 5.74,
+    "onPage": 21
+   },
+   {
+    "colour": "#000000",
+    "share": 0.049,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "dark",
+  "increaseContrast": "off",
+  "screen": "setup-chosen",
+  "control": "Touch",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#000000",
+    "share": 0.095,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "dark",
+  "increaseContrast": "off",
+  "screen": "setup-chosen",
+  "control": "Next",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#000000",
+    "share": 1,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "dark",
+  "increaseContrast": "off",
+  "screen": "voice",
+  "control": "Back to Talking",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.456,
+    "onFill": 5.74,
+    "onPage": 21
+   },
+   {
+    "colour": "#000000",
+    "share": 0.049,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "dark",
+  "increaseContrast": "off",
+  "screen": "voice",
+  "control": "Normal speed",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#000000",
+    "share": 0.095,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "dark",
+  "increaseContrast": "on",
+  "screen": "home",
+  "control": "tile:Maybe.",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.323,
+    "onFill": 5.74,
+    "onPage": 21
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "dark",
+  "increaseContrast": "on",
+  "screen": "home",
+  "control": "tile:I don't know.",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.323,
+    "onFill": 5.74,
+    "onPage": 21
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "dark",
+  "increaseContrast": "on",
+  "screen": "home",
+  "control": "tile:Please.",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.323,
+    "onFill": 5.74,
+    "onPage": 21
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "dark",
+  "increaseContrast": "on",
+  "screen": "home",
+  "control": "Basics",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#000000",
+    "share": 0.497,
+    "onFill": 3.66,
+    "onPage": 1
+   },
+   {
+    "colour": "#FFFFFF",
+    "share": 0.308,
+    "onFill": 5.74,
+    "onPage": 21
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "dark",
+  "increaseContrast": "on",
+  "screen": "pressed",
+  "control": "pressed:I don't know.",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.654,
+    "onFill": 5.74,
+    "onPage": 21
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "dark",
+  "increaseContrast": "on",
+  "screen": "settings",
+  "control": "Back to Talking",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.309,
+    "onFill": 5.74,
+    "onPage": 21
+   },
+   {
+    "colour": "#000000",
+    "share": 0.033,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "dark",
+  "increaseContrast": "on",
+  "screen": "setup-chosen",
+  "control": "Back to Talking",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.456,
+    "onFill": 5.74,
+    "onPage": 21
+   },
+   {
+    "colour": "#000000",
+    "share": 0.049,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "dark",
+  "increaseContrast": "on",
+  "screen": "setup-chosen",
+  "control": "Touch",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#000000",
+    "share": 0.095,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "dark",
+  "increaseContrast": "on",
+  "screen": "setup-chosen",
+  "control": "Next",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#000000",
+    "share": 1,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "dark",
+  "increaseContrast": "on",
+  "screen": "voice",
+  "control": "Back to Talking",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.456,
+    "onFill": 5.74,
+    "onPage": 21
+   },
+   {
+    "colour": "#000000",
+    "share": 0.049,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "dark",
+  "increaseContrast": "on",
+  "screen": "voice",
+  "control": "Normal speed",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#000000",
+    "share": 0.095,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "light",
+  "increaseContrast": "off",
+  "screen": "home",
+  "control": "tile:Maybe.",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": []
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "light",
+  "increaseContrast": "off",
+  "screen": "home",
+  "control": "tile:I don't know.",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": []
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "light",
+  "increaseContrast": "off",
+  "screen": "home",
+  "control": "tile:Please.",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": []
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "light",
+  "increaseContrast": "off",
+  "screen": "home",
+  "control": "Basics",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.497,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "light",
+  "increaseContrast": "off",
+  "screen": "pressed",
+  "control": "pressed:I don't know.",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#000000",
+    "share": 0.489,
+    "onFill": 3.66,
+    "onPage": 21
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "light",
+  "increaseContrast": "off",
+  "screen": "settings",
+  "control": "Back to Talking",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.033,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "light",
+  "increaseContrast": "off",
+  "screen": "setup-chosen",
+  "control": "Back to Talking",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.049,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "light",
+  "increaseContrast": "off",
+  "screen": "setup-chosen",
+  "control": "Touch",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.095,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "light",
+  "increaseContrast": "off",
+  "screen": "setup-chosen",
+  "control": "Next",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 1,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "light",
+  "increaseContrast": "off",
+  "screen": "voice",
+  "control": "Back to Talking",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.049,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "light",
+  "increaseContrast": "off",
+  "screen": "voice",
+  "control": "Normal speed",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.095,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "light",
+  "increaseContrast": "on",
+  "screen": "home",
+  "control": "tile:Maybe.",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": []
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "light",
+  "increaseContrast": "on",
+  "screen": "home",
+  "control": "tile:I don't know.",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": []
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "light",
+  "increaseContrast": "on",
+  "screen": "home",
+  "control": "tile:Please.",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": []
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "light",
+  "increaseContrast": "on",
+  "screen": "home",
+  "control": "Basics",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.497,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "light",
+  "increaseContrast": "on",
+  "screen": "pressed",
+  "control": "pressed:I don't know.",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#000000",
+    "share": 0.489,
+    "onFill": 3.66,
+    "onPage": 21
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "light",
+  "increaseContrast": "on",
+  "screen": "settings",
+  "control": "Back to Talking",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.033,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "light",
+  "increaseContrast": "on",
+  "screen": "setup-chosen",
+  "control": "Back to Talking",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.049,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "light",
+  "increaseContrast": "on",
+  "screen": "setup-chosen",
+  "control": "Touch",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.095,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "light",
+  "increaseContrast": "on",
+  "screen": "setup-chosen",
+  "control": "Next",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 1,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "light",
+  "increaseContrast": "on",
+  "screen": "voice",
+  "control": "Back to Talking",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.049,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "ipad",
+  "appearance": "light",
+  "increaseContrast": "on",
+  "screen": "voice",
+  "control": "Normal speed",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.095,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "off",
+  "screen": "home",
+  "control": "tile:Maybe.",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.313,
+    "onFill": 5.74,
+    "onPage": 21
+   },
+   {
+    "colour": "#000000",
+    "share": 0.044,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "off",
+  "screen": "home",
+  "control": "tile:I don't know.",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.313,
+    "onFill": 5.74,
+    "onPage": 21
+   },
+   {
+    "colour": "#000000",
+    "share": 0.044,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "off",
+  "screen": "home",
+  "control": "tile:Please.",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.313,
+    "onFill": 5.74,
+    "onPage": 21
+   },
+   {
+    "colour": "#000000",
+    "share": 0.044,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "off",
+  "screen": "home",
+  "control": "Basics",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#000000",
+    "share": 0.508,
+    "onFill": 3.66,
+    "onPage": 1
+   },
+   {
+    "colour": "#FFFFFF",
+    "share": 0.305,
+    "onFill": 5.74,
+    "onPage": 21
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "off",
+  "screen": "pressed",
+  "control": "pressed:I don't know.",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.636,
+    "onFill": 5.74,
+    "onPage": 21
+   },
+   {
+    "colour": "#000000",
+    "share": 0.044,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "off",
+  "screen": "save",
+  "control": "Back to Talking",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.451,
+    "onFill": 5.74,
+    "onPage": 21
+   },
+   {
+    "colour": "#000000",
+    "share": 0.075,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "off",
+  "screen": "save",
+  "control": "Save",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#000000",
+    "share": 0.235,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "off",
+  "screen": "settings",
+  "control": "Back to Talking",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.309,
+    "onFill": 5.74,
+    "onPage": 21
+   },
+   {
+    "colour": "#000000",
+    "share": 0.051,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "off",
+  "screen": "setup-chosen",
+  "control": "Back to Talking",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.451,
+    "onFill": 5.74,
+    "onPage": 21
+   },
+   {
+    "colour": "#000000",
+    "share": 0.075,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "off",
+  "screen": "setup-chosen",
+  "control": "Touch",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#000000",
+    "share": 0.235,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "off",
+  "screen": "setup-chosen",
+  "control": "Next",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#000000",
+    "share": 1,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "off",
+  "screen": "voice",
+  "control": "Back to Talking",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.451,
+    "onFill": 5.74,
+    "onPage": 21
+   },
+   {
+    "colour": "#000000",
+    "share": 0.075,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "off",
+  "screen": "voice",
+  "control": "Normal speed",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#000000",
+    "share": 0.235,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "on",
+  "screen": "home",
+  "control": "tile:Maybe.",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.313,
+    "onFill": 5.74,
+    "onPage": 21
+   },
+   {
+    "colour": "#000000",
+    "share": 0.044,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "on",
+  "screen": "home",
+  "control": "tile:I don't know.",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.313,
+    "onFill": 5.74,
+    "onPage": 21
+   },
+   {
+    "colour": "#000000",
+    "share": 0.044,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "on",
+  "screen": "home",
+  "control": "tile:Please.",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.313,
+    "onFill": 5.74,
+    "onPage": 21
+   },
+   {
+    "colour": "#000000",
+    "share": 0.044,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "on",
+  "screen": "home",
+  "control": "Basics",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#000000",
+    "share": 0.508,
+    "onFill": 3.66,
+    "onPage": 1
+   },
+   {
+    "colour": "#FFFFFF",
+    "share": 0.305,
+    "onFill": 5.74,
+    "onPage": 21
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "on",
+  "screen": "library",
+  "control": "Back to Talking",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.451,
+    "onFill": 5.74,
+    "onPage": 21
+   },
+   {
+    "colour": "#000000",
+    "share": 0.075,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "on",
+  "screen": "pressed",
+  "control": "pressed:I don't know.",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.636,
+    "onFill": 5.74,
+    "onPage": 21
+   },
+   {
+    "colour": "#000000",
+    "share": 0.044,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "on",
+  "screen": "save",
+  "control": "Back to Talking",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.451,
+    "onFill": 5.74,
+    "onPage": 21
+   },
+   {
+    "colour": "#000000",
+    "share": 0.075,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "on",
+  "screen": "save",
+  "control": "Save",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#000000",
+    "share": 0.235,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "on",
+  "screen": "settings",
+  "control": "Back to Talking",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.309,
+    "onFill": 5.74,
+    "onPage": 21
+   },
+   {
+    "colour": "#000000",
+    "share": 0.051,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "on",
+  "screen": "setup-chosen",
+  "control": "Back to Talking",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.451,
+    "onFill": 5.74,
+    "onPage": 21
+   },
+   {
+    "colour": "#000000",
+    "share": 0.075,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "on",
+  "screen": "setup-chosen",
+  "control": "Touch",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#000000",
+    "share": 0.235,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "on",
+  "screen": "setup-chosen",
+  "control": "Next",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#000000",
+    "share": 1,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "on",
+  "screen": "setup",
+  "control": "Back to Talking",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.451,
+    "onFill": 5.74,
+    "onPage": 21
+   },
+   {
+    "colour": "#000000",
+    "share": 0.075,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "on",
+  "screen": "setup",
+  "control": "Next",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#000000",
+    "share": 1,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "on",
+  "screen": "voice",
+  "control": "Back to Talking",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.451,
+    "onFill": 5.74,
+    "onPage": 21
+   },
+   {
+    "colour": "#000000",
+    "share": 0.075,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "on",
+  "screen": "voice",
+  "control": "Normal speed",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#000000",
+    "share": 0.235,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "light",
+  "increaseContrast": "off",
+  "screen": "home",
+  "control": "tile:Maybe.",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.044,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "light",
+  "increaseContrast": "off",
+  "screen": "home",
+  "control": "tile:I don't know.",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.044,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "light",
+  "increaseContrast": "off",
+  "screen": "home",
+  "control": "tile:Please.",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.044,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "light",
+  "increaseContrast": "off",
+  "screen": "home",
+  "control": "Basics",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.508,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "light",
+  "increaseContrast": "off",
+  "screen": "pressed",
+  "control": "pressed:I don't know.",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#000000",
+    "share": 0.475,
+    "onFill": 3.66,
+    "onPage": 21
+   },
+   {
+    "colour": "#FFFFFF",
+    "share": 0.044,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "light",
+  "increaseContrast": "off",
+  "screen": "save",
+  "control": "Back to Talking",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.075,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "light",
+  "increaseContrast": "off",
+  "screen": "save",
+  "control": "Save",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.235,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "light",
+  "increaseContrast": "off",
+  "screen": "settings",
+  "control": "Back to Talking",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.051,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "light",
+  "increaseContrast": "off",
+  "screen": "setup-chosen",
+  "control": "Back to Talking",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.075,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "light",
+  "increaseContrast": "off",
+  "screen": "setup-chosen",
+  "control": "Touch",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.235,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "light",
+  "increaseContrast": "off",
+  "screen": "setup-chosen",
+  "control": "Next",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 1,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "light",
+  "increaseContrast": "off",
+  "screen": "voice",
+  "control": "Back to Talking",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.075,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "light",
+  "increaseContrast": "off",
+  "screen": "voice",
+  "control": "Normal speed",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.235,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "light",
+  "increaseContrast": "on",
+  "screen": "home",
+  "control": "tile:Maybe.",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.044,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "light",
+  "increaseContrast": "on",
+  "screen": "home",
+  "control": "tile:I don't know.",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.044,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "light",
+  "increaseContrast": "on",
+  "screen": "home",
+  "control": "tile:Please.",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.044,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "light",
+  "increaseContrast": "on",
+  "screen": "home",
+  "control": "Basics",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.508,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "light",
+  "increaseContrast": "on",
+  "screen": "pressed",
+  "control": "pressed:I don't know.",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#000000",
+    "share": 0.475,
+    "onFill": 3.66,
+    "onPage": 21
+   },
+   {
+    "colour": "#FFFFFF",
+    "share": 0.044,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "light",
+  "increaseContrast": "on",
+  "screen": "save",
+  "control": "Back to Talking",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.075,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "light",
+  "increaseContrast": "on",
+  "screen": "save",
+  "control": "Save",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.235,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "light",
+  "increaseContrast": "on",
+  "screen": "settings",
+  "control": "Back to Talking",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.051,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "light",
+  "increaseContrast": "on",
+  "screen": "setup-chosen",
+  "control": "Back to Talking",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.075,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "light",
+  "increaseContrast": "on",
+  "screen": "setup-chosen",
+  "control": "Touch",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.235,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "light",
+  "increaseContrast": "on",
+  "screen": "setup-chosen",
+  "control": "Next",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 1,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "light",
+  "increaseContrast": "on",
+  "screen": "voice",
+  "control": "Back to Talking",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.075,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "main dc11030",
+  "device": "iphone",
+  "appearance": "light",
+  "increaseContrast": "on",
+  "screen": "voice",
+  "control": "Normal speed",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#FFFFFF",
+  "fillOnPage": 5.74,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.235,
+    "onFill": 5.74,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "control: phraseFill = Color.accentColor",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "off",
+  "screen": "home",
+  "control": "tile:Maybe.",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.313,
+    "onFill": 5.74,
+    "onPage": 21
+   },
+   {
+    "colour": "#000000",
+    "share": 0.044,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "control: phraseFill = Color.accentColor",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "off",
+  "screen": "home",
+  "control": "tile:I don't know.",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.313,
+    "onFill": 5.74,
+    "onPage": 21
+   },
+   {
+    "colour": "#000000",
+    "share": 0.044,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "control: phraseFill = Color.accentColor",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "off",
+  "screen": "home",
+  "control": "tile:Please.",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.313,
+    "onFill": 5.74,
+    "onPage": 21
+   },
+   {
+    "colour": "#000000",
+    "share": 0.044,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "control: phraseFill = Color.accentColor",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "off",
+  "screen": "home",
+  "control": "Basics",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#000000",
+    "share": 0.508,
+    "onFill": 3.66,
+    "onPage": 1
+   },
+   {
+    "colour": "#FFFFFF",
+    "share": 0.305,
+    "onFill": 5.74,
+    "onPage": 21
+   }
+  ]
+ },
+ {
+  "build": "control: phraseFill = Color.accentColor",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "off",
+  "screen": "pressed",
+  "control": "pressed:I don't know.",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.636,
+    "onFill": 5.74,
+    "onPage": 21
+   },
+   {
+    "colour": "#000000",
+    "share": 0.044,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "control: phraseFill = Color.accentColor",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "off",
+  "screen": "settings",
+  "control": "Back to Talking",
+  "fill": "#0A60D6",
+  "words": "#FFFFFF",
+  "wordsOnFill": 5.74,
+  "page": "#000000",
+  "fillOnPage": 3.66,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.309,
+    "onFill": 5.74,
+    "onPage": 21
+   },
+   {
+    "colour": "#000000",
+    "share": 0.051,
+    "onFill": 3.66,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "control: phraseFill = Color.accentColor",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "on",
+  "screen": "home",
+  "control": "tile:Maybe.",
+  "fill": "#1A7BFF",
+  "words": "#FFFFFF",
+  "wordsOnFill": 3.95,
+  "page": "#000000",
+  "fillOnPage": 5.32,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.313,
+    "onFill": 3.95,
+    "onPage": 21
+   },
+   {
+    "colour": "#000000",
+    "share": 0.044,
+    "onFill": 5.32,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "control: phraseFill = Color.accentColor",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "on",
+  "screen": "home",
+  "control": "tile:I don't know.",
+  "fill": "#1A7BFF",
+  "words": "#FFFFFF",
+  "wordsOnFill": 3.95,
+  "page": "#000000",
+  "fillOnPage": 5.32,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.313,
+    "onFill": 3.95,
+    "onPage": 21
+   },
+   {
+    "colour": "#000000",
+    "share": 0.044,
+    "onFill": 5.32,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "control: phraseFill = Color.accentColor",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "on",
+  "screen": "home",
+  "control": "tile:Please.",
+  "fill": "#1A7BFF",
+  "words": "#FFFFFF",
+  "wordsOnFill": 3.95,
+  "page": "#000000",
+  "fillOnPage": 5.32,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.313,
+    "onFill": 3.95,
+    "onPage": 21
+   },
+   {
+    "colour": "#000000",
+    "share": 0.044,
+    "onFill": 5.32,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "control: phraseFill = Color.accentColor",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "on",
+  "screen": "home",
+  "control": "Basics",
+  "fill": "#1A7BFF",
+  "words": "#000000",
+  "wordsOnFill": 5.32,
+  "page": "#000000",
+  "fillOnPage": 5.32,
+  "edgeBand": [
+   {
+    "colour": "#000000",
+    "share": 0.508,
+    "onFill": 5.32,
+    "onPage": 1
+   },
+   {
+    "colour": "#FFFFFF",
+    "share": 0.305,
+    "onFill": 3.95,
+    "onPage": 21
+   }
+  ]
+ },
+ {
+  "build": "control: phraseFill = Color.accentColor",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "on",
+  "screen": "pressed",
+  "control": "pressed:I don't know.",
+  "fill": "#1A7BFF",
+  "words": "#FFFFFF",
+  "wordsOnFill": 3.95,
+  "page": "#000000",
+  "fillOnPage": 5.32,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.636,
+    "onFill": 3.95,
+    "onPage": 21
+   },
+   {
+    "colour": "#000000",
+    "share": 0.044,
+    "onFill": 5.32,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "control: phraseFill = Color.accentColor",
+  "device": "iphone",
+  "appearance": "dark",
+  "increaseContrast": "on",
+  "screen": "settings",
+  "control": "Back to Talking",
+  "fill": "#1A7BFF",
+  "words": "#FFFFFF",
+  "wordsOnFill": 3.95,
+  "page": "#000000",
+  "fillOnPage": 5.32,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.309,
+    "onFill": 3.95,
+    "onPage": 21
+   },
+   {
+    "colour": "#000000",
+    "share": 0.051,
+    "onFill": 5.32,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "control: phraseFill = Color.accentColor",
+  "device": "iphone",
+  "appearance": "light",
+  "increaseContrast": "on",
+  "screen": "home",
+  "control": "tile:Maybe.",
+  "fill": "#084DAB",
+  "words": "#FFFFFF",
+  "wordsOnFill": 7.89,
+  "page": "#FFFFFF",
+  "fillOnPage": 7.89,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.044,
+    "onFill": 7.89,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "control: phraseFill = Color.accentColor",
+  "device": "iphone",
+  "appearance": "light",
+  "increaseContrast": "on",
+  "screen": "home",
+  "control": "tile:I don't know.",
+  "fill": "#084DAB",
+  "words": "#FFFFFF",
+  "wordsOnFill": 7.89,
+  "page": "#FFFFFF",
+  "fillOnPage": 7.89,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.044,
+    "onFill": 7.89,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "control: phraseFill = Color.accentColor",
+  "device": "iphone",
+  "appearance": "light",
+  "increaseContrast": "on",
+  "screen": "home",
+  "control": "tile:Please.",
+  "fill": "#084DAB",
+  "words": "#FFFFFF",
+  "wordsOnFill": 7.89,
+  "page": "#FFFFFF",
+  "fillOnPage": 7.89,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.044,
+    "onFill": 7.89,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "control: phraseFill = Color.accentColor",
+  "device": "iphone",
+  "appearance": "light",
+  "increaseContrast": "on",
+  "screen": "home",
+  "control": "Basics",
+  "fill": "#084DAB",
+  "words": "#FFFFFF",
+  "wordsOnFill": 7.89,
+  "page": "#FFFFFF",
+  "fillOnPage": 7.89,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.508,
+    "onFill": 7.89,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "control: phraseFill = Color.accentColor",
+  "device": "iphone",
+  "appearance": "light",
+  "increaseContrast": "on",
+  "screen": "pressed",
+  "control": "pressed:I don't know.",
+  "fill": "#084DAB",
+  "words": "#FFFFFF",
+  "wordsOnFill": 7.89,
+  "page": "#FFFFFF",
+  "fillOnPage": 7.89,
+  "edgeBand": [
+   {
+    "colour": "#000000",
+    "share": 0.475,
+    "onFill": 2.66,
+    "onPage": 21
+   },
+   {
+    "colour": "#FFFFFF",
+    "share": 0.044,
+    "onFill": 7.89,
+    "onPage": 1
+   }
+  ]
+ },
+ {
+  "build": "control: phraseFill = Color.accentColor",
+  "device": "iphone",
+  "appearance": "light",
+  "increaseContrast": "on",
+  "screen": "settings",
+  "control": "Back to Talking",
+  "fill": "#084DAB",
+  "words": "#FFFFFF",
+  "wordsOnFill": 7.89,
+  "page": "#FFFFFF",
+  "fillOnPage": 7.89,
+  "edgeBand": [
+   {
+    "colour": "#FFFFFF",
+    "share": 0.051,
+    "onFill": 7.89,
+    "onPage": 1
+   }
+  ]
+ }
+]
