@@ -331,6 +331,7 @@ struct ProfileChoiceTests {
         "iPhone 17": Array(repeating: .touch, count: 5),
         "iPhone 17 Pro Max": Array(repeating: .touch, count: 5),
         "iPhone 16e": Array(repeating: .touch, count: 5),
+        "iPhone Air": Array(repeating: .touch, count: 5),
         "375×667 phone": Array(repeating: .touch, count: 5),
         "375×667 phone, zoomed": Array(repeating: .touch, count: 5),
         "13-inch iPad": Array(repeating: .eyeTracking, count: 5),
@@ -338,19 +339,32 @@ struct ProfileChoiceTests {
         // Head tracking's sizes hold, but leave no room for typing until
         // touch's leave none either, at AX3; at AX5 they scroll.
         "13-inch iPad, landscape, zoomed": [.touch, .touch, .touch, .headTracking, .touch],
+        "13-inch iPad Air": Array(repeating: .eyeTracking, count: 5),
+        "13-inch iPad Air, landscape": Array(repeating: .eyeTracking, count: 5),
         "11-inch iPad": Array(repeating: .eyeTracking, count: 5),
         // Eye Tracking's scroll; at AX5 head tracking's leave no room for
         // typing.
         "11-inch iPad, landscape": [.headTracking, .headTracking, .headTracking, .headTracking, .touch],
+        "820×1180 iPad": Array(repeating: .eyeTracking, count: 5),
+        // Head tracking's sizes hold, but leave no room for typing until
+        // touch's leave none either, at AX5.
+        "820×1180 iPad, landscape": [.touch, .touch, .touch, .touch, .headTracking],
         "iPad mini": Array(repeating: .eyeTracking, count: 5),
         // Head tracking's leave the starter library 30 to 58 points short.
         "iPad mini, landscape": Array(repeating: .touch, count: 5),
+        // With Bold Text too: the window is 12 points wider than the
+        // other iPad mini's (`eyeTableWithBoldText`).
+        "iPad mini (A20 Pro)": Array(repeating: .eyeTracking, count: 5),
+        // Head tracking's leave the starter library 18 to 46 points short.
+        "iPad mini (A20 Pro), landscape": Array(repeating: .touch, count: 5),
     ]
 
     /// Where Bold Text changes what `eyeTable` says: on the iPad mini in
     /// portrait, Eye Tracking's 15-point gap leaves five columns of 130.4
     /// points, narrower than the widest bold word one carries (132), so
     /// head tracking's are taken (`HomeLayout.arrangementHoldsItsWords`).
+    /// The iPad mini (A20 Pro)'s window, 12 points wider, leaves columns
+    /// of 132.8 and keeps Eye Tracking's.
     static let eyeTableWithBoldText: [String: [Profile]] = [
         "iPad mini": Array(repeating: .headTracking, count: 5),
     ]
@@ -365,7 +379,7 @@ struct ProfileChoiceTests {
     @Test(arguments: HomeLayoutEngineTests.windows.indices)
     func theWindowsPeopleUseTakeTheSizesTheTableSays(window index: Int) {
         let window = HomeLayoutEngineTests.windows[index]
-        let space = HomeLayout.Space(size: window.size, safeArea: .init(top: window.top, leading: 0, bottom: window.bottom, trailing: 0))
+        let space = window.space
         #expect(Self.eyeTable[window.name]?.count == HomeLayoutEngineTests.textSizes.count, "\(window.name)")
         for (size, (name, plain)) in HomeLayoutEngineTests.textSizes.enumerated() {
             for boldText in [false, true] {
@@ -390,8 +404,9 @@ struct ProfileChoiceTests {
 
     /// Every regular and compact iPad-sized window from 600 to 1432 points
     /// wide, every 32, at an iPad mini's, an 11-inch's and a 13-inch's
-    /// heights in both orientations, at three text sizes, Bold Text off,
-    /// in which `profile` holds.
+    /// heights in both orientations, and every window people use
+    /// (`HomeLayoutEngineTests.windows`) with its own safe areas, at three
+    /// text sizes, Bold Text off, in which `profile` holds.
     static func heldWindows(_ profile: Profile, every step: CGFloat = 32) -> [(layout: HomeLayout, context: String)] {
         var held: [(HomeLayout, String)] = []
         for (name, text) in [("default", HomeLayoutEngineTests.defaultText), ("xxxLarge", HomeLayoutEngineTests.largerText), ("AX5", HomeLayoutEngineTests.largestText)] {
@@ -402,6 +417,11 @@ struct ProfileChoiceTests {
                     guard layout.holdsProfile else { continue }
                     held.append((layout, "\(width)×\(height), \(name), \(profile)"))
                 }
+            }
+            for window in HomeLayoutEngineTests.windows {
+                let layout = HomeLayout(space: window.space, profile: profile, text: text, modes: .phrasesAndTyping)
+                guard layout.holdsProfile else { continue }
+                held.append((layout, "\(window.name), \(name), \(profile)"))
             }
         }
         return held
