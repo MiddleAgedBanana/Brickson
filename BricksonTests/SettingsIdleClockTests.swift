@@ -198,10 +198,14 @@ struct SettingsIdleClockTests {
     /// A scroll view reports a change from idle to idle as it appears;
     /// that is not a scroll. Fails if it counts: every screen that appears,
     /// the first screen rebuilt by a reset among them, would look used, and
-    /// an untouched Settings would reset at every limit again.
+    /// an untouched Settings would reset at every limit again. A touch that
+    /// rests without moving the list (tracking) is not use either; fails
+    /// if it counts.
     @Test func aScrollViewAppearingIsNotAScroll() {
         #expect(!SettingsScrollUse.counts(from: .idle, to: .idle))
-        #expect(SettingsScrollUse.counts(from: .idle, to: .tracking))
+        #expect(!SettingsScrollUse.counts(from: .idle, to: .tracking))
+        #expect(!SettingsScrollUse.counts(from: .tracking, to: .idle))
+        #expect(SettingsScrollUse.counts(from: .tracking, to: .interacting))
         #expect(SettingsScrollUse.counts(from: .idle, to: .interacting))
         #expect(SettingsScrollUse.counts(from: .interacting, to: .decelerating))
         #expect(SettingsScrollUse.counts(from: .decelerating, to: .idle))

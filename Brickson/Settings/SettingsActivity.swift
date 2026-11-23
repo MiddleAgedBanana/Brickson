@@ -81,8 +81,12 @@ private struct SettingsScrollActivityModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .onScrollPhaseChange { old, phase in
-                guard SettingsScrollUse.counts(from: old, to: phase) else { return }
-                activity?.recordActivity()
+                if SettingsScrollUse.counts(from: old, to: phase) {
+                    activity?.recordActivity()
+                }
+                // Held from the first touch, so a reset never lands under a
+                // finger; a hold that ends restarts the wait without being
+                // use.
                 activity?.setHold(.scrolling(id), phase.isScrolling)
             }
             .onDisappear {
@@ -91,13 +95,21 @@ private struct SettingsScrollActivityModifier: ViewModifier {
     }
 }
 
-/// Which scroll phase changes count as use (`recordsSettingsScrolling()`).
+/// Which scroll phase changes count as use (`recordsSettingsScrolling()`):
+/// those where the screen's content moves. A scroll view that appears
+/// reports a change from idle to idle, which is not a scroll: counted, it
+/// made every screen that appeared look used, the first screen rebuilt by a
+/// reset among them. A touch that rests without moving the list (tracking)
+/// is not one either; it holds the reset while it lasts.
 nonisolated enum SettingsScrollUse {
-    /// A change into, out of or within scrolling. A scroll view that
-    /// appears reports a change from idle to idle, which is not a scroll:
-    /// counted, it made every screen that appeared look used, the first
-    /// screen rebuilt by a reset among them.
     static func counts(from old: ScrollPhase, to new: ScrollPhase) -> Bool {
-        old.isScrolling || new.isScrolling
+        moves(old) || moves(new)
+    }
+
+    private static func moves(_ phase: ScrollPhase) -> Bool {
+        switch phase {
+        case .interacting, .decelerating, .animating: true
+        case .idle, .tracking: false
+        }
     }
 }
