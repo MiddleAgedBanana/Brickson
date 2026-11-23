@@ -4585,9 +4585,10 @@ every screen at each limit for as long as it stayed open, and an
 activation that landed while the screens were replaced did nothing: a
 UI test's tap on Family Setup was lost that way on CI, and 10 of 40
 taps aimed at a reset on the owner's Mac. Coming back to Brickson, a
-hold ending and a scroll view appearing (its phase changing from idle to
-idle) restart the wait without being use, and the reset's own return to
-the root is not use
+hold ending, a scroll view appearing (its phase changing from idle to
+idle) and a touch that rests on a screen without moving it (tracking,
+which holds the reset while it lasts) are not use, and nor is the
+reset's own return to the root
 ([`log/2026-11-22-settings-reset-only-after-use.md`](log/2026-11-22-settings-reset-only-after-use.md)).
 
 ## Setup answers are kept as offered, never as completed
