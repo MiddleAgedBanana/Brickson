@@ -8069,9 +8069,11 @@ full entry always wins over its line.
   (`decision_index_problems`) fails when a `##` or `###` decision here
   has no line or two, when a line is malformed or names a title that no
   longer exists, when a superseded line's `see "Title"`, in either case,
-  names none, when the index passes 15 KiB (`DECISION_INDEX_LIMIT`), or
-  when `AGENTS.md` stops naming the index in its first 24,000 bytes.
-  Each test expects its own problem and no other. It runs in CI with the
+  names none, or when the index passes 15 KiB (`DECISION_INDEX_LIMIT`);
+  `agents_md_index_problems` fails when, within the first 24,000 bytes of
+  `AGENTS.md`, its opening stops sending agents to the index before they
+  decide or *Workflow rules* stops starting each session with the index
+  groups the work touches. Each test expects its own problem and no other. It runs in CI with the
   other document checks.
 - **The rule.** Whoever adds or changes a decision adds or changes its
   line in the same change; after a summary, a job re-reads its work

@@ -34,13 +34,17 @@ one-line index of every decision").
   whole length, whether or not it decides anything; the pointer in
   `AGENTS.md` reaches Codex and Antigravity as well; and `AGENTS.md`
   says agent instructions never go in an agent-specific file.
-- `scripts/test-docs.py` gains `decision_index_problems` and 10 tests in
-  `DecisionIndexTests`. It fails when a decision has no line, when a line
+- `scripts/test-docs.py` gains `decision_index_problems`,
+  `agents_md_index_problems` and 12 tests in `DecisionIndexTests`. It
+  fails when a decision has no line, when a line
   names a title that is not a heading of docs/DECISIONS.md, when a title
   appears twice, when a line breaks the `- "Title": ...` form, when a
   `see "Title"` pointer, in either case, names no decision, when the
-  index passes its size limit, or when `AGENTS.md` stops naming the
-  index in its first 24,000 bytes. Each test expects its own problem and
+  index passes its size limit, or when, within the first 24,000 bytes of
+  `AGENTS.md`, its opening stops sending agents to the index before they
+  decide or *Workflow rules* stops starting each session with the index
+  groups the work touches; a bare mention of the path does not count.
+  Each test expects its own problem and
   no other, so none passes on a problem its edit happens to cause. CI
   already runs this script, so no workflow changed.
 - Titles in the index are quoted for a text search rather than linked.
@@ -66,29 +70,41 @@ request:
   Content Viewer; it says so now.
 - This record's *Commits* now names its commits.
 
+One finding on the review commit, fixed: the check passed as long as
+`AGENTS.md` named the index anywhere in its first 24,000 bytes, so the
+"each with its line" mention would have kept it green with both
+pointers gone. `agents_md_index_problems` now reads the opening's
+directive and the start-of-session step themselves, with tests that
+remove each.
+
 ## Commits
 
 - `aea358c`: the index, the symlink that loaded it, `decision_index_problems`
   and its tests, the `AGENTS.md` rule, this record, docs/DECISIONS.md
   and docs/HANDOFF.md.
-- The commit that adds this line: the answers to the review above, the
-  symlink replaced by the pointers in `AGENTS.md`, the decision renamed
-  "A one-line index of every decision", and this record, docs/DECISIONS.md
-  and docs/HANDOFF.md brought up to date.
+- `1e679d3`: the answers to the first review, the symlink replaced by
+  the pointers in `AGENTS.md`, the decision renamed "A one-line index of
+  every decision", and this record, docs/DECISIONS.md and
+  docs/HANDOFF.md brought up to date.
+- The commit that adds this line: the second review's finding,
+  `agents_md_index_problems` and its tests, and the counts here, in
+  docs/DECISIONS.md and in docs/HANDOFF.md.
 
 ## Verified
 
 - First commit, in the cloud session (Linux, no Mac):
   `python3 scripts/test-docs.py` passed 71 tests.
-- Review commit, on the owner's Mac: the five Python checks as
+- Review commits, on the owner's Mac: the five Python checks as
   `scripts/test.sh` runs them before the unit tests (`test-docs.py`,
   `test-hooks.py`, `test-privacy.py`, `test-agent-bridge.py`,
-  `test-forbidden-code.py`) all pass; `test-docs.py` runs 70 tests, 10
-  of them in `DecisionIndexTests`, which read the real files too: the
-  index matches docs/DECISIONS.md (98 `##` and 12 `###` entries, 110
-  lines) and `AGENTS.md` names it in its first 24,000 bytes. With the
-  decision renamed in docs/DECISIONS.md and not yet in the index, the
-  check failed on both lines, as it should.
+  `test-forbidden-code.py`) all pass; `test-docs.py` runs 72 tests, 12
+  of them in `DecisionIndexTests`, two of which read the real files too:
+  the index matches docs/DECISIONS.md (98 `##` and 12 `###` entries, 110
+  lines), and `AGENTS.md`'s opening and start of a session send agents
+  to it within its first 24,000 bytes. With the decision renamed in
+  docs/DECISIONS.md and not yet in the index, the check failed on both
+  lines, as it should; with either pointer taken out of the real
+  `AGENTS.md`, `agents_md_index_problems` reported it.
 - The privacy check on the outgoing commits and on the pull request
   text.
 

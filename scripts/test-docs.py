@@ -34,7 +34,8 @@ It also checks docs/DECISIONS-INDEX.md, which AGENTS.md sends every agent
 to before it decides anything: each ## and ### decision in
 docs/DECISIONS.md has exactly one line, every line and every see "Title"
 names a decision that exists, the file stays within DECISION_INDEX_LIMIT,
-and AGENTS.md names it where every agent reads.
+and AGENTS.md's opening and start of a session send every agent to it
+within the bytes every agent reads.
 """
 from functools import cache
 from pathlib import Path
@@ -704,6 +705,29 @@ def decision_index_problems(decisions, index, limit=DECISION_INDEX_LIMIT):
                         f'{INDEX_REASON}')
     return problems
 
+
+START_OF_SESSION = re.compile(r'^- Start each session with.*?(?=^- |^#|\Z)', re.M | re.S)
+
+
+def agents_md_index_problems(agents):
+    """AGENTS.md's opening sends every agent to the index before it decides
+    anything, and *Workflow rules* starts each session with the index
+    groups the work touches, both within the first AGENTS_FIRST_READ bytes,
+    which is all Antigravity reads. A bare mention of the path elsewhere
+    does not count."""
+    text = agents.encode()[:AGENTS_FIRST_READ].decode(errors='ignore')
+    opening = ' '.join(text.split('\n## ', 1)[0].split())
+    problems = []
+    if not re.search(rf'Before deciding anything, read [^.]*`{re.escape(DECISION_INDEX)}`', opening):
+        problems.append(f'AGENTS.md: its opening no longer says "Before deciding anything, read" '
+                        f'the groups of `{DECISION_INDEX}` the work touches, within its first '
+                        f'{AGENTS_FIRST_READ} bytes {INDEX_REASON}')
+    start = START_OF_SESSION.search(text)
+    if not start or 'the index groups your work touches' not in ' '.join(start[0].split()):
+        problems.append(f'AGENTS.md: *Workflow rules* no longer starts each session with "the '
+                        f'index groups your work touches", within its first {AGENTS_FIRST_READ} '
+                        f'bytes {INDEX_REASON}')
+    return problems
 
 class CheckerTests(unittest.TestCase):
     """The checks themselves must catch what they claim to catch."""
@@ -1385,13 +1409,30 @@ class DecisionIndexTests(unittest.TestCase):
                                            (ROOT / DECISION_INDEX).read_text())
         self.assertEqual(problems, [], '\n' + '\n'.join(problems))
 
-    def test_agents_md_sends_every_agent_to_the_index(self):
-        # Claude Code reads AGENTS.md through CLAUDE.md, Codex reads it
-        # directly, and Antigravity reads only its first AGENTS_FIRST_READ
-        # bytes, so the pointer must come before that.
-        start = (ROOT / 'AGENTS.md').read_bytes()[:AGENTS_FIRST_READ].decode(errors='ignore')
-        self.assertIn(DECISION_INDEX, start)
+    AGENTS = ('# Briefing\n\nIntro. Before deciding anything, read the groups of\n'
+              '`docs/DECISIONS-INDEX.md` (one line per decision) your work touches.\n\n'
+              '## Workflow rules\n\n- Record decisions, each with its line in\n'
+              '  `docs/DECISIONS-INDEX.md`.\n- Start each session with `git status`, then read\n'
+              '  the index groups your work touches with their entries.\n- Next.\n')
 
+    def test_agents_md_sends_every_agent_to_the_index(self):
+        self.assertEqual(agents_md_index_problems(self.AGENTS), [])
+        # Claude Code reads AGENTS.md through CLAUDE.md, Codex reads it
+        # directly, and Antigravity reads only its first AGENTS_FIRST_READ bytes.
+        problems = agents_md_index_problems((ROOT / 'AGENTS.md').read_text())
+        self.assertEqual(problems, [], '\n' + '\n'.join(problems))
+
+    def test_agents_md_without_the_opening_directive_fails(self):
+        # The later "each with its line" mention must not keep this passing.
+        agents = self.AGENTS.replace('Before deciding anything, read', 'Agents may read')
+        self.assertProblem(agents_md_index_problems(agents), 'its opening no longer says')
+
+    def test_agents_md_without_the_start_of_session_step_fails(self):
+        for agents in [self.AGENTS.replace('the index groups your work touches', 'the decisions'),
+                       self.AGENTS.replace('## Workflow rules\n', '## Workflow rules\n\n'
+                                           + 'x' * AGENTS_FIRST_READ + '\n')]:
+            self.assertProblem(agents_md_index_problems(agents),
+                               'no longer starts each session')
 
 class IssueFormTests(unittest.TestCase):
     """Dropping the privacy warning, or allowing blank issues, must fail."""

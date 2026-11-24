@@ -200,7 +200,7 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
 
 - **Decision index, 2026-11-24**, the owner's Mac: the five Python
   checks `scripts/test.sh` runs before the unit tests pass;
-  `python3 scripts/test-docs.py` runs 70 tests, 10 of them in
+  `python3 scripts/test-docs.py` runs 72 tests, 12 of them in
   `DecisionIndexTests` ([record](log/2026-11-24-decision-index.md)).
 - **Pure-Swift unit test coverage, 2026-10-27**, Xcode 27.1 (27A9275),
   iPad Pro 13-inch (M5) simulator, iOS 27.0: 18 new Swift Testing unit tests
