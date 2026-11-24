@@ -95,11 +95,12 @@ While this pull request was open, `main`'s run 45119137212 (iPhone, part
 1 of 3, at `eed020f`) failed the idle test the other way: "Failed to
 compute hit point" for Family Setup. In its recording Settings drew at
 10.4 s and the untouched first screen redrew at 14.1, 17.6 and 20.7 s.
-XCTest tried the tap three times; each time its search for the row
-took 1.6 to 2 s and ended before a redraw, and its tap came after it
-(14.26, 17.82 and 20.65 s), when the row it had found was gone. On a
-slow machine nearly every try spans a 3-second redraw, so this form
-needs no unlucky timing at all.
+XCTest tried the tap three times. Each try's search for the row began
+before one of those redraws (at 12.40, 15.74 and 19.07 s) and its tap
+was refused after it (at 14.54, 17.93 and 21.10 s) for want of a hit
+point: the row it had found had been replaced. Each try took 2 to 2.3 s,
+so on a slow machine nearly every try spans a 3-second redraw, and this
+form needs no unlucky timing at all.
 
 ### The other sighting: `HomeSizesTests` on #130's first push
 
@@ -161,7 +162,14 @@ rebuild shows as a burst of two or three frames.
   idle test's gap (docs/DECISIONS.md, docs/HANDOFF.md).
 - `d3007db` Merge `main` after #132.
 - `106c646` Count a scroll as use only when the list moves.
-- This record, and `docs/HANDOFF.md`'s state line brought up to date.
+- `9d8233d` This record, and `docs/HANDOFF.md`'s state line brought up
+  to date.
+- `5e07a13` Say which failure the cause is shown for, and that a reset
+  happens once.
+- `3c03fc4` Keep the load evidence, link kind H, and record `main`'s
+  failure of the same fault (cubic's first review).
+- The commit after `3c03fc4`: the timings of `main`'s failure stated
+  exactly, and these hashes (cubic's second review).
 
 ## Verified
 
