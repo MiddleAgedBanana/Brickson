@@ -30,11 +30,11 @@ default, so the sections listed in CODEX_MUST_READ must open the file, in
 that order, after an introduction that names project_doc_max_bytes, and
 end within that limit; and the whole file must fit within it too.
 
-It also checks docs/DECISIONS-INDEX.md, which every Claude Code job loads
-through .claude/rules/decision-index.md: each ## and ### decision in
+It also checks docs/DECISIONS-INDEX.md, which AGENTS.md sends every agent
+to before it decides anything: each ## and ### decision in
 docs/DECISIONS.md has exactly one line, every line and every see "Title"
-names a decision that exists, and the file stays within
-DECISION_INDEX_LIMIT.
+names a decision that exists, the file stays within DECISION_INDEX_LIMIT,
+and AGENTS.md names it where every agent reads.
 """
 from functools import cache
 from pathlib import Path
@@ -649,23 +649,24 @@ def whole_file_problems(data, limit=CODEX_READ_LIMIT):
     return []
 
 
-# docs/DECISIONS-INDEX.md has one line per decision, and every Claude Code
-# job loads it through .claude/rules (docs/DECISIONS.md, "A decision index
-# every agent loads").
+# docs/DECISIONS-INDEX.md has one line per decision, and AGENTS.md sends
+# every agent to it before deciding anything (docs/DECISIONS.md, "A one-line
+# index of every decision").
 DECISION_INDEX = 'docs/DECISIONS-INDEX.md'
-DECISION_INDEX_RULE = '.claude/rules/decision-index.md'
 DECISION_INDEX_LIMIT = 15 * 1024
+# Antigravity reads only the first 24,000 bytes of AGENTS.md.
+AGENTS_FIRST_READ = 24000
 LIST_ITEM = re.compile(r'[ \t]*(?:[-*+]|\d+[.)])[ \t]')
 INDEX_LINE = re.compile(r'- "(?P<title>[^"\n]+)": \S')
-SEE = re.compile(r'\bsee "(?P<title>[^"\n]+)"')
-INDEX_REASON = '(docs/DECISIONS.md, "A decision index every agent loads")'
+SEE = re.compile(r'\bsee "(?P<title>[^"\n]+)"', re.IGNORECASE)
+INDEX_REASON = '(docs/DECISIONS.md, "A one-line index of every decision")'
 
 
 def decision_index_problems(decisions, index, limit=DECISION_INDEX_LIMIT):
     """Every ## and ### decision in docs/DECISIONS.md has exactly one line in
     the index, as - "Title": what it chose; every line and every see "Title"
-    names a decision that exists; and the index stays small enough to load
-    into every job."""
+    names a decision that exists; and the index stays short enough to read
+    before every decision."""
     titles = {normalize(title): title
               for level, title, _ in headings(decisions) if level in (2, 3)}
     problems, lines = [], {}
@@ -698,8 +699,8 @@ def decision_index_problems(decisions, index, limit=DECISION_INDEX_LIMIT):
                             f'{INDEX_REASON}')
     size = len(index.encode())
     if size > limit:
-        problems.append(f'{DECISION_INDEX} is {size} bytes, past its {limit}-byte limit; every '
-                        f'Claude Code job loads it whole. Shorten lines, never drop one '
+        problems.append(f'{DECISION_INDEX} is {size} bytes, past its {limit}-byte limit; agents '
+                        f'read it before deciding anything. Shorten lines, never drop one '
                         f'{INDEX_REASON}')
     return problems
 
@@ -1321,7 +1322,7 @@ class DocumentTests(unittest.TestCase):
 
 class DecisionIndexTests(unittest.TestCase):
     """A decision with no index line, or a line for a decision that is gone,
-    must fail (docs/DECISIONS.md, "A decision index every agent loads")."""
+    must fail (docs/DECISIONS.md, "A one-line index of every decision")."""
 
     DECISIONS = ('# Decisions\n\nIntro.\n\n## Orientations\n\nText.\n\n'
                  '### The fold\n\nText.\n\n## Old layout\n\n*History.*\n')
@@ -1330,6 +1331,12 @@ class DecisionIndexTests(unittest.TestCase):
              '- "The fold": Owner\'s call. A wider gap at the fold.\n'
              '- "Old layout": History; see "Orientations".\n')
 
+    def assertProblem(self, problems, words, note=None):
+        """Exactly one problem, and it is the expected one, so a test cannot
+        pass on some other problem its edit happens to cause."""
+        self.assertEqual(len(problems), 1, note or problems)
+        self.assertIn(words, problems[0], note)
+
     def test_a_complete_index_passes(self):
         self.assertEqual(decision_index_problems(self.DECISIONS, self.INDEX), [])
 
@@ -1337,30 +1344,37 @@ class DecisionIndexTests(unittest.TestCase):
         for title in ['Orientations', 'The fold']:
             index = re.sub(rf'^- "{title}":.*\n', '', self.INDEX, flags=re.M)
             index = index.replace(f'see "{title}"', 'see "The fold"')
-            self.assertTrue(decision_index_problems(self.DECISIONS, index), title)
+            self.assertProblem(decision_index_problems(self.DECISIONS, index),
+                               f'the decision "{title}" has no line', title)
 
     def test_a_line_for_a_decision_that_is_gone_fails(self):
         index = self.INDEX + '- "Renamed away": Chose A over B, because C.\n'
-        self.assertTrue(decision_index_problems(self.DECISIONS, index))
+        self.assertProblem(decision_index_problems(self.DECISIONS, index),
+                           '"Renamed away" is not a decision in docs/DECISIONS.md')
 
     def test_a_decision_with_two_lines_fails(self):
         index = self.INDEX + '- "orientations.": Chose A over B, because C.\n'
-        self.assertTrue(decision_index_problems(self.DECISIONS, index))
+        self.assertProblem(decision_index_problems(self.DECISIONS, index),
+                           '"orientations." has two lines')
 
     def test_a_list_item_not_in_the_line_form_fails(self):
         for line in ['- Orientations: no quote marks.\n', '* "Orientations": wrong bullet.\n',
                      '- "Orientations" with no colon.\n']:
-            index = re.sub(r'^- "Orientations":.*\n', line, self.INDEX, flags=re.M)
-            self.assertTrue(decision_index_problems(self.DECISIONS, index), line)
+            index = self.INDEX + line
+            self.assertProblem(decision_index_problems(self.DECISIONS, index),
+                               f'"{line.strip()}" is not a decision line', line)
 
     def test_a_pointer_to_a_decision_that_is_gone_fails(self):
-        index = self.INDEX.replace('see "Orientations"', 'see "Home version 0"')
-        self.assertTrue(decision_index_problems(self.DECISIONS, index))
+        for pointer in ['see', 'See', 'SEE']:
+            index = self.INDEX.replace('see "Orientations"', f'{pointer} "Home version 0"')
+            self.assertProblem(decision_index_problems(self.DECISIONS, index),
+                               'see "Home version 0" names no decision', pointer)
 
     def test_an_index_past_its_limit_fails(self):
         size = len(self.INDEX.encode())
         self.assertEqual(decision_index_problems(self.DECISIONS, self.INDEX, limit=size), [])
-        self.assertTrue(decision_index_problems(self.DECISIONS, self.INDEX, limit=size - 1))
+        self.assertProblem(decision_index_problems(self.DECISIONS, self.INDEX, limit=size - 1),
+                           f'is {size} bytes, past its {size - 1}-byte limit')
 
     def test_titles_in_code_are_not_decisions(self):
         decisions = self.DECISIONS + '\n```\n## Not a decision\n```\n'
@@ -1371,18 +1385,12 @@ class DecisionIndexTests(unittest.TestCase):
                                            (ROOT / DECISION_INDEX).read_text())
         self.assertEqual(problems, [], '\n' + '\n'.join(problems))
 
-    def test_every_claude_code_job_loads_the_index(self):
-        # Claude Code loads every file in .claude/rules at launch; the rule
-        # is a link, so the index has one copy.
-        rule = ROOT / DECISION_INDEX_RULE
-        self.assertTrue(rule.is_symlink(), f'{DECISION_INDEX_RULE} must be a symbolic link')
-        self.assertEqual(os.readlink(rule), '../../docs/DECISIONS-INDEX.md')
-        self.assertEqual(rule.resolve(), (ROOT / DECISION_INDEX).resolve())
-        # A paths: field would load it only beside matching files.
-        self.assertFalse(rule.read_text().startswith('---'))
-
-    def test_agents_md_points_every_agent_to_the_index(self):
-        self.assertIn(DECISION_INDEX, (ROOT / 'AGENTS.md').read_text())
+    def test_agents_md_sends_every_agent_to_the_index(self):
+        # Claude Code reads AGENTS.md through CLAUDE.md, Codex reads it
+        # directly, and Antigravity reads only its first AGENTS_FIRST_READ
+        # bytes, so the pointer must come before that.
+        start = (ROOT / 'AGENTS.md').read_bytes()[:AGENTS_FIRST_READ].decode(errors='ignore')
+        self.assertIn(DECISION_INDEX, start)
 
 
 class IssueFormTests(unittest.TestCase):

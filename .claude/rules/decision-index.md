@@ -1,1 +1,0 @@
-../../docs/DECISIONS-INDEX.md

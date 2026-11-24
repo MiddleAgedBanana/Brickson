@@ -18,7 +18,8 @@ design review sheet) and #131 (what GitHub's agent logged when a Mac job
 is cancelled) have merged too, and #108, #109's draft twin, was closed.
 Open pull requests: #115, the record of the simulator experiments; #133,
 a tap lost while Settings resets when idle; and the one adding
-`docs/DECISIONS-INDEX.md`, one line per decision that every agent loads
+`docs/DECISIONS-INDEX.md`, one line per decision, which `AGENTS.md` sends
+every agent to before it decides anything
 ([`log/2026-11-24-decision-index.md`](log/2026-11-24-decision-index.md)).
 Device checks wait for the Team ID (*Next steps, in order*, step 4).
 
@@ -197,8 +198,9 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
 
 ## Verification
 
-- **Decision index, 2026-11-24**, Linux cloud session, no Mac:
-  `python3 scripts/test-docs.py` passes 71 tests, 11 of them new in
+- **Decision index, 2026-11-24**, the owner's Mac: the five Python
+  checks `scripts/test.sh` runs before the unit tests pass;
+  `python3 scripts/test-docs.py` runs 70 tests, 10 of them in
   `DecisionIndexTests` ([record](log/2026-11-24-decision-index.md)).
 - **Pure-Swift unit test coverage, 2026-10-27**, Xcode 27.1 (27A9275),
   iPad Pro 13-inch (M5) simulator, iOS 27.0: 18 new Swift Testing unit tests

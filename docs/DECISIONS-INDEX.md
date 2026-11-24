@@ -1,6 +1,6 @@
 # Decision index
 
-What each decision in docs/DECISIONS.md chose, over what, and why. Search there for the quoted title; the full entry wins. "Owner's call" marks the owner's own choice. Change a decision, change its line here; `scripts/test-docs.py` checks.
+What each decision in docs/DECISIONS.md chose, over what, and why. Before deciding anything, read the groups your work touches, then search docs/DECISIONS.md for each quoted title that applies; the full entry wins. "Owner's call" marks the owner's own choice. Change a decision, change its line here; `scripts/test-docs.py` checks.
 
 ## Owner and identity
 - "Waiting on the owner": Only the owner settles name, bundle id, price, pronunciation and EU trader status.
@@ -124,7 +124,7 @@ What each decision in docs/DECISIONS.md chose, over what, and why. Search there 
 - "Solid fills on Home, system glass elsewhere": Chose measured solid fills on Home over Liquid Glass, whose contrast cannot be promised.
 - "Colour tokens in four appearances": Chose asset-catalog colour sets over code colours, whose provider runs off the main thread.
 - "Concentric corners": Chose one CornerRule over computing window radii; Home keeps a fixed 12pt corner until the owner picks.
-- "Show Borders and the Large Content Viewer on Home": Chose a 2pt inner border that moves nothing over the deprecated setting.
+- "Show Borders and the Large Content Viewer on Home": A 2pt inner border under Show Borders and in dark mode; no Large Content Viewer on Home but Settings' gear, since a slow press then said nothing.
 - "Guards for Apple's look": Chose a script refusing app-added glass, PrimitiveButtonStyle and the like over review alone.
 
 ## Tests and checks
@@ -148,4 +148,4 @@ What each decision in docs/DECISIONS.md chose, over what, and why. Search there 
 
 ## Instructions for agents
 - "AGENTS.md puts first what Codex reads": Chose one rules file under 32 KiB, reasons elsewhere, over nested files cloud threads miss.
-- "A decision index every agent loads": Chose one line per decision, loaded through .claude/rules, over reading all of DECISIONS.md, so reasons reach every job cheaply.
+- "A one-line index of every decision": Chose this index, which AGENTS.md sends every agent to before deciding, over loading it into every session or reading all of DECISIONS.md.
