@@ -8028,3 +8028,35 @@ Before: *What this is and what's at stake* was followed by *Where
 things are* and *Build and test*, ahead of the invariants; *Guardrails
 for agents* came between *Workflow rules* and *Working with the owner*;
 and *Gotchas* came last, as now.
+
+## A decision index every agent loads
+
+**Decision.** `docs/DECISIONS-INDEX.md` holds one line per decision in
+this file, grouped by subject: the exact title to search for, then what
+it chose, over what, and why, in a sentence. Claude Code loads it at the
+start of every job through `.claude/rules/decision-index.md`, a relative
+symlink to the index; `AGENTS.md` points Codex and Antigravity to it.
+The full entry here always wins over its line.
+
+- **Why an index.** This file is over 7,900 lines, too long for a job to
+  read before every change, so jobs acted without the reason behind an
+  earlier choice and the owner was asked to explain it again. A line per
+  decision costs about 14 KB of context and tells a job which entry to
+  read before it changes something.
+- **Why a rules file.** `CLAUDE.md` must stay exactly `@AGENTS.md`, and
+  `AGENTS.md` has no room for the index under Codex's 32 KiB. Claude
+  Code loads every `.claude/rules/*.md` file without `paths` frontmatter
+  at launch, symlinks included, so the index loads with no change to
+  either file. Chose this over nested per-folder files, which cloud
+  threads miss ("AGENTS.md puts first what Codex reads").
+- **A check keeps it true.** `scripts/test-docs.py`
+  (`decision_index_problems`) fails when a `##` or `###` decision here
+  has no line or two, when a line is malformed or names a title that no
+  longer exists, when a superseded line's `see "Title"` names none, or
+  when the index passes 15 KiB (`DECISION_INDEX_LIMIT`). It runs in CI
+  with the other document checks.
+- **No relative links in the index.** A link there would resolve from
+  `.claude/rules/` and break, so lines name titles in quotes instead.
+- **The rule.** Whoever adds or changes a decision adds or changes its
+  line in the same change; after a summary, a job re-reads its work
+  file, `AGENTS.md` and the index first (`AGENTS.md`, *Workflow rules*).

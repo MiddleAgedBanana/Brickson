@@ -29,6 +29,12 @@ It also checks the start of AGENTS.md. Codex reads only its first 32 KiB by
 default, so the sections listed in CODEX_MUST_READ must open the file, in
 that order, after an introduction that names project_doc_max_bytes, and
 end within that limit; and the whole file must fit within it too.
+
+It also checks docs/DECISIONS-INDEX.md, which every Claude Code job loads
+through .claude/rules/decision-index.md: each ## and ### decision in
+docs/DECISIONS.md has exactly one line, every line and every see "Title"
+names a decision that exists, and the file stays within
+DECISION_INDEX_LIMIT.
 """
 from functools import cache
 from pathlib import Path
@@ -641,6 +647,61 @@ def whole_file_problems(data, limit=CODEX_READ_LIMIT):
                 f'reasons in docs/DECISIONS.md (docs/DECISIONS.md, "AGENTS.md puts first what '
                 f'Codex reads")']
     return []
+
+
+# docs/DECISIONS-INDEX.md has one line per decision, and every Claude Code
+# job loads it through .claude/rules (docs/DECISIONS.md, "A decision index
+# every agent loads").
+DECISION_INDEX = 'docs/DECISIONS-INDEX.md'
+DECISION_INDEX_RULE = '.claude/rules/decision-index.md'
+DECISION_INDEX_LIMIT = 15 * 1024
+LIST_ITEM = re.compile(r'[ \t]*(?:[-*+]|\d+[.)])[ \t]')
+INDEX_LINE = re.compile(r'- "(?P<title>[^"\n]+)": \S')
+SEE = re.compile(r'\bsee "(?P<title>[^"\n]+)"')
+INDEX_REASON = '(docs/DECISIONS.md, "A decision index every agent loads")'
+
+
+def decision_index_problems(decisions, index, limit=DECISION_INDEX_LIMIT):
+    """Every ## and ### decision in docs/DECISIONS.md has exactly one line in
+    the index, as - "Title": what it chose; every line and every see "Title"
+    names a decision that exists; and the index stays small enough to load
+    into every job."""
+    titles = {normalize(title): title
+              for level, title, _ in headings(decisions) if level in (2, 3)}
+    problems, lines = [], {}
+    for line in index.splitlines():
+        if not LIST_ITEM.match(line):
+            continue
+        match = INDEX_LINE.match(line)
+        if not match:
+            problems.append(f'{DECISION_INDEX}: "{line.strip()}" is not a decision line. Write '
+                            f'it as - "Title": what was chosen, over what, and why {INDEX_REASON}')
+            continue
+        key = normalize(match['title'])
+        if key not in titles:
+            problems.append(f'{DECISION_INDEX}: "{match["title"]}" is not a decision in '
+                            f'docs/DECISIONS.md. Use its heading as it is now, or remove the '
+                            f'line if the decision went {INDEX_REASON}')
+        elif key in lines:
+            problems.append(f'{DECISION_INDEX}: "{match["title"]}" has two lines; keep one '
+                            f'{INDEX_REASON}')
+        lines[key] = match['title']
+    for key, title in titles.items():
+        if key not in lines:
+            problems.append(f'{DECISION_INDEX}: the decision "{title}" has no line. Add - '
+                            f'"{title}": what it chose, over what, and why, in the change that '
+                            f'adds the decision {INDEX_REASON}')
+    for see in SEE.finditer(index):
+        if normalize(see['title']) not in titles:
+            problems.append(f'{DECISION_INDEX}: see "{see["title"]}" names no decision in '
+                            f'docs/DECISIONS.md; point to the one that replaced it '
+                            f'{INDEX_REASON}')
+    size = len(index.encode())
+    if size > limit:
+        problems.append(f'{DECISION_INDEX} is {size} bytes, past its {limit}-byte limit; every '
+                        f'Claude Code job loads it whole. Shorten lines, never drop one '
+                        f'{INDEX_REASON}')
+    return problems
 
 
 class CheckerTests(unittest.TestCase):
@@ -1256,6 +1317,72 @@ class DocumentTests(unittest.TestCase):
         # An exception for a citation that is gone must go too.
         unused = sorted((EXTERNAL | QUOTATIONS) - used)
         self.assertEqual(unused, [], 'nothing cites these EXTERNAL or QUOTATIONS entries')
+
+
+class DecisionIndexTests(unittest.TestCase):
+    """A decision with no index line, or a line for a decision that is gone,
+    must fail (docs/DECISIONS.md, "A decision index every agent loads")."""
+
+    DECISIONS = ('# Decisions\n\nIntro.\n\n## Orientations\n\nText.\n\n'
+                 '### The fold\n\nText.\n\n## Old layout\n\n*History.*\n')
+    INDEX = ('# Decision index\n\nIntro.\n\n## Devices\n'
+             '- "Orientations": Chose portrait over all four, because of X.\n'
+             '- "The fold": Owner\'s call. A wider gap at the fold.\n'
+             '- "Old layout": History; see "Orientations".\n')
+
+    def test_a_complete_index_passes(self):
+        self.assertEqual(decision_index_problems(self.DECISIONS, self.INDEX), [])
+
+    def test_a_decision_with_no_line_fails(self):
+        for title in ['Orientations', 'The fold']:
+            index = re.sub(rf'^- "{title}":.*\n', '', self.INDEX, flags=re.M)
+            index = index.replace(f'see "{title}"', 'see "The fold"')
+            self.assertTrue(decision_index_problems(self.DECISIONS, index), title)
+
+    def test_a_line_for_a_decision_that_is_gone_fails(self):
+        index = self.INDEX + '- "Renamed away": Chose A over B, because C.\n'
+        self.assertTrue(decision_index_problems(self.DECISIONS, index))
+
+    def test_a_decision_with_two_lines_fails(self):
+        index = self.INDEX + '- "orientations.": Chose A over B, because C.\n'
+        self.assertTrue(decision_index_problems(self.DECISIONS, index))
+
+    def test_a_list_item_not_in_the_line_form_fails(self):
+        for line in ['- Orientations: no quote marks.\n', '* "Orientations": wrong bullet.\n',
+                     '- "Orientations" with no colon.\n']:
+            index = re.sub(r'^- "Orientations":.*\n', line, self.INDEX, flags=re.M)
+            self.assertTrue(decision_index_problems(self.DECISIONS, index), line)
+
+    def test_a_pointer_to_a_decision_that_is_gone_fails(self):
+        index = self.INDEX.replace('see "Orientations"', 'see "Home version 0"')
+        self.assertTrue(decision_index_problems(self.DECISIONS, index))
+
+    def test_an_index_past_its_limit_fails(self):
+        size = len(self.INDEX.encode())
+        self.assertEqual(decision_index_problems(self.DECISIONS, self.INDEX, limit=size), [])
+        self.assertTrue(decision_index_problems(self.DECISIONS, self.INDEX, limit=size - 1))
+
+    def test_titles_in_code_are_not_decisions(self):
+        decisions = self.DECISIONS + '\n```\n## Not a decision\n```\n'
+        self.assertEqual(decision_index_problems(decisions, self.INDEX), [])
+
+    def test_the_repositorys_index_matches_its_decisions(self):
+        problems = decision_index_problems((ROOT / 'docs/DECISIONS.md').read_text(),
+                                           (ROOT / DECISION_INDEX).read_text())
+        self.assertEqual(problems, [], '\n' + '\n'.join(problems))
+
+    def test_every_claude_code_job_loads_the_index(self):
+        # Claude Code loads every file in .claude/rules at launch; the rule
+        # is a link, so the index has one copy.
+        rule = ROOT / DECISION_INDEX_RULE
+        self.assertTrue(rule.is_symlink(), f'{DECISION_INDEX_RULE} must be a symbolic link')
+        self.assertEqual(os.readlink(rule), '../../docs/DECISIONS-INDEX.md')
+        self.assertEqual(rule.resolve(), (ROOT / DECISION_INDEX).resolve())
+        # A paths: field would load it only beside matching files.
+        self.assertFalse(rule.read_text().startswith('---'))
+
+    def test_agents_md_points_every_agent_to_the_index(self):
+        self.assertIn(DECISION_INDEX, (ROOT / 'AGENTS.md').read_text())
 
 
 class IssueFormTests(unittest.TestCase):

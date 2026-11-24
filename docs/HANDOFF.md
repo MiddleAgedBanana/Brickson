@@ -6,17 +6,20 @@ edits this page in place and writes its record in [`docs/log/`](log/README.md);
 nothing is appended here. Plan: [`docs/ROADMAP.md`](ROADMAP.md). How the
 project runs: [`docs/SDLC.md`](SDLC.md).
 
-**State as of 2026-11-22: `main` is at `0558fe7`, pull request #131,
-keeping what GitHub's agent logged when a Mac job is cancelled, merged
-2026-11-22, after #130, a design review sheet, the same day.** Since
-2026-11-20, #109 (the agent bridge), #122 (UI test waits), #123 (a phrase
-the speech service never begins), #124, #127, #128 and #129 (the speech
-service's pause and carry-on reports) have merged too, and #108, #109's
-draft twin, was closed. Open pull requests: #115, the record of the
-simulator experiments; #120, four more windows for Home's layout tests;
-and the one running the simulator's start in the background, so GitHub's
-agent keeps in touch
-([`log/2026-11-22-simulator-start-in-the-background.md`](log/2026-11-22-simulator-start-in-the-background.md)).
+**State as of 2026-11-24: `main` is at `23fcd3a`, pull request #120,
+four more windows for Home's layout tests, merged 2026-11-23, after #132,
+running the simulator's start in the background so GitHub's agent keeps
+in touch
+([`log/2026-11-22-simulator-start-in-the-background.md`](log/2026-11-22-simulator-start-in-the-background.md)),
+the same day.** Since 2026-11-20, #109 (the agent bridge), #122 (UI test
+waits), #123 (a phrase the speech service never begins), #124, #127,
+#128 and #129 (the speech service's pause and carry-on reports), #130 (a
+design review sheet) and #131 (what GitHub's agent logged when a Mac job
+is cancelled) have merged too, and #108, #109's draft twin, was closed.
+Open pull requests: #115, the record of the simulator experiments; #133,
+a tap lost while Settings resets when idle; and the one adding
+`docs/DECISIONS-INDEX.md`, one line per decision that every agent loads
+([`log/2026-11-24-decision-index.md`](log/2026-11-24-decision-index.md)).
 Device checks wait for the Team ID (*Next steps, in order*, step 4).
 
 ## What the app does today
@@ -194,6 +197,9 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
 
 ## Verification
 
+- **Decision index, 2026-11-24**, Linux cloud session, no Mac:
+  `python3 scripts/test-docs.py` passes 71 tests, 11 of them new in
+  `DecisionIndexTests` ([record](log/2026-11-24-decision-index.md)).
 - **Pure-Swift unit test coverage, 2026-10-27**, Xcode 27.1 (27A9275),
   iPad Pro 13-inch (M5) simulator, iOS 27.0: 18 new Swift Testing unit tests
   and one extended suite across `HomeLayoutEngineTests`, `HomeReservedRegionTests`,

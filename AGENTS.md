@@ -337,7 +337,8 @@ path from a real input to the failure.
 - **Document every change** in the same pull request: one new
   `docs/log/` file (template in `docs/log/README.md`); edit untrue lines
   of `docs/HANDOFF.md` in place, never append; record decisions in
-  docs/DECISIONS.md and new rules here; edit `docs/ROADMAP.md` when an
+  docs/DECISIONS.md, each with its line in `docs/DECISIONS-INDEX.md`,
+  and new rules here; edit `docs/ROADMAP.md` when an
   item starts, lands or moves, and `README.md` when setup or behaviour
   changes. Snapshot before removing information from HANDOFF or this file
   (`docs/archive/README.md`). Record reversals and their reasons. Where
@@ -358,7 +359,8 @@ path from a real input to the failure.
   `git fetch origin`, then read this file, docs/HANDOFF.md,
   docs/DECISIONS.md and the newest
   `docs/log/` records from `origin/main` before changing anything. Check
-  your own tools for build, simulator and Mac access.
+  your own tools for build, simulator and Mac access. After a summary,
+  re-read your work file, this file and `docs/DECISIONS-INDEX.md` first.
 
 ## Working with the owner
 
