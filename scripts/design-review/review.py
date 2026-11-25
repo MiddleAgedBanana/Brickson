@@ -23,7 +23,8 @@ inactive  the same sheet and screens on an iPad in Windowed Apps, behind
 screens   takes Home, typing, the alarm and Settings again, into the
           manifests `capture` wrote.
 compose   lays every appearance side by side, one picture for each part
-          of the sheet and each screen, and writes README.md beside them.
+          of the sheet and each screen, and writes README.generated.md
+          beside them.
 
 Nothing from outside reaches AXe as an option of its own: every value this
 script passes is one of its own constants, a number it worked out, or the

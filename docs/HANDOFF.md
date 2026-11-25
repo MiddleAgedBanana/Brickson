@@ -6,12 +6,15 @@ edits this page in place and writes its record in [`docs/log/`](log/README.md);
 nothing is appended here. Plan: [`docs/ROADMAP.md`](ROADMAP.md). How the
 project runs: [`docs/SDLC.md`](SDLC.md).
 
-**State as of 2026-11-25: `main` is at `60bd9a2`, pull request #133,
-making Settings reset only after use
+**State as of 2026-11-25: `main` is at `27d894c`, pull request #134,
+adding `docs/DECISIONS-INDEX.md`, one line per decision, which
+`AGENTS.md` sends every agent to before it decides anything
+([`log/2026-11-24-decision-index.md`](log/2026-11-24-decision-index.md)),
+merged 2026-11-25, after #133, making Settings reset only after use
 ([`log/2026-11-22-settings-reset-only-after-use.md`](log/2026-11-22-settings-reset-only-after-use.md)),
-merged 2026-11-25, after #120 (four more windows for Home's layout tests)
-and #132 (running the simulator's start in the background so GitHub's
-agent keeps in touch,
+the same day, and #120 (four more windows for Home's layout tests) and
+#132 (running the simulator's start in the background so GitHub's agent
+keeps in touch,
 [`log/2026-11-22-simulator-start-in-the-background.md`](log/2026-11-22-simulator-start-in-the-background.md))
 on 2026-11-23.** Since 2026-11-20, #109 (the agent bridge), #122 (UI
 test waits), #123 (a phrase the speech service never begins), #124,
@@ -19,10 +22,9 @@ test waits), #123 (a phrase the speech service never begins), #124,
 #130 (a design review sheet) and #131 (what GitHub's agent logged when a
 Mac job is cancelled) have merged too, and #108, #109's draft twin, was
 closed. Open pull requests: #115, the record of the simulator
-experiments; and the one adding `docs/DECISIONS-INDEX.md`, one line per
-decision, which `AGENTS.md` sends every agent to before it decides
-anything
-([`log/2026-11-24-decision-index.md`](log/2026-11-24-decision-index.md)).
+experiments; and #135, which makes the design review sheet's
+instructions work the first time from its README alone
+([`log/2026-11-25-design-review-readme.md`](log/2026-11-25-design-review-readme.md)).
 Device checks wait for the Team ID (*Next steps, in order*, step 4).
 
 ## What the app does today
