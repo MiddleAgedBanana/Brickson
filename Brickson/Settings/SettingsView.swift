@@ -15,8 +15,9 @@ import SwiftUI
 /// from Home's frames").
 ///
 /// When nobody has used it for 90 seconds it goes back to its root and
-/// stays open; only Back to Talking closes it (docs/DECISIONS.md, "Settings
-/// resets when idle and never closes").
+/// stays open; only Back to Talking closes it. Until something in it is
+/// used, it is already as a reset would leave it, and never resets
+/// (docs/DECISIONS.md, "Settings resets when idle and never closes").
 ///
 /// At the foot of the cover, a line kept for it shows any sound problem,
 /// because the cover hides Home's: a sample that cannot be heard always
@@ -68,7 +69,7 @@ struct SettingsView: View {
             )
             VStack(spacing: 0) {
                 SettingsSafetyBar(backToTalking: home.backToTalking, safeArea: space.safeArea, close: close)
-                NavigationStack(path: $path) {
+                NavigationStack(path: screens) {
                     SettingsRootView()
                         .navigationDestination(for: SettingsRoute.self) { route in
                             destination(for: route)
@@ -92,9 +93,6 @@ struct SettingsView: View {
         .environment(activity)
         .environment(landing)
         .environment(library)
-        .onChange(of: path) {
-            activity.recordActivity()
-        }
         .onChange(of: attention.isSounding, initial: true) { _, isSounding in
             // Never change the screen under someone answering the alarm.
             activity.setHold(.alarm, isSounding)
@@ -107,7 +105,7 @@ struct SettingsView: View {
         .onChange(of: scenePhase) { _, phase in
             // Time in another app or with the screen off never counts.
             if phase == .active {
-                activity.recordActivity()
+                activity.restartWait()
             }
         }
         .task(id: IdleWait(deadline: activity.clock.deadline, isActive: scenePhase == .active)) {
@@ -121,15 +119,30 @@ struct SettingsView: View {
         }
     }
 
+    /// The screens as a person changes them, with the stack's Back or a
+    /// screen's own controls: each change counts as use as it happens,
+    /// before an idle wait can wake. The idle reset sets `path` itself,
+    /// which is not use, so Settings is untouched after a reset.
+    private var screens: Binding<[SettingsRoute]> {
+        Binding {
+            path
+        } set: { newPath in
+            if newPath != path {
+                activity.recordActivity()
+            }
+            path = newPath
+        }
+    }
+
     @ViewBuilder
     private func destination(for route: SettingsRoute) -> some View {
         switch route {
         case .familySetup:
-            FamilySetupView(path: $path)
+            FamilySetupView(path: screens)
         case .guidedSetup(let step, let entry):
-            GuidedSetupView(step: step, entry: entry, path: $path)
+            GuidedSetupView(step: step, entry: entry, path: screens)
         case .voice:
-            VoiceSettingsView(path: $path)
+            VoiceSettingsView(path: screens)
         case .reachingTheScreen:
             ReachingTheScreenView()
         case .keepOpen:
@@ -143,29 +156,29 @@ struct SettingsView: View {
         case .about:
             AboutView()
         case .library:
-            LibraryView(path: $path)
+            LibraryView(path: screens)
         case .libraryCategory(let id):
-            LibraryCategoryView(categoryID: id, path: $path)
+            LibraryCategoryView(categoryID: id, path: screens)
         case .newCategory:
-            LibraryNameEditor(categoryID: nil, path: $path)
+            LibraryNameEditor(categoryID: nil, path: screens)
         case .categoryName(let id):
-            LibraryNameEditor(categoryID: id, path: $path)
+            LibraryNameEditor(categoryID: id, path: screens)
         case .categoryPicture(let id):
-            LibraryPictureQuestion(categoryID: id, path: $path)
+            LibraryPictureQuestion(categoryID: id, path: screens)
         case .moveCategory(let id):
-            LibraryMoveQuestion(item: .category(id), path: $path)
+            LibraryMoveQuestion(item: .category(id), path: screens)
         case .deleteCategory(let id):
-            LibraryDeleteQuestion(item: .category(id), path: $path)
+            LibraryDeleteQuestion(item: .category(id), path: screens)
         case .newPhrase(let category):
-            LibraryPhraseEditor(phraseID: nil, categoryID: category, path: $path)
+            LibraryPhraseEditor(phraseID: nil, categoryID: category, path: screens)
         case .phrase(let id):
-            LibraryPhraseEditor(phraseID: id, categoryID: nil, path: $path)
+            LibraryPhraseEditor(phraseID: id, categoryID: nil, path: screens)
         case .movePhrase(let id):
-            LibraryMoveQuestion(item: .phrase(id), path: $path)
+            LibraryMoveQuestion(item: .phrase(id), path: screens)
         case .deletePhrase(let id):
-            LibraryDeleteQuestion(item: .phrase(id), path: $path)
+            LibraryDeleteQuestion(item: .phrase(id), path: screens)
         case .restoreBackup:
-            LibraryRestoreQuestion(path: $path)
+            LibraryRestoreQuestion(path: screens)
         }
     }
 

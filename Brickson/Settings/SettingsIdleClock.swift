@@ -34,6 +34,14 @@ nonisolated enum SettingsIdleHold: Hashable, Sendable {
 /// spot nobody chose, which is a dwell hazard; returning to the root puts the
 /// same safe top row in front of them that opening Settings does.
 ///
+/// It resets **only after use**. Until a control is used, a screen is
+/// opened or closed, or a screen is scrolled, Settings is just as a reset
+/// would leave it, so no reset is due. A reset rebuilds every screen, and
+/// an activation (a touch, a dwell, a switch, a spoken command) that lands
+/// while they are replaced does nothing; an untouched Settings used to
+/// rebuild itself at every limit, for as long as it stayed open
+/// (docs/DECISIONS.md, "Settings resets when idle and never closes").
+///
 /// Time is `ContinuousClock`, and this type never reads it: callers pass
 /// `now`, so tests are exact and a wall-clock jump cannot fire or postpone a
 /// reset (docs/LESSONS.md, "Timers use ContinuousClock").
@@ -46,6 +54,9 @@ nonisolated struct SettingsIdleClock: Equatable, Sendable {
     let limit: Duration
     private(set) var lastActivity: ContinuousClock.Instant
     private(set) var holds: Set<SettingsIdleHold> = []
+    /// True until something is used after Settings opens or resets: then
+    /// it is as a reset would leave it, and no reset is due.
+    private(set) var isUntouched = true
 
     init(limit: Duration = Self.standardLimit, startedAt start: ContinuousClock.Instant) {
         self.limit = limit
@@ -54,15 +65,24 @@ nonisolated struct SettingsIdleClock: Equatable, Sendable {
 
     var isHeld: Bool { !holds.isEmpty }
 
-    /// When Settings resets if nothing else happens; nil while held.
+    /// When Settings resets if nothing else happens; nil while held, and
+    /// while nothing has been used since Settings opened or last reset.
     var deadline: ContinuousClock.Instant? {
-        isHeld ? nil : lastActivity + limit
+        isHeld || isUntouched ? nil : lastActivity + limit
     }
 
-    /// A control was used, a screen was pushed or popped, or the list was
-    /// scrolled. Also called when Brickson becomes active again, so time
-    /// spent in another app or with the screen off never counts.
+    /// A control was used, a screen was pushed or popped, or a screen was
+    /// scrolled: a reset now has something to undo, and the full wait
+    /// starts again.
     mutating func recordActivity(at now: ContinuousClock.Instant) {
+        isUntouched = false
+        restartWait(at: now)
+    }
+
+    /// The full wait starts again, and nothing on the screen changed:
+    /// Brickson became active again, so time spent in another app or with
+    /// the screen off never counts, or a hold ended.
+    mutating func restartWait(at now: ContinuousClock.Instant) {
         lastActivity = max(lastActivity, now)
     }
 
@@ -71,7 +91,7 @@ nonisolated struct SettingsIdleClock: Equatable, Sendable {
             holds.insert(hold)
         } else if holds.remove(hold) != nil {
             // The task just ended: give the family the full wait from here.
-            recordActivity(at: now)
+            restartWait(at: now)
         }
     }
 
@@ -80,8 +100,10 @@ nonisolated struct SettingsIdleClock: Equatable, Sendable {
         return now >= deadline
     }
 
-    /// Settings went back to its root: the next wait starts now.
+    /// Settings went back to its root, rebuilt: it is as if it had just
+    /// opened, so nothing is due until it is used again.
     mutating func didReset(at now: ContinuousClock.Instant) {
-        recordActivity(at: now)
+        restartWait(at: now)
+        isUntouched = true
     }
 }
