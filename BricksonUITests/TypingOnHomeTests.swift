@@ -121,23 +121,23 @@ final class TypingOnHomeTests: XCTestCase {
         app.typeText("Green apples")
 
         let speak = app.buttons["Speak"]
-        Self.waitUntil(speak, "isEnabled == true", "Speak did not turn on once words were typed (\(context))")
+        waitUntil(speak, "isEnabled == true", "Speak did not turn on once words were typed (\(context))")
         speak.tap()
         showPhrases(in: app, context: context)
-        XCTAssertTrue(app.staticTexts["Green apples"].waitForExistence(timeout: 10), "Speak did not say the message (\(context))")
-        Self.waitUntil(app.buttons["Again"], "isEnabled == true", "Again is off after Speak (\(context))")
+        waitToAppear(app.staticTexts["Green apples"], "Speak did not say the message (\(context))")
+        waitUntil(app.buttons["Again"], "isEnabled == true", "Again is off after Speak (\(context))")
 
         startTyping(in: app, context: context)
         let field = Self.field(in: app)
-        Self.waitForField(field, toHold: "Green apples", "Speak did not keep the message (\(context))")
+        waitForField(field, toHold: "Green apples", "Speak did not keep the message (\(context))")
 
         app.buttons["clear"].tap()
-        Self.waitUntil(app.buttons["Speak"], "isEnabled == false", "Speak is still on after Clear (\(context))")
+        waitUntil(app.buttons["Speak"], "isEnabled == false", "Speak is still on after Clear (\(context))")
         app.typeText("Blue kites\n")
         // Return speaks, and is not kept as a line break.
-        Self.waitForField(field, toHold: "Blue kites", "Return did not keep the message as typed (\(context))")
+        waitForField(field, toHold: "Blue kites", "Return did not keep the message as typed (\(context))")
         showPhrases(in: app, context: context)
-        XCTAssertTrue(app.staticTexts["Blue kites"].waitForExistence(timeout: 10), "Return did not say the message (\(context))")
+        waitToAppear(app.staticTexts["Blue kites"], "Return did not say the message (\(context))")
     }
 
     /// Fails if Clear does not empty the message, or Put Back does not
@@ -149,19 +149,19 @@ final class TypingOnHomeTests: XCTestCase {
         startTyping(in: app, context: context)
         app.typeText("Hello")
         let field = Self.field(in: app)
-        Self.waitForField(field, toHold: "Hello", "the words did not appear (\(context))")
+        waitForField(field, toHold: "Hello", "the words did not appear (\(context))")
         let clear = app.buttons["clear"]
-        Self.waitUntil(clear, "isEnabled == true", "Clear did not turn on once words were typed (\(context))")
+        waitUntil(clear, "isEnabled == true", "Clear did not turn on once words were typed (\(context))")
 
         clear.tap()
         let putBack = app.buttons["putBack"]
-        Self.waitUntil(putBack, "isEnabled == true", "Put Back did not turn on after Clear (\(context))")
+        waitUntil(putBack, "isEnabled == true", "Put Back did not turn on after Clear (\(context))")
         XCTAssertNotEqual(field.value as? String, "Hello", "Clear did not empty the message (\(context))")
         XCTAssertFalse(clear.isEnabled, "Clear is still on with nothing typed (\(context))")
 
         putBack.tap()
-        Self.waitUntil(clear, "isEnabled == true", "Clear did not turn on after Put Back (\(context))")
-        Self.waitForField(field, toHold: "Hello", "Put Back did not bring the message back (\(context))")
+        waitUntil(clear, "isEnabled == true", "Clear did not turn on after Put Back (\(context))")
+        waitForField(field, toHold: "Hello", "Put Back did not bring the message back (\(context))")
         XCTAssertFalse(putBack.isEnabled, "Put Back is still on once the message is back (\(context))")
     }
 
@@ -173,29 +173,29 @@ final class TypingOnHomeTests: XCTestCase {
         let context = Self.context(app)
         startTyping(in: app, context: context)
         app.typeText("Hello")
-        Self.waitForField(Self.field(in: app), toHold: "Hello", "the words did not appear (\(context))")
+        waitForField(Self.field(in: app), toHold: "Hello", "the words did not appear (\(context))")
 
         // Emergency: straight to the emergency phrases (invariant 2).
         let emergency = app.buttons["Emergency"]
         emergency.tap()
-        Self.waitUntil(emergency, "isSelected == true", "Emergency did not show its phrases from typing (\(context))")
-        Self.waitUntil(app.buttons[HomeChains.phraseTile].firstMatch, "isEnabled == true", "the phrases are still dimmed after Emergency (\(context))")
+        waitUntil(emergency, "isSelected == true", "Emergency did not show its phrases from typing (\(context))")
+        waitUntil(app.buttons[HomeChains.phraseTile].firstMatch, "isEnabled == true", "the phrases are still dimmed after Emergency (\(context))")
         XCTAssertFalse(Self.field(in: app).exists, "the field is still showing after Emergency (\(context))")
         startTyping(in: app, context: context)
-        Self.waitForField(Self.field(in: app), toHold: "Hello", "Emergency did not keep the message (\(context))")
+        waitForField(Self.field(in: app), toHold: "Hello", "Emergency did not keep the message (\(context))")
 
         // Settings closes onto the phrases.
         app.buttons["settings"].tap()
         let back = app.buttons["backToTalking"]
-        XCTAssertTrue(back.waitForExistence(timeout: 10), "Settings did not open from typing (\(context))")
+        waitToAppear(back, "Settings did not open from typing (\(context))")
         back.tap()
-        Self.waitUntil(app.buttons["phrases"], "isSelected == true", "Settings did not close onto the phrases (\(context))")
+        waitUntil(app.buttons["phrases"], "isSelected == true", "Settings did not close onto the phrases (\(context))")
         XCTAssertFalse(Self.field(in: app).exists, "the field is showing after Settings (\(context))")
 
         startTyping(in: app, context: context)
-        Self.waitForField(Self.field(in: app), toHold: "Hello", "Settings did not keep the message (\(context))")
+        waitForField(Self.field(in: app), toHold: "Hello", "Settings did not keep the message (\(context))")
         showPhrases(in: app, context: context)
-        Self.waitUntil(app.buttons[HomeChains.phraseTile].firstMatch, "isEnabled == true", "the phrases are still dimmed after Phrases (\(context))")
+        waitUntil(app.buttons[HomeChains.phraseTile].firstMatch, "isEnabled == true", "the phrases are still dimmed after Phrases (\(context))")
     }
 
     /// Fails if the message is lost when the app closes, or if restoring it
@@ -206,14 +206,14 @@ final class TypingOnHomeTests: XCTestCase {
         let context = Self.context(app)
         startTyping(in: app, context: context)
         app.typeText("Bring the blanket")
-        Self.waitForField(Self.field(in: app), toHold: "Bring the blanket", "the words did not appear (\(context))")
+        waitForField(Self.field(in: app), toHold: "Bring the blanket", "the words did not appear (\(context))")
         app.terminate()
 
         app = launchedApp(storage: .kept)
         XCTAssertFalse(Self.field(in: app).exists, "the app opened typing at launch (\(context))")
         XCTAssertFalse(app.buttons["Again"].isEnabled, "something was spoken at launch (\(context))")
         startTyping(in: app, context: context)
-        Self.waitForField(Self.field(in: app), toHold: "Bring the blanket", "the message was lost on relaunch (\(context))")
+        waitForField(Self.field(in: app), toHold: "Bring the blanket", "the message was lost on relaunch (\(context))")
     }
 
     // MARK: Helpers
@@ -224,9 +224,9 @@ final class TypingOnHomeTests: XCTestCase {
     private func startTyping(in app: XCUIApplication, context: String) -> CGRect {
         app.buttons["type"].tap()
         let keyboard = app.keyboards.firstMatch
-        XCTAssertTrue(keyboard.waitForExistence(timeout: 10), "Type did not open the keyboard (\(context))")
-        XCTAssertTrue(Self.field(in: app).waitForExistence(timeout: 10), "Type did not show the field (\(context))")
-        Self.waitUntil(app.buttons["type"], "isSelected == true", "Type does not show selected (\(context))")
+        waitToAppear(keyboard, "Type did not open the keyboard (\(context))")
+        waitToAppear(Self.field(in: app), "Type did not show the field (\(context))")
+        waitUntil(app.buttons["type"], "isSelected == true", "Type does not show selected (\(context))")
         return keyboard.frame
     }
 
@@ -234,9 +234,8 @@ final class TypingOnHomeTests: XCTestCase {
     @MainActor
     private func showPhrases(in app: XCUIApplication, context: String) {
         app.buttons["phrases"].tap()
-        Self.waitUntil(app.buttons["phrases"], "isSelected == true", "Phrases did not leave typing (\(context))")
-        let gone = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: app.keyboards.firstMatch)
-        XCTAssertEqual(XCTWaiter.wait(for: [gone], timeout: 10), .completed, "the keyboard stayed after Phrases (\(context))")
+        waitUntil(app.buttons["phrases"], "isSelected == true", "Phrases did not leave typing (\(context))")
+        waitToDisappear(app.keyboards.firstMatch, "the keyboard stayed after Phrases (\(context))")
     }
 
     @MainActor
@@ -250,20 +249,18 @@ final class TypingOnHomeTests: XCTestCase {
         return "\(UIDevice.current.userInterfaceIdiom == .pad ? "iPad" : "iPhone"), window \(window.size)"
     }
 
-    /// Waits up to 10 s for `element` to match `format`, after a tap.
+    /// Waits up to `UIWait.response` for `element` to match `format`,
+    /// after a tap.
     @MainActor
-    private static func waitUntil(_ element: XCUIElement, _ format: String, _ message: String) {
-        let changed = XCTNSPredicateExpectation(predicate: NSPredicate(format: format), object: element)
-        XCTAssertEqual(XCTWaiter.wait(for: [changed], timeout: 10), .completed, message)
+    private func waitUntil(_ element: XCUIElement, _ format: String, _ message: String) {
+        let predicate = NSPredicate(format: format)
+        waitUntil(message) { predicate.evaluate(with: element) }
     }
 
-    /// Waits up to 10 s for the field to hold `words`.
+    /// Waits up to `UIWait.response` for the field to hold `words`.
     @MainActor
-    private static func waitForField(_ field: XCUIElement, toHold words: String, _ message: String) {
-        let holds = XCTNSPredicateExpectation(
-            predicate: NSPredicate { _, _ in MainActor.assumeIsolated { (field.value as? String) == words } }, object: nil
-        )
-        XCTAssertEqual(XCTWaiter.wait(for: [holds], timeout: 10), .completed, "\(message): \(String(describing: field.value))")
+    private func waitForField(_ field: XCUIElement, toHold words: String, _ message: String) {
+        waitUntil("\(message): \(String(describing: field.value))") { (field.value as? String) == words }
     }
 
     private static func isSameFrame(_ a: CGRect, _ b: CGRect) -> Bool {

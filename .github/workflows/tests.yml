@@ -5,13 +5,16 @@
 # Each job that tests runs the same script you run on your Mac
 # (scripts/test.sh): unit tests on the newest iPad Pro 13-inch simulator
 # the chosen Xcode can run, and UI tests on that iPad and on the newest
-# standard iPhone, each family on a machine of its own at the same time.
-# "UI tests", the check the `main` ruleset requires, passes only when both
-# families' jobs passed.
+# standard iPhone. The UI tests run in three parts per family
+# (scripts/ui-test-parts.py), each part on a machine of its own, all at the
+# same time. "UI tests", the check the `main` ruleset requires, passes only
+# when every part passed on both families.
 # Each job keeps its result bundles (build/TestResults: every test,
 # screenshots of failures, the screens UI tests capture, and which
 # simulator processes used the machine) as a download on the run's page
-# for 14 days, whether the tests passed or failed.
+# for 14 days, whether the tests passed or failed. A cancelled job also
+# keeps github-agent-log.txt there: what GitHub's agent on the machine
+# logged about the job's cancelling (scripts/github-agent-log.sh).
 #
 # Every job that tests builds with Apple's newest released Xcode, never a
 # pinned one (docs/DECISIONS.md, "Build with Apple's current Xcode").
@@ -143,6 +146,12 @@ jobs:
         run: python3 scripts/test-runner.py
       - name: Build and run the unit tests
         run: scripts/test.sh unit
+      # GitHub has cancelled jobs by itself, with only "The operation was
+      # canceled." in the log. This keeps what its agent logged about it;
+      # it only reads, and never changes how the job ended.
+      - name: Keep what GitHub's agent logged about the cancelling
+        if: cancelled()
+        run: scripts/github-agent-log.sh build/TestResults || true
       - name: Keep the test results
         if: always()
         uses: actions/upload-artifact@v7.0.2
@@ -165,15 +174,19 @@ jobs:
           fi
           echo "The privacy check passed."
 
-  # One job per device family, at the same time, so neither waits for the
-  # other and each has its own time limit (docs/DECISIONS.md, "Tests").
-  # Two jobs rather than a matrix, so the "UI tests" check below reads each
-  # family's own result: a matrix reports one result for all its legs, and
-  # that summary has been seen to read as passed when a leg never got a
-  # machine. scripts/test-runner.py checks that the two jobs stay the same
-  # apart from the family.
-  ui-ipad:
-    name: UI tests on iPad
+  # One job per device family and part of the UI tests, all at the same
+  # time, so none waits for another and each has its own time limit
+  # (docs/DECISIONS.md, "Tests"). Each part runs about a third of the UI
+  # tests (scripts/ui-test-parts.py; the last part runs every class the
+  # others do not name, so every test runs in one part). Separate jobs
+  # rather than a matrix, so the "UI tests" check below reads each job's
+  # own result: a matrix reports one result for all its legs, and that
+  # summary has been seen to read as passed when a leg never got a
+  # machine. scripts/test-runner.py checks that the jobs stay the same
+  # apart from the family and the part, and that every part runs on both
+  # families.
+  ui-ipad-1:
+    name: UI tests on iPad, part 1 of 3
     runs-on: xcode-27
     timeout-minutes: 90
     steps:
@@ -193,18 +206,101 @@ jobs:
       - name: Build the app and run the UI tests
         env:
           SIMULATOR_FAMILY: ipad
+          UI_TEST_PART: "1"
         run: scripts/test.sh ui
+      # GitHub has cancelled jobs by itself, with only "The operation was
+      # canceled." in the log. This keeps what its agent logged about it;
+      # it only reads, and never changes how the job ended.
+      - name: Keep what GitHub's agent logged about the cancelling
+        if: cancelled()
+        run: scripts/github-agent-log.sh build/TestResults || true
       - name: Keep the test results
         if: always()
         uses: actions/upload-artifact@v7.0.2
         with:
-          name: ui-test-results-ipad
+          name: ui-test-results-ipad-part1
           path: build/TestResults
           if-no-files-found: warn
           retention-days: 14
 
-  ui-iphone:
-    name: UI tests on iPhone
+  ui-ipad-2:
+    name: UI tests on iPad, part 2 of 3
+    runs-on: xcode-27
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - name: Use the newest released Xcode
+        run: |
+          xcode="$(python3 scripts/select-xcode.py choose)"
+          sudo xcode-select --switch "$xcode"
+      - name: Show the Xcode version
+        run: xcodebuild -version
+      - name: Install XcodeGen
+        run: |
+          brew install xcodegen
+          brew list --versions xcodegen
+      - name: Build the app and run the UI tests
+        env:
+          SIMULATOR_FAMILY: ipad
+          UI_TEST_PART: "2"
+        run: scripts/test.sh ui
+      # GitHub has cancelled jobs by itself, with only "The operation was
+      # canceled." in the log. This keeps what its agent logged about it;
+      # it only reads, and never changes how the job ended.
+      - name: Keep what GitHub's agent logged about the cancelling
+        if: cancelled()
+        run: scripts/github-agent-log.sh build/TestResults || true
+      - name: Keep the test results
+        if: always()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: ui-test-results-ipad-part2
+          path: build/TestResults
+          if-no-files-found: warn
+          retention-days: 14
+
+  ui-ipad-3:
+    name: UI tests on iPad, part 3 of 3
+    runs-on: xcode-27
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - name: Use the newest released Xcode
+        run: |
+          xcode="$(python3 scripts/select-xcode.py choose)"
+          sudo xcode-select --switch "$xcode"
+      - name: Show the Xcode version
+        run: xcodebuild -version
+      - name: Install XcodeGen
+        run: |
+          brew install xcodegen
+          brew list --versions xcodegen
+      - name: Build the app and run the UI tests
+        env:
+          SIMULATOR_FAMILY: ipad
+          UI_TEST_PART: "3"
+        run: scripts/test.sh ui
+      # GitHub has cancelled jobs by itself, with only "The operation was
+      # canceled." in the log. This keeps what its agent logged about it;
+      # it only reads, and never changes how the job ended.
+      - name: Keep what GitHub's agent logged about the cancelling
+        if: cancelled()
+        run: scripts/github-agent-log.sh build/TestResults || true
+      - name: Keep the test results
+        if: always()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: ui-test-results-ipad-part3
+          path: build/TestResults
+          if-no-files-found: warn
+          retention-days: 14
+
+  ui-iphone-1:
+    name: UI tests on iPhone, part 1 of 3
     runs-on: xcode-27
     timeout-minutes: 90
     steps:
@@ -224,33 +320,121 @@ jobs:
       - name: Build the app and run the UI tests
         env:
           SIMULATOR_FAMILY: iphone
+          UI_TEST_PART: "1"
         run: scripts/test.sh ui
+      # GitHub has cancelled jobs by itself, with only "The operation was
+      # canceled." in the log. This keeps what its agent logged about it;
+      # it only reads, and never changes how the job ended.
+      - name: Keep what GitHub's agent logged about the cancelling
+        if: cancelled()
+        run: scripts/github-agent-log.sh build/TestResults || true
       - name: Keep the test results
         if: always()
         uses: actions/upload-artifact@v7.0.2
         with:
-          name: ui-test-results-iphone
+          name: ui-test-results-iphone-part1
+          path: build/TestResults
+          if-no-files-found: warn
+          retention-days: 14
+
+  ui-iphone-2:
+    name: UI tests on iPhone, part 2 of 3
+    runs-on: xcode-27
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - name: Use the newest released Xcode
+        run: |
+          xcode="$(python3 scripts/select-xcode.py choose)"
+          sudo xcode-select --switch "$xcode"
+      - name: Show the Xcode version
+        run: xcodebuild -version
+      - name: Install XcodeGen
+        run: |
+          brew install xcodegen
+          brew list --versions xcodegen
+      - name: Build the app and run the UI tests
+        env:
+          SIMULATOR_FAMILY: iphone
+          UI_TEST_PART: "2"
+        run: scripts/test.sh ui
+      # GitHub has cancelled jobs by itself, with only "The operation was
+      # canceled." in the log. This keeps what its agent logged about it;
+      # it only reads, and never changes how the job ended.
+      - name: Keep what GitHub's agent logged about the cancelling
+        if: cancelled()
+        run: scripts/github-agent-log.sh build/TestResults || true
+      - name: Keep the test results
+        if: always()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: ui-test-results-iphone-part2
+          path: build/TestResults
+          if-no-files-found: warn
+          retention-days: 14
+
+  ui-iphone-3:
+    name: UI tests on iPhone, part 3 of 3
+    runs-on: xcode-27
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+      - name: Use the newest released Xcode
+        run: |
+          xcode="$(python3 scripts/select-xcode.py choose)"
+          sudo xcode-select --switch "$xcode"
+      - name: Show the Xcode version
+        run: xcodebuild -version
+      - name: Install XcodeGen
+        run: |
+          brew install xcodegen
+          brew list --versions xcodegen
+      - name: Build the app and run the UI tests
+        env:
+          SIMULATOR_FAMILY: iphone
+          UI_TEST_PART: "3"
+        run: scripts/test.sh ui
+      # GitHub has cancelled jobs by itself, with only "The operation was
+      # canceled." in the log. This keeps what its agent logged about it;
+      # it only reads, and never changes how the job ended.
+      - name: Keep what GitHub's agent logged about the cancelling
+        if: cancelled()
+        run: scripts/github-agent-log.sh build/TestResults || true
+      - name: Keep the test results
+        if: always()
+        uses: actions/upload-artifact@v7.0.2
+        with:
+          name: ui-test-results-iphone-part3
           path: build/TestResults
           if-no-files-found: warn
           retention-days: 14
 
   # The check the `main` ruleset requires by name. It runs however the
-  # family jobs ended, and fails unless both of them passed: a failed,
-  # cancelled or skipped family never reads as passed.
+  # part jobs ended, and fails unless every one of them passed: a failed,
+  # cancelled or skipped part never reads as passed.
   ui-result:
     name: UI tests
-    needs: [ui-ipad, ui-iphone]
+    needs: [ui-ipad-1, ui-ipad-2, ui-ipad-3, ui-iphone-1, ui-iphone-2, ui-iphone-3]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Check that the UI tests passed on both families
+      - name: Check that every part of the UI tests passed on both families
         env:
-          IPAD: ${{ needs.ui-ipad.result }}
-          IPHONE: ${{ needs.ui-iphone.result }}
+          IPAD_1: ${{ needs.ui-ipad-1.result }}
+          IPAD_2: ${{ needs.ui-ipad-2.result }}
+          IPAD_3: ${{ needs.ui-ipad-3.result }}
+          IPHONE_1: ${{ needs.ui-iphone-1.result }}
+          IPHONE_2: ${{ needs.ui-iphone-2.result }}
+          IPHONE_3: ${{ needs.ui-iphone-3.result }}
         run: |
-          if [ "$IPAD" != success ] || [ "$IPHONE" != success ]; then
-            echo "The UI tests did not pass on both families (iPad: $IPAD, iPhone: $IPHONE)."
+          if [ "$IPAD_1" != success ] || [ "$IPAD_2" != success ] || [ "$IPAD_3" != success ] ||
+            [ "$IPHONE_1" != success ] || [ "$IPHONE_2" != success ] || [ "$IPHONE_3" != success ]; then
+            echo "The UI tests did not pass in every part (iPad: $IPAD_1, $IPAD_2, $IPAD_3; iPhone: $IPHONE_1, $IPHONE_2, $IPHONE_3)."
             exit 1
           fi
-          echo "The UI tests passed on the iPad and the iPhone."
+          echo "Every part of the UI tests passed on the iPad and the iPhone."

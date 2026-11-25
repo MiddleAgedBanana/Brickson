@@ -23,6 +23,23 @@ something, the tool is named. A-1 (does Snap to Item stop on a dimmed
 button) is a device question and is not answered here; SIM-5 only says
 what the system reports about a dimmed button.
 
+### Overtaken since the run
+
+Main moved on while this pull request waited; on 2026-11-25 the record
+was checked against it, and each finding below stands as measured on
+2026-11-15 except:
+
+- **The accent under Increase Contrast** (SIM-10) is fixed: pull request
+  #116 draws every fill from its colour set by name
+  (`Palette.phraseFill` is `Color("AccentColor")`), and
+  `PaletteTests.everyFillIsDrawnFromItsColourSet` checks it. Its *Known
+  gaps* item and follow-up were dropped from this pull request.
+- **The four missing window sizes** (SIM-12) are in
+  `HomeLayoutEngineTests.windows` since pull request #120.
+- **docs/ACCESSIBILITY.md's `pointerStyle(_:)` row** (SIM-13) and **the
+  run sheet's SIM-1 (b)**, now the owner's step in Xcode, were
+  corrected by pull request #127.
+
 ### Where it was measured
 
 - Mac with Xcode 27.2; Simulator runtime iOS 27.2.
@@ -77,7 +94,7 @@ what the system reports about a dimmed button.
 | SIM-7 | D-14 | Could not test: Smart Invert does not show in Simulator screenshots |
 | SIM-8 | D-17 | Partly: the bar's words stay above 10:1 over scrolled rows; the rows' own words under the bar not measured |
 | SIM-9 | D-20 | Partly: Home's fills keep their contrast in an inactive window; system styles not run |
-| SIM-10 | D-21, D-02, A-33 (A4-U17, L1-U22) | Yes, answered, with **one shipped defect**: the accent under Increase Contrast in dark (3.95:1) |
+| SIM-10 | D-21, D-02, A-33 (A4-U17, L1-U22) | Yes, answered, with one defect in the app as it was: the accent under Increase Contrast in dark (3.95:1), fixed since by #116 |
 | SIM-11 | A-45 (B3-U8), A2-U13, A3-U17 | Mostly: three differences on the probe; on Home the tree and VoiceOver agree; Full Keyboard Access on Home not measured |
 | SIM-12 | B2-U4, B2-U6 | Mostly: all windows and insets; corner radius has no public API; no iOS 26 runtime |
 | SIM-13 | B1-U10, B2-U10, L1-U4 | Yes, answered (the haptics value itself needs devices) |
@@ -105,8 +122,9 @@ what the system reports about a dimmed button.
   Brickson inside Assistive Access, needs a device.
 - **What it means.** Apple's own dressing of controls inside Assistive
   Access waits for DEV-12, or for the owner to render the preview in
-  Xcode (*Not verified*, below). The run sheet's (b) conflicts with
-  AGENTS.md; the fix proposed is in *Follow-ups*.
+  Xcode (*Not verified*, below). The run sheet's (b) then asked an
+  agent to open the project, which AGENTS.md forbids; it is the owner's
+  step since #127 (*Overtaken since the run*).
 
 ### SIM-2. Control sizes (D-01)
 
@@ -131,7 +149,7 @@ what the system reports about a dimmed button.
 - **Answer.** `.extraLarge` draws exactly as tall as `.large` on iOS
   27.2, on iPhone and iPad, as Apple's API page says. Sizes grow with
   Dynamic Type.
-- **What it means.** Settled, as stage 2 expected: family screens gain
+- **What it means.** Settled, as the design research expected: family screens gain
   nothing from `.extraLarge`. No system size reaches Brickson's switch,
   head or eye floors at the default text size (54 against 88, 109 and
   136 points), so Home keeps its own sizes from the layout engine.
@@ -158,7 +176,8 @@ what the system reports about a dimmed button.
   floor for Phrases and Type, but not switch and head tracking's 88 or
   Eye Tracking's 109 (`HomeLayout.Profile.modeControlFloor`). A joined
   Phrases and Type control cannot be a system segmented picker in those
-  profiles without a custom style, which stage 5 would have to justify;
+  profiles without a custom style, which Brickson's own components
+  would have to justify;
   and its words would not follow the person's text size.
 
 ### SIM-4. Brickson's edit sheets against Apple's sheet guidance (D-22)
@@ -232,7 +251,8 @@ what the system reports about a dimmed button.
   interactive words. A button hidden with `accessibilityHidden(true)`
   stays in both automation trees although VoiceOver never reaches it.
 - **What it means.** The system can tell a dimmed button from an
-  available one, so a "real control that is not available" (stage 1's
+  available one, so a "real control that is not available" (the
+  accessibility research's
   third case) is something each input method could treat differently;
   whether Snap to Item does is A-1, on a device (DEV-1). The two
   responds-to-interaction modifiers change nothing these tools show, so
@@ -269,7 +289,8 @@ what the system reports about a dimmed button.
 - **What it means.** By the run sheet's rule Breathe, which still moves,
   cannot be the indicator as it is. Whether a change of brightness
   alone counts as motion for a person who asked for less is a design
-  question for stage 5 (E-08). Whether a device behaves the same is
+  question for Brickson's own components (E-08). Whether a device
+  behaves the same is
   DEV-10's D-07 (device) part; until then this is the Simulator's
   answer only.
 
@@ -406,12 +427,12 @@ what the system reports about a dimmed button.
   tint, and their pressed looks, do not keep 4.5:1 words or 3:1 edges;
   `.glass` keeps its words but not a 3:1 edge in dark. Brickson's own
   fills hold, except the accent under Increase Contrast in dark, which
-  is an invariant 6 failure in the shipped app (docs/HANDOFF.md, *Known
-  gaps*).
+  was an invariant 6 failure in the app as built that day (fixed since
+  by pull request #116, *Overtaken since the run*).
 - **What it means.** None of the failing Apple styles can carry
   Brickson's words with the system tint; Brickson's solid fills and
-  its named colours are right to replace them. The accent defect needs
-  a device check and the owner's design decision (*Follow-ups*).
+  its named colours are right to replace them. Drawing every fill from
+  its colour set by name, as #116 now does, is what keeps them.
   Whether a system Back button's 1.3:1 glass circle counts as a control
   edge under invariant 6, when its chevron is 15:1, is a question for
   the owner (*Follow-ups*).
@@ -522,12 +543,12 @@ what the system reports about a dimmed button.
   with 32 points at the top and 20 at the bottom. Its corner radius is
   not readable through any public API, so it was not measured. iOS 26
   against iOS 27 could not be compared: no iOS 26 runtime is installed.
-- **What it means.** Four window sizes that five simulators give are not among
-  `HomeLayoutEngineTests.windows` (its width sweep, with no safe
-  areas, covers their widths but not these windows with their insets):
-  iPhone Air, iPad Air 13-inch, the 820 by 1180 iPads and the new iPad
-  mini. Adding them is a test change for a later pull request
-  (*Follow-ups*). The corner radius and iOS 26's insets move to a
+- **What it means.** Four window sizes that five simulators give were
+  not among `HomeLayoutEngineTests.windows` that day (its width sweep,
+  with no safe areas, covered their widths but not these windows with
+  their insets): iPhone Air, iPad Air 13-inch, the 820 by 1180 iPads
+  and the new iPad mini. Pull request #120 has since added them. The
+  corner radius and iOS 26's insets move to a
   device (HW-6 or DEV-12).
 
 ### SIM-13. Checks that need only the compiler (B1-U10, B2-U10, L1-U4)
@@ -555,9 +576,9 @@ what the system reports about a dimmed button.
   this SDK; SwiftUI has no `.adjustable` trait, and an adjustable
   element is made with `accessibilityAdjustableAction`. The haptics
   check compiles; its answer is a device's.
-- **What it means.** Stage 1's notes on these two APIs should read as
-  above, and so should docs/ACCESSIBILITY.md's row that lists
-  `pointerStyle(_:)` (*Follow-ups*).
+- **What it means.** The accessibility research's notes on these two
+  APIs should read as above; docs/ACCESSIBILITY.md's row for
+  `pointerStyle(_:)` says the same since #127.
 
 **The confirmation dialog (L1-U4).**
 
@@ -615,7 +636,8 @@ what the system reports about a dimmed button.
   without moving a target; inside the message slot a speaking control
   (Yes or No) is a nearest neighbour of the text in every window. The
   non-control slots remain to be scored.
-- **What it means.** Stage 5 (H-02) starts from this: the candidates
+- **What it means.** Brickson's own components (H-02) start from this:
+  the candidates
   left are the non-control slots, which this run did not score, or room
   taken from another region (a layout change that moves targets, the
   owner's decision).
@@ -651,16 +673,17 @@ SSML.**
   indicator under Reduce Motion (SIM-6, DEV-10); word reports with the
   default voice and a Personal Voice (SIM-14, DEV-10); the haptics
   capability on each iPad (SIM-13, DEV-12); the corner radius and iOS
-  26's insets (SIM-12, HW-6 or DEV-12); and **the accent under Increase
-  Contrast in dark** (SIM-10): confirm 3.95:1 on a device before the fix.
+  26's insets (SIM-12, HW-6 or DEV-12).
 
 ## Commits
 
 On `claude/experiments-simulator`, `dc83b2a` to the last commit of
 pull request #115: this record (written step by step as the run went),
 the "Found, 2026-11-15" lines in docs/EXPERIMENTS.md, docs/HANDOFF.md's
-experiments line and two *Known gaps* items, and the stills. Nothing in `Brickson/`, `BricksonProbe/` or the
-tests changed: every temporary test, probe line and scratch file was
+experiments line, and the stills; then a merge of `main` on 2026-11-25
+that dropped the two *Known gaps* items main had made untrue
+(*Overtaken since the run*). Nothing in `Brickson/`, `BricksonProbe/` or
+the tests changed: every temporary test, probe line and scratch file was
 removed before committing.
 
 ## Verified
@@ -692,28 +715,9 @@ removed before committing.
 
 ## Follow-ups
 
-- **The accent under Increase Contrast in dark** (SIM-10): a device
-  check, then the owner's design decision, as the new *Known gaps* item
-  says. `PaletteTests` pins the asset's values, not what is drawn, so it
-  cannot see this; a rendered check of the fills under each appearance
-  would. *(owner; then a thread)*
-- **Four window sizes (five simulators) missing from the layout
-  engine's table** (SIM-12): a test pull request adds them. *(a thread,
-  R0)*
-- **docs/ACCESSIBILITY.md lists `View.pointerStyle(_:)` as a SwiftUI
-  18.0 API** (the row with `HoverEffectGroup` and `pointerVisibility`),
-  but it does not compile for iOS or iPadOS in the iOS 27.2 SDK
-  (SIM-13). Proposed fix: take it out of that row or mark it macOS and
-  visionOS only, after checking the row's other names the same way.
-  *(a documents pull request)*
 - **The rows' own words under the scroll edge** (SIM-8) were not
   measured; a run that samples them, if the owner wants that number.
   *(a thread)*
-- **The run sheet's SIM-1 (b) asks an agent to open the project in
-  Xcode**, which AGENTS.md forbids. Proposed fix: say in
-  docs/EXPERIMENTS.md that the owner renders the "Assistive Access"
-  preview in Xcode's canvas, or drop (b) and leave it to DEV-12.
-  *(owner)*
 - **The run sheet's step 2 makes the worktree from the owner's
   checkout** (`git fetch` there). This session used a separate clone
   instead, so the owner's checkout was not touched at all; the run sheet

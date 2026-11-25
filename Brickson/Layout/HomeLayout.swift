@@ -207,10 +207,15 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         /// Guidelines give around a control with a bezel ("about 12 points
         /// of padding"), the reference app's gaze gap, which Eye Tracking
         /// holds at the densest screen, as its floors.
+        ///
+        /// Touch's and the switch and head gaps are steps of the spacing
+        /// scale; Eye Tracking's 15 is not, on purpose: it is a physical
+        /// size, like the floors, and changes only with them
+        /// (docs/DECISIONS.md, "One spacing scale").
         var controlSpacing: CGFloat {
             switch self {
-            case .touch: 8
-            case .switchControl, .headTracking: 12
+            case .touch: Spacing.small
+            case .switchControl, .headTracking: Spacing.medium
             case .eyeTracking, .lateStage: 15
             }
         }
@@ -219,10 +224,10 @@ nonisolated struct HomeLayout: Equatable, Sendable {
         /// between controls, more than the half point the chain checks count
         /// as a tie, so a look resting in a well keeps meeting the control in
         /// its own region first (`HomeLayoutEngineTests`).
-        var minimumRegionSpacing: CGFloat { controlSpacing + 2 }
+        var minimumRegionSpacing: CGFloat { controlSpacing + Spacing.xxxSmall }
 
         /// The gap between regions where there is room.
-        var regionSpacing: CGFloat { controlSpacing + 4 }
+        var regionSpacing: CGFloat { controlSpacing + Spacing.xxSmall }
 
         /// How tall Yes, No, Emergency, Again and Get Attention grow where
         /// there is room: touch's sizes, 64 points on compact widths and 88
@@ -353,18 +358,20 @@ nonisolated struct HomeLayout: Equatable, Sendable {
 
     /// Home's margins inside the safe area: 16 points at the sides, 8 above
     /// and below (`HomeView` today).
-    static let margins = (horizontal: CGFloat(16), vertical: CGFloat(8))
-    /// The gap between controls inside a region.
-    static let controlSpacing: CGFloat = 8
+    static let margins = (horizontal: Spacing.large, vertical: Spacing.small)
+    /// The gap between controls inside a region: touch's, 8 points.
+    static let controlSpacing = Profile.touch.controlSpacing
     /// The gap between regions where there is room: larger than the gap
-    /// between controls, so each region reads as a group.
-    static let regionSpacing: CGFloat = 12
+    /// between controls, so each region reads as a group. Touch's, 12
+    /// points.
+    static let regionSpacing = Profile.touch.regionSpacing
     /// The smallest gap between regions. Still more than the gap between
     /// controls, by more than the half point the chain checks count as a
     /// tie, so a look resting in a well keeps meeting the control in its
     /// own region first (`HomeLayoutEngineTests`). A window short of room gives
     /// these four points back before any control shrinks to its floor.
-    static let minimumRegionSpacing: CGFloat = 10
+    /// Touch's, 10 points.
+    static let minimumRegionSpacing = Profile.touch.minimumRegionSpacing
     /// How much farther than Again or the category under Stop's well Yes's
     /// centre stays from every point of the well (`wellDrop`): more than
     /// the half point the chain checks count as a tie, so a look resting in
@@ -373,7 +380,7 @@ nonisolated struct HomeLayout: Equatable, Sendable {
     /// The room between a label and its control's edges: 4 points at the
     /// sides, 6 above and below (`HomeButtonStyle`). Small on purpose: the
     /// label fits itself to what is left (`FittedLabel`).
-    static let labelInset = (horizontal: CGFloat(4), vertical: CGFloat(6))
+    static let labelInset = (horizontal: Spacing.xxSmall, vertical: Spacing.xSmall)
     /// The room beside the words of a control that shows selected, Emergency
     /// and the categories: as much as above and below them, which no ring
     /// reaches (`HomeButtonLook`). SwiftUI shrinks a word too wide for its
@@ -396,7 +403,7 @@ nonisolated struct HomeLayout: Equatable, Sendable {
     static let twoLineCategoryHeight: CGFloat = 56
     /// The space between the message's two lines and the status line
     /// under them (`HomeView`).
-    static let statusSpacing: CGFloat = 4
+    static let statusSpacing = Spacing.xxSmall
     /// Everyday categories with a cell of their own (the slot plan's four).
     static let categoryCapacity = 4
     /// The most columns any phrase grid has: four on regular widths, and

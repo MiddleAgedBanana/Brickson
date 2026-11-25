@@ -65,7 +65,7 @@ final class FoldOffsetUITests: XCTestCase {
         // This measures the actual Home and actual cover independently,
         // each relative to its coherent ancestor window.
         app.buttons["settings"].tap()
-        XCTAssertTrue(app.buttons["backToTalking"].waitForExistence(timeout: 10))
+        waitToAppear(app.buttons["backToTalking"], "Settings did not open")
         let back = try button("backToTalking", in: app.snapshot())
         let backFrame = localFrame(back)
         attachCapture(app, name: "top-division-\(appearance.rawValue)-settings")

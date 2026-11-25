@@ -170,6 +170,102 @@ containers, "instead of building device-specific interfaces" (AGENTS.md,
   entry. Before: AGENTS.md said floors were "computed in physical size per
   device".
 
+## One spacing scale
+
+*Default, adopted 2026-11-16 (pull request #117): an objective call left
+to the project, reversible. Nothing a person sees changed.*
+
+The room between views, and the margins and insets around them, come
+from one scale, `Spacing` (`Brickson/Layout/Spacing.swift`), instead of
+numbers written into each view. A step has one name everywhere, so the
+same kind of room is the same number on every screen, and the app's
+coming look can change a step in one place. Gaps that should be equal
+and are not are easy to miss by eye, so a test now measures them
+(below).
+
+- **The steps** are the values the app already drew, on a two-point grid:
+  `xxxSmall` 2, `xxSmall` 4, `xSmall` 6, `small` 8, `medium` 12, `large`
+  16 and `xLarge` 24 points. Every number that moved onto the scale moved
+  onto the step of its own value, so no frame changed: Home's margins (16
+  and 8), its labels' inset (4 and 6), the message's status gap (4) and
+  its field's inset (6); touch's gap between controls (8), and the switch
+  and head gap (12); Settings' gutter and gap between rows (16), the gap
+  beside its first row (16) and under its safety bar (8); and the stacks
+  and paddings of Settings, Voice Settings, the Library's editor field,
+  the privacy policy, setup and the keyboard probe screen.
+- **Made from steps.** Each profile's smallest gap between regions is its
+  gap between controls plus `xxxSmall`, and its gap between regions where
+  there is room plus `xxSmall` (10 and 12 for touch, as before).
+  `HomeLayout.controlSpacing`, `regionSpacing` and `minimumRegionSpacing`
+  are touch's, read from the profile instead of written again.
+- **Off the scale on purpose.** Eye Tracking's and the late stage's gap
+  between controls, 15 points, is the reference app's 12-point gaze gap
+  held at the densest supported screen like the profiles' floors
+  (*Layouts from the space available*), so it changes only with them.
+  A dimmed Settings row draws its words 14 points in
+  (`SettingsRowButtonStyle.systemWordsInset`), the system button's own
+  inset measured on CI, so the words do not move as the row dims.
+- **Not spacing, so not steps:** the distances the dwell checks keep
+  between a look and a control (`SettingsRowPlace.margin`,
+  `HomeLayout.wellClearance`, the half point counted as a tie), measuring
+  slack (`WordFit.widthSlack`), the widths and insets of borders and
+  rings, corner radii, sizes and floors; `spacing: 0` in stacks whose
+  frames the layout engine sets; and `.padding()` with no value, which is
+  the system's own.
+- **Nearly equal values, kept for the look to decide** (docs/HANDOFF.md,
+  *Known gaps*): 14 beside 16 (the dimmed row's words and Settings'
+  gutter), 15 beside 16 (Eye Tracking's and the late stage's gap and the
+  large step), and Home's message field at 6 against the Library
+  editor's outlined field at 12. Changing any of them changes what
+  people see.
+- **Text size.** A step stays the same at every text size: the words and
+  the controls that hold them grow (the layout engine measures one line
+  of each label at the person's size), while a gap is room for a finger,
+  a pointer or a look between two targets, which does not depend on the
+  words. Growing gaps with `@ScaledMetric` would also take room from the
+  targets at the largest sizes, where Home needs it most. The one
+  spacing that grows with the words is a label's gap between its icon
+  and its words, a share of the font (`LabelFont.iconSpacing(at:)`).
+  Nothing in the scale names a device, a window or an orientation.
+
+**Equal gaps measure equal.** Where the layout promises one gap, between
+every two phrase tiles across and down and between the safety row's
+controls, one rule judges it: `EqualGaps` (`BricksonUITests/EqualGaps.swift`,
+compiled into the unit tests too) groups frames into rows, measures every
+gap, and fails when two differ by more than half a point, or when there
+is nothing to measure or controls touch. Half a point is the tie the
+chain checks use and one pixel on a 2x screen: SwiftUI rounds each edge
+to a pixel, so equal gaps can come out one pixel apart, while an uneven
+gap a person can see differs by a point or more.
+
+- `EqualGapsTests` (Swift Testing) applies it to frames made by hand,
+  even and uneven, and to the layout engine's frames in
+  every window `HomeLayoutEngineTests` sweeps and in every profile in a
+  phone's and an iPad's windows, at the default and largest text sizes;
+  each gap must also be the profile's gap between controls.
+- `HomeLayoutTests` applies it to the running app on CI's iPad and iPhone
+  simulators, at the default and the largest accessibility text size, in
+  portrait and, on the iPad, landscape: the eight tiles of the starter
+  library's largest category and the five safety-row controls, read from
+  the accessibility tree. It runs inside the test that already launches
+  Home in each of those, so it adds no launch. It is an XCTest UI test
+  because only XCTest drives an app (*Apple's current frameworks first*,
+  the XCTest and XCUIAutomation row). `EqualGaps` itself uses no UIKit
+  type, so the unit tests run the same rule.
+- What they cannot show: the rendered gaps of profiles other than
+  touch's, which the UI tests ask for (the engine's are checked);
+  windows with a reserved region, where a fold or camera widens one gap
+  on purpose (`HomeReservedRegionTests`); the gaps of Settings and setup,
+  which only the steps hold; and the drawn fill, since an accessibility
+  frame is the button's, which Home's fills fill.
+- A check that flags a new spacing number written into a view belongs
+  with the look rules the forbidden-code check is gaining in pull request
+  #114, beside its list of known exceptions; it is added once that merges
+  (docs/HANDOFF.md, *Known gaps*).
+
+Before: each view wrote its own numbers, with the same values repeated
+in about thirty-five places.
+
 ## App identity
 
 *2026-10-10. Name: owner. Other values: default.*
@@ -768,7 +864,11 @@ the answer is None, because starter phrases such as "I need my medication."
 are the person's own words to the people nearby, not guidance on managing a
 condition. Infrequent would make the app 13+. The full answers are in
 docs/APP-STORE.md, section 6. Re-answer when the starter phrases, an in-app
-web view or caregiver alerts change what the app contains. Whether US state
+web view or caregiver alerts change what the app contains. *2026-11-19:*
+Apple added two questions, Shared Location and Dating and Relationships,
+asked from 2026-11-16 and due from every app by 2027-01-12; Brickson
+answers No to both, since it has no location code and no such feature
+(docs/APP-STORE.md, section 6). Whether US state
 age-assurance laws require the Declared Age Range API is **not** decided
 here; any age check must never cover or block communication (invariants 2
 and 10).
@@ -907,6 +1007,14 @@ the alarm. When an activation is refused (during a phone or FaceTime call),
 it is retried mixing with other audio, so the sound plays rather than
 failing silently; a refusal of both shows "Audio failed".
 
+*2026-11-19.* That retry mixes but does not duck other audio
+(`.duckOthers`). Apple's documentation for the option says ducking lasts
+from activation until the session is deactivated, and to use it only for
+a few seconds at a time; with `.keepActive` the session is never
+deactivated, so other audio, a call included, would stay lowered after
+the phrase. Ducking is decided together with `.releaseWhenIdle`, after
+that device check.
+
 Before: "Open, decide with the Get Attention port (step 1): when to release
 the audio session." The reference app activated before speaking and never
 deactivated; Brickson keeps that behaviour, now in one place.
@@ -981,6 +1089,150 @@ If the session could not activate for the phrase, an unexpected end shows
 nothing new: "Audio failed" is already showing, and replacing it with
 "Stopped — Again" sent the reference app round a loop of Again activations
 that failed the same way (code audit L3).
+
+**Pause and carry-on reports are logged, not acted on yet.** *2026-11-19.
+Default: an objective safety call the owner left to the project.
+Reversible if the owner objects.* The synthesizer's pause and carry-on
+reports (`speechSynthesizer(_:didPause:)` and
+`speechSynthesizer(_:didContinue:)`) are forwarded like its other reports
+and logged, without the phrase's words, saying whether each was for the
+phrase still current and how long it waited to reach the main thread
+(it is stamped as it arrives); nothing else changes. Brickson never calls
+`pauseSpeaking(at:)`, and Apple documents the pause report for a pause
+made that way, so whether the system also sends one when a call, Siri or
+another app's alarm pauses speech, in which order with the interruption
+notice, and whether such a pause is ever lifted a moment later, are not
+known. Device check S2, step 4, reads the log for them. Until then a
+paused synthesizer is found as before: by the interruption notice, or by
+the speech watchdog within one and a half seconds
+(`theWatchdogStopsASynthesizerLeftPaused`). Treating a pause report as a
+cut-off waits for that check: acting on it now could show "Stopped —
+Again" over a phrase that would have carried on, or rely on a report
+that never comes.
+
+## A phrase that does not start
+
+*2026-11-17. Default: an objective safety call the owner left to the
+project. Reversible if the owner objects.*
+
+The system's speech service can accept a phrase and never begin it, while
+the synthesizer goes on saying it is speaking. On CI (pull request #122,
+run 44037184309, iPad part 3) Yes was tapped at 07:49:21; the synthesizer's
+voice lookup for it did not answer until 07:52:09, no audio started before
+the test relaunched the app at 07:52:49, and Home showed "Speaking" throughout,
+because the missed-finish watchdog only acts on a synthesizer that has gone
+quiet. On a device that would be a phrase the person never heard, with
+nothing on screen to say so (invariants 4 and 5). Pull request #120's
+`LaunchTests` failure at the older 30-second wait looked the same: the
+same test, with "Speaking" still showing.
+
+**The rule.** The speech watchdog (`SpeechService`) also checks each
+utterance against `SpokenUtteranceTracker.startLimit`, 15 seconds from the
+moment the app is asked to speak it, before it stops any earlier phrase,
+activates audio, looks up the voice and hands it to the synthesizer. An
+utterance that by then has sent
+neither a start report (`speechSynthesizer(_:didStart:)`, which Apple
+documents as the moment speech begins) nor a word report
+(`willSpeakRangeOfSpeechString`) is stopped and treated as cut off, after
+a second look half a second later so a report already on its way can land,
+as for a synthesizer gone quiet:
+
+- a phrase shows the existing warning that names the way back: "Stopped —
+  Again", "Stopped: Phrases" while typing, "Stopped — Back" under a screen
+  over Home, with their full sentences for VoiceOver;
+- a Settings voice sample only clears "Speaking", since it cannot be
+  repeated with Again;
+- when the audio session never activated, "Audio failed" stays, as in
+  "A phrase the system cuts off" (code audit L3).
+
+A phrase that began in time is never stopped by the limit, however long
+it then speaks.
+
+**When the watchdog cannot look.** A slow audio activation or voice
+lookup holds the main thread, where the watchdog runs; on CI a voice
+lookup took almost three minutes. So the limit is also checked outside
+the watchdog, against the start limit and its half-second second look
+(`SpeechService.latestStart`, 15.5 seconds): a phrase held up that long
+or longer before the synthesizer has it is never handed over, and one
+whose first start or word report is stamped that late is stopped as soon
+as the report reaches the main thread. Both
+show the same warning as above. Without this, a phrase held up past the
+limit could begin before the watchdog's next look and be kept, sounding
+minutes after it was chosen (a review on the pull request found it).
+
+**Why it is stopped, not left to sound later.** A phrase heard minutes
+after it was chosen can answer a question nobody is asking any more (Yes
+to a different question), and nothing may sound without the person's
+action (invariant 4). Stopped, it can be said again with one activation:
+Again, or the same tile, which is no longer absorbed as a repeat of a
+phrase still "speaking".
+
+**Why 15 seconds.** Long enough for a slow first phrase: in the same CI
+run, on an overloaded iPad simulator, the first sound of each of five
+later launches came 1.9 to 4.9 seconds after the phrase's voice lookup
+and 3.1 to 5.4 seconds after the test began its tap or press (from the
+app's and the test's own logs in the result bundle). The limit counts
+from the moment the app asks for the phrase, which falls between the
+two, so the slowest healthy start took between 4.9 and 5.4 seconds. The
+2026-10-25 simulator controls
+([speech diagnostic](evidence/2026-10-25-duo-design/speech-diagnostic/README.md))
+reported their start 0.03 to 0.08 seconds after asking and their first
+word 0.6 to 1 second after. Fifteen seconds is nearly three times the
+slowest healthy start (2.8 times 5.4 seconds). Short enough that the person learns a
+phrase will not be heard before the 20 seconds after which the app
+already treats a synthesizer that reports nothing as possibly stuck
+(`SpokenUtteranceTracker.repeatWindow`). `SpokenUtteranceTrackerTests`
+pins both bounds: at least twice the slowest healthy start, and under the
+repeat window.
+
+**Why a start report or a word, not words alone.** Brickson already
+trusts a phrase that reports no words at all ("A phrase the system cuts
+off"); if only words counted, a voice that reports none would have every
+message longer than the limit stopped while it was being heard.
+
+**Counted from the ask, audio and voice lookup included.** Stopping an
+earlier phrase, activating the audio session and looking up the chosen
+voice all happen on the main thread before the synthesizer has the
+phrase, and the voice lookup can wait on the system's voice service. That
+time counts against the limit,
+because what the limit guards is how late after the person's choice a
+phrase would sound: one that has not started 15 seconds after it was
+asked for is late whatever held it up, and stopping it follows the rule
+above. A review on the pull request proposed starting the count after
+the lookup; declined for that reason, and because the synthesizer looks
+the voice up again as it takes the phrase (`SystemSpeechSynthesizer`), so
+the count could not start after every lookup anyway. A later review found
+that the first version started the count after the audio session
+activated, contrary to this rule; it now starts before
+(`SpeechServiceTests`, `aSlowAudioActivationCountsAgainstTheStartLimit`).
+
+**Evidence kept for the limit.** A start of one second or more is
+logged at notice level as "Speech began N ms after it was asked for",
+whichever report shows it first (the start report, or a word from a
+voice that sends no start), and
+a phrase the limit stops at error level, numbers only and never the
+words, so a CI result bundle or a device's log shows how close real
+starts come. A start of 7.5 seconds or more (half the limit) is new
+evidence to revisit the limit with. The measurement is taken from the
+first report the app handles. A review proposed ordering the reports by
+the time each was stamped instead, in case the start report is handled
+after a word; declined, because each report is stamped as it arrives and
+passed to the main queue in arrival order, so the two can differ by at
+most the moments it takes to pass one along, against a log threshold of
+one second and a limit of 15.
+
+**What it does not catch.** A phrase the synthesizer begins after
+`latestStart`, while its own voice lookup held the main thread, can be
+heard for the moment it takes to stop it. A start report sent for speech
+that is never heard, and a phrase that began and then stays "speaking" with no finish
+(the 2026-10-25 diagnostic) still show "Speaking": the first is not
+known to happen, and the second is the open gap the diagnostic records.
+
+**The words on screen.** The limit reuses "Stopped — Again" and its
+sentence, "Speech stopped unexpectedly. Choose Again to repeat it." A
+plainer warning for a phrase that never began (such as "Not spoken —
+Again") would be new words on Home, which is the owner's call; it is
+recorded as a proposal in docs/HANDOFF.md, not built.
 
 ## Audio session notices
 
@@ -1701,6 +1953,33 @@ category.
   starter's largest category), a short last row can scroll up beside the
   categories, part of invariant 11's scrolling gap (docs/HANDOFF.md,
   *Known gaps*).
+
+## Text people read is in American English
+
+*2026-11-19. Default; reversible if the owner objects
+([`log/2026-11-19-records-brought-up-to-date.md`](log/2026-11-19-records-brought-up-to-date.md)).*
+
+Every word Brickson shows or says for itself (the String Catalog, the
+starter phrases, the system's permission prompts in `Info.plist`) and
+every word of its App Store text (name, subtitle, promotional text,
+description, keywords, What's New and the notes for App Review) is
+written in American English: "color", "center", "gray", "favorite",
+"canceled". The App Store record's primary language is English (U.S.)
+(docs/APP-STORE.md, section 1), the store text is drafted in it
+(docs/ASO.md, *The store text*), and one spelling everywhere keeps the
+String Catalog's keys stable for translation later.
+
+- **One exception.** The English (U.K.) and English (Australia) store
+  localizations name the disease "MND", "motor neurone disease", because
+  that is what people there search for (docs/ASO.md, *Other
+  English-speaking stores*); the rest of their text is the US text.
+- **A person's own words are never respelled.** Phrases and categories a
+  family writes, and everything shown with `Text(verbatim:)`, stay as
+  typed.
+- **Not covered:** code identifiers, comments and the project's
+  documents.
+- Respelling a starter phrase, even only its spelling, changes words a
+  person speaks, so it goes to the owner first.
 
 ## Words wider than Home's narrowest buttons
 
@@ -2493,6 +2772,25 @@ docs/work/layout-engine.md; the record is
   `theStarterLibraryFitsWhereTheTableSays` pins both modes.
   *2026-10-24:* Home has Phrases and Type, so the slot plan's column is
   Home's (*Typing on Home*, *Where the starter library fits, measured*).
+  *2026-11-17, more windows:* the iPhone Air (420 by 912 points, 68
+  and 34 at the top and bottom), the 13-inch iPad Air (1024 by 1366),
+  the 820 by 1180 iPads (iPad Air 11-inch and iPad (A16)) and the iPad
+  mini (A20 Pro) (756 by 1158), as the iOS 27.2 simulators gave them in
+  portrait, iPads with 32 and 20, join the table, the iPads turned to
+  landscape too with the same insets, as every iPad in it has (the
+  landscape insets are not measured). Every check the engine tests run
+  over the swept windows now also runs on each window of the table with
+  its own safe areas. By the engine: the iPhone Air holds the starter
+  library through AX3, Bold Text on or off, as the iPhone 16e does, and
+  every new iPad window at every text size. Without Phrases and Type
+  (`HomeLayout.Modes.phrasesOnly`, the arrangement kept for comparison,
+  not Home's), the iPad mini (A20 Pro) in landscape holds it through AX3
+  only, 28 points short at AX5, as the other iPad mini in landscape (40
+  points short there). The safety row ends above
+  the keyboard's room on each at every size but the 820 by 1180 iPad in
+  landscape at AX5 and the iPad mini (A20 Pro) in landscape from AX3,
+  as on the other iPad mini, where Home does not offer typing
+  (*Typing on Home*, *The keyboard's room, measured*).
 - **The message on the narrowest windows.** Known limit, not accepted:
   below 345 points with Bold Text on, the message beside Phrases and Type
   is narrower than "understand." in its font at the default size, so the
@@ -2651,7 +2949,16 @@ R0 item 3's accessibility work (docs/ACCESSIBILITY.md, sections 1 and 3;
   *2026-10-23:* Again is in C, reached after Emergency, and Settings in
   B, after the categories (*Settings on Home*). Get Attention is in C,
   after Emergency and before Again; Stop, while it shows, is reached
-  first in B (*Get Attention and Stop on Home*).
+  first in B (*Get Attention and Stop on Home*). *2026-11-17:* the
+  priorities alone were not enough. Until SwiftUI had applied them, the
+  accessibility tree XCTest read on CI's simulators listed elements in the
+  order they are declared, which matched Home's screen order, Phrases
+  and Type before Yes, No and Emergency, for seconds at a time on a still
+  Home (at least 3.9 in one launch). So Home also declares its
+  regions, and the safety row its controls, in the order they are
+  reached (`HomeRegion.allCases`, `HomeRegion.safetyRowOrder`), each
+  placed at the engine's frame; nothing moves
+  ([`log/2026-11-17-home-order-before-sorting.md`](log/2026-11-17-home-order-before-sorting.md)).
 - **Each region is an accessibility container** (`.contain`), so its
   controls are reached together and Switch Control can offer it as a
   group when Group Items is on. The regions carry identifiers for tests
@@ -4288,6 +4595,21 @@ with unsaved words, its file picker and the reading of a chosen file:
 start again. Time in another app or with the screen off never counts.
 Time is `ContinuousClock`; the pure clock takes `now:`.
 
+*2026-11-22, default, reversible:* it resets **only after use**. Until a
+control is used, a screen is pushed or popped or a screen is scrolled,
+Settings is already as a reset would leave it, so no reset is due; a
+reset leaves it untouched again, so it returns to its root once, 90
+seconds after it was last used. Before, an untouched Settings rebuilt
+every screen at each limit for as long as it stayed open, and an
+activation that landed while the screens were replaced did nothing: a
+UI test's tap on Family Setup was lost that way on CI, and 10 of 40
+taps aimed at a reset on the owner's Mac. Coming back to Brickson, a
+hold ending, a scroll view appearing (its phase changing from idle to
+idle) and a touch that rests on a screen without moving it (tracking,
+which holds the reset while it lasts) are not use, and nor is the
+reset's own return to the root
+([`log/2026-11-22-settings-reset-only-after-use.md`](log/2026-11-22-settings-reset-only-after-use.md)).
+
 ## Setup answers are kept as offered, never as completed
 
 *2026-10-21. Default, adopted 2026-10-21: the owner left these choices to
@@ -4410,6 +4732,18 @@ Talking keeps touch's frame*). The work file is
   tracking's to AX3 and touch's at AX5; the iPad mini in landscape takes
   touch's (head tracking's are 30 to 58 points short). The full table is in
   the work file and pinned in `ProfileChoiceTests`.
+  *2026-11-17:* of the windows added to the table (*The layout engine*,
+  *Where the starter library fits*), the iPhone Air takes touch's (head
+  tracking's leave the starter library 134 to 162 points short, Eye
+  Tracking's 354); the 13-inch iPad Air in both orientations, and the
+  820 by 1180 iPad and the iPad mini (A20 Pro) in portrait, take Eye
+  Tracking's at every text size, the iPad mini (A20 Pro) with Bold Text
+  too (its window, 12 points wider, leaves five columns of 132.8
+  points); the 820 by 1180 iPad in landscape takes touch's through AX3
+  and head tracking's at AX5 (head tracking's hold at every size but
+  leave no room for typing until touch's leave none either, as on the
+  zoomed 13-inch iPad in landscape); and the iPad mini (A20 Pro) in
+  landscape takes touch's (head tracking's are 18 to 46 points short).
 - **The arrangement is touch's.** Whether Home is regular or compact,
   how the categories sit and the grid's columns are chosen at touch's
   gap, so every profile in a window has the same arrangement and only
@@ -4699,6 +5033,15 @@ Step by Step. The work file is
   Bold Text) and not in others (the 375 by 667 window at AX3 and AX5,
   the zoomed 320-point window, AX5 with Bold Text). The owner can cap the growth, or keep touch's on the Pro Max,
   instead.
+  *2026-11-17:* of the windows added to the table (*The layout engine*,
+  *Where the starter library fits*), the 13-inch iPad Air in both
+  orientations and the 820 by 1180 iPad in portrait take the late
+  stage's at every text size; the iPad mini (A20 Pro) in portrait Eye
+  Tracking's, with Bold Text too; the 820 by 1180 iPad in landscape
+  touch's through AX3 and head tracking's at AX5; and the iPad mini (A20
+  Pro) in landscape and the iPhone Air touch's (on the iPhone Air, head
+  tracking's leave a board of six 12 points short at the default size
+  and 40 at AX5). Both boards take the same sizes on each.
 - **A fold or a camera across Home** shows the board in every
   category's frames at touch's sizes, because no fold check has
   measured the board's (*iPhone Duo*).
@@ -5378,7 +5721,7 @@ fill, which Apple's own dark and Increase Contrast dark system colours
 favour: by their published values they carry black words far better than
 white) without touching every view.
 
-**What `PaletteTests` measures**, ported from the stage 5 colour search's
+**What `PaletteTests` measures**, ported from a colour search's
 checked arithmetic (`BricksonTests/ColourArithmetic.swift`, cross-checked
 against that search's Python and Sharma, Wu and Dalal's published
 CIEDE2000 pairs in `theArithmeticMatchesTheColourSearch`), except that
@@ -5448,9 +5791,146 @@ whether they wait for the design of the app's look or get the border now
 (Codex's review of pull request #113). The 32 look-alike pairs break no
 invariant: 15 is the colour search's target, not a rule here.
 
+**Every fill is its colour set by name, never `Color.accentColor`**
+*(added 2026-11-15, pull request #116; a correctness fix, no colour
+chosen)*. The Simulator run recorded in pull request #115 found the phrase
+tiles, the selected category and Back to Talking drawn `#084DAB` with
+Increase Contrast in light and `#1A7BFF` in dark, although their colour
+set, `AccentColor`, holds `#0A60D6` in all four slots. They were filled
+with `Color.accentColor`, the app's accent, which the system treats as a
+colour for words and symbols: with Increase Contrast on it draws the
+accent darker in light mode and lighter in dark mode, on top of whatever
+the colour set's high-contrast slots hold (they held `#0A60D6` and the
+accent still changed). Under the tiles' white words the lighter blue
+measured 3.95:1, and in light the black pressed ring came to 2.66:1 on
+the darker one: invariant 6 broken on both sides, while every test here
+passed, because they read the catalog through UIKit, not the colour a
+view draws.
+
+- `Palette.phraseFill` is `Color("AccentColor")`, the same colour set
+  loaded by name like every other fill. In that run every fill loaded by
+  name kept its colour set's value under Increase Contrast, so this one
+  should be drawn as the catalog holds it: `#0A60D6` in all four
+  appearances, words 5.74:1 and the pressed ring 3.66:1, as the budget
+  measures. Without Increase Contrast nothing changes; with it, these
+  controls should keep the blue they show without it (in light, a
+  little lighter than the system drew them). Measured on the rendered
+  pixels in the iOS 27.2 Simulator on 2026-11-16: `#0A60D6` with its
+  white words at 5.74:1 in all four appearances, on an iPhone 17 and a
+  13-inch iPad Pro, on every control measured that this fill draws (all
+  but two, named in the log), and the pressed ring at 3.66:1 in light;
+  the same scripts on a build with `Color.accentColor` put back
+  measured `#1A7BFF` and 3.95:1 again
+  ([`log/2026-11-16-tile-contrast-pixels.md`](log/2026-11-16-tile-contrast-pixels.md)).
+  A real screen is still the device check the next point names.
+- `everyFillIsDrawnFromItsColourSet` fails if any of `Palette`'s fills,
+  or its fill label, is made any other way. It checks `Palette`, not the
+  views: a view that drew a colour of its own instead of `Palette`'s
+  would still pass it. SwiftUI's environment cannot set Increase
+  Contrast, so no unit test can resolve the drawn colour there; the
+  test pins the cause. The Simulator's measurement of the rendered
+  pixels, above, confirms the result there; a real device's is still
+  pending (docs/HANDOFF.md, *Checks that need a real device*, its row
+  on buttons under Increase Contrast and Reduce Transparency).
+- Why not new Increase Contrast values instead: the system's change
+  comes after the slot is read, so no slot value fixes a fill drawn with
+  `Color.accentColor`. And in dark mode, with white words and a black
+  screen, the words' ratio and the fill's edge multiply to 21, so a
+  darker slot gains words only by losing edge; `#0A60D6` is the value
+  that lowers neither (`increasedContrastNeverLowersContrast`).
+- The colour set keeps its name and stays the app's global accent
+  (`project.yml`), so system controls that use the accent for their
+  words and symbols still get the system's adjustment, which suits a
+  colour drawn as words.
+
 Before: each colour set had one value for every appearance, and
 `PaletteTests` measured that value in the four appearances against the
 base screen; the words on fills were `Color.white`.
+
+## Concentric corners
+
+*Default, adopted 2026-11-17 (pull request #121): an objective call left
+to the project, reversible. Nothing a person sees changed: no screen uses
+it yet.*
+
+Apple's current design builds rounded shapes from three kinds of corner,
+in its own words: "fixed shapes have a constant corner radius. Capsules
+use a radius that's half the height of the container. And concentric
+shapes calculate their radius by subtracting padding from the parent's"
+(WWDC25, *Get to know the new design system*, read 2026-11-17). Its
+guide to the new design asks apps to keep "a sense of visual continuity
+in your interface by using rounded shapes that are concentric to their
+containers", with SwiftUI's `ConcentricRectangle` and
+`rect(corners:isUniform:)` (*Adopting Liquid Glass*). A concentric
+corner shares its container's centre, as a sheet's corners follow the
+screen's; a grid of tiles that all share one fixed radius, whatever the
+window around them, is the plainest way a screen looks unlike Apple's
+own. Home's controls draw one fixed 12-point corner today
+(`HomeButtonStyle.cornerRadius`). This entry adds the rule and the
+shapes the app's coming look is built from; which kind each control
+takes is that look's to decide, the owner's.
+
+- **The rule, as numbers:** `CornerRule` (`Brickson/Layout/CornerRule.swift`,
+  plain Foundation, no device). Its `Kind` holds the three kinds; a
+  concentric corner's radius is its container's less the room between
+  them, never less than its minimum and never negative; a capsule's is
+  half its shorter side; no corner is rounder than a capsule. The layout
+  engine and the tests can know a corner's radius without drawing it.
+- **The shapes, drawn by SwiftUI:** `CornerRule.Kind.shape`
+  (`Brickson/Home/CornerShapes.swift`) gives a `RoundedRectangle` with
+  the continuous curve for a fixed corner, a `Capsule` for a capsule,
+  and SwiftUI's own `ConcentricRectangle` with
+  `.concentric(minimum:)` for a concentric one, which takes its radius
+  from the nearest container shape: the window's corners, or a view's
+  `concentricContainer(radius:)`, which sets `containerShape(_:)` to a
+  continuous rounded rectangle. Brickson computes no window radius:
+  SwiftUI knows it, and no code names a device.
+- **Always a minimum.** "When the system calculates a zero radius, the
+  corner is square" (`concentric(minimum:)`, Apple's documentation), as
+  it does for a tile deep in a grid, far from any rounded corner.
+  Interactive shapes are never sharp, so Brickson's concentric corners
+  have no form without a minimum. `CornerRule.minimum` is 12 points, the
+  corner Home draws today, so a control that adopts the concentric shape
+  is never sharper than it is now; the look may change it, in one place.
+- **Rings inside a tile.** SwiftUI measures every concentric corner from
+  the nearest container shape, never from the shape around it, and
+  `ConcentricRectangle` cannot itself be a container shape. A ring drawn
+  inside a concentric tile therefore uses `CornerRule.minimum(_:insetBy:)`,
+  the tile's minimum less the ring's inset, and stays concentric with the
+  tile both where the tile follows the container and where it has fallen
+  back to its minimum. Every ring a Home control draws today ends less
+  deep than the minimum, so each keeps a round corner.
+- **Room across and down alike.** The rule is written for a shape set
+  the same distance in from its container across and down, as an even
+  padding sets it. What SwiftUI does when the two differ is not measured
+  yet; the change that first pads a concentric shape unevenly measures
+  it with the test below and adds it to the rule.
+- **Tested both ways.** `CornerRuleTests` (Swift Testing, plain numbers;
+  also run on Linux while this was written) pins the rule: the
+  subtraction, the minimum, a ring's concentricity across a sweep of
+  containers, tiles and rings, the capsule, and that no kind is square.
+  `CornerShapesTests` draws each kind with `ImageRenderer` at 2x inside a
+  40-point container and measures the corner SwiftUI drew, as the
+  rounded rectangle of nearby radii, with either curve, that matches its
+  pixels best: a concentric shape 10 points in must measure 30, one 32
+  or 56 points in the minimum, a ring 6 points inside a tile the tile's
+  less 6, a fixed corner its own radius and a capsule half its shorter
+  side, each to half a point. It also pins the minimum to Home's
+  corner.
+- **Not done here, for the change that adopts it:** which controls take
+  which kind (for example capsules for a row of controls, which Apple's
+  guidelines favour for a horizontal row, or tiles concentric with the
+  window), all the owner's look; that a larger corner keeps every label
+  clear of its curve, since a label fits a rectangle (`HomeButtonStyle`
+  keeps its words inside a 12-point curve today); and that a rounder
+  hit shape (`contentShape`) still meets each profile's target floor at
+  its corners. The adopting change measures each of these on CI's
+  simulators before it ships.
+
+Before: one fixed 12-point radius written into Home's button style and
+reused by its message field, the same number written again in Settings'
+card and the Library editor's field, and a capsule drawn round a dimmed
+Settings row. They stay as they are until the look adopts the shapes.
 
 ## Show Borders and the Large Content Viewer on Home
 
@@ -5672,6 +6152,391 @@ request merges only when they pass.
   over adding a weekly CI run with animations on, or leaving them on
   and raising the iPad job's time limit (2026-11-13). Record:
   [`log/2026-11-13-ipad-ui-test-stall.md`](log/2026-11-13-ipad-ui-test-stall.md).
+- **2026-11-16, default, reversible:** the UI tests run in three parts
+  per device family, six jobs that run at the same time as GitHub has
+  Macs free, each with 90 minutes; this replaces one job per family
+  (2026-11-03). That morning the iPad's job ran past 90 minutes, on
+  `main` and on pull requests, and the iPhone's took up to 89, so
+  nothing could merge: each job spent 9 to 19 minutes starting the
+  simulator and building, then ran all 81 tests one after another, 48
+  to 70 minutes and more on a slow machine. `scripts/ui-test-parts.py`
+  names the test classes of every part but the last; the last runs
+  every other class, so a new class always runs somewhere and no class
+  can be left out of every part. `scripts/test.sh` runs one part when
+  `UI_TEST_PART` names it and everything without it. The parts are
+  balanced by measured time, about 18 to 28 minutes of tests each on
+  CI; move classes between them when one grows. A part keeps the full
+  run's order where a test depends on it, and the check enforces it
+  (`RUNS_AFTER`): `LibraryTests` runs after `KeyboardProbeTests` in the
+  same part, as it always did. *Corrected 2026-11-17:* the reason first
+  given here, that `KeyboardProbeTests` showing the keyboard first fills
+  its suggestion bar before `LibraryTests` audits New Phrase with the
+  keyboard up, did not hold. On CI that day the bar had its words in
+  `KeyboardProbeTests` and was empty again in `LibraryTests` about two
+  and a half minutes later, and Apple's audit reported its empty
+  buttons. On the Mac, on simulators made new or erased for the check,
+  the keyboard's three suggestion buttons stayed without words, and so
+  without labels, for the whole first showing of the keyboard: 120
+  seconds after typing, and 60 seconds before typing and 20 after, so
+  no wait can fix it. Showing the keyboard again gave the bar its words
+  at once. So `LibraryTests` now waits for the bar's words before that
+  audit and, when the first showing has none, leaves New Phrase and
+  opens it again, then audits once; if the bar is still empty, the test
+  fails saying so (`BricksonUITests/KeyboardSuggestions.swift`). The
+  trade-off: the test no longer audits the empty bar of the keyboard's
+  first showing on a cold simulator. That bar is Apple's keyboard, not
+  Brickson's, and the audit itself is unchanged: no finding is excused
+  or retried. A named exception for the keyboard's suggestion cell was
+  not chosen, because it would let more through the audit. The
+  trade-off is the owner's to accept (AGENTS.md, *Code Review Rules*),
+  by merging the pull request that makes it. The order
+  stays until a change that also edits its check drops it. Record:
+  [`log/2026-11-17-keyboard-suggestion-bar.md`](log/2026-11-17-keyboard-suggestion-bar.md).
+  `scripts/test-runner.py` checks that every UI test class runs in
+  exactly one part, that each family runs every part, and that the six
+  jobs differ only in family and part; "UI tests" passes only when all
+  six passed. Nothing is dropped: every test still runs on both
+  families on every pull request. The cost: each part starts its own
+  simulator and builds the app, so a run uses about a third more Mac
+  time, and GitHub runs at most five Mac jobs at once, so with the unit
+  job two parts wait for a free machine. Running two simulators in one
+  job was not chosen: GitHub's Mac has three processors, and the
+  simulator-load records show one simulator and its tests already
+  keeping them almost fully busy. Revisit when a part's job
+  takes more than about 45 minutes on a normal day (rebalance, or add
+  a part), or when GitHub's Macs get more processors (fewer parts). The
+  same day, a run whose tests all passed failed because its simulator
+  had already shut down when `scripts/test.sh` asked it to: a simulator
+  already shut down now counts as cleaned up, and one still running
+  still fails the run. Record:
+  [`log/2026-11-16-ui-test-parts.md`](log/2026-11-16-ui-test-parts.md).
+- **2026-11-17, default, reversible:** every wait in the UI tests goes
+  through one helper (`BricksonUITests/Waiting.swift`) with a named limit
+  (`BricksonUITests/UIWait.swift`), so a slow machine and a broken app
+  fail differently. Each wait watches a real condition and ends as soon
+  as it holds; the limit only decides when a stuck app fails. A look
+  that starts before the limit counts even if it ends after it, and no
+  look starts after it, so a pause that ends late cannot pass a strict
+  limit (`UIWait.watch`, unit-tested with a clock of its own). On CI
+  `scripts/test.sh` passes a scale of 3 (`BRICKSON_UI_WAIT_SCALE`, at
+  most 5), which stretches every limit but a strict one: a launch 30
+  seconds (90 on CI), one action's response 10 (30), a quick response
+  the tests always gave 5 (15), a phrase's speech ending 30 (90),
+  Settings' idle reset 30 (90), and a watch for something that must not
+  happen 3 (9), stretched too because an overloaded Mac gives the app
+  less of each second it is watched. A wait
+  that runs out says how long it waited, against which limit, how many
+  times it looked, how long its slowest look took and when it ended (to
+  find in the simulator-load record); a look over 5 seconds is named as
+  XCTest's own query being slow, a sign of an overloaded machine, and is
+  printed even when the wait ends well. **Safety bounds stay strict**:
+  the tests that prove a phrase speaks on the first tap, Emergency shows
+  its phrases and Get Attention sounds keep the limits they had (10, 5
+  and 10 seconds) on every machine, so a load before speaking still
+  fails there; the person's own bound, a response within half a second,
+  is measured on a device (*Every release passes the quality bar*), and
+  the app's own time limits are unit-tested with injected time. Why: on
+  2026-11-16 and 2026-11-17 UI tests failed on GitHub's Macs while
+  their apps worked: the Mac at 300% of its three processors with a load
+  average of 370 to 650, a single query of the app taking 5 to 12
+  seconds, the simulator's voice taking more than 30 seconds to say
+  "Yes." (once more than a minute), and a failure that could not say
+  whether the app or the machine was slow. Load average was not used in
+  the words: it is in the hundreds on passing runs too. Nothing is
+  retried, skipped or loosened. Only the time a stuck app is given
+  changed, and on a Mac each wait keeps the number of seconds it had,
+  with two exceptions, both shorter: the three waits for the first
+  screen after a launch had 60 seconds and have 30 (`scripts/test.sh`
+  launches the app once before the tests, so the first test does not
+  meet a cold simulator), and two waits for Again after a phrase had 15 and have
+  10, as the first-tap test always had. A review of #122 asked for the
+  owner's acceptance first, since a CI run now passes where "Speaking"
+  shows for up to 90 seconds rather than 30. Declined as a default: no
+  wait stretched here bounds what the person meets. The person's bounds
+  are measured on a device, the app's own time limits are unit-tested,
+  and a phrase that never ends, a screen that never opens or a control
+  that never turns on still fails on every machine; only the time an
+  overloaded simulator is given before that failure grew. The owner
+  sees it in the pull request and decides by merging it or not.
+  `scripts/ui-test-waits.py` (run by `scripts/test-runner.py`) refuses a
+  bare wait anywhere in the UI tests but the two helper files and the one
+  file below, wherever its arguments break across lines: a number
+  of seconds handed to XCTest's waits, an XCTest waiter or predicate
+  expectation, a sleep, a run loop held for a time or a deadline of the
+  test's own. `HomeAccessibilityOrderTests.swift` keeps its 9 bare waits
+  (7 from before the helpers, 2 that pull request #119's re-read added)
+  and `KeyboardSuggestions.swift` its 2 (pull request #125's own look at
+  the keyboard's suggestion bar, which came in from `main`) until a
+  later pull request moves them onto the helpers, and neither may gain
+  one.
+  Revisit if a stretched limit runs out on CI with only quick looks: that
+  is a stuck app, or a limit too short for that step. Record:
+  [`log/2026-11-17-ui-test-waits.md`](log/2026-11-17-ui-test-waits.md).
+- **2026-11-19, default, reversible:** on a simulator, `scripts/test.sh
+  ui` waits before its first test until the Mac has settled. After the
+  build and the warm-up launch, `scripts/simulator-load.py settle` reads
+  the Mac's load (its own count of tasks running or waiting for a
+  processor, averaged over a minute) every five seconds, and the tests
+  start once three readings in a row are under 50 for each of the Mac's
+  processors, 150 on GitHub's three, or after twenty minutes, whichever
+  comes first. Why: every simulator on GitHub's machines starts for the
+  first time, a first start begins hundreds of iOS's own background
+  tasks, and on that Mac they held the load at 400 to 550 and brought it
+  under 150 only about 15 to 20 minutes after the start, while the
+  tests began at about minute five. In the 320 UI test jobs of
+  2026-11-12 to 11-19, one test in 10,504 that started under a load of
+  150 failed with a wait run out, against about 8 in 1,000 that started
+  above 350; no test step stalled in about 7,400 minutes of tests under
+  a load of 250, and 50 did in about 2,520 minutes above it. So the
+  nineteen jobs that week whose waits ran out were not nineteen faults
+  but tests run on a starved Mac, and a longer wait in one test only
+  left the next test to fail the same way. The wait changes when the
+  tests start and nothing they check: no test is retried, skipped or
+  given a longer limit, an accessibility audit runs as before, a Mac
+  that never settles is tested anyway with a warning, and so is one
+  whose wait could not run. The unit tests do not wait: none of their
+  failures that week was a wait run out. The cost is minutes in every
+  UI job: on the first CI run with it the wait was 3.8 to 13.2 minutes,
+  a middle of 8, the tests were not measurably quicker, and a part's
+  job took 34 to 45 minutes where it took 28 to 35. On a Mac with more
+  processors the limit is higher and the wait is the ten seconds its
+  three readings take.
+  Not chosen: longer waits in the tests that failed; stopping iOS's
+  background tasks, which changes the system the tests run on; a larger
+  paid machine, which hides the cause; and keeping a started
+  simulator's data between runs, which would remove the start-up work
+  instead of waiting for it but needs a workflow change, a new action
+  and its own experiment, so it is the follow-up if the wait proves
+  long. The wait runs in the foreground, as the build and the tests
+  do, so a TERM signal sent to `scripts/test.sh` alone is answered when
+  the wait ends, as it is for them. CodeRabbit's review of pull request
+  #128 asked for the wait to be made interruptible; declined, because
+  the build before it and the tests after it, each longer, would still
+  hold the script the same way, and a change to how the script answers
+  signals belongs to all its steps together. The wallpaper pausing
+  (2026-11-03) is unchanged: measure it
+  again now that the tests start settled, one change at a time. This
+  does not explain the jobs GitHub cancelled before their tests began
+  (docs/HANDOFF.md, *Known gaps*). Revisit when a wait often reaches its
+  twenty minutes, when a part's job often takes more than about 45
+  minutes (the slowest of the first six took 44.7, so this is close),
+  or when a wait runs out in a test that started settled, which would
+  show the cause is another for that test. Record:
+  [`log/2026-11-19-ui-tests-wait-for-a-settled-mac.md`](log/2026-11-19-ui-tests-wait-for-a-settled-mac.md).
+- **2026-11-22, default, reversible:** on a simulator `scripts/test.sh`
+  started, the simulator's own start-up work runs in macOS's background
+  band (darwin background, which `taskpolicy -b` sets) from the moment
+  it has finished starting, or a minute after its boot, whichever comes
+  first, until the build (and the UI tests' warm-up launch) is done;
+  that setting is then taken off every one of its processes (iOS's own
+  background processes stay as iOS runs them), launchd_sim, SpringBoard
+  and backboardd are read back at normal priority, and only then does
+  the wait for the Mac to settle begin. The
+  unit tests now wait for the Mac to settle too. Why: at least twenty Mac jobs from 2026-11-13 to 2026-11-22
+  (twelve "Unit tests", eight iPad UI jobs, never an iPhone one) were
+  cancelled by GitHub's own agent on the machine, and the three whose
+  agent log was kept say the same: the agent's requests to GitHub timed
+  out after 100 seconds, its session lapsed, and it cancelled the job as
+  it shut down, 9.3 to 10.9 minutes after the simulator began to start;
+  each agent's log has no line at all for four to six minutes before
+  that, so the agent itself was hardly running.
+  In all seven such jobs whose timeline could be read, the build had run
+  for under 20 seconds: the Mac was swamped by iOS's own start of the
+  simulator, at a load of 750 to 860 on three processors, within seconds
+  of it. On the owner's Mac a first start of the iPad simulator did about
+  725 processor-seconds of work in 388 processes, and a second start of
+  the same simulator still about 417, so building first, limiting the
+  build's parallel tasks or keeping a started simulator between runs
+  could not make that load clearly lower; and `nice` did not move the
+  priority of threads that carry a quality-of-service class there, as a
+  program's threads usually do. In the background band a process runs,
+  reads and writes, and uses the network only when nothing outside the
+  band is waiting to, so GitHub's agent, the build and the watcher come
+  first and the start-up work still has every moment they leave. iOS
+  itself runs about two thirds of a started simulator's processes in that
+  band; this adds the rest, for the start-up only. Held there from the
+  boot itself, a first start on the owner's Mac had not finished after
+  almost seven minutes, where it takes 19 seconds at normal priority,
+  and finished two seconds after it was returned to normal priority (on
+  Apple silicon the system runs background work on the efficiency cores
+  when it can); in the captured jobs the agent kept in touch for the
+  first three to four and a half minutes; so the band begins once
+  `simctl bootstatus` says the simulator has started, or a minute after
+  the boot if it has not said so by then. The script says both with
+  files it creates with the shell alone, which the watcher, already
+  running, reads every second: in the self-cancelled jobs, the program
+  started once `bootstatus` returned came up only 7.9 to 10.9 minutes
+  after the boot in five of seven and never in a sixth, while the
+  watcher, once running, wrote its lines five to nine seconds apart at a
+  load of 850. While the start-up work is lowered, the load average does
+  not see it (below), so the fix is judged by no job cancelled by itself,
+  by how soon the start-up work is lowered after the boot (a minute at most), by how soon an ordinary
+  program starts during the start-up (in 70 jobs before, `simctl bootstatus`
+  printed its first line 1.3 to 5.4 minutes after the boot, and the
+  watcher began up to eleven minutes after it), and by the record, which
+  now begins before the boot and says on each line how much of a
+  processor GitHub's agent got, at what priority, and how many of its
+  threads were waiting. **The return is checked, not assumed:**
+  `scripts/simulator-load.py restore` makes the watcher stop lowering,
+  returns launchd_sim first (every later process takes its band from it)
+  and every process under it, in passes until a pass finds none it had
+  not returned, so one started after the first batch is returned too, and
+  then reads launchd_sim, SpringBoard and backboardd back, which iOS never
+  runs in the background. Returning a process clears only the setting the
+  script made: on the owner's Mac a round trip left every one of a
+  settled simulator's 209 processes at the priority it had before.
+  The return comes before the wait because the load average leaves out
+  threads in the background band: on pull request #132's first CI run,
+  with the wait before the return, every wait ended on its first
+  readings and the start-up work, back at normal priority, ran during
+  the tests (loads of 203 to 454). Adding the lowered simulator's
+  threads running or waiting to the load, tried on the second run, did
+  not hold the wait either (14 to 35 of them at the wait, and loads up
+  to 419 in the UI jobs' tests and 527 in the unit job's): work held in
+  the band also waits on the disk and the network, which a count of
+  runnable threads does not see. With
+  the return first, the wait reads the load as it was calibrated on
+  2026-11-19, with the rest of the start-up work counted in it. A watcher that has not begun when the return
+  comes is ended (it would lower the simulator once it began), and one
+  that does not answer is asked to stop before it is killed. The same
+  run showed GitHub's agent at priority 20, the utility band, below the
+  simulator's daemons at 31: before this change the start-up work
+  outranked it.
+  **When the return cannot be confirmed, the run stops before its first
+  test and fails,** saying what it found in the log and the record.
+  Chosen over testing anyway with a warning: on a throttled simulator the
+  strict limits of the tests that prove a phrase speaks on the first
+  activation could run out and read as the app's fault, while a failed
+  job that says why is seen and run again. No test, limit, retry or audit
+  changes. The unit tests' wait reverses the 2026-11-19 line "the unit
+  tests do not wait": with the start-up held in the background until the
+  wait ends, unit tests started before it would meet that work at full
+  priority, and twelve of the twenty cancelled jobs were "Unit tests".
+  The cost, measured on this pull request's runs, is in its record. Not
+  chosen: `nice` on GitHub's agent (above); the band from the boot
+  (above); stopping iOS's background tasks, declined on 2026-11-19;
+  keeping a started simulator between runs, which needs a new action and
+  would remove less than half the work (above). Review findings
+  declined on pull request #132: that `setpriority` with
+  `PRIO_DARWIN_PROCESS` can change only the calling process (the
+  zero-only rule is `PRIO_DARWIN_THREAD`'s; the record shows lowered
+  processes at priority 4, and every CI return was confirmed by its
+  read-back); that `restore` could signal a process given a dead
+  watcher's number (macOS numbers processes in sequence, so the number
+  would have to come round during the build, and `stop` already signals
+  the same number); that a return that fails when the watcher stops
+  early is only written to the record (no test runs on that path, the
+  run shuts down the simulator it started, and `restore`, the only path
+  to a test, fails the run on anything it cannot confirm); and that the
+  record names the Mac and simulator it measured on (AGENTS.md asks for
+  that). Revisit if a job is
+  cancelled by itself again (read its `github-agent-log.txt` and the
+  agent's lines in the simulator's record), if a return fails on CI, or
+  when GitHub's Macs get more processors. Record:
+  [`log/2026-11-22-simulator-start-in-the-background.md`](log/2026-11-22-simulator-start-in-the-background.md).
+
+## Guards for Apple's look
+
+*2026-11-15. Default, under the owner's standing word of 2026-11-15 that
+objective engineering is the threads' to decide; reversible if the owner
+objects ([record](log/2026-11-15-guards-for-apples-look.md)).*
+
+The owner wants Brickson to read as an app Apple made. Some of what
+that takes, from Apple's Human Interface Guidelines and API pages and
+from AGENTS.md, can be decided from the code alone.
+`scripts/forbidden-code.py` checks those rules in the same run as *A
+check for code the app must never contain*, so a review can no longer
+miss such a regression. Each finding names its rule, why it matters to the person using the app, and
+what to do instead. Nothing the app shows or does changed.
+
+- **What it refuses**, in the Swift of the targets that ship: Liquid
+  Glass or a see-through material added by the app (`glassEffect`, the
+  glass button styles, `Material`; invariant 6 and *Solid fills on Home,
+  system glass elsewhere*, whose system bars keep their glass with no
+  code); a `PrimitiveButtonStyle` or a call to its `trigger()`, which
+  decide themselves when a button fires (invariants 1 and 9); a button
+  that repeats while held (invariant 10); a picture that is not an SF
+  Symbol, in code or as a file, the app icon and custom symbols
+  (`.symbolset`, named by a literal) apart; Ultralight, Thin and Light
+  weights; a fixed text size (`.system(size:)` or UIKit's system font
+  with a number, bare or in `CGFloat(…)` or `Double(…)`; a custom font's
+  `fixedSize:`; `UIFont(name:size:)` with a number in a file that never
+  scales a font with `UIFontMetrics`); circular corners and the deprecated
+  `cornerRadius(_:antialiased:)`; an accessibility setting or Bold Text
+  written into the environment, which hides the person's choice; a
+  `ButtonStyle` that never reads `configuration.isPressed` or another
+  value's `isPressed`, in its own code or in a view of its file that it
+  names (another style's press state, or a property of its own called
+  `isPressed`, does not count); `.textCase(.uppercase)`; a context menu, swipe action, swipe to delete, drag to move or drag and
+  drop (invariants 1 and 3); a system alert, confirmation dialog or
+  action sheet (invariants 3, 4 and 10; *Settings is a cover with a fixed
+  safety bar*), since the system places its buttons itself: measured in
+  the iOS 27.2 Simulator, a confirmation dialog opens with its first,
+  destructive item nearest the spot just activated, and on the iPhone
+  directly under it, so a repeated activation by Dwell, Snap to Item or
+  a switch's auto-select meets that item next (docs/EXPERIMENTS.md,
+  SIM-13, measured in pull request #115); a toggle (invariant 10); a view given the button trait,
+  a default accessibility action or "responds to interaction"
+  (invariants 1 and 2); an empty `catch` (invariant 5); the old clocks
+  (`CACurrentMediaTime` and the like; AGENTS.md, *Workflow rules*); a
+  hover effect that lifts. `onTapGesture` and the other gestures were
+  already refused.
+- **Choices made.** Glass is refused in the whole app, not only Home:
+  this decision gives the system's components their own glass and the
+  app none. Repeating is refused on every button, not only the speaking
+  ones, because which control speaks cannot be read from the code and
+  every control can be reached with a held switch or a dwell. Named
+  accessibility actions, escape and magic tap are allowed: they add a
+  way in, not a second meaning for one.
+- **Scope.** The targets that ship: every target that is not a test,
+  except an application target that `project.yml` leaves out of every
+  archive, so it is never uploaded (`SKIP_INSTALL` true for every build, where XcodeGen reads it: under
+  `base`, or straight under `settings` only when it has no `base`,
+  `configs` or `groups`) and naming no settings group, which could turn
+  it back off, such as the experiments' probe app, which keeps every
+  other rule. A framework or extension ships
+  inside the app whatever its own setting says. If every application
+  target is marked so, the check stops with status 2.
+- **Known exceptions.** Where today's code breaks one of these rules and
+  the fix would change what a person sees, the place is named in
+  `KNOWN_EXCEPTIONS` (rule, file and type, with how many times its code
+  breaks the rule) and in docs/HANDOFF.md, *Known gaps*, as an input to
+  the new design. It excuses nothing else, not even one more break of
+  its rule in its type (a call to `trigger()` is a rule of its own, so
+  the exception for a `PrimitiveButtonStyle` never excuses one), and one
+  the code no longer needs as often, or whose file is gone or in no
+  target that ships, is a finding of its own. A file moved with its whole folder is not: the check
+  cannot tell that from another repository's checkout, so its tests fail
+  instead, and the moved code is checked at its new place. There are two,
+  both in Settings: `SettingsRowButtonStyle` and `SettingsPairLabel`.
+  Adding one is an exception, which *Code Review Rules* flags for the
+  owner. These two were proposed in pull request #114, not accepted by
+  it: the owner's merge accepts them until the new design replaces
+  both places, and declining them means that design
+  comes first, since fixing either now changes what a person sees.
+- **Not guarded, and why.** Each needs judgment, a screenshot or a
+  device, or would raise false alarms: two layers and hierarchy;
+  colour's meaning, placement and four appearances (the colour tokens'
+  own tests hold those); concentric and capsule shapes and sharp
+  corners (geometry); symbol meaning and rendering modes; motion and
+  Reduce Motion; sizes and places (the layout engine's tests hold
+  them); words, branding, the app icon and inactive windows; a setting
+  for appearance inside the app (the only `preferredColorScheme` is the
+  UI tests' launch option); system typefaces (Apple allows a custom
+  headline font that follows Dynamic Type and Bold Text; its fixed size
+  is refused); Heavy and Black weights (Apple prefers Regular to Bold
+  but warns only against the light ones); an error interpolated into a
+  crash message (whether it can hold a person's words is judgment);
+  intervals between `Date`s (right for calendar time people read); caps
+  on Dynamic Type (`textSize` caps on purpose); menus, steppers and
+  sliders (allowed on family screens); an empty handler for one kind of
+  error (`catch is SomeError {}`), which can be the recovery, as where
+  removing a draft finds the file already gone and every other error is
+  thrown on (only a bare `catch {}` is refused); words typed in capitals
+  (`Text("DELETE")`), which a script cannot tell from an acronym such as
+  "OK" or "SOS"; a custom UIKit font with a fixed size in a file that
+  scales another font, since `UIFontMetrics` often scales a font in
+  another statement and a script cannot follow which.
 
 ## Personal details stay out of the repository
 
@@ -6302,6 +7167,7 @@ runs it in seconds. On 2026-11-13 `main` broke none of its rules.
   `docs/DECISIONS.md, "<title>"`; a skip, a `.disabled` or an `.enabled`
   with no reason, which is a string in its own unlabelled message or
   comment, never one in its condition or in `file:`.
+- **Apple's look**, in the app that ships: *Guards for Apple's look*.
 - **`CLAUDE.md`** holds only `@AGENTS.md`.
 - **Changing what it allows.** Every finding names its rule and what to
   do. A file that needs a legacy API gets a row of the frameworks table,
@@ -6403,9 +7269,79 @@ station answers.
   library, anything from the private list, Apple's private API, or
   anything learned by taking Apple's software apart. It speaks neutral
   test words only (docs/DEVICE-CHECKS.md, *Keep the repository's rules*).
-- **Revisit when** stage 4's experiments are done: the owner chooses
-  whether the probe is removed or kept to run them again after a new
+- **Revisit when** the experiments in docs/EXPERIMENTS.md are done: the
+  owner chooses whether the probe is removed or kept to run them again after a new
   iOS.
+
+## A design review sheet in debug builds
+
+*2026-11-19. Default, under the owner's standing word of 2026-11-15 that
+objective engineering is the threads' to decide; reversible. Nothing a
+person sees changed: the sheet is in debug builds only.*
+
+The app's new design will be judged from a picture of every visual
+building block on `main`, drawn by the app itself in each appearance the
+system offers, and the owner will pick colours from it by eye. So the
+picture must be real renders, never a drawing of them, and every contrast
+it prints must be measured from those renders.
+
+- **Where.** A screen in the `Brickson` target that only debug builds
+  compile, `DesignReviewScreen` (`Brickson/DesignReview/`), opened by the
+  launch argument `--screen=design-review` in place of Home, as the
+  keyboard probe is (`--screen=keyboard-probe`). A release build has no
+  such screen and reads no launch argument (`LaunchOptions`). Not the
+  experiments' probe app: the sheet must draw with Brickson's own
+  `Palette`, `HomeButtonStyle`, `FittedLabel`, `settingsRowStyle` and
+  `CornerRule` shapes, which the probe does not compile.
+- **What it shows.** Built from the app's own lists, so a token or step
+  added to them shows up (`DesignReviewTests` fails if the catalogue's
+  own list of roles leaves out a fill, and the capture script refuses a
+  sheet that never showed one of the specimens it expects): every fill in
+  `Palette.fills` with `Palette.fillLabel`
+  on it, primary ink on the screen at the message's and the status line's
+  sizes, every step of `Spacing.steps`, the three kinds of corner of
+  *Concentric corners*, Home's controls in each fill on, selected, off
+  and pressed, two phrase tiles and Settings' rows on and off.
+- **An exception, the owner's to accept: the sheet's words are English
+  only, `Text(verbatim:)`, outside the String Catalog** (AGENTS.md,
+  *Workflow rules*: words people see go through it). Only the person
+  reviewing the design reads them, in a debug build, as only the person
+  running an experiment reads the probe app's (*A probe app for the
+  experiments, kept out of Brickson*, whose English-only words the owner
+  accepted on 2026-11-15); in the catalog they would be strings to
+  translate and ship in every release for a screen no release has. The
+  owner's merge of the pull request that adds the sheet accepts it;
+  declining it means the sheet's words go through the catalog.
+- **Appearances come from the system, never from the app.** The sheet
+  writes no setting into the environment (*Guards for Apple's look*) and
+  sets no colour scheme. A script on the Mac (`scripts/design-review/`)
+  sets each appearance on the simulator: Apple's `xcrun devicectl device
+  settings appearance` for light and dark, Increase Contrast, Reduce
+  Transparency, Show Borders and the text size, and the simulator's
+  accessibility defaults for Bold Text and Differentiate Without Colour,
+  which devicectl does not offer. The sheet prints the settings the app
+  received at its top, and the script refuses a capture whose line does
+  not name the appearance it set, so "nothing changed" can never be a
+  setting that did not arrive. An inactive window is a real one: an iPad
+  in Windowed Apps with another app's window in front.
+- **Measured from the pixels.** The script reads each specimen's frame
+  from the accessibility tree and measures its fill, words, edge and the
+  screen around it in the screenshot, converted to sRGB, with WCAG 2's
+  formula as `PaletteTests` uses it (`ReviewPixels.swift`, tested in
+  `ReviewPixelsTests`). The sheet itself prints no ratio: a colour the
+  system changes after the token is read, as it once did to
+  `Color.accentColor` (*Colour tokens in four appearances*), shows up only
+  in the pixels. A pressed control is pressed for real, with a touch held
+  while the screenshot is taken.
+- **Side by side.** The script crops each specimen at its own pixels, never
+  scaled, and lays one column for each appearance with the measured ratios
+  under each crop, plus Home, Home while typing (Apple's keyboard),
+  Home with the alarm sounding and Settings in each appearance.
+- **Not in CI.** It needs AXe, `devicectl` and simulators whose settings it
+  changes, so it runs on the Mac when the design changes. Its unit tests
+  (`DesignReviewTests`, `ReviewPixelsTests`) run in CI with the rest; the
+  script's own checks run by hand (`python3 -I
+  scripts/design-review/test_review.py`).
 
 ## Reviews, updates and GitHub settings
 
@@ -6423,7 +7359,7 @@ review setup does not quietly break them.
   with different training and tools each see things the others miss,
   and one stands in when another is out of credits or reviews for the
   hour. So cubic joins Codex, CodeRabbit and Greptile (it does not
-  replace Greptile, as the consultant's brief of 2026-11-06 proposed),
+  replace Greptile, as a proposal of 2026-11-06 had it),
   and each reviewer's settings live in a file here, where agents and
   reviewers read them, rather than only on its website:
   - **`.coderabbit.yaml`** (the owner approved its contents).
@@ -6659,6 +7595,25 @@ review setup does not quietly break them.
 - No `CODEOWNERS` file: the owner is the only maintainer and appears as
   the author of every pull request agents open, and GitHub never asks an
   author to review their own pull request.
+- **2026-11-19, the record catches up: eight reviewers, all the
+  owner's.** The owner said on 2026-11-16 that every review bot on
+  Brickson's pull requests is theirs. Besides Codex, CodeRabbit,
+  Greptile, cubic and Copilot (above), three more comment by themselves,
+  and no agent asks them:
+  - **Gitar** (`gitar-bot`) posts a review comment as pushes arrive.
+    The "Approved" in that comment is Gitar's own label, never a GitHub
+    approval. Its auto-apply is off and stays off, because reviewers
+    never write the code (above; AGENTS.md, "Reviews and updates on
+    GitHub").
+  - **Graphify** (`graphify-labs`) posts one summary review per pull
+    request (one each on #112, #114, #116, #117 and #119, whatever their
+    pushes), so its review may not cover a later head.
+  - **SonarQube Cloud** (`sonarqubecloud`) posts a quality-gate comment
+    and check runs of its own; none of them is a required check.
+
+  cubic's app was installed on 2026-11-15 and has reviewed since #114.
+  None of the eight approves, and every conversation any of them opens
+  is one the ruleset requires resolved (*`main` ruleset*, below).
 
 ### Dependencies
 
@@ -6683,9 +7638,8 @@ commit each tag stood for is held apart, in the lockfile (below).
   checkout keeps the job's token where every later step's `git` can
   use it, and no step here runs `git` against GitHub; nothing uploaded
   includes the checkout either, so this closes a door rather than a
-  leak (zizmor's `artipacked` check, run for the consultant's brief of
-  2026-11-06). `scripts/test-runner.py` fails a checkout without it,
-  in any workflow.
+  leak (zizmor's `artipacked` check, run on 2026-11-06).
+  `scripts/test-runner.py` fails a checkout without it, in any workflow.
 - **Dependency review on every pull request.**
   `.github/workflows/dependency-review.yml` runs GitHub's
   `actions/dependency-review-action`, which fails a pull request that
@@ -6823,8 +7777,9 @@ itself once `scripts/test-site.py` landed; checks "Analyze (actions)" and
   `autobuild` and `manual` build modes; no mode that skips the build has
   been announced. It probably meant AI Scan, below.
 - **Since 2026-11-08 AI Scan is off** (the owner: it used most of the
-  month's AI credits and found nothing; *Code review* above), so no scan
-  reads the Swift code; Copilot's review of each code pull request and
+  month's AI credits and found nothing; *Code review* above), so no
+  GitHub scan reads the Swift code (SonarQube Cloud does:
+  *SonarQube Cloud's alerts*, below); Copilot's review of each code pull request and
   Copilot Autofix's suggestions for CodeQL alerts remain. Before, in
   the bullet below:
 - *Until 2026-11-08.* GitHub's **AI Scan for pull requests** (a public
@@ -6865,6 +7820,75 @@ turns AI Scan back on, when it stops reading Swift or leaves the
 preview with new terms; or when a Swift error appears on the Tool
 status page again.
 
+### SonarQube Cloud's alerts
+
+*2026-11-17, default, reversible.* SonarQube Cloud analyses `main` and
+every pull request by itself (its automatic analysis, set up on its
+website; the repository holds no settings file for it), Swift included,
+and sends its security findings to GitHub's code scanning page beside
+CodeQL's. On a pull request they arrive as review comments, so each one
+needs an answer before a merge (*`main` ruleset*, below). They do not
+block a merge otherwise: the ruleset's code scanning rule names CodeQL
+only.
+
+On 2026-11-17 four of its findings stood open on `main`, all of one
+kind: a value from outside a Python helper script (an argument, or a
+file's text) handed to another program, which could read it as an
+option of its own ("argument injection"). None is in the app. Each was
+checked against the code:
+
+- **Alert 7, `scripts/privacy-check.py`: fixed.** The path it named, the
+  folder after `git -C`, was safe: git reads the word after `-C` as a
+  folder even when it starts with a dash. The same call had a gap it did
+  not name: a `--commits` range went to `git log` as given, so
+  `--commits=--output=<file>` emptied that file before the check
+  stopped. A range that starts with a dash is now refused before git
+  runs, and the folder is resolved to an absolute path first, which
+  never reads as an option whatever git does. Tests:
+  `test_a_range_that_starts_with_a_dash_is_refused_before_git_reads_it`
+  and `test_git_is_given_the_repository_as_an_absolute_folder`.
+- **Alert 4, `scripts/forbidden-code.py`: hardened.** The same safe
+  path; the folder is now resolved first too
+  (`test_git_is_given_the_checkout_as_an_absolute_folder`).
+- **Alert 6, `scripts/agent-bridge.py`, the brief's text: declined, a
+  false positive.** The brief reaches `codex exec` and `agy -p` as the
+  prompt only after the bridge's fixed preamble ("You are working on
+  Brickson…"), so that argument never starts with a dash.
+- **Alert 5, `scripts/agent-bridge.py`, `--background`: declined, a
+  false positive.** The bridge starts itself again with the arguments its
+  own parser already accepted, minus `--background`. They reach no other
+  program and allow nothing its user could not type.
+
+The owner dismissed alerts 5 and 6 on GitHub as false positives with
+these reasons on 2026-11-17, and SonarQube Cloud's own API then showed
+both as resolved false positives, so a dismissal on GitHub reaches it.
+An agent's dismissal through the owner's `gh` on the Mac was refused by
+Claude Code's permission check there, so dismissing stays with the
+owner. If alert 4 or 7 is still open after this change reaches `main`,
+SonarQube Cloud does not count a resolved path as safe; the owner then
+dismisses it with the reason above.
+
+**How a script hands a value to another program**, so the finding does
+not return: a folder or file goes as an absolute path
+(`Path(...).resolve()`); any other value from outside (an argument, a
+file's text, an environment variable) is refused if it starts with a
+dash, or with any other character the receiving program reads
+specially (some programs read `@name` as a file of more arguments),
+checked after any prefix the script strips; a dash may instead be
+answered by putting the value after `--` where the program reads that
+as the end of its options; and no script builds a shell command from
+it. The repeated answers to this finding on pull
+request #119 came from new measuring scripts that took their arguments
+from the command line.
+
+**Answering one on a pull request.** Check it like any reviewer's
+finding (AGENTS.md, *Code Review Rules*). Where the code follows the rule
+above, answer once, naming this section, and ask the owner to dismiss
+the alert on GitHub as a false positive with that reason, in the
+thread's report rather than in a comment. An alert reported again after a fix
+means the fix missed a path: look again before answering it a second
+time.
+
 ### Security review context
 
 *2026-11-08, approved by the owner in the security-policy chat.* The root
@@ -6889,7 +7913,7 @@ through its API on 2026-10-15:
 | Require a pull request before merging | 0 approvals; merge commits only | Nobody pushes to `main`. The owner cannot approve pull requests that show them as author, so any approval count would block every merge. Merge commits keep the commit hashes HANDOFF cites on `main`. |
 | Require status checks to pass | "Unit tests" and "UI tests" | The job names in `tests.yml`. Renaming a job blocks every pull request until the ruleset is changed to match. |
 | Require branches to be up to date | Off | Each update reruns the Mac tests; `main` is tested again after every merge anyway. |
-| Require conversation resolution | On | Every reviewer's comment (Codex, CodeRabbit, Greptile, cubic, Copilot), and every CodeQL alert posted on the pull request, gets an answer before a merge. AI Scan findings were answered too, by practice, while it was on (until 2026-11-08, *Code scanning* above). |
+| Require conversation resolution | On | Every reviewer's comment (Codex, CodeRabbit, Greptile, cubic, Copilot, Gitar, Graphify), and every CodeQL or SonarQube Cloud alert posted on the pull request, gets an answer before a merge. AI Scan findings were answered too, by practice, while it was on (until 2026-11-08, *Code scanning* above). |
 | Require code scanning results | CodeQL: errors, high or higher | A workflow change that CodeQL flags as an error, or as a high or critical security problem, cannot merge. It did not cover Dependabot's first pull request, which got no CodeQL analysis before merging (*Code scanning* above). |
 | Automatically request Copilot code review | Off since 2026-11-03 (on before, with new pushes and drafts off) | The agent asks for Copilot's review once per code pull request, after Codex's review is answered (since 2026-11-08, *Code review* above). |
 | Block force pushes, restrict deletions | On | History on `main` never changes. |
@@ -6897,7 +7921,7 @@ through its API on 2026-10-15:
 
 ## AGENTS.md puts first what Codex reads
 
-*2026-11-03. Default, from the owner's consultant notes; reversible if
+*2026-11-03. Default, from notes the owner passed on; reversible if
 the owner objects
 ([`log/2026-11-03-agents-md-for-codex.md`](log/2026-11-03-agents-md-for-codex.md)).*
 
@@ -6912,6 +7936,17 @@ reasons behind its rules stay here and in docs/LESSONS.md. The order
 below still holds, and `scripts/test-docs.py` now also fails when the
 whole file passes the 32 KiB Codex reads by default (31,985 bytes and
 556 lines on 2026-11-12).
+
+**2026-11-17: room kept.** With the guards' line for Apple's look and the
+UI test parts' commands, AGENTS.md reached 32,883 bytes, past the limit.
+Its introduction, *Build and test* and *Gotchas* were tightened to 32,349
+bytes, keeping every rule: padding and repeated words went, the two
+bullets on cloud agents and the owner's Mac became one, the Swift Testing
+filter's example is the one in *Build and test*, and the gotcha that
+simulator audio is unreliable went, since *Workflow rules* already says
+simulators prove nothing about sound. The introduction now says the check
+fails when the whole file passes 32 KiB, not only when the sections Codex
+must read end past it.
 
 Its length is deliberate. Claude Code's guidance is under about 200 lines
 per file, but this project's safety, privacy, review and guard rules do
@@ -7008,3 +8043,58 @@ Before: *What this is and what's at stake* was followed by *Where
 things are* and *Build and test*, ahead of the invariants; *Guardrails
 for agents* came between *Workflow rules* and *Working with the owner*;
 and *Gotchas* came last, as now.
+
+## A one-line index of every decision
+
+*2026-11-24. The owner asked on 2026-11-23 never to have to explain the
+reason behind a past decision again, to anyone or to any agent. How this
+works is a default, reversible if the owner objects, and the owner
+decides on the merge
+([`log/2026-11-24-decision-index.md`](log/2026-11-24-decision-index.md)).*
+
+**Decision.** `docs/DECISIONS-INDEX.md` holds one line per decision in
+this file, grouped by subject: the exact title to search for, then what
+it chose, over what, and why, in a sentence. `AGENTS.md`, which every
+agent reads at the start of every session (Claude Code through
+`CLAUDE.md`), sends every agent to it: its opening says to read the
+groups the work touches before deciding anything, and *Workflow rules*
+starts each session with those groups and their full entries here. The
+full entry always wins over its line.
+
+- **Why an index.** This file is over 8,000 lines, too long to read
+  before every change, so jobs acted without the reason behind an
+  earlier choice and the owner was asked to explain it again. A line per
+  decision tells a job which entries to read before it changes
+  something.
+- **Why a pointer, not the index loaded into every session.** The first
+  version of this change loaded the whole index (about 14 KB) into every
+  Claude Code session through a symlink in `.claude/rules/`. Chose a
+  short pointer in `AGENTS.md` instead: whatever loads at the start stays
+  with a job for its whole length, whether or not it decides anything,
+  while a job that decides something still reads the index first; the
+  pointer reaches Codex and Antigravity as well, inside the first 24,000
+  bytes Antigravity reads; and agent instructions stay in `AGENTS.md`,
+  never in an agent-specific file. The index stays under 15 KiB, so it
+  is one quick read.
+- **The start of a session reads the index, not this file whole.**
+  *Workflow rules* told each session to read all of this file, which at
+  over 500 KB no session does; it now names the index groups the work
+  touches and their entries here.
+- **A check keeps it true.** `scripts/test-docs.py`
+  (`decision_index_problems`) fails when a `##` or `###` decision here
+  has no line or two, when a line is malformed or names a title that no
+  longer exists, when a superseded line's `see "Title"`, in either case,
+  names none, or when the index passes 15 KiB (`DECISION_INDEX_LIMIT`);
+  `agents_md_index_problems` fails when, within the first 24,000 bytes of
+  `AGENTS.md`, its opening stops sending agents to the index before they
+  decide or *Workflow rules* stops starting each session with the index
+  groups the work touches. Each test expects its own problem and no other. It runs in CI with the
+  other document checks.
+- **The rule.** Whoever adds or changes a decision adds or changes its
+  line in the same change; after a summary, a job re-reads its work
+  file, `AGENTS.md` and the index first (`AGENTS.md`, *Workflow rules*).
+- **The owner's decision.** `AGENTS.md`, *Tests, workflows and the rules
+  themselves*, leaves a new file that agents and reviewers read, and a
+  change to the rules they follow, to the owner. The index is such a
+  file and the start of a session changed, so the pull request lists
+  both for the owner, and the merge is that decision.

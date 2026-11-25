@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Exercise test.sh's error reporting and simulator choice without booting a
-simulator, check the simulator watcher it starts (simulator-load.py), and
-check that CI runs it with the newest released Xcode."""
+simulator, check the simulator watcher it starts (simulator-load.py),
+check that CI runs it with the newest released Xcode, and check what a
+cancelled CI job keeps of GitHub's agent's log (github-agent-log.sh)."""
 import argparse
+import calendar
 import contextlib
 import ctypes
 import importlib.util
@@ -12,6 +14,7 @@ import json
 import os
 from pathlib import Path
 import re
+import shutil
 import signal
 import subprocess
 import sys
@@ -25,6 +28,8 @@ SCRIPT = Path(__file__).resolve().with_name("test.sh")
 WORKFLOW = SCRIPT.parent.parent / ".github" / "workflows" / "tests.yml"
 WORKFLOWS = WORKFLOW.parent
 VERIFY_LOCKFILE = WORKFLOWS / "verify-lockfile.yml"
+UI_TESTS = SCRIPT.parent.parent / "BricksonUITests"
+AGENT_LOG = SCRIPT.with_name("github-agent-log.sh")
 
 # Answers the version and build-settings queries from the fixture, and
 # records every other xcodebuild run, one line of tab-separated arguments
@@ -47,6 +52,8 @@ done
 action="${!#}"
 echo "$action" >> "$RUNNER_EVENTS"
 if [ "$action" = build-for-testing ]; then
+    # Which of the watcher's files test.sh had created by now.
+    echo "build: $(cd "$TEST_RESULTS_DIR" 2>/dev/null && ls *.claimed *.started 2>/dev/null | tr '\n' ' ')" >> "$RUNNER_MARKERS"
     app="$DERIVED_DATA_DIR/Build/Products/Debug-iphonesimulator/Brickson.app"
     mkdir -p "$app"
     cp "$FIXTURE_INFO_PLIST" "$app/Info.plist"
@@ -59,20 +66,48 @@ fi
 """
 
 # The simulator list, the selected Xcode's simulator SDK, the result
-# summary and the coverage report come from the fixture; every simulator
+# summary and the coverage report come from the fixture, a device's state
+# from its last boot or shutdown (a failed shutdown leaves the state
+# FIXTURE_SHUTDOWN_LEAVES names, or none changed); every simulator
 # and String Catalog command is recorded. Syncing the catalog writes the
 # fixture's catalog over the copy it is given, or leaves the copy as it was.
 FAKE_XCRUN = """\
 case "$*" in
-    "simctl list devices available --json") cat "$FIXTURE_DEVICES" ;;
+    "simctl list devices available --json")
+        # The fixture's devices, each in the state its last boot or
+        # shutdown left it.
+        /usr/bin/python3 -c '
+import json, os
+devices = json.load(open(os.environ["FIXTURE_DEVICES"]))
+states = {}
+if os.path.exists(os.environ["RUNNER_STATES"]):
+    for line in open(os.environ["RUNNER_STATES"]):
+        udid, state = line.split()
+        states[udid] = state
+for runtime in devices["devices"].values():
+    for device in runtime:
+        device["state"] = states.get(device["udid"], device["state"])
+print(json.dumps(devices))
+' ;;
     "--sdk iphonesimulator --show-sdk-version") echo "$FIXTURE_SDK" ;;
     "simctl boot "* | "simctl bootstatus "*" -b" | "simctl shutdown "* | "simctl spawn "* | "simctl install "* | \\
         "simctl terminate "*)
         echo "$*" >> "$RUNNER_SIMCTL"
         case "$2" in
-            boot) exit "$FIXTURE_BOOT_STATUS" ;;
-            bootstatus) exit "$FIXTURE_BOOTSTATUS_STATUS" ;;
-            shutdown) exit "$FIXTURE_SHUTDOWN_STATUS" ;;
+            boot)
+                [ "$FIXTURE_BOOT_STATUS" != 0 ] || echo "$3 Booted" >> "$RUNNER_STATES"
+                exit "$FIXTURE_BOOT_STATUS" ;;
+            bootstatus)
+                # Which of the watcher's files test.sh had created by now.
+                echo "bootstatus: $(cd "$TEST_RESULTS_DIR" 2>/dev/null && ls *.claimed *.started 2>/dev/null | tr '\n' ' ')" >> "$RUNNER_MARKERS"
+                exit "$FIXTURE_BOOTSTATUS_STATUS" ;;
+            shutdown)
+                if [ "$FIXTURE_SHUTDOWN_STATUS" = 0 ]; then
+                    echo "$3 Shutdown" >> "$RUNNER_STATES"
+                elif [ -n "$FIXTURE_SHUTDOWN_LEAVES" ]; then
+                    echo "$3 $FIXTURE_SHUTDOWN_LEAVES" >> "$RUNNER_STATES"
+                fi
+                exit "$FIXTURE_SHUTDOWN_STATUS" ;;
         esac ;;
     "simctl launch "*)
         echo "$*" >> "$RUNNER_SIMCTL"
@@ -93,8 +128,11 @@ case "$*" in
 esac
 """
 
-# Stands in for scripts/simulator-load.py: records each start and stop
-# among the simulator commands, and the test run's pid it was given.
+# Stands in for scripts/simulator-load.py: records each start, wait for
+# the Mac to settle, return to normal priority and stop among the
+# simulator commands, and the test run's pid it was given. The wait and the
+# return are also recorded among xcodebuild's runs, to show where they come
+# between them.
 FAKE_SIMULATOR_LOAD = """\
 import os, sys
 from pathlib import Path
@@ -102,10 +140,34 @@ arguments = sys.argv[1:]
 def value(name):
     return arguments[arguments.index(name) + 1]
 with Path(os.environ["RUNNER_SIMCTL"]).open("a") as log:
+    if arguments[0] == "settle":
+        log.write(f"load settle {Path(value('--out')).name}\\n")
+        with Path(os.environ["RUNNER_EVENTS"]).open("a") as events:
+            events.write("settle\\n")
+        status = int(os.environ.get("FIXTURE_LOAD_SETTLE_STATUS", "0"))
+        if status == 0:
+            print("The Mac has settled (fixture).")
+        sys.exit(status)
+    if arguments[0] == "restore":
+        watcher = f" {value('--pid')}" if "--pid" in arguments else ""
+        log.write(f"load restore {value('--udid')}{watcher} {Path(value('--out')).name}\\n")
+        with Path(os.environ["RUNNER_EVENTS"]).open("a") as events:
+            events.write("restore\\n")
+        status = int(os.environ.get("FIXTURE_LOAD_RESTORE_STATUS", "0"))
+        if status == 0:
+            print("Returned the simulator's processes to normal priority (fixture).")
+        else:
+            print("error: could not confirm (fixture)", file=sys.stderr)
+        sys.exit(status)
     if arguments[0] == "start":
         Path(os.environ["RUNNER_LOAD_PARENT"]).write_text(value("--parent"))
-        pausing = "pausing" if "--pause-posters" in arguments else "watching"
-        log.write(f"load start {value('--udid')} {pausing} {Path(value('--out')).name}\\n")
+        if "--claim-file" in arguments:
+            out = value("--out")
+            files = value("--claim-file") == out + ".claimed" and value("--started-file") == out + ".started"
+            plan = "claiming" if files and {"--pause-posters", "--background"} <= set(arguments) else "?"
+        else:
+            plan = "pausing" if "--pause-posters" in arguments else "watching"
+        log.write(f"load start {value('--udid')} {plan} {Path(value('--out')).name}\\n")
         status = int(os.environ.get("FIXTURE_LOAD_START_STATUS", "0"))
         if status == 0:
             print(4242)
@@ -151,9 +213,10 @@ def run_script(build_body, mode="ui", destination="id=fixture-simulator",
                target="26.0", sdk="27.1", devices=None, team="",
                test_summary=summary(3), family=None, arguments=(),
                coverage=COVERAGE, strings=True, synced_catalog=None,
-               sync_status=0, on_ci=True, boot_status=0,
-               bootstatus_status=0, shutdown_status=0, docs_status=0, hooks_status=0,
-               privacy_status=0, bridge_status=0, forbidden_status=0):
+               sync_status=0, on_ci=True, boot_status=0, part=None,
+               bootstatus_status=0, shutdown_status=0, shutdown_leaves="",
+               docs_status=0, hooks_status=0,
+               privacy_status=0, bridge_status=0, forbidden_status=0, wait_scale=None):
     with tempfile.TemporaryDirectory() as directory:
         # Exercise the exact checked-in runner and selector in an isolated
         # checkout. Preflights are dependencies, like the mocked Apple tools:
@@ -161,8 +224,15 @@ def run_script(build_body, mode="ui", destination="id=fixture-simulator",
         # the unit gate, with its normal PATH (including gh for alias reads).
         fixture_scripts = Path(directory, "repo", "scripts")
         fixture_scripts.mkdir(parents=True)
-        for name in ("test.sh", "choose-simulator.py"):
+        for name in ("test.sh", "choose-simulator.py", "ui-test-parts.py"):
             (fixture_scripts / name).write_bytes((SCRIPT.parent / name).read_bytes())
+        # The UI tests' own classes, which scripts/ui-test-parts.py reads.
+        fixture_ui_tests = Path(directory, "repo", "BricksonUITests")
+        fixture_ui_tests.mkdir()
+        for path in UI_TESTS.rglob("*.swift"):
+            copy = fixture_ui_tests / path.relative_to(UI_TESTS)
+            copy.parent.mkdir(parents=True, exist_ok=True)
+            copy.write_bytes(path.read_bytes())
         (fixture_scripts / "simulator-load.py").write_text(FAKE_SIMULATOR_LOAD)
         for name, status in (("docs", docs_status), ("hooks", hooks_status),
                              ("privacy", privacy_status), ("agent-bridge", bridge_status),
@@ -195,6 +265,7 @@ def run_script(build_body, mode="ui", destination="id=fixture-simulator",
                            RUNNER_EVENTS=f"{directory}/events",
                            RUNNER_SIMCTL=f"{directory}/simctl",
                            RUNNER_LOAD_PARENT=f"{directory}/load-parent",
+                           RUNNER_MARKERS=f"{directory}/markers",
                            FIXTURE_DEVICES=str(devices_path),
                            FIXTURE_INFO_PLIST=str(plist_path),
                            FIXTURE_TARGET=target, FIXTURE_SDK=sdk,
@@ -206,12 +277,19 @@ def run_script(build_body, mode="ui", destination="id=fixture-simulator",
                            FIXTURE_BOOT_STATUS=str(boot_status),
                            FIXTURE_BOOTSTATUS_STATUS=str(bootstatus_status),
                            FIXTURE_SHUTDOWN_STATUS=str(shutdown_status),
+                           FIXTURE_SHUTDOWN_LEAVES=shutdown_leaves,
+                           RUNNER_STATES=f"{directory}/states",
                            CI="true" if on_ci else "",
                            STRING_CATALOG=str(catalog_path),
                            DERIVED_DATA_DIR=f"{directory}/DerivedData",
                            TEST_RESULTS_DIR=f"{directory}/TestResults")
-        for name in ("DESTINATION", "SIMULATOR_FAMILY"):
+        for name in ("DESTINATION", "SIMULATOR_FAMILY", "UI_TEST_PART",
+                     "BRICKSON_UI_WAIT_SCALE", "TEST_RUNNER_BRICKSON_UI_WAIT_SCALE"):
             environment.pop(name, None)
+        if wait_scale is not None:
+            environment["BRICKSON_UI_WAIT_SCALE"] = wait_scale
+        if part is not None:
+            environment["UI_TEST_PART"] = part
         if destination is not None:
             environment["DESTINATION"] = destination
         if family is not None:
@@ -230,6 +308,9 @@ def run_script(build_body, mode="ui", destination="id=fixture-simulator",
         result.calls = lines(Path(directory, "invocations"))
         result.invocations = len(result.calls)
         result.simctl = lines(Path(directory, "simctl"))
+        result.markers = [line.rstrip() for line in lines(Path(directory, "markers"))]
+        result.markers_left = sorted(path.name for pattern in ("*.claimed", "*.started")
+                                     for path in Path(directory, "TestResults").glob(pattern))
         result.stale_bundle_kept = stale.exists()
         result.stale_record_kept = stale_record.exists()
         result.results_dir = f"{directory}/TestResults"
@@ -511,7 +592,8 @@ class DestinationTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual(actions(result), [("build-for-testing", "id=PHONE"),
                                            ("test-without-building", "id=PHONE")])
-        self.assertEqual(result.simctl[:2], ["simctl boot PHONE", "simctl bootstatus PHONE -b"])
+        self.assertEqual([call for call in result.simctl if call.startswith("simctl")][:2],
+                         ["simctl boot PHONE", "simctl bootstatus PHONE -b"])
         self.assertIn("simctl spawn PHONE defaults write com.apple.keyboard.preferences "
                       "AutomaticMinimizationEnabled -bool false", result.simctl)
         self.assertIn("simctl spawn PHONE defaults write com.apple.keyboard.preferences "
@@ -569,23 +651,37 @@ class DestinationTests(unittest.TestCase):
 
 
 class PreparationTests(unittest.TestCase):
-    """Before UI tests: the full software keyboard, and one warm-up launch
-    of the app on test-only storage."""
+    """Before UI tests: the full software keyboard and one warm-up launch
+    of the app on test-only storage. Before any tests: a wait for the Mac
+    to settle after the simulator's start
+    (docs/log/2026-11-19-ui-tests-wait-for-a-settled-mac.md), and, on a
+    simulator this run started, its processes returned from the background
+    band and checked (docs/log/2026-11-22-simulator-start-in-the-background.md)."""
 
     def ui_run(self, build_body="exit 0", **options):
         return run_script(build_body, destination=None,
                           devices={runtime("27.1"): [device("iPad Pro 13-inch (M5)", "PAD")]},
                           family="ipad", **options)
 
-    # Dropping either keyboard setting or the warm-up, warming up on the
-    # person's own storage, or warming up after the tests, fails this test.
+    # Dropping either keyboard setting, the warm-up, the wait for the Mac
+    # to settle or the return to normal priority, warming up on the
+    # person's own storage, warming up after the tests, starting the
+    # watcher after the simulator, claiming the simulator only once it has
+    # finished starting (on GitHub's busy Macs `bootstatus` began up to
+    # five minutes after the boot), saying it has started before
+    # `bootstatus` does, or leaving the watcher's files behind, fails this
+    # test.
     def test_ui_tests_get_the_full_keyboard_and_a_warm_simulator(self):
         result = self.ui_run()
         self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.markers, [
+            "bootstatus: simulator-load-ipad.txt.claimed",
+            "build: simulator-load-ipad.txt.claimed simulator-load-ipad.txt.started"])
+        self.assertEqual(result.markers_left, [])
         self.assertEqual(result.simctl, [
+            "load start PAD claiming simulator-load-ipad.txt",
             "simctl boot PAD",
             "simctl bootstatus PAD -b",
-            "load start PAD pausing simulator-load-ipad.txt",
             "simctl spawn PAD defaults write com.apple.keyboard.preferences "
             "AutomaticMinimizationEnabled -bool false",
             "simctl spawn PAD defaults write com.apple.keyboard.preferences "
@@ -595,6 +691,8 @@ class PreparationTests(unittest.TestCase):
             "simctl launch PAD fixture.brickson --fresh-test-storage",
             "sleep 15",
             "simctl terminate PAD fixture.brickson",
+            "load restore PAD 4242 simulator-load-ipad.txt",
+            "load settle simulator-load-ipad.txt",
             "load stop 4242 simulator-load-ipad.txt",
             "simctl shutdown PAD",
         ])
@@ -603,12 +701,75 @@ class PreparationTests(unittest.TestCase):
         self.assertLess(result.stdout.index("Building Brickson-UI for testing"), warmed)
         self.assertLess(warmed, result.stdout.index("Testing Brickson-UI on: id=PAD"))
 
-    # Unit tests changing the keyboard or launching the app fails this.
-    def test_unit_tests_only_wait_for_the_simulator(self):
+    # The UI tests starting before the Mac has settled (the wait dropped,
+    # or moved before the build or after the tests), or the wait's own
+    # words kept out of the log, fails this test. The tests' first minutes
+    # are when a simulator that has just started for the first time keeps
+    # GitHub's Mac busiest
+    # (docs/log/2026-11-19-ui-tests-wait-for-a-settled-mac.md).
+    def test_ui_tests_start_only_after_the_wait_for_the_mac_to_settle(self):
+        result = self.ui_run()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.events,
+                         ["build-for-testing", "restore", "settle", "test-without-building"])
+        # The return comes before the wait: the Mac's load leaves out work
+        # in the background band, so on pull request #132's first two CI
+        # runs a wait with the simulator still lowered ended at once, and
+        # the start-up work then met the tests.
+        returned = result.stdout.index("Returned the simulator's processes to normal priority")
+        self.assertLess(result.stdout.index("Warm-up:"), returned)
+        settled = result.stdout.index("The Mac has settled (fixture).")
+        self.assertLess(returned, settled)
+        self.assertLess(settled, result.stdout.index("Testing Brickson-UI on: id=PAD"))
+
+    # Testing a simulator whose processes cannot be confirmed back at
+    # normal priority, in either mode, or stopping without saying why,
+    # fails this test. The tests would run throttled, and a strict limit
+    # that ran out there would read as the app's fault (docs/DECISIONS.md,
+    # "Tests", 2026-11-22). The simulator is still shut down.
+    def test_a_simulator_not_confirmed_back_at_normal_priority_is_not_tested(self):
+        os.environ["FIXTURE_LOAD_RESTORE_STATUS"] = "1"
+        try:
+            for mode in ("ui", "unit"):
+                with self.subTest(mode=mode):
+                    result = self.ui_run(mode=mode)
+                    self.assertEqual(result.returncode, 1, result.stderr)
+                    self.assertNotIn("test-without-building", [name for name, _ in actions(result)])
+                    self.assertIn("could not be confirmed back at normal priority, so no test runs "
+                                  "on it", result.stderr)
+                    self.assertEqual(result.simctl[-2:], ["load stop 4242 simulator-load-ipad.txt",
+                                                          "simctl shutdown PAD"])
+        finally:
+            del os.environ["FIXTURE_LOAD_RESTORE_STATUS"]
+
+    # A wait that cannot run (its command fails) stopping the tests, or
+    # passing silently, fails this test.
+    def test_a_failed_wait_to_settle_is_reported_and_the_tests_still_run(self):
+        os.environ["FIXTURE_LOAD_SETTLE_STATUS"] = "1"
+        try:
+            result = self.ui_run()
+        finally:
+            del os.environ["FIXTURE_LOAD_SETTLE_STATUS"]
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("could not wait for the Mac to settle", result.stderr)
+        self.assertIn(("test-without-building", "id=PAD"), actions(result))
+
+    # Unit tests changing the keyboard or launching the app fails this;
+    # so does a unit run that does not wait for the Mac to settle and
+    # return the simulator's processes to normal priority before its
+    # tests. Held in the background until then, the start-up work would
+    # otherwise meet the unit tests at full priority (docs/DECISIONS.md,
+    # "Tests", 2026-11-22).
+    def test_unit_tests_wait_for_the_mac_and_leave_the_keyboard_and_app_alone(self):
         result = run_script("exit 0", mode="unit", destination=None, devices=IPAD_AND_IPHONE)
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertEqual([call for call in result.simctl if call.startswith("simctl")],
                          ["simctl boot PAD", "simctl bootstatus PAD -b", "simctl shutdown PAD"])
+        self.assertEqual([event for event in result.events if event not in result.preflights],
+                         ["build-for-testing", "restore", "settle", "test-without-building"])
+        self.assertEqual(result.markers, [
+            "bootstatus: simulator-load-ipad.txt.claimed",
+            "build: simulator-load-ipad.txt.claimed simulator-load-ipad.txt.started"])
 
     # A failed warm-up that stops the run, or one that passes silently,
     # fails this test.
@@ -628,6 +789,7 @@ class PreparationTests(unittest.TestCase):
         self.assertEqual(result.returncode, 65)
         self.assertEqual([name for name, _ in actions(result)], ["build-for-testing"])
         self.assertNotIn("simctl launch PAD fixture.brickson --fresh-test-storage", result.simctl)
+        self.assertFalse(any(call.startswith("load settle") for call in result.simctl), result.simctl)
 
 
 class SimulatorLifecycleTests(unittest.TestCase):
@@ -672,12 +834,17 @@ class SimulatorLifecycleTests(unittest.TestCase):
                 self.assertNotIn("simctl boot PHONE", result.simctl)
                 self.assertNotIn("simctl shutdown PHONE", result.simctl)
 
-    # A boot that fails never gives this invocation ownership of the device.
+    # A boot that fails never gives this invocation ownership of the
+    # device: its watcher, started before the boot, is never claimed, so it
+    # pauses and lowers nothing there, and it is stopped.
     def test_failed_boot_does_not_claim_or_shutdown_the_device(self):
         result = self.phone_run(boot_status=70)
         self.assertNotEqual(result.returncode, 0)
         self.assertNotIn("simctl shutdown PHONE", result.simctl)
         self.assertEqual(result.invocations, 0)
+        self.assertFalse(any(call.startswith("load restore") for call in result.simctl), result.simctl)
+        self.assertEqual((result.markers, result.markers_left), ([], []))
+        self.assertIn("load stop 4242 simulator-load-destination.txt", result.simctl)
 
     # Ignoring cleanup errors can start two simulators and cause UI timeouts.
     def test_failed_shutdown_fails_the_run_and_does_not_start_another_family(self):
@@ -694,12 +861,364 @@ class SimulatorLifecycleTests(unittest.TestCase):
                 self.assertNotIn("All UI tests passed.", result.stdout)
 
 
+    # simctl refuses to shut down a simulator that has already stopped
+    # (CoreSimulator error 405, "Unable to shutdown device in current
+    # state: Shutdown"). On GitHub's iPhone on 2026-11-16 a run passed
+    # every test and then failed there. Counting that refusal as a failed
+    # clean-up, or no longer trying to shut the simulator down, fails this
+    # test; a simulator still running after a failed shutdown fails the
+    # run (above).
+    def test_a_simulator_that_already_shut_down_counts_as_cleaned_up(self):
+        result = run_script("exit 0", destination=None, devices=IPAD_AND_IPHONE,
+                            shutdown_status=149, shutdown_leaves="Shutdown")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(result.simctl.count("simctl shutdown PAD"), 1)
+        self.assertEqual(result.simctl.count("simctl shutdown PHONE"), 1)
+        self.assertIn("simctl boot PHONE", result.simctl)
+        self.assertIn("Simulator PAD had already shut down.", result.stdout)
+        self.assertNotIn("Could not shut down", result.stderr)
+        self.assertIn("All UI tests passed.", result.stdout)
+
+
+class UITestPartTests(unittest.TestCase):
+    """CI runs the UI tests in parts, each on a machine of its own
+    (scripts/ui-test-parts.py; docs/DECISIONS.md, "Tests"). Every UI test
+    class runs in exactly one part, and a part changes only which classes
+    the test run runs."""
+
+    def ipad_run(self, part=None, mode="ui", **options):
+        return run_script("exit 0", mode=mode, destination=None, family="ipad",
+                          devices={runtime("27.1"): [device("iPad Pro 13-inch (M5)", "PAD")]},
+                          part=part, **options)
+
+    @staticmethod
+    def parts_module():
+        spec = importlib.util.spec_from_file_location(
+            "ui_test_parts", SCRIPT.with_name("ui-test-parts.py"))
+        module = importlib.util.module_from_spec(spec)
+        writes, sys.dont_write_bytecode = sys.dont_write_bytecode, True
+        try:
+            spec.loader.exec_module(module)
+        finally:
+            sys.dont_write_bytecode = writes
+        return module
+
+    # Leaving a class out of every part, naming it in two, or a part that
+    # names no class, fails this test: the parts together are every UI test
+    # class, each once.
+    def test_every_ui_test_class_runs_in_exactly_one_part(self):
+        parts = self.parts_module()
+        self.assertEqual(parts.problems(), [])
+        classes = parts.test_classes()
+        self.assertGreaterEqual(len(classes), 10, classes)
+        count = len(parts.PARTS) + 1
+        runs = {name: 0 for name in classes}
+        for number in range(1, count + 1):
+            words = parts.arguments(number)
+            only = {w.split("/", 1)[1] for w in words if w.startswith("-only-testing:")}
+            skip = {w.split("/", 1)[1] for w in words if w.startswith("-skip-testing:")}
+            self.assertFalse(only and skip, words)
+            ran = only if only else classes - skip
+            self.assertTrue(ran, f"Part {number} runs nothing.")
+            for name in ran:
+                runs[name] += 1
+        self.assertEqual({name: n for name, n in runs.items() if n != 1}, {})
+
+    # A misspelled class (which would run in no part), a class named
+    # twice, or naming every class (leaving the last part empty) is
+    # reported; accepting any of them fails this test.
+    def test_unsound_parts_are_reported(self):
+        parts = self.parts_module()
+        classes = sorted(parts.test_classes())
+        cases = {
+            "misspelled": ((("SettingTests",),), "not a UI test class"),
+            "twice": (((classes[0],), (classes[0],)), "more than one part"),
+            "empty": (((),), "names no class"),
+            "all named": ((tuple(classes),), "would run nothing"),
+        }
+        for case, (named, words) in cases.items():
+            with self.subTest(case=case):
+                found = parts.problems(named)
+                self.assertTrue(any(words in line for line in found), found)
+
+    # LibraryTests audits a screen with the keyboard up and must run after
+    # KeyboardProbeTests, in the same part, as in the full run (the
+    # keyboard's suggestion bar is empty the first time it shows, and the
+    # audit fails on it). Parting them, or a rule whose earlier class sorts
+    # after the later one, fails this test unless it is reported.
+    def test_a_class_parted_from_the_class_it_runs_after_is_reported(self):
+        parts = self.parts_module()
+        self.assertEqual(parts.RUNS_AFTER, {"LibraryTests": "KeyboardProbeTests"})
+        cases = {
+            "parted": ((("LibraryTests",),), None),
+            "parted the other way": ((("KeyboardProbeTests",),), None),
+            "earlier sorts after": ((("LibraryTests", "KeyboardProbeTests"),),
+                                    {"KeyboardProbeTests": "LibraryTests"}),
+        }
+        for case, (named, rule) in cases.items():
+            with self.subTest(case=case):
+                found = parts.problems(named, runs_after=rule)
+                self.assertTrue(any("must run after" in line for line in found), found)
+        self.assertFalse([line for line in
+                          parts.problems((("LibraryTests", "KeyboardProbeTests"),))
+                          if "must run after" in line])
+
+    # project.yml builds every Swift file under BricksonUITests, folders
+    # inside it too; reading only the top folder fails this test (a class
+    # in a folder would be missing from the last part's description, and
+    # naming it in a part would be refused).
+    def test_classes_in_folders_inside_the_ui_tests_count(self):
+        parts = self.parts_module()
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            (folder / "Home").mkdir()
+            (folder / "TopTests.swift").write_text("final class TopTests: XCTestCase {}\n")
+            (folder / "Home" / "InnerTests.swift").write_text(
+                "final class InnerTests: XCTestCase {}\n")
+            self.assertEqual(parts.test_classes(folder), {"TopTests", "InnerTests"})
+            self.assertEqual(parts.problems((("InnerTests",),), folder), [])
+            self.assertIn("InnerTests", parts.describe(2, (("TopTests",),), folder))
+
+    # Passing a part's classes to the build, or none to the test run,
+    # fails this test; so does a part that keeps the full run's bundle.
+    def test_a_named_part_runs_only_its_classes(self):
+        parts = self.parts_module()
+        result = self.ipad_run(part="1")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        build, test = (arguments_of(call) for call in result.calls)
+        self.assertEqual(build[-1], "build-for-testing")
+        self.assertFalse([w for w in build if w.startswith(("-only-testing", "-skip-testing"))])
+        expected = [f"-only-testing:BricksonUITests/{name}" for name in parts.PARTS[0]]
+        self.assertEqual([w for w in test if w.startswith(("-only-testing", "-skip-testing"))],
+                         expected)
+        bundle = test[test.index("-resultBundlePath") + 1]
+        self.assertTrue(bundle.endswith("TestResults/ui-ipad-part1.xcresult"), bundle)
+        self.assertIn("load start PAD claiming simulator-load-ipad-part1.txt", result.simctl)
+        self.assertIn("UI tests, part 1 of", result.stdout)
+        self.assertIn("All UI tests in part 1 passed.", result.stdout)
+
+    # The last part runs every class the others do not name: dropping one
+    # of their names from its skips, or running it by name, fails this test.
+    def test_the_last_part_runs_every_class_the_others_do_not_name(self):
+        parts = self.parts_module()
+        last = str(len(parts.PARTS) + 1)
+        result = self.ipad_run(part=last)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        test = arguments_of(result.calls[-1])
+        expected = [f"-skip-testing:BricksonUITests/{name}"
+                    for part in parts.PARTS for name in part]
+        self.assertEqual([w for w in test if w.startswith(("-only-testing", "-skip-testing"))],
+                         expected)
+
+    # Without a part every class runs: a filter there fails this test.
+    def test_without_a_part_every_class_runs(self):
+        result = self.ipad_run()
+        self.assertEqual(result.returncode, 0, result.stderr)
+        for call in result.calls:
+            self.assertFalse([w for w in arguments_of(call)
+                              if w.startswith(("-only-testing", "-skip-testing"))], call)
+        test = arguments_of(result.calls[-1])
+        self.assertTrue(test[test.index("-resultBundlePath") + 1].endswith("ui-ipad.xcresult"))
+        self.assertIn("All UI tests passed.", result.stdout)
+
+    # A part that does not exist, or a part of the unit tests, stops the
+    # run before anything is built or started; running anything fails
+    # this test.
+    def test_an_unknown_part_or_a_part_of_the_unit_tests_is_refused(self):
+        for part, mode in (("0", "ui"), ("9", "ui"), ("two", "ui"), ("1", "unit")):
+            with self.subTest(part=part, mode=mode):
+                result = self.ipad_run(part=part, mode=mode)
+                self.assertEqual(result.returncode, 2, result.stdout + result.stderr)
+                self.assertEqual(result.invocations, 0)
+                self.assertEqual(result.simctl, [])
+
+
+class UITestWaitTests(unittest.TestCase):
+    """Every wait in the UI tests goes through BricksonUITests/Waiting.swift,
+    with a limit from UIWait.swift that stretches on CI
+    (scripts/ui-test-waits.py; docs/DECISIONS.md, "Tests")."""
+
+    @staticmethod
+    def waits_module():
+        spec = importlib.util.spec_from_file_location(
+            "ui_test_waits", SCRIPT.with_name("ui-test-waits.py"))
+        module = importlib.util.module_from_spec(spec)
+        writes, sys.dont_write_bytecode = sys.dont_write_bytecode, True
+        try:
+            spec.loader.exec_module(module)
+        finally:
+            sys.dont_write_bytecode = writes
+        return module
+
+    def problems_in(self, files, not_yet_converted=None):
+        with tempfile.TemporaryDirectory() as directory:
+            folder = Path(directory)
+            for name, text in files.items():
+                (folder / name).write_text(textwrap.dedent(text))
+            return self.waits_module().problems(folder, not_yet_converted or {})
+
+    # A bare wait added anywhere in the UI tests, or a file not yet
+    # converted that gains one, fails this test.
+    def test_the_ui_tests_wait_only_through_the_helpers(self):
+        self.assertEqual(self.waits_module().problems(), [])
+
+    # Dropping any pattern from the check lets its wait through and fails
+    # here: each line is one way XCTest, Foundation or Swift can wait for a
+    # number of seconds.
+    def test_each_kind_of_bare_wait_is_found(self):
+        bare = [
+            "XCTAssertTrue(button.waitForExistence(timeout: 5))",
+            "_ = button.waitForExistence(timeout: limit)",
+            "_ = button.waitForNonExistence(timeout: limit)",
+            "_ = XCTWaiter.wait(for: [seen], timeout: limit)",
+            "await fulfillment(of: [seen], timeout: limit)",
+            "waitForExpectations(timeout: limit)",
+            "wait(for: [seen], timeout: limit)",
+            "_ = button.wait(for: \\.isHittable, toEqual: true, timeout: limit)",
+            "let seen = expectation(for: shown, evaluatedWith: button)",
+            "let seen = XCTNSPredicateExpectation(predicate: shown, object: button)",
+            "sleep(2)",
+            "usleep(500)",
+            "Thread.sleep(forTimeInterval: pause)",
+            "try await Task.sleep(for: pause)",
+            "RunLoop.current.run(until: end)",
+            "let end = clock.now + .seconds(5)",
+            "let end = Date().addingTimeInterval(pause)",
+            'XCTFail("seen: \\(button.waitForExistence(timeout: 1))")',
+        ]
+        for line in bare:
+            with self.subTest(line=line):
+                found = self.problems_in({"SomeTests.swift": f"func test() {{\n    {line}\n}}\n"})
+                self.assertEqual(len(found), 1, found)
+                self.assertTrue(found[0].startswith("SomeTests.swift:2: "), found)
+
+    # Reading comments, the words of strings or a gesture's own length as a
+    # wait, or the named strict limit, fails here: none of them waits.
+    def test_comments_strings_gestures_and_the_helpers_waits_are_not_bare(self):
+        found = self.problems_in({"SomeTests.swift": """\
+            // _ = button.waitForExistence(timeout: 5)
+            /* sleep(1) /* nested */ Thread.sleep(forTimeInterval: 1) */
+            XCTFail("waitForExistence(timeout: 5) ran out after sleep(2)")
+            let words = \"\"\"
+                XCTWaiter.wait(for: [seen], timeout: 3)
+                \"\"\"
+            button.press(forDuration: 1.2)
+            button.press(forDuration: 0.1, thenDragTo: other, withVelocity: .slow, thenHoldForDuration: 1)
+            waitToAppear(button, "Settings did not open")
+            waitUntil(within: .strict(seconds: 10), "Again stayed off") { again.isEnabled }
+            _ = appears(message, within: .observation)
+            """})
+        self.assertEqual(found, [])
+
+    # Reading one line at a time (a wait whose arguments run onto the next
+    # line), counting one wait per line, not reading the code inside a raw
+    # string's interpolation, or reading a raw string's words as code, fails
+    # here.
+    def test_waits_over_several_lines_beside_another_or_in_raw_strings_are_found(self):
+        over_lines = self.problems_in({"SomeTests.swift": """\
+            func test() {
+                wait(
+                    for: [seen],
+                    timeout: limit
+                )
+            }
+            """})
+        self.assertEqual(over_lines, ["SomeTests.swift:2: XCTest's waiter; wait with Waiting.swift "
+                                      "and a UIWait limit"])
+        split_call = self.problems_in({"SomeTests.swift": """\
+            func test() {
+                _ = button.waitForExistence
+                    (timeout: limit)
+            }
+            """})
+        self.assertEqual(split_call, ["SomeTests.swift:2: XCTest's own wait for an element; wait with "
+                                      "Waiting.swift and a UIWait limit"])
+        both = "XCTAssertTrue(a.waitForExistence(timeout: 1) && b.waitForExistence(timeout: 1))\n"
+        self.assertEqual(len(self.problems_in({"SomeTests.swift": both})), 2)
+        grown = self.problems_in({"OldTests.swift": both}, {"OldTests.swift": 1})
+        self.assertIn("OldTests.swift: 2 bare waits, more than the 1", grown[0])
+        raw = self.problems_in({"SomeTests.swift": """\
+            func test() {
+                XCTFail(#"a \\" sleep(1) \\(sleep(1))"#)
+                XCTFail(#"seen: \\#(button.waitForExistence(timeout: 1))"#)
+            }
+            """})
+        self.assertEqual(len(raw), 1, raw)
+        self.assertTrue(raw[0].startswith("SomeTests.swift:3: "), raw)
+
+    # Checking the helpers themselves, or letting a file not yet converted
+    # gain a wait, fails here; it may lose them. Only the helpers at the
+    # top of the folder are exempt, not another file with the same name.
+    def test_only_the_helpers_wait_directly_and_old_files_may_not_grow(self):
+        two = "button.waitForExistence(timeout: 5)\nsleep(1)\n"
+        self.assertEqual(self.problems_in({"Waiting.swift": two, "UIWait.swift": two}), [])
+        with tempfile.TemporaryDirectory() as directory:
+            nested = Path(directory) / "Probes"
+            nested.mkdir()
+            (nested / "Waiting.swift").write_text(two)
+            found = self.waits_module().problems(Path(directory), {})
+        self.assertEqual(found, ["Probes/Waiting.swift:1: XCTest's own wait for an element; wait with "
+                                 "Waiting.swift and a UIWait limit",
+                                 "Probes/Waiting.swift:2: a sleep; wait with Waiting.swift and a UIWait limit"])
+        self.assertEqual(self.problems_in({"OldTests.swift": two}, {"OldTests.swift": 2}), [])
+        self.assertEqual(self.problems_in({"OldTests.swift": two}, {"OldTests.swift": 3}), [])
+        grown = self.problems_in({"OldTests.swift": two}, {"OldTests.swift": 1})
+        self.assertEqual(len(grown), 1, grown)
+        self.assertIn("OldTests.swift: 2 bare waits, more than the 1", grown[0])
+        gone = self.problems_in({"NewTests.swift": "\n"}, {"OldTests.swift": 1})
+        self.assertEqual(len(gone), 1, gone)
+        self.assertIn("OldTests.swift: listed as not yet converted, but there is no such file", gone[0])
+
+    def test_the_check_exits_with_a_failure_when_it_finds_one(self):
+        result = subprocess.run([sys.executable, "-I", str(SCRIPT.with_name("ui-test-waits.py"))],
+                                capture_output=True, text=True)
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertIn("Every UI test wait goes through Waiting.swift.", result.stdout)
+        module = self.waits_module()
+        with mock.patch.object(module, "problems", return_value=["SomeTests.swift:2: a sleep"]), \
+                contextlib.redirect_stdout(io.StringIO()) as out, \
+                contextlib.redirect_stderr(io.StringIO()):
+            self.assertEqual(module.main(), 1)
+        self.assertIn("SomeTests.swift:2: a sleep", out.getvalue())
+
+    def scale_run(self, mode="ui", **options):
+        return run_script(
+            'if [ "$action" = test-without-building ]; then\n'
+            '    echo "scale ${TEST_RUNNER_BRICKSON_UI_WAIT_SCALE-unset}" >> "$RUNNER_EVENTS"\n'
+            'fi', mode=mode, **options)
+
+    # Not passing the scale to the test runner, passing it on a Mac, or
+    # ignoring a chosen one fails here; so does a scale that reaches the
+    # build rather than the test run.
+    def test_the_ui_tests_get_three_times_their_limits_on_ci_only(self):
+        for on_ci, chosen, expected in [(True, None, "3"), (False, None, "1"),
+                                        (True, "2", "2"), (False, "4", "4")]:
+            with self.subTest(on_ci=on_ci, chosen=chosen):
+                result = self.scale_run(on_ci=on_ci, wait_scale=chosen)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                scales = [event for event in result.events if event.startswith("scale ")]
+                self.assertEqual(scales, [f"scale {expected}"], result.events)
+                self.assertIn(f"UI test waits: a scale of {expected} asked for", result.stdout)
+
+    # Renaming the variable on one side only leaves the UI tests at their
+    # normal limits on CI, silently; this test fails instead.
+    def test_the_script_and_the_tests_name_the_same_variable(self):
+        swift = (UI_TESTS / "UIWait.swift").read_text()
+        name = re.search(r'static let scaleVariable = "([A-Z_]+)"', swift)
+        self.assertIsNotNone(name)
+        script = SCRIPT.read_text()
+        self.assertIn(f'export TEST_RUNNER_{name.group(1)}="$ui_wait_scale"', script)
+        self.assertIn(f"${{{name.group(1)}:-}}", script)
+
+
 class WatcherTests(unittest.TestCase):
     """test.sh watches each simulator it tests on with
-    scripts/simulator-load.py, pausing the lock-screen wallpaper
-    extensions only on a simulator it started itself, and stops the
+    scripts/simulator-load.py from before it starts, pausing the
+    lock-screen wallpaper extensions and lowering its processes only on a
+    simulator it started itself, and only once it has, and stops the
     watcher before the simulator in every way a run can end
-    (docs/log/2026-11-03-ui-test-stall.md)."""
+    (docs/log/2026-11-03-ui-test-stall.md,
+    docs/log/2026-11-22-simulator-start-in-the-background.md)."""
 
     def phone_run(self, build_body="exit 0", state="Shutdown", mode="ui", **options):
         return run_script(build_body, mode=mode, destination="platform=iOS Simulator,id=PHONE",
@@ -707,14 +1226,16 @@ class WatcherTests(unittest.TestCase):
                           **options)
 
     def load_calls(self, result):
-        return [call for call in result.simctl if call.startswith(("load ", "simctl boot ",
-                                                                   "simctl shutdown "))]
+        return [call for call in result.simctl
+                if call.startswith(("load start ", "load stop ", "simctl boot ", "simctl shutdown "))]
 
-    # Pausing processes of a simulator someone else started, or not
-    # pausing them on one this run started, in either mode, fails this test.
+    # Pausing or lowering processes of a simulator someone else started,
+    # claiming it, or returning its processes (a run that never lowered
+    # them has nothing to return), or not doing so on one this run
+    # started, in either mode, fails this test.
     def test_wallpaper_extensions_are_paused_only_on_a_simulator_this_run_started(self):
         for mode in ("ui", "unit"):
-            for state, expected in (("Shutdown", "pausing"), ("Booted", "watching")):
+            for state, expected in (("Shutdown", "claiming"), ("Booted", "watching")):
                 with self.subTest(mode=mode, state=state):
                     result = self.phone_run(state=state, mode=mode)
                     self.assertEqual(result.returncode, 0, result.stderr)
@@ -723,10 +1244,17 @@ class WatcherTests(unittest.TestCase):
                     self.assertIn("load stop 4242 simulator-load-destination.txt", result.simctl)
                     self.assertIn("Processor time the simulator's processes used while watched",
                                   result.stdout)
+                    owned = state == "Shutdown"
+                    self.assertEqual(result.markers[0], "bootstatus: simulator-load-destination.txt"
+                                     ".claimed" if owned else "bootstatus:")
+                    self.assertEqual(
+                        "load restore PHONE 4242 simulator-load-destination.txt" in result.simctl, owned)
+                    self.assertIn("load settle simulator-load-destination.txt", result.simctl)
 
-    # A watcher left running after its simulator stops, started before the
-    # simulator has finished starting, or still started after a failed
-    # start, fails this test.
+    # A watcher left running after its simulator stops, or started after
+    # the simulator, which leaves its first minutes out of the record,
+    # fails this test; so does one claimed when the simulator did not
+    # finish starting.
     def test_the_watcher_stops_before_the_simulator_however_the_run_ends(self):
         cases = [
             ('if [ "$action" = build-for-testing ]; then exit 65; fi', {}, 65),
@@ -742,12 +1270,18 @@ class WatcherTests(unittest.TestCase):
                 result = self.phone_run(body, **options)
                 self.assertEqual(result.returncode, status, result.stderr)
                 self.assertEqual(self.load_calls(result), [
-                    "simctl boot PHONE", "load start PHONE pausing simulator-load-destination.txt",
+                    "load start PHONE claiming simulator-load-destination.txt", "simctl boot PHONE",
                     "load stop 4242 simulator-load-destination.txt", "simctl shutdown PHONE"])
-                self.assertLess(result.simctl.index("simctl bootstatus PHONE -b"),
-                                result.simctl.index("load start PHONE pausing simulator-load-destination.txt"))
+                self.assertEqual(result.markers[0],
+                                 "bootstatus: simulator-load-destination.txt.claimed")
         result = self.phone_run(bootstatus_status=70)
-        self.assertEqual(self.load_calls(result), ["simctl boot PHONE", "simctl shutdown PHONE"])
+        self.assertEqual(self.load_calls(result), [
+            "load start PHONE claiming simulator-load-destination.txt", "simctl boot PHONE",
+            "load stop 4242 simulator-load-destination.txt", "simctl shutdown PHONE"])
+        # Claimed when the boot succeeded, never said to have started, and
+        # its files gone with it.
+        self.assertEqual(result.markers, ["bootstatus: simulator-load-destination.txt.claimed"])
+        self.assertEqual(result.markers_left, [])
 
     # A watcher that cannot start stopping the tests, or passing silently,
     # fails this test.
@@ -761,6 +1295,9 @@ class WatcherTests(unittest.TestCase):
         self.assertIn("the simulator watcher did not start", result.stderr)
         self.assertIn(("test-without-building", "id=PHONE"), actions(result))
         self.assertFalse(any(call.startswith("load stop") for call in result.simctl))
+        self.assertEqual(result.markers, ["bootstatus:", "build:"])
+        # Nothing was lowered, and the return is still made and checked.
+        self.assertIn("load restore PHONE simulator-load-destination.txt", result.simctl)
 
 
 class EvidenceTests(unittest.TestCase):
@@ -975,11 +1512,14 @@ def launchd_sim_arguments(device):
     return [LAUNCHD_SIM, f"{DEVICES}/{device}/data/var/run/launchd_bootstrap.plist"]
 
 
-def process_table(times, ticks=0, ended=(), without=(), extra=()):
+def process_table(times, ticks=0, ended=(), without=(), extra=(), refuse=(), priorities=None):
     """Two simulators, PAD (launchd_sim 100) and OTHER (200), and the Mac,
     with each process's processor time in seconds and the processors'
     busy ticks. A process in `ended` ended before its details were read;
-    one in `without` is not listed; `extra` adds rows."""
+    one in `without` is not listed; `extra` adds rows, each of which may
+    end with its priority and its threads running; `priorities` gives a
+    listed process another priority than 31; one in `refuse` cannot have
+    its priority changed."""
     rows = [
         (1, 0, "S", "/sbin/launchd", None),
         (100, 1, "S", LAUNCHD_SIM, launchd_sim_arguments("PAD")),
@@ -993,9 +1533,11 @@ def process_table(times, ticks=0, ended=(), without=(), extra=()):
         (300, 1, "S", "/Applications/Example.app/Contents/MacOS/GradientPosterExtension", None),
     ]
     rows = [row for row in rows if row[0] not in without] + list(extra)
-    return json.dumps({"ticks": ticks, "processes": [
-        [pid, ppid, state, None if pid in ended else times.get(pid, 0.0), path, arguments]
-        for pid, ppid, state, path, arguments in rows]})
+    priorities = priorities or {}
+    return json.dumps({"ticks": ticks, "refuse": list(refuse), "processes": [
+        [pid, ppid, state, None if pid in ended else times.get(pid, 0.0), path, arguments,
+         *(rest or [priorities.get(pid, 31), 0])]
+        for pid, ppid, state, path, arguments, *rest in rows]})
 
 
 def simulator_load():
@@ -1047,14 +1589,19 @@ class SimulatorLoadTests(unittest.TestCase):
     def times(self, times, **options):
         self.processes.write_text(process_table(times, **options))
 
-    def watch(self, pause_posters):
+    def watch(self, pause_posters, **options):
         self.kills, self.now = [], 0.0
         out = self.record.open("w")
         self.addCleanup(out.close)
         self.system = self.module.ProcessFile(str(self.processes))
         return self.module.Watch("PAD", out, pause_posters, self.system,
                                  clock=lambda: self.now,
-                                 kill=lambda pid, number: self.kills.append((pid, number)))
+                                 kill=lambda pid, number: self.kills.append((pid, number)),
+                                 **options)
+
+    def changes(self):
+        """Each change of priority made so far, in order ("on 100")."""
+        return lines(Path(str(self.processes) + ".background"))
 
     def arguments(self, **options):
         values = dict(udid="PAD", out=str(self.record), pause_posters=True,
@@ -1441,6 +1988,347 @@ class SimulatorLoadTests(unittest.TestCase):
                             and "No such file" in line for line in lines), lines)
         self.assertEqual(lines[-1], "Stopped.")
 
+    # Lowering or pausing anything before the run says it started the
+    # simulator, lowering another simulator's or the Mac's own processes,
+    # lowering launchd_sim after its processes (one started in between
+    # would miss the band), or lowering a process twice fails this test.
+    def test_the_simulator_is_lowered_only_once_claimed_and_its_launchd_sim_first(self):
+        # A process whose pid is below its launchd_sim's, as a reused pid
+        # can be.
+        self.times({}, extra=[(90, 100, "S", f"{RUNTIME_ROOT}/usr/libexec/lsd", None)])
+        watcher = self.watch(pause_posters=True, background=True, claimed=False)
+        watcher.sample()
+        self.assertEqual((self.changes(), self.kills), ([], []))
+        watcher.claim()
+        watcher.sample()
+        watcher.sample()
+        self.assertEqual(self.changes(), ["on 100", "on 90", "on 110", "on 120", "on 121", "on 122",
+                                          "on 123"])
+        self.assertEqual(self.kills, [(121, signal.SIGSTOP), (122, signal.SIGSTOP)])
+        record = self.record.read_text()
+        self.assertRegex(record, r"\d\d:\d\d:\d\d this run started the simulator: pausing its "
+                                 r"lock-screen wallpaper extensions and running its processes in "
+                                 r"the background until the tests, from when it has started or in "
+                                 r"60 s\n")
+        self.assertIn("put 7 of the simulator's processes in the background, its launchd_sim first",
+                      record)
+        watcher.summary()
+        self.assertIn("Put 7 of the simulator's processes in the background while it started.",
+                      self.record.read_text())
+
+    # Lowering before the simulator has finished starting, while there is
+    # still time (held in the band from the boot, a first start on the
+    # owner's Mac had not finished after almost seven minutes), or waiting
+    # for it longer than a minute after the claim (GitHub's agent kept in
+    # touch for the first three minutes or so, and `bootstatus` began up to
+    # five minutes after the boot), or not saying which it was, fails this
+    # test.
+    def test_lowering_waits_for_the_start_or_a_minute_whichever_comes_first(self):
+        watcher = self.watch(pause_posters=False, background=True, claimed=False, started=False)
+        watcher.claim()
+        self.now = 59.0
+        watcher.sample()
+        self.assertEqual(self.changes(), [])
+        watcher.mark_started()
+        watcher.sample()
+        self.assertEqual(len(self.changes()), 6)
+        record = self.record.read_text()
+        self.assertRegex(record, r"\d\d:\d\d:\d\d the simulator has finished starting\n")
+        self.assertIn("its launchd_sim first (it had started)", record)
+        self.processes.with_name("processes.json.background").unlink()
+        late = self.watch(pause_posters=False, background=True, claimed=False, started=False)
+        late.claim()
+        self.now = 59.9
+        late.sample()
+        self.assertEqual(self.changes(), [])
+        self.now = 60.0
+        late.sample()
+        self.assertEqual(len(self.changes()), 6)
+        self.assertIn("its launchd_sim first (60 s after the claim, before it had started)",
+                      self.record.read_text())
+
+    # A process that starts after the first batch left at normal priority
+    # until the next line, rather than the next check, fails this test.
+    def test_a_process_started_after_the_first_batch_is_lowered_at_the_next_check(self):
+        watcher = self.watch(pause_posters=False, background=True)
+        watcher.sample()
+        newcomer = [(124, 120, "S", f"{RUNTIME_ROOT}/usr/libexec/chronod", None)]
+        self.times({}, extra=newcomer)
+        watcher.sample(line=False)
+        self.assertEqual(self.changes()[-1], "on 124")
+
+    # Lowering after `restore` has asked the watcher to stop (the process
+    # would run the tests in the background), or the watcher returning
+    # processes itself then, which is `restore`'s to do and check, fails
+    # this test.
+    def test_lowering_stops_when_asked_and_says_so(self):
+        watcher = self.watch(pause_posters=False, background=True)
+        watcher.sample()
+        watcher.stop_lowering()
+        self.times({}, extra=[(124, 120, "S", f"{RUNTIME_ROOT}/usr/libexec/chronod", None)])
+        watcher.sample()
+        watcher.return_lowered()
+        self.assertEqual(len(self.changes()), 6)
+        self.assertRegex(self.record.read_text(),
+                         r"\d\d:\d\d:\d\d stopped putting the simulator's processes in the "
+                         r"background \(it had put 6 there\)\n")
+
+    # A watcher that stops before `restore` ran (a failed build, say)
+    # leaving the simulator in the background, or saying "Stopped." before
+    # it has returned them, fails this test.
+    def test_a_watcher_that_stops_first_returns_what_it_lowered(self):
+        for number in (signal.SIGTERM, signal.SIGINT, signal.SIGUSR1, signal.SIGUSR2):
+            self.addCleanup(signal.signal, number, signal.getsignal(number))
+        arguments = self.arguments(pause_posters=False, background=True)
+        self.assertEqual(self.module.watch(arguments, parent_alive=lambda pid: False), 0)
+        self.assertEqual(self.changes(), ["on 100", "on 110", "on 120", "on 121", "on 122", "on 123",
+                                          "off 100", "off 110", "off 120", "off 121", "off 122",
+                                          "off 123"])
+        lines_ = self.record.read_text().splitlines()
+        self.assertIn("Returned 6 of the simulator's processes to normal priority (it had put 6 in "
+                      "the background), as the watcher stopped before the tests.", lines_)
+        self.assertEqual(lines_[-1], "Stopped.")
+
+    # A watcher that stops first returning only the processes it lowered
+    # fails this test: one started under a lowered parent after its last
+    # reading took the band from it (CodeRabbit's review).
+    def test_a_watcher_that_stops_first_returns_processes_started_since_its_last_reading(self):
+        watcher = self.watch(pause_posters=False, background=True)
+        watcher.sample()
+        self.times({}, extra=[(124, 120, "S", f"{RUNTIME_ROOT}/usr/libexec/chronod", None)])
+        watcher.return_lowered()
+        self.assertEqual(self.changes()[6:], ["off 100", "off 110", "off 120", "off 121", "off 122",
+                                              "off 123", "off 124"])
+
+    # A process whose priority cannot be changed stopping the watcher,
+    # passing without a word, or being tried again at every reading fails
+    # this test.
+    def test_a_process_that_cannot_be_lowered_is_written_down_once(self):
+        self.times({}, refuse=(110,))
+        watcher = self.watch(pause_posters=False, background=True)
+        watcher.sample()
+        watcher.sample(line=False)
+        self.assertEqual(self.changes(), ["on 100", "on 120", "on 121", "on 122", "on 123"])
+        record = self.record.read_text()
+        self.assertEqual(record.count("could not put SpringBoard (110) in the background"), 1, record)
+
+    # GitHub's agent's share of a processor, its priority and its threads
+    # waiting left out of the line, the agent found by anything but the
+    # kernel's names for its programs, or its processes not named once
+    # with their priority, fails this test. Where no agent runs, nothing
+    # is said (the tests above).
+    def test_each_line_says_what_githubs_agent_got(self):
+        agent = [(500, 1, "S", "/Users/runner/actions-runner/cached/bin/Runner.Listener", None, 31, 1),
+                 (501, 500, "S", "/Users/runner/actions-runner/cached/bin/Runner.Worker", None, 20, 0),
+                 (502, 1, "S", "/Users/runner/bin/Runner.Listener.helper", None, 31, 0)]
+        watcher = self.watch(pause_posters=False)
+        self.times({500: 1.0}, extra=agent)
+        watcher.sample()
+        self.now = 5.0
+        self.times({500: 2.0, 110: 1.0}, extra=agent)
+        watcher.sample()
+        lines_ = self.record.read_text().splitlines()
+        self.assertEqual([line for line in lines_ if "GitHub's agent" in line][0][9:],
+                         "GitHub's agent: Runner.Listener (500) at priority 31, "
+                         "Runner.Worker (501) at priority 20")
+        self.assertRegex(lines_[-1], r" list [\d.]+ s agent 20% at 31, 1 running \| SpringBoard 20%$")
+
+    # `restore` leaving any process of the simulator in the band, returning
+    # launchd_sim after its processes, another simulator's or the Mac's
+    # processes changed, a result that does not say what it read back, or
+    # a process iOS itself runs in the background (here PosterBoard)
+    # counted as a failure, fails this test.
+    def test_restore_returns_every_process_and_reads_them_back(self):
+        self.times({}, priorities={120: 4},
+                   extra=[(90, 100, "S", f"{RUNTIME_ROOT}/usr/libexec/lsd", None)])
+        system = self.module.ProcessFile(str(self.processes))
+        for pid in (100, 90, 110, 120, 121, 122, 123):
+            system.set_background(pid, True)
+        printed, errors = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(printed), contextlib.redirect_stderr(errors):
+            status = self.module.restore(self.restore_arguments(), system=system)
+        self.assertEqual(status, 0, errors.getvalue())
+        self.assertEqual(self.changes()[7:], ["off 100", "off 90", "off 110", "off 120", "off 121",
+                                              "off 122", "off 123"])
+        self.assertEqual(system.lowered(), set())
+        said = ("returned the simulator's 7 processes to normal priority in 1 pass, until a pass "
+                "found none it had not returned; read back: launchd_sim at 31, SpringBoard at 31, "
+                "backboardd was not running; 1 of the 7 running now are in the background as iOS "
+                "runs them")
+        self.assertEqual(printed.getvalue(), said + "\n")
+        self.assertRegex(self.record.read_text(), r"\A\d\d:\d\d:\d\d " + re.escape(said) + r"\n\Z")
+
+    def restore_arguments(self, **options):
+        values = dict(udid="PAD", out=str(self.record), pid=None, processes=str(self.processes))
+        values.update(options)
+        return argparse.Namespace(**values)
+
+    def restore(self, system, pid=None, **options):
+        printed, errors = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(printed), contextlib.redirect_stderr(errors):
+            status = self.module.restore(self.restore_arguments(pid=pid), system=system, **options)
+        return status, printed.getvalue(), errors.getvalue()
+
+    # A process started under a lowered parent while a pass was returning
+    # the others (it took the band from its parent) left in the band, or a
+    # result that does not say it took another pass, fails this test.
+    def test_a_process_started_during_a_pass_is_returned_by_the_next(self):
+        system = self.module.ProcessFile(str(self.processes))
+        for pid in (100, 110, 120, 121, 122, 123):
+            system.set_background(pid, True)
+        returning = system.set_background
+
+        def set_background(pid, background):
+            returning(pid, background)
+            if pid == 123 and not background:
+                self.times({}, extra=[(130, 110, "S", f"{RUNTIME_ROOT}/usr/libexec/chronod", None)])
+                returning(130, True)
+
+        system.set_background = set_background
+        status, printed, errors = self.restore(system)
+        self.assertEqual(status, 0, errors)
+        self.assertEqual(system.lowered(), set())
+        self.assertIn("returned the simulator's 7 processes to normal priority in 2 passes", printed)
+
+    # A simulator that may still be in the background reported as back
+    # at normal priority, quietly, or without saying why, fails this
+    # test: for each way the return cannot be confirmed, `restore` fails
+    # and says so in the log and the record.
+    def test_a_return_that_cannot_be_confirmed_fails_loudly(self):
+        never_still = self.module.ProcessFile(str(self.processes))
+        cases = {
+            "SpringBoard (110) is still in the background": dict(priorities={110: 4}),
+            "AegirPoster (122) could not be returned: [Errno 1] Operation not permitted":
+                dict(refuse=(122,)),
+            "the simulator PAD's launchd_sim was not found": dict(without=(100,)),
+        }
+        for expected, options in cases.items():
+            with self.subTest(expected=expected):
+                self.times({}, **options)
+                self.record.write_text("")
+                status, printed, errors = self.restore(self.module.ProcessFile(str(self.processes)))
+                self.assertEqual(status, 1, printed)
+                self.assertIn("error: could not confirm that the simulator's processes are back at "
+                              "normal priority: ", errors)
+                self.assertIn(expected, errors)
+                self.assertIn(expected, self.record.read_text())
+        # New processes still appearing after five passes: a sixth reading
+        # would be needed to confirm none was left.
+        self.times({})
+        appearing = itertools.count(600)
+        returning = never_still.set_background
+
+        def set_background(pid, background):
+            returning(pid, background)
+            born = next(appearing)
+            self.times({}, extra=[(born, 100, "S", f"{RUNTIME_ROOT}/usr/libexec/chronod", None)])
+
+        never_still.set_background = set_background
+        status, _, errors = self.restore(never_still)
+        self.assertEqual(status, 1)
+        self.assertIn("after 5 passes new processes were still appearing", errors)
+
+    # `restore` returning processes while the watcher may still lower new
+    # ones, or a watcher that never answers left running (it could lower a
+    # process after the return), fails this test.
+    def test_restore_first_stops_the_watcher_lowering(self):
+        self.record.write_text("Watching simulator PAD, from 00:00:00\n")
+        system = self.module.ProcessFile(str(self.processes))
+        signals = []
+
+        def answering(pid, number):
+            signals.append((pid, number))
+            if number == signal.SIGUSR1:
+                self.module.add_to_record(str(self.record), self.module.STOPPED_LOWERING + " (it had put 0 there)")
+
+        status, printed, errors = self.restore(system, pid=4242, kill=answering,
+                                               is_alive=lambda pid: True)
+        self.assertEqual((status, signals), (0, [(4242, signal.SIGUSR1)]), errors)
+        record = self.record.read_text()
+        self.assertLess(record.index("stopped putting"), record.index("returned the simulator's"))
+        # One that never answers is asked to stop, so it lets what it paused
+        # run again, and killed only if it does not.
+        signals.clear()
+        self.record.write_text("Watching simulator PAD, from 00:00:00\n")
+        status, printed, errors = self.restore(
+            system, pid=4242, kill=lambda pid, number: signals.append((pid, number)),
+            is_alive=lambda pid: True, wait=0.2)
+        self.assertEqual((status, signals), (0, [(4242, signal.SIGUSR1), (4242, signal.SIGTERM),
+                                                 (4242, signal.SIGKILL)]), errors)
+        self.assertIn("the simulator watcher (4242) did not say within 0 s that it had stopped putting "
+                      "processes in the background, so it was stopped; nothing is paused from now on",
+                      self.record.read_text())
+        signals.clear()
+        self.record.write_text("Watching simulator PAD, from 00:00:00\n")
+
+        def stopping(pid, number):
+            signals.append((pid, number))
+            if number == signal.SIGTERM:
+                self.module.add_to_record(str(self.record), "x")
+                with open(self.record, "a") as record:
+                    record.write("Stopped.\n")
+
+        status, printed, errors = self.restore(system, pid=4242, kill=stopping,
+                                               is_alive=lambda pid: True, wait=0.2)
+        self.assertEqual((status, signals), (0, [(4242, signal.SIGUSR1), (4242, signal.SIGTERM)]), errors)
+
+    # A watcher still starting when `restore` runs (`start` leaves one to
+    # start on a busy Mac) left running fails this test: once it began it
+    # would find the claim and lower the simulator during the tests
+    # (Codex's, CodeRabbit's and Gitar's reviews).
+    def test_restore_ends_a_watcher_that_has_not_begun(self):
+        self.record.write_text("")
+        system = self.module.ProcessFile(str(self.processes))
+        signals = []
+        status, printed, errors = self.restore(system, pid=4242, wait=0.2, is_alive=lambda pid: True,
+                                               kill=lambda pid, number: signals.append((pid, number)))
+        self.assertEqual((status, signals), (0, [(4242, signal.SIGKILL)]), errors)
+        self.assertIn("the simulator watcher (4242) had not begun within 0 s, so it was stopped; it "
+                      "had paused and lowered nothing", self.record.read_text())
+
+    # The watcher and `restore` as the separate programs scripts/test.sh
+    # runs, with the files it creates: nothing lowered before the claim,
+    # nor after it until the simulator has started, everything then, the
+    # watcher answering `restore`, and every process back at normal
+    # priority before it stops. (Without --pause-posters: the stand-in's
+    # pids may be real processes here.)
+    def test_the_commands_lower_and_return_the_simulator_together(self):
+        claim, begun = Path(f"{self.record}.claimed"), Path(f"{self.record}.started")
+        started = self.run_script("start", "--udid", "PAD", "--out", str(self.record),
+                                  "--parent", str(os.getpid()), "--background",
+                                  "--claim-file", str(claim), "--started-file", str(begun),
+                                  "--processes", str(self.processes))
+        self.assertEqual(started.returncode, 0, started.stderr)
+        pid = int(started.stdout)
+        self.addCleanup(end, pid)
+        self.assertTrue(wait_for(lambda: "simulator " in self.record.read_text()), self.record.read_text())
+        claim.touch()
+        self.assertTrue(wait_for(lambda: "this run started the simulator" in self.record.read_text()),
+                        self.record.read_text())
+        time.sleep(1.5)
+        self.assertEqual(self.changes(), [])
+        begun.touch()
+        self.assertTrue(wait_for(lambda: len(self.changes()) == 6), self.changes())
+        # A newcomer is lowered at the next check, a second later, not at
+        # the next line.
+        self.times({}, extra=[(124, 120, "S", f"{RUNTIME_ROOT}/usr/libexec/chronod", None)])
+        added = time.monotonic()
+        self.assertTrue(wait_for(lambda: "on 124" in self.changes()), self.changes())
+        self.assertLess(time.monotonic() - added, 3.0, self.changes())
+        restored = self.run_script("restore", "--udid", "PAD", "--out", str(self.record),
+                                   "--pid", str(pid), "--processes", str(self.processes))
+        self.assertEqual(restored.returncode, 0, restored.stderr)
+        self.assertEqual(self.module.ProcessFile(str(self.processes)).lowered(), set())
+        stopped = self.run_script("stop", "--pid", str(pid), "--out", str(self.record))
+        self.assertEqual(stopped.returncode, 0, stopped.stderr)
+        record = self.record.read_text()
+        self.assertTrue(record.startswith("Watching simulator PAD, once this run has started it, "
+                                          "running its processes in the background until the tests, "
+                                          "from "), record)
+        self.assertLess(record.index("stopped putting"), record.index("returned the simulator's 7"))
+        self.assertNotIn("Returned ", record)
+        self.assertEqual(record.splitlines()[-1], "Stopped.")
+
     # The structures are read straight from the kernel's bytes, so a field
     # of the wrong size shifts every field after it. A size that differs
     # from xnu's bsd/sys/proc_info.h (struct proc_bsdshortinfo, 64 bytes;
@@ -1454,12 +2342,131 @@ class SimulatorLoadTests(unittest.TestCase):
         # padding can hide a field that is too short from the sizes alone.
         fields = {name: (getattr(structure, name).offset, getattr(structure, name).size)
                   for structure, names in ((self.module.ShortInfo, ("ppid", "status", "comm")),
-                                           (self.module.TaskInfo, ("total_user", "total_system")),
+                                           (self.module.TaskInfo, ("total_user", "total_system",
+                                                                   "numrunning", "priority")),
                                            (self.module.Timebase, ("numer", "denom")))
                   for name in names}
         self.assertEqual(fields, {"ppid": (4, 4), "status": (12, 4), "comm": (16, 16),
                                   "total_user": (16, 8), "total_system": (24, 8),
+                                  "numrunning": (88, 4), "priority": (92, 4),
                                   "numer": (0, 4), "denom": (4, 4)})
+
+
+class SettleTests(unittest.TestCase):
+    """Before the UI tests start, scripts/simulator-load.py waits until
+    the Mac's load has stayed under 50 for each of its processors, for at
+    most twenty minutes, and says what it did in the log and in the
+    simulator's record
+    (docs/log/2026-11-19-ui-tests-wait-for-a-settled-mac.md)."""
+
+    def setUp(self):
+        self.module = simulator_load()
+        folder = tempfile.TemporaryDirectory()
+        self.addCleanup(folder.cleanup)
+        self.record = Path(folder.name) / "record.txt"
+
+    def settle(self, loads, processors=3, arguments=()):
+        """Waits on a Mac whose load reads `loads`, one a reading and the
+        last one from then on (an OSError is raised, not returned), with a
+        clock only the wait's own sleeps move. Returns the status, what
+        was printed and the warnings."""
+        self.now = 0.0
+        readings = list(loads)
+
+        def load():
+            reading = readings.pop(0) if len(readings) > 1 else readings[0]
+            if isinstance(reading, OSError):
+                raise reading
+            return reading
+
+        def sleep(seconds):
+            self.now += seconds
+
+        printed, warnings = io.StringIO(), io.StringIO()
+        with contextlib.redirect_stdout(printed), contextlib.redirect_stderr(warnings):
+            status = self.module.settle(
+                self.module.parse(["settle", "--out", str(self.record), *arguments]),
+                load=load, processors=lambda: processors, clock=lambda: self.now, sleep=sleep)
+        return status, printed.getvalue(), warnings.getvalue()
+
+    # Ending the wait on the first reading under the limit (149), counting
+    # readings under it that are not in a row (149, then 140 and 120), a
+    # limit that is not 50 for each processor, or leaving the wait out of
+    # the simulator's record, fails this test.
+    def test_the_wait_ends_once_the_load_has_stayed_under_the_limit(self):
+        status, printed, warnings = self.settle([500, 400, 160, 149, 151, 140, 120, 100])
+        self.assertEqual((status, warnings), (0, ""))
+        self.assertEqual(self.now, 35.0)
+        self.assertIn("its load is 500, and they start once it has stayed under 150 "
+                      "(50 for each of its 3 processors), or after 20 min", printed)
+        self.assertIn("The Mac settled after 35 s: load 100.", printed)
+        record = self.record.read_text().splitlines()
+        self.assertRegex(record[0], r"^\d\d:\d\d:\d\d waiting for the Mac to settle before the tests: "
+                                    r"load 500\.0, wanted under 150$")
+        self.assertRegex(record[1], r"^\d\d:\d\d:\d\d the Mac settled after 35 s: load 100\.0$")
+        self.assertEqual(len(record), 2)
+
+    # A fixed limit, which would hold up every run on a Mac with more
+    # processors than GitHub's three while its simulator starts, or a
+    # reading at the limit counted as under it, fails this test.
+    def test_the_limit_follows_the_macs_processors(self):
+        status, printed, warnings = self.settle([400], processors=14)
+        self.assertEqual((status, warnings, self.now), (0, "", 10.0))
+        self.assertIn("under 700 (50 for each of its 14 processors)", printed)
+        status, printed, warnings = self.settle([150, 150, 150, 149])
+        self.assertEqual((status, warnings, self.now), (0, "", 25.0))
+
+    # Waiting without end, stopping the run, staying silent while it
+    # waits (a log with no line for twenty minutes reads as a hung job),
+    # or giving up without a warning, fails this test. So does a limit
+    # other than twenty minutes, which the record of the decision counts
+    # on for a job's longest time (docs/DECISIONS.md, "Tests").
+    def test_a_mac_that_does_not_settle_is_reported_and_the_tests_wait_no_longer(self):
+        status, printed, warnings = self.settle([500])
+        self.assertEqual(status, 0)
+        self.assertEqual(self.now, 20 * 60.0)
+        self.assertEqual(warnings, "warning: the Mac had not settled after 20 min (load 500, wanted "
+                                   "under 150); the tests run anyway.\n")
+        self.assertEqual(re.findall(r"still settling after (\d+) min: load 500\n", printed),
+                         [str(minute) for minute in range(1, 20)])
+        self.assertRegex(self.record.read_text().splitlines()[-1],
+                         r"^\d\d:\d\d:\d\d the Mac had not settled after 1200 s: load 500\.0; "
+                         r"the tests run anyway$")
+
+    # A load the Mac cannot give (os.getloadavg raises OSError) ending the
+    # run, holding the tests, or passing without a word, fails this test.
+    def test_a_load_that_cannot_be_read_neither_holds_nor_stops_the_tests(self):
+        status, printed, warnings = self.settle([400, OSError("unobtainable")])
+        self.assertEqual((status, self.now), (0, 5.0))
+        self.assertIn("warning: the Mac's load could not be read (unobtainable), so the tests "
+                      "start without waiting for it to settle.", warnings)
+        self.assertIn("the Mac's load could not be read", self.record.read_text())
+
+    # A sleep before the limit is looked at, or `--limit` not reaching the
+    # wait, fails this test: with no time allowed the wait reads the load
+    # once and does not sleep at all.
+    def test_the_wait_is_no_longer_than_its_limit(self):
+        status, printed, warnings = self.settle([400], arguments=("--limit", "0"))
+        self.assertEqual((status, self.now), (0, 0.0))
+        self.assertIn("or after 0 s.", printed)
+        self.assertEqual(warnings, "warning: the Mac had not settled after 0 s (load 400, wanted "
+                                   "under 150); the tests run anyway.\n")
+
+    # The command missing from the script's own, or its `--limit` not
+    # reaching the wait, fails this test: with no time allowed, the real
+    # command reads this machine's load once and says it did not wait. How
+    # long that took is the machine's to say (a busy one can take a second
+    # over one reading), so the seconds are not pinned here; the test
+    # above pins them on its own clock.
+    def test_the_command_reads_the_real_load_and_its_limit(self):
+        ran = subprocess.run([sys.executable, "-I", str(SCRIPT.with_name("simulator-load.py")),
+                              "settle", "--out", str(self.record), "--limit", "0"],
+                             capture_output=True, text=True, timeout=60)
+        self.assertEqual(ran.returncode, 0, ran.stderr)
+        self.assertIn("Waiting for the Mac to settle before the tests", ran.stdout)
+        self.assertRegex(ran.stderr, r"the Mac had not settled after \d+ s \(load \d+, ")
+        self.assertRegex(self.record.read_text(),
+                         r"the Mac had not settled after \d+ s: load \d+\.\d; the tests run anyway")
 
 
 @unittest.skipUnless(sys.platform == "darwin",
@@ -1522,6 +2529,24 @@ class MacProcessesTests(unittest.TestCase):
         self.assertAlmostEqual(own, used, delta=0.25 * used)
         self.assertGreater(busy, 0.5 * used)
 
+    # A process put in the background band reading back at any priority
+    # but the band's, one returned still reading there, or an ended one
+    # changed without ProcessLookupError (the watcher would write it down
+    # as refused), fails this test.
+    def test_a_process_is_lowered_and_returned_for_real(self):
+        sleeper = self.child("/bin/sleep", "60")
+        before = self.system.state(sleeper.pid)[1]
+        self.assertGreater(before, self.module.BACKGROUND_PRIORITY)
+        self.system.set_background(sleeper.pid, True)
+        self.assertEqual(self.system.state(sleeper.pid)[1], self.module.BACKGROUND_PRIORITY)
+        self.system.set_background(sleeper.pid, False)
+        self.assertEqual(self.system.state(sleeper.pid)[1], before)
+        finished = subprocess.Popen(["/usr/bin/true"])
+        finished.wait()
+        with self.assertRaises(ProcessLookupError):
+            self.system.set_background(finished.pid, True)
+        self.assertIsNone(self.system.state(finished.pid))
+
     # A process that has ended has no details: reading something for it
     # anyway (a reused buffer's last contents, say) fails this test.
     def test_an_ended_process_has_no_details(self):
@@ -1549,11 +2574,15 @@ class MacProcessesTests(unittest.TestCase):
             self.assertIn(os.getpid(), self.system.table())
             self.assertEqual(" ".join(self.system.arguments(os.getpid())), expected)
             self.assertIsNotNone(self.system.details(os.getpid()))
+            self.assertIsNotNone(self.system.state(os.getpid()))
+            self.system.set_background(os.getpid(), False)
             self.assertTrue(self.system.processor_ticks())
             watcher = self.module.Watch("NO-SUCH-SIMULATOR", out, True, self.system)
             watcher.sample()
             out.seek(0)
-            self.assertRegex(out.read(), r"\A\d\d:\d\d:\d\d the simulator NO-SUCH-SIMULATOR is not running\n\Z")
+            # On GitHub's Macs the watcher also names GitHub's agent first.
+            self.assertRegex(out.read(), r"\A(\d\d:\d\d:\d\d GitHub's agent: [^\n]*\n)?"
+                                         r"\d\d:\d\d:\d\d the simulator NO-SUCH-SIMULATOR is not running\n\Z")
         refuse.assert_not_called()
 
     # scripts/test.sh runs the watcher with the Mac's own /usr/bin/python3,
@@ -1583,6 +2612,15 @@ class MacProcessesTests(unittest.TestCase):
             self.assertNotIn("could not read", text)
 
 
+def ui_test_part_count():
+    """How many parts scripts/ui-test-parts.py splits the UI tests into."""
+    ran = subprocess.run([sys.executable, "-I", str(SCRIPT.with_name("ui-test-parts.py")), "count"],
+                         capture_output=True, text=True, timeout=60)
+    if ran.returncode != 0:
+        raise AssertionError(ran.stderr)
+    return int(ran.stdout)
+
+
 def workflow_jobs(text):
     """Each job's id and its lines, without comments. Reads the layout
     tests.yml uses: job ids two spaces in, under a top-level `jobs:`."""
@@ -1603,13 +2641,14 @@ def workflow_jobs(text):
 
 
 def job_steps(lines):
-    """A job's steps, in order: each step's name or action, its `with` and
-    `env` values, and its script. Reads the layout tests.yml uses."""
+    """A job's steps, in order: each step's name or action, its condition,
+    its `with` and `env` values, and its script. Reads the layout tests.yml
+    uses."""
     steps, step, block, script_indent = [], None, None, None
     for line in lines:
         start = re.match(r"      - (.*)$", line)
         if start:
-            step = {"name": None, "uses": None, "with": {}, "env": {}, "run": []}
+            step = {"name": None, "uses": None, "if": None, "with": {}, "env": {}, "run": []}
             steps.append(step)
             line, block, script_indent = "        " + start.group(1), None, None
         if step is None:
@@ -1628,7 +2667,7 @@ def job_steps(lines):
                     script_indent = 10
                 else:
                     step["run"].append(value)
-            elif key in ("name", "uses"):
+            elif key in ("name", "uses", "if"):
                 step[key] = value
             continue
         nested = re.match(r"          ([\w-]+): *(.*)$", line)
@@ -1889,14 +2928,16 @@ class WorkflowTests(unittest.TestCase):
     # or making "UI tests" a check that can pass while a family's UI tests
     # failed, were cancelled or never ran, fails this test. "UI tests" is
     # either one job that tests both families, or a job that waits for the
-    # family jobs, runs however they ended, and fails unless they passed
-    # (docs/DECISIONS.md, "Tests").
+    # jobs that test each family (or each part of the UI tests on each
+    # family, scripts/ui-test-parts.py), runs however they ended, and fails
+    # unless they all passed (docs/DECISIONS.md, "Tests").
     # Renaming a required job, a "UI tests" job without `if: always()`, a
-    # family missing, the families run as a matrix (whose one summary
-    # result was reported as success with a family that never got a
-    # machine), the gate not reading each family's own result or not
-    # failing, or the two families' jobs differing in anything but the
-    # family fails this test.
+    # family or a part missing on either family, a part named twice, a job
+    # name that miscounts the parts, the jobs run as a matrix (whose one
+    # summary result was reported as success with a family that never got
+    # a machine), the gate not reading each job's own result or not
+    # failing, or the jobs differing in anything but the family and the
+    # part fails this test.
     def test_the_required_checks_stay_and_ui_tests_needs_both_families(self):
         jobs = {job: "\n".join(lines) for job, lines in workflow_jobs(WORKFLOW.read_text()).items()}
 
@@ -1917,7 +2958,8 @@ class WorkflowTests(unittest.TestCase):
         self.assertRegex(result, r"(?m)^    if: *(\$\{\{ *)?always\(\)( *\}\})? *$",
                          "Without `if: always()`, a failed family skips the UI tests job, "
                          "and a skipped required check reads as passed.")
-        families, steps, variables = {}, set(), []
+        count = ui_test_part_count()
+        tested, steps, variables = [], set(), []
         for job in needed:
             with self.subTest(job=job):
                 body = jobs[job]
@@ -1926,24 +2968,48 @@ class WorkflowTests(unittest.TestCase):
                                     "A matrix reports one result for every family together.")
                 family = re.search(r"SIMULATOR_FAMILY: *(\w+) *$", body, re.M)
                 self.assertIsNotNone(family, body)
-                families[family.group(1)] = job
+                part = re.search(r'UI_TEST_PART: *"?(\d+)"? *$', body, re.M)
                 variable = re.search(r"(?m)^ +(\w+): *\$\{\{ *needs\." + re.escape(job)
                                      + r"\.result *\}\} *$", result)
                 self.assertIsNotNone(variable, f"The UI tests job does not read {job}'s result.")
                 self.assertRegex(result, r'"\$' + variable.group(1) + r'" *!= *"?success"?')
                 variables.append(variable.group(1))
                 display = {"ipad": "iPad", "iphone": "iPhone"}.get(family.group(1), family.group(1))
-                steps.add(body.replace(display, "FAMILY").replace(family.group(1), "family"))
-        self.assertEqual(set(families), {"ipad", "iphone"})
-        self.assertEqual(len(steps), 1, "The families' jobs differ in more than the family.")
-        # Run the check itself with every pair of results: it passes only
-        # when every family passed, so `&&` for `||`, or one family left
-        # out, fails here.
+                shape = body.replace(display, "FAMILY").replace(family.group(1), "family")
+                if part:
+                    number = part.group(1)
+                    self.assertRegex(body, rf"(?m)^    name: .*, part {number} of {count} *$",
+                                     "A part's job name miscounts the parts.")
+                    for spelling in (f"part {number} of", f'UI_TEST_PART: "{number}"',
+                                     f"-part{number}"):
+                        self.assertIn(spelling, shape)
+                        shape = shape.replace(spelling, spelling.replace(number, "N"))
+                tested.append((family.group(1), int(part.group(1)) if part else None))
+                steps.add(shape)
+        parts = {number for _, number in tested}
+        expected = ({(family, number) for family in ("ipad", "iphone")
+                     for number in range(1, count + 1)} if parts != {None}
+                    else {("ipad", None), ("iphone", None)})
+        self.assertEqual(sorted(tested, key=str), sorted(expected, key=str),
+                         "Each family runs every part of the UI tests, each part once.")
+        self.assertEqual(len(steps), 1,
+                         "The UI test jobs differ in more than the family and the part.")
+        # Run the check itself: it passes only when every job passed, so
+        # `&&` for `||`, or one job left out, fails here. With two jobs,
+        # every pair of results; with more, every job alone failing,
+        # cancelled or skipped while the rest passed, and all alike.
         script = re.search(r"(?m)^( +)run: *\|\n((?:\1 +.*(?:\n|$))+)", result)
         self.assertIsNotNone(script, "The UI tests job has no script to check the results.")
         script = textwrap.dedent(script.group(2))
         outcomes = ["success", "failure", "cancelled", "skipped"]
-        for chosen in itertools.product(outcomes, repeat=len(variables)):
+        if len(variables) <= 2:
+            combinations = list(itertools.product(outcomes, repeat=len(variables)))
+        else:
+            combinations = [tuple(outcome for _ in variables) for outcome in outcomes]
+            combinations += [tuple(outcome if index == odd else "success"
+                                   for index in range(len(variables)))
+                             for odd in range(len(variables)) for outcome in outcomes[1:]]
+        for chosen in combinations:
             with self.subTest(results=chosen):
                 environment = dict(os.environ, **dict(zip(variables, chosen)))
                 ran = subprocess.run(["bash", "-c", script], env=environment,
@@ -2515,6 +3581,309 @@ steps:
                   if not line.lstrip().startswith("#")
                   and re.search(r"Xcode_\d|DEVELOPER_DIR|xcode-version", line)]
         self.assertEqual(pinned, [])
+
+
+# What GitHub's agent on the machine logs, as runner 2.338's
+# Runner.Listener writes it (actions/runner, JobDispatcher.cs): the job
+# arrives, its hold is renewed every minute, the service asks for the
+# cancel, and the job ends. Between them, lines that say nothing about
+# the job.
+AGENT_RUNNER_LOG = """\
+[2026-11-21 14:00:00Z INFO JobDispatcher] Job request 0 for plan p1 job j1 received.
+[2026-11-21 14:00:00Z INFO MessageListener] Unrelated: the listener's own business
+[2026-11-21 14:00:00Z INFO ProcessInvokerWrapper]   Force kill process on cancellation: 'True'
+   at System.Threading.CancellationToken.ThrowOperationCanceledException() in a stack trace
+[2026-11-21 14:00:01Z INFO JobDispatcher] Successfully renew job j1, job is valid till 2026-11-21 14:10:01Z
+[2026-11-21 14:01:01Z ERR  JobDispatcher] Catch exception during renew runner job j1.
+[2026-11-21 14:01:02Z INFO JobDispatcher] Retrying lock renewal for job j1. Job is valid until 2026-11-21 14:10:01Z.
+[2026-11-21 14:01:20Z INFO JobDispatcher] Successfully renew job j1, job is valid till 2026-11-21 14:11:20Z
+[2026-11-21 14:01:21Z ERR  JobDispatcher] HttpRequestException: Authorization: Bearer SECRET-ONE at https://x.example/up?sv=1&sig=SECRET-TWO&se=2 eyJhbGciOiJSUzI1NiJ9.eyJzdWIiOiJTRUNSRVQifQ.c2lnbmF0dXJl ghs_SECRETTHREE0123456789abcdEF token=SECRET-FOUR eyJydW5uZXIiOiJTRUNSRVQifQ
+[2026-11-21 14:05:00Z INFO JobDispatcher] Job cancellation request j1 received, cancellation timeout 5 minutes.
+[2026-11-21 14:05:01Z INFO JobDispatcher] Send job cancellation message to worker for job j1.
+""" + "".join(f"[2026-11-21 14:05:02Z INFO Terminal] quiet line {n}\n" for n in range(1, 51)) + """\
+[2026-11-21 14:06:00Z INFO JobDispatcher] finish job request for job j1 with result: Canceled
+"""
+
+AGENT_WORKER_LOG = """\
+[2026-11-21 14:00:02Z INFO Worker] Unrelated: the worker's own business
+      "condition": "cancelled()", in the job's description
+                      "v": "pull request text that mentions a cancel"
+[2026-11-21 14:00:03Z INFO ProcessInvokerWrapper]   Force kill process on cancellation: 'False'
+[2026-11-21 14:05:01Z INFO Worker] Cancellation/Shutdown message received.
+[2026-11-21 14:05:02Z INFO StepsRunner] Job was CANCELLED by the user.
+"""
+
+
+class GitHubAgentLogTests(unittest.TestCase):
+    """When GitHub cancels a job, scripts/github-agent-log.sh saves, beside
+    the job's test results, what GitHub's agent on the machine logged about
+    its hold on the job and its cancelling. It only reads, and always ends
+    with status 0, so it never changes how a job ended."""
+
+    def setUp(self):
+        holder = tempfile.TemporaryDirectory()
+        self.addCleanup(holder.cleanup)
+        self.folder = Path(holder.name)
+        self.agent = self.folder / "agent"
+        diag = self.agent / "_diag"
+        diag.mkdir(parents=True)
+        (diag / "Runner_20261121-140000-utc.log").write_text(AGENT_RUNNER_LOG)
+        (diag / "Worker_20261121-140001-utc.log").write_text(AGENT_WORKER_LOG)
+        (diag / "pages").mkdir()
+        (diag / "pages" / "Unrelated.log").write_text("renew from a page, not the agent's log\n")
+        # A stand-in for ps, so a run here never finds the real agent of
+        # the machine it runs on (GitHub's own, when CI runs these tests).
+        # It records each call, lists FIXTURE_PS, or a program's arguments
+        # with a secret in them when asked for those, and with
+        # FIXTURE_PS_SLEEP set never answers in time.
+        stubs = self.folder / "stubs"
+        stubs.mkdir()
+        self.ps_calls = self.folder / "ps-calls.txt"
+        ps = stubs / "ps"
+        ps.write_text('#!/bin/bash\n'
+                      'echo "$*" >> "$FIXTURE_PS_CALLS"\n'
+                      '[ -z "$FIXTURE_PS_SLEEP" ] || exec sleep "$FIXTURE_PS_SLEEP"\n'
+                      'case "$*" in\n'
+                      '    *args*|*command*) printf "%s" "  41 01:02 /opt/agent/bin/Runner.Listener '
+                      'run --jitconfig SECRET-ARGUMENT\n" ;;\n'
+                      '    *) printf "%s" "$FIXTURE_PS" ;;\n'
+                      'esac\n')
+        ps.chmod(0o755)
+        self.environment = {
+            "PATH": f"{stubs}{os.pathsep}{os.environ.get('PATH', '/usr/bin:/bin')}",
+            "HOME": str(self.folder), "LANG": "C",
+            "GITHUB_JOB": "unit", "GITHUB_RUN_ID": "1234", "GITHUB_RUN_ATTEMPT": "2",
+            "GITHUB_AGENT_FOLDER": str(self.agent),
+            "GITHUB_AGENT_KNOWN_FOLDERS": str(self.folder / "not-there"),
+            "FIXTURE_PS": "", "FIXTURE_PS_CALLS": str(self.ps_calls),
+        }
+
+    def run_log(self, *arguments, cwd=None, **environment):
+        variables = dict(self.environment, **environment)
+        variables = {key: value for key, value in variables.items() if value is not None}
+        return subprocess.run([str(AGENT_LOG), *arguments], cwd=cwd or self.folder,
+                              env=variables, capture_output=True, text=True, timeout=60)
+
+    def snapshot(self, folder):
+        return {path: (path.stat().st_size, path.stat().st_mtime_ns)
+                for path in sorted(folder.rglob("*"))}
+
+    # Committing the script without its executable bit, so the workflow's
+    # `scripts/github-agent-log.sh` fails with 126 behind its `|| true`,
+    # fails this test.
+    def test_the_script_can_be_run(self):
+        self.assertTrue(os.access(AGENT_LOG, os.X_OK),
+                        f"{AGENT_LOG.name} is not executable (git update-index --chmod=+x).")
+
+    # Leaving out the lines about the agent's hold on the job (its renewals
+    # and their failures), the service's cancel request or the job's end,
+    # matching them only in one case, reading a file other than the
+    # agent's Runner_ and Worker_ logs, copying lines that say nothing
+    # about the job (the agent's note on every program it starts, a stack
+    # trace, the job's description and the pull request text the Worker
+    # log holds), a wrong time, or leaving out the job's ids or the load,
+    # fails this test.
+    def test_the_lines_about_the_hold_and_the_cancelling_are_kept(self):
+        results = self.folder / "results"
+        ran = self.run_log(str(results))
+        self.assertEqual(ran.returncode, 0, ran.stdout + ran.stderr)
+        saved = (results / "github-agent-log.txt").read_text()
+        for line in ["Successfully renew job j1, job is valid till 2026-11-21 14:10:01Z",
+                     "Catch exception during renew runner job j1.",
+                     "Retrying lock renewal for job j1.",
+                     "Job cancellation request j1 received, cancellation timeout 5 minutes.",
+                     "Send job cancellation message to worker for job j1.",
+                     "finish job request for job j1 with result: Canceled",
+                     "Cancellation/Shutdown message received.",
+                     "Job was CANCELLED by the user."]:
+            with self.subTest(line=line):
+                self.assertIn(line, saved)
+        for line in ["Unrelated: the listener's own business",
+                     "Unrelated: the worker's own business",
+                     "renew from a page", "Force kill process on cancellation",
+                     "in a stack trace", "in the job's description",
+                     "pull request text"]:
+            with self.subTest(left_out=line):
+                self.assertNotIn(line, saved)
+        # The Runner log's last 40 lines come whole; its earlier quiet
+        # lines do not.
+        self.assertIn("quiet line 50", saved)
+        self.assertIn("quiet line 12", saved)
+        self.assertNotIn("quiet line 11\n", saved)
+        self.assertIn(str(self.agent), saved)
+        for field in ["unit", "1234", "attempt 2"]:
+            self.assertIn(field, saved)
+        written = re.search(r"Written: (\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ)", saved)
+        self.assertIsNotNone(written, saved)
+        stamp = calendar.timegm(time.strptime(written.group(1), "%Y-%m-%dT%H:%M:%SZ"))
+        self.assertLess(abs(stamp - time.time()), 120, written.group(1))
+        self.assertRegex(saved, r"Load[^\n]*: \S")
+        # The answer the record is for, ahead of the lines it comes from.
+        self.assertRegex(saved, r"(?s)Last successful renewal: [^\n]*14:11:20Z.*"
+                                r"First trouble renewing: [^\n]*Catch exception during renew.*"
+                                r"Cancellation request: [^\n]*Job cancellation request j1 received")
+
+    # Printing nothing, or something other than what was saved, so a
+    # cancelled job's own log does not show it, fails this test.
+    def test_what_is_saved_is_also_printed(self):
+        results = self.folder / "results"
+        ran = self.run_log(str(results))
+        self.assertEqual(ran.returncode, 0, ran.stdout + ran.stderr)
+        self.assertEqual(ran.stdout, (results / "github-agent-log.txt").read_text())
+
+    # Writing anywhere but the one file in the results folder it is given
+    # (or build/TestResults with none), or changing anything in the
+    # agent's folder, fails this test.
+    def test_it_writes_one_file_in_the_results_folder_and_only_reads_the_agents(self):
+        before = self.snapshot(self.agent)
+        results = self.folder / "deep" / "results"
+        ran = self.run_log(str(results))
+        self.assertEqual(ran.returncode, 0, ran.stdout + ran.stderr)
+        self.assertEqual([path.name for path in results.iterdir()], ["github-agent-log.txt"])
+        self.assertEqual(self.snapshot(self.agent), before)
+        workspace = self.folder / "workspace"
+        workspace.mkdir()
+        ran = self.run_log(cwd=workspace)
+        self.assertEqual(ran.returncode, 0, ran.stdout + ran.stderr)
+        self.assertEqual(sorted(str(path.relative_to(workspace)) for path in workspace.rglob("*")),
+                         ["build", "build/TestResults", "build/TestResults/github-agent-log.txt"])
+
+    # Stopping, or ending with an error, when the results folder cannot be
+    # written fails this test; the record still reaches the job's log.
+    def test_a_results_folder_that_cannot_be_written_still_ends_0(self):
+        blocker = self.folder / "a-file"
+        blocker.write_text("not a folder\n")
+        ran = self.run_log(str(blocker / "results"))
+        self.assertEqual(ran.returncode, 0, ran.stdout + ran.stderr)
+        self.assertIn("could not be written", ran.stdout + ran.stderr)
+        self.assertIn("Job cancellation request j1 received", ran.stdout)
+
+    # Ending with an error, or saying nothing, when the agent's folder is
+    # not found, listing processes by a "runner" anywhere in their path
+    # (every path under GitHub's home folder holds one) rather than in
+    # their own name, or printing their arguments (GitHub's agent can be
+    # started with its credentials in them), fails this test.
+    def test_no_agent_folder_is_said_and_still_ends_0(self):
+        results = self.folder / "results"
+        ran = self.run_log(str(results), GITHUB_AGENT_FOLDER=str(self.folder / "nowhere"),
+                           FIXTURE_PS="  41 01:02 /opt/agent/bin/Runner.Listener\n"
+                                      "  42 00:10 /Users/runner/work/tool\n")
+        self.assertEqual(ran.returncode, 0, ran.stdout + ran.stderr)
+        saved = (results / "github-agent-log.txt").read_text()
+        self.assertIn("No folder of GitHub's agent", saved)
+        self.assertIn(str(self.folder / "nowhere"), saved)
+        self.assertIn("41 01:02 /opt/agent/bin/Runner.Listener", saved)
+        self.assertNotIn("/Users/runner/work/tool", saved)
+        self.assertNotIn("SECRET", saved)
+        self.assertNotIn("Job cancellation request", saved)
+
+    # Not finding the agent from its running Runner.Worker or
+    # Runner.Listener, as on GitHub's machines, where no variable names
+    # its folder, fails this test.
+    def test_the_agents_folder_is_found_from_its_running_process(self):
+        results = self.folder / "results"
+        ran = self.run_log(str(results), GITHUB_AGENT_FOLDER=None,
+                           FIXTURE_PS=f"  77 03:00 {self.agent}/bin/Runner.Worker\n")
+        self.assertEqual(ran.returncode, 0, ran.stdout + ran.stderr)
+        saved = (results / "github-agent-log.txt").read_text()
+        self.assertIn(f"Agent folder: {self.agent}", saved)
+        self.assertIn("Job cancellation request j1 received", saved)
+
+    # Starting ps before trying the folders GitHub's agent is known to
+    # use, when one of them holds its log, fails this test: on GitHub's
+    # busy Macs one `ps` has taken minutes (docs/DECISIONS.md, "Tests",
+    # 2026-11-04), and the results' upload waits for this step.
+    def test_a_known_folder_is_read_without_starting_ps(self):
+        results = self.folder / "results"
+        ran = self.run_log(str(results), GITHUB_AGENT_FOLDER=None,
+                           GITHUB_AGENT_KNOWN_FOLDERS=f"{self.folder / 'not-there'}:{self.agent}",
+                           FIXTURE_PS="  77 03:00 /elsewhere/bin/Runner.Worker\n")
+        self.assertEqual(ran.returncode, 0, ran.stdout + ran.stderr)
+        self.assertIn(f"Agent folder: {self.agent}", (results / "github-agent-log.txt").read_text())
+        self.assertFalse(self.ps_calls.exists(), self.ps_calls.read_text() if self.ps_calls.exists() else "")
+
+    # Waiting for a ps that does not answer past its limit fails this
+    # test.
+    def test_a_ps_that_does_not_answer_is_given_up(self):
+        results = self.folder / "results"
+        started = time.monotonic()
+        ran = self.run_log(str(results), GITHUB_AGENT_FOLDER=None, GITHUB_AGENT_PS_SECONDS="1",
+                           FIXTURE_PS_SLEEP="30")
+        self.assertLess(time.monotonic() - started, 20)
+        self.assertEqual(ran.returncode, 0, ran.stdout + ran.stderr)
+        self.assertIn("No folder of GitHub's agent", (results / "github-agent-log.txt").read_text())
+
+    # Starting any program but sysctl and awk where the agent's folder is
+    # known fails this test. After a cancel GitHub gives a job's last
+    # steps five minutes, and on its busy Macs each program started took
+    # seconds: a first version, starting about forty, kept the results'
+    # upload after it from finishing in two jobs of five
+    # (docs/log/2026-11-21-github-agent-log.md).
+    def test_only_sysctl_and_awk_are_started_where_the_folder_is_known(self):
+        results = self.folder / "results"
+        results.mkdir()
+        only = self.folder / "only"
+        only.mkdir()
+        for tool in ("sysctl", "awk"):
+            found = shutil.which(tool, path=os.environ.get("PATH", "") + ":/usr/sbin:/sbin")
+            if found:
+                (only / tool).symlink_to(found)
+        ran = self.run_log(str(results), PATH=str(only), GITHUB_AGENT_FOLDER=None,
+                           GITHUB_AGENT_KNOWN_FOLDERS=str(self.agent))
+        self.assertEqual(ran.returncode, 0, ran.stdout + ran.stderr)
+        self.assertEqual(ran.stderr, "")
+        saved = (results / "github-agent-log.txt").read_text()
+        self.assertEqual(ran.stdout, saved)
+        for line in [f"Agent folder: {self.agent}", "Written: ",
+                     "Job cancellation request j1 received", "quiet line 50",
+                     "Job was CANCELLED by the user."]:
+            self.assertIn(line, saved)
+        # A job cancelled before its results folder existed: mkdir too.
+        found = shutil.which("mkdir")
+        if found:
+            (only / "mkdir").symlink_to(found)
+        missing = self.folder / "missing" / "results"
+        ran = self.run_log(str(missing), PATH=str(only), GITHUB_AGENT_FOLDER=None,
+                           GITHUB_AGENT_KNOWN_FOLDERS=str(self.agent))
+        self.assertEqual((ran.returncode, ran.stderr), (0, ""), ran.stdout + ran.stderr)
+        self.assertIn("Job cancellation request j1 received",
+                      (missing / "github-agent-log.txt").read_text())
+
+    # Copying a token, a credential or a signed address's signature from
+    # the agent's log into the public download or the job's log fails
+    # this test.
+    def test_tokens_and_signatures_are_removed(self):
+        results = self.folder / "results"
+        ran = self.run_log(str(results))
+        self.assertEqual(ran.returncode, 0, ran.stdout + ran.stderr)
+        saved = (results / "github-agent-log.txt").read_text()
+        self.assertIn("HttpRequestException: Authorization: ", saved)
+        self.assertIn("sig=[removed]&se=2", saved)
+        self.assertIn("token=[removed]", saved)
+        for text in (saved, ran.stdout):
+            self.assertNotIn("SECRET", text)
+            self.assertNotIn("eyJzdWIi", text)
+            self.assertNotIn("eyJydW5u", text)
+
+    # A job that runs scripts/test.sh without the step, the step running
+    # whenever the job ends (or never), after the results are uploaded, on
+    # another folder than the one uploaded, or able to fail the job, fails
+    # this test.
+    def test_every_job_that_runs_the_tests_keeps_the_agents_log_when_cancelled(self):
+        testing = {job: lines for job, lines in workflow_jobs(WORKFLOW.read_text()).items()
+                   if any("scripts/test.sh" in line for line in lines)}
+        self.assertEqual(len(testing), 1 + 2 * ui_test_part_count(), sorted(testing))
+        for job, lines in testing.items():
+            with self.subTest(job=job):
+                steps = job_steps(lines)
+                names = [step["name"] for step in steps]
+                self.assertIn("Keep what GitHub's agent logged about the cancelling", names)
+                index = names.index("Keep what GitHub's agent logged about the cancelling")
+                step, upload = steps[index], steps[index + 1]
+                self.assertRegex(step["if"] or "", r"^(\$\{\{ *)?cancelled\(\)( *\}\})?$")
+                self.assertEqual(upload["name"], "Keep the test results")
+                self.assertEqual(step["run"], "scripts/github-agent-log.sh build/TestResults || true\n")
+                self.assertEqual(upload["with"].get("path"), "build/TestResults")
 
 
 if __name__ == "__main__":

@@ -116,11 +116,11 @@ final class SettingsOnHomeTests: XCTestCase {
         assertReachable("Settings", in: app, context: context)
         let home = try screenControls(in: app)
         app.buttons["settings"].tap()
-        XCTAssertTrue(app.buttons["familySetup"].waitForExistence(timeout: 10), "Settings did not open from Home (\(context))")
+        waitToAppear(app.buttons["familySetup"], "Settings did not open from Home (\(context))")
         open("familySetup", leaving: "familySetup", in: app, context: context)
 
         let row = app.buttons[SettingsChains.voiceSettingsRow]
-        XCTAssertTrue(row.waitForExistence(timeout: 10), "Family Setup has no Voice Settings row (\(context))")
+        waitToAppear(row, "Family Setup has no Voice Settings row (\(context))")
         let unscrolled = row.frame
         let top = app.navigationBars[SettingsChains.familySetup].frame.maxY
         let list = app.scrollViews.containing(.button, identifier: SettingsChains.voiceSettingsRow).firstMatch
@@ -205,17 +205,17 @@ final class SettingsOnHomeTests: XCTestCase {
     @MainActor
     func testTheFirstRunHintShowsUntilFamilySetupOpens() {
         let app = launchedApp()
-        XCTAssertTrue(app.staticTexts[Self.firstRunHint].waitForExistence(timeout: 10), "a first launch shows no setup hint")
+        waitToAppear(app.staticTexts[Self.firstRunHint], "a first launch shows no setup hint")
 
         app.buttons["settings"].tap()
         let familySetup = app.buttons["familySetup"]
-        XCTAssertTrue(familySetup.waitForExistence(timeout: 10), "Settings did not open from Home")
+        waitToAppear(familySetup, "Settings did not open from Home")
         familySetup.tap()
-        XCTAssertTrue(app.navigationBars["Family Setup"].waitForExistence(timeout: 10), "Family Setup did not open")
+        waitToAppear(app.navigationBars["Family Setup"], "Family Setup did not open")
         app.buttons["backToTalking"].tap()
 
         let placeholder = app.staticTexts["Choose a phrase to speak it."]
-        XCTAssertTrue(placeholder.waitForExistence(timeout: 10), "Home did not show its placeholder after Family Setup was opened")
+        waitToAppear(placeholder, "Home did not show its placeholder after Family Setup was opened")
         XCTAssertFalse(app.staticTexts[Self.firstRunHint].exists, "the setup hint is still showing after Family Setup was opened")
     }
 
@@ -230,16 +230,10 @@ final class SettingsOnHomeTests: XCTestCase {
         let isPad = UIDevice.current.userInterfaceIdiom == .pad
         // A query straight after a rotation can read the frames from before
         // the turn, so wait for the window to turn first.
-        let turned = NSPredicate { _, _ in
-            MainActor.assumeIsolated {
-                let frame = app.windows.firstMatch.frame
-                return (frame.width > frame.height) == orientation.isLandscape
-            }
+        waitUntil("the window did not turn to \(orientation.isLandscape ? "landscape" : "portrait")") {
+            let frame = app.windows.firstMatch.frame
+            return (frame.width > frame.height) == orientation.isLandscape
         }
-        XCTAssertEqual(
-            XCTWaiter.wait(for: [expectation(for: turned, evaluatedWith: nil)], timeout: 10), .completed,
-            "the window did not turn to \(orientation.isLandscape ? "landscape" : "portrait")"
-        )
         let window = app.windows.firstMatch.frame
         let context = "\(textSize.name), \(orientation.isLandscape ? "landscape" : "portrait"), \(isPad ? "iPad" : "iPhone"), window \(window.size)"
             + (checkInDue ? ", check-in due" : "")
@@ -253,8 +247,8 @@ final class SettingsOnHomeTests: XCTestCase {
         // In: where Home's Settings was, Settings' first screen.
         app.buttons["settings"].tap()
         let back = app.buttons["backToTalking"]
-        XCTAssertTrue(back.waitForExistence(timeout: 10), "Settings did not open from Home (\(context))")
-        XCTAssertTrue(app.buttons["familySetup"].waitForExistence(timeout: 10), "Settings opened without Family Setup (\(context))")
+        waitToAppear(back, "Settings did not open from Home (\(context))")
+        waitToAppear(app.buttons["familySetup"], "Settings opened without Family Setup (\(context))")
         let cover = try Self.onCover(screenControls(in: app))
         attachCapture(app, name: "settings-opened-\(context)".replacingOccurrences(of: ", ", with: "-"))
         // Back to Talking over Phrases, centred and as tall: Phrases' frame
@@ -296,8 +290,8 @@ final class SettingsOnHomeTests: XCTestCase {
             // The second step, through Next, in the bar at the foot of
             // every step, read once the first step has gone.
             open(SettingsChains.firstStepNext, leaving: SettingsChains.learnAboutEachWay, in: app, context: context)
-            XCTAssertTrue(
-                app.navigationBars[SettingsChains.secondStep].waitForExistence(timeout: 10),
+            waitToAppear(
+                app.navigationBars[SettingsChains.secondStep],
                 "Next did not open the second step (\(context))"
             )
             secondStep = try Self.onCover(screenControls(in: app))
@@ -341,9 +335,8 @@ final class SettingsOnHomeTests: XCTestCase {
 
         // Out: where Back to Talking was, Home.
         back.tap()
-        XCTAssertTrue(app.buttons["Yes"].waitForExistence(timeout: 10), "Home did not come back (\(context))")
-        let closed = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: back)
-        XCTAssertEqual(XCTWaiter.wait(for: [closed], timeout: 10), .completed, "Settings did not close (\(context))")
+        waitToAppear(app.buttons["Yes"], "Home did not come back (\(context))")
+        waitToDisappear(back, "Settings did not close (\(context))")
         let after = try screenControls(in: app)
         attachCapture(app, name: "settings-closed-\(context)".replacingOccurrences(of: ", ", with: "-"))
         let returning = nearestControls(to: way.center, among: after)
@@ -385,8 +378,7 @@ final class SettingsOnHomeTests: XCTestCase {
         } else {
             app.buttons[name].tap()
         }
-        let gone = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: app.buttons[leaving])
-        XCTAssertEqual(XCTWaiter.wait(for: [gone], timeout: 10), .completed, "\(name) did not open its screen (\(context))")
+        waitToDisappear(app.buttons[leaving], "\(name) did not open its screen (\(context))")
     }
 
     /// Opens the guide with the first step's Learn About Each Way, reads its
@@ -400,7 +392,7 @@ final class SettingsOnHomeTests: XCTestCase {
     ) throws -> [ScreenControl] {
         app.buttons[SettingsChains.learnAboutEachWay].tap()
         let done = app.buttons[SettingsChains.eachWayDone]
-        XCTAssertTrue(done.waitForExistence(timeout: 10), "Learn About Each Way did not open the guide (\(context))")
+        waitToAppear(done, "Learn About Each Way did not open the guide (\(context))")
         let stepNames = Set(step.map(\.name))
         let guide = try Self.onCover(screenControls(in: app)).filter { !stepNames.contains($0.name) }
         attachCapture(app, name: "each-way-opened-\(context)".replacingOccurrences(of: ", ", with: "-"))
@@ -414,10 +406,9 @@ final class SettingsOnHomeTests: XCTestCase {
             XCTAssertEqual(actual, expected, accuracy: 1, "Done's \(edge) edge is not Back to Talking's (\(context))")
         }
         done.tap()
-        let closed = expectation(for: NSPredicate(format: "exists == false"), evaluatedWith: done)
-        XCTAssertEqual(XCTWaiter.wait(for: [closed], timeout: 10), .completed, "Done did not close the guide (\(context))")
-        XCTAssertTrue(
-            app.buttons[SettingsChains.learnAboutEachWay].waitForExistence(timeout: 10), "Done did not return to the first step (\(context))"
+        waitToDisappear(done, "Done did not close the guide (\(context))")
+        waitToAppear(
+            app.buttons[SettingsChains.learnAboutEachWay], "Done did not return to the first step (\(context))"
         )
         return guide
     }
@@ -441,7 +432,7 @@ final class SettingsOnHomeTests: XCTestCase {
             in: app, context: context
         )
         let wayBack = app.buttons[SettingsChains.voiceWayBack]
-        XCTAssertTrue(wayBack.waitForExistence(timeout: 10), "Voice Settings opened without Back to Family Setup (\(context))")
+        waitToAppear(wayBack, "Voice Settings opened without Back to Family Setup (\(context))")
         let voice = try Self.onCover(screenControls(in: app))
         attachCapture(app, name: "voice-settings-opened-\(context)".replacingOccurrences(of: ", ", with: "-"))
         if let back = voice.first(where: { $0.name == SettingsChains.voiceWayBack })?.frame {
@@ -463,17 +454,13 @@ final class SettingsOnHomeTests: XCTestCase {
 
         wayBack.tap()
         let voiceRow = app.buttons[SettingsChains.voiceSettingsRow]
-        XCTAssertTrue(voiceRow.waitForExistence(timeout: 10), "Back to Family Setup did not return to Family Setup (\(context))")
-        let settled = NSPredicate { _, _ in
-            MainActor.assumeIsolated {
-                let frame = voiceRow.frame
-                return abs(frame.minX - row.minX) < 1 && abs(frame.minY - row.minY) < 1
-            }
-        }
-        XCTAssertEqual(
-            XCTWaiter.wait(for: [expectation(for: settled, evaluatedWith: nil)], timeout: 10), .completed,
+        waitToAppear(voiceRow, "Back to Family Setup did not return to Family Setup (\(context))")
+        waitUntil(
             "Family Setup's Voice Settings row at \(voiceRow.frame) is not back where it showed, at \(row) (\(context))"
-        )
+        ) {
+            let frame = voiceRow.frame
+            return abs(frame.minX - row.minX) < 1 && abs(frame.minY - row.minY) < 1
+        }
         return voice
     }
 
@@ -492,8 +479,8 @@ final class SettingsOnHomeTests: XCTestCase {
     ) throws -> ([ScreenControl], [ScreenControl], [ScreenControl]) {
         open(SettingsChains.back, leaving: "restBoardEveryCategory", in: app, context: context)
         open(SettingsChains.back, leaving: SettingsChains.learnAboutEachWay, in: app, context: context)
-        XCTAssertTrue(
-            app.buttons[SettingsChains.checkInGoThrough].waitForExistence(timeout: 10), "Back did not return to Family Setup (\(context))"
+        waitToAppear(
+            app.buttons[SettingsChains.checkInGoThrough], "Back did not return to Family Setup (\(context))"
         )
 
         // The card's rows go as soon as Go Through answers the check-in,
@@ -511,23 +498,17 @@ final class SettingsOnHomeTests: XCTestCase {
         }
 
         open(SettingsChains.back, leaving: SettingsChains.learnAboutEachWay, in: app, context: context)
-        XCTAssertTrue(
-            app.staticTexts["Family Setup will ask again in about three months."].waitForExistence(timeout: 10),
+        waitToAppear(
+            app.staticTexts["Family Setup will ask again in about three months."],
             "Family Setup does not say the check-in was answered (\(context))"
         )
         // Read where it rests: Set Up Step by Step back in its place, not
         // part way through sliding in.
         if let guided = familySetup.first(where: { $0.name == SettingsChains.guidedSetupRow })?.frame {
-            let settled = NSPredicate { _, _ in
-                MainActor.assumeIsolated {
-                    let frame = app.buttons[SettingsChains.guidedSetupRow].frame
-                    return abs(frame.minX - guided.minX) < 1 && abs(frame.minY - guided.minY) < 1
-                }
+            waitUntil("Set Up Step by Step is not back where it was (\(context))") {
+                let frame = app.buttons[SettingsChains.guidedSetupRow].frame
+                return abs(frame.minX - guided.minX) < 1 && abs(frame.minY - guided.minY) < 1
             }
-            XCTAssertEqual(
-                XCTWaiter.wait(for: [expectation(for: settled, evaluatedWith: nil)], timeout: 10), .completed,
-                "Set Up Step by Step is not back where it was (\(context))"
-            )
         }
         let answered = try Self.onCover(screenControls(in: app))
         attachCapture(app, name: "family-setup-after-the-check-in-\(context)".replacingOccurrences(of: ", ", with: "-"))
@@ -550,8 +531,8 @@ final class SettingsOnHomeTests: XCTestCase {
         // The second step from there: a look still over where the card's
         // rows were met Next, so no choice lies across that place.
         open(SettingsChains.firstStepNext, leaving: SettingsChains.learnAboutEachWay, in: app, context: context)
-        XCTAssertTrue(
-            app.navigationBars[SettingsChains.secondStep].waitForExistence(timeout: 10),
+        waitToAppear(
+            app.navigationBars[SettingsChains.secondStep],
             "Next did not open the second step after the check-in (\(context))"
         )
         let secondAfterCheckIn = try Self.onCover(screenControls(in: app))

@@ -54,7 +54,7 @@ final class PhraseDragProbeTests: XCTestCase {
         let app = launchedApp(keepsUIKitAnimations: true)
         defer { app.terminate() }
         let view = app.scrollViews["homeRegion.phrases"]
-        guard view.waitForExistence(timeout: 10) else { return XCTFail("No phrase grid") }
+        guard waitToAppear(view, "No phrase grid") else { return }
         let viewport = view.frame
         let tiles = app.buttons.matching(identifier: "phraseTile").allElementsBoundByIndex
             .map { (label: $0.label, frame: $0.frame) }
@@ -99,7 +99,7 @@ final class PhraseDragProbeTests: XCTestCase {
                 a.press(forDuration: 0.05, thenDragTo: b, withVelocity: .slow, thenHoldForDuration: 0.1)
             }
         }
-        let said = aimed && message.waitForExistence(timeout: 3) ? message.label : ""
+        let said = aimed && appears(message, within: .observation) ? message.label : ""
         let ended = [tiles.first { $0.frame.contains(to) }?.label, app.buttons["Yes"].frame.contains(to) ? "Yes" : nil]
             .compactMap { $0 }.first ?? "none"
         let fields: [String: Any] = [

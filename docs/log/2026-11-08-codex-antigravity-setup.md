@@ -36,7 +36,7 @@ Antigravity's hook in its own folder: an `echo` and a refused dry run.
 | Command-line tool | `codex-cli 0.167.0` (Homebrew), current per `codex doctor` | `agy 1.5.3` |
 | App | "ChatGPT" (`com.openai.codex`, 26.1103.41825), running | "Gemini" (`com.google.GeminiMacOS`, 1.141.3.1394), which runs the agent manager with its own `agy` 1.4.11 |
 | Signed in | `codex login status`: "Logged in using ChatGPT", exit 0 | Yes (Google account; `agy models` answered) |
-| Plan | ChatGPT Pro, the $100 a month tier (the owner, 2026-11-08) | Google AI Pro (the owner, 2026-11-08); `agy models` lists Gemini 4 Argon and Claude Opus and Sonnet 5.5, which only paid plans get |
+| Plan | ChatGPT Pro (the owner, 2026-11-08) | Google AI Pro (the owner, 2026-11-08); `agy models` lists Gemini 4 Argon and Claude Opus and Sonnet 5.5, which only paid plans get |
 | Reads AGENTS.md | All of it on this Mac (`project_doc_max_bytes = 131072`) | Only its first 24,000 bytes; see the pointer file below |
 
 ### Antigravity's own folder

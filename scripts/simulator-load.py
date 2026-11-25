@@ -2,21 +2,39 @@
 """Watches one simulator's processes while its tests run, and writes down
 which of them use the machine's processors.
 
-    simulator-load.py start --udid <udid> --out <file> --parent <pid> [--pause-posters]
+    simulator-load.py start --udid <udid> --out <file> --parent <pid>
+                            [--pause-posters] [--background]
+                            [--claim-file <file> [--started-file <file>]]
+    simulator-load.py settle --out <file> [--limit <seconds>]
+    simulator-load.py restore --udid <udid> --out <file> [--pid <pid>]
     simulator-load.py stop --pid <pid> --out <file>
 
 `start` starts a watcher in the background, waits for it to begin
 watching (or, on a Mac too busy to start it in time, leaves it to begin)
 and prints its pid; `stop` stops it, waits for its summary and prints it.
-scripts/test.sh starts one for each simulator it tests on.
+scripts/test.sh starts one for each simulator it tests on, before it
+starts the simulator, so the record covers the simulator's first minutes.
+Given --claim-file, the watcher pauses and lowers nothing until that file
+exists: scripts/test.sh creates it once it has started the simulator
+itself, and the --started-file once the simulator has finished starting
+(below). Files, not a command: on GitHub's machines a program started
+during the simulator's start took up to eleven minutes to begin, while
+the watcher, already running, kept its lines five to nine seconds apart.
+`settle` waits, before the tests, until the Mac is no longer busy with
+the simulator's start (see "Waiting for the Mac to settle" below), and
+`restore` then returns the simulator's processes to normal priority and
+checks that they are there (see "The simulator's start in the
+background" below).
 
 Every five seconds the watcher reads the Mac's process list, finds the
 processes the simulator runs (everything started under that device's
 launchd_sim), and writes one line: the time, how much processor time the
 simulator and the whole Mac used since the last line, the Mac's load, how
-long reading the list took, and the simulator's busiest processes. When
+long reading the list took, how much of a processor GitHub's agent used
+(below), and the simulator's busiest processes. When
 it is stopped (SIGTERM or SIGINT) it writes the processes that used the
 most time over the whole run, lets any process it paused run again,
+returns any it still holds in the background to normal priority,
 writes how much processor time it used itself, then writes "Stopped.".
 It also stops by itself once the process named by --parent (the test run)
 is gone, so a test run that is killed never leaves it running.
@@ -53,6 +71,79 @@ extensions started meanwhile were never paused
 (docs/log/2026-11-04-watcher-without-ps.md). Only the processes of the
 one simulator named by --udid are read in detail or paused, and only on
 a Mac.
+
+Waiting for the Mac to settle. A simulator that starts for the first
+time, as every simulator on GitHub's machines does, starts hundreds of
+background tasks: indexing, widgets, wallpapers, health, news and the
+rest. On GitHub's Mac (three processors) they kept every processor busy,
+with 400 to 550 tasks waiting for one, for a quarter of an hour and more,
+and the UI tests started five minutes into it. In the 320 UI test jobs
+from 2026-11-12 to 2026-11-19, a test step never stalled while the load
+was under 250, and stalled 50 times above it; tests that started with
+the load under 150 failed once in 10,504 runs, and those that started
+above 350 about eight times in a thousand
+(docs/log/2026-11-19-ui-tests-wait-for-a-settled-mac.md). So `settle`
+reads the load every five seconds and returns once three readings in a
+row are under 50 for each of the Mac's processors (150 on GitHub's), or
+after --limit seconds (twenty minutes unless given), saying which in the
+log and in the record. It only waits: it never fails a run, and a Mac
+that does not settle is tested anyway, with a warning. The load is the
+one-minute average of tasks running or waiting for a processor
+(os.getloadavg), the "load" of each of the record's lines. It leaves out
+tasks in macOS's background band, so on a simulator held there (below)
+the wait comes after `restore`: the load then counts the simulator's
+start-up work again, as when the wait was calibrated.
+
+The simulator's start in the background. GitHub cancelled Mac test jobs
+by itself 8.5 to 13 minutes after their simulator began to start: its
+agent on the machine (the runner program, Runner.Listener, which keeps
+the job's session with GitHub) had requests time out after 100 seconds,
+lost its session and cancelled the job as it shut down. In all five
+such jobs whose timeline could be read, the build had run for under 20
+seconds: the Mac was swamped by the simulator's own start, within
+seconds of it (docs/log/2026-11-22-simulator-start-in-the-background.md).
+So with --background, once claimed, the watcher puts the simulator's
+processes in macOS's background band (setpriority with
+PRIO_DARWIN_PROCESS and PRIO_DARWIN_BG, as `taskpolicy -b` does): its
+launchd_sim first, which every later process of the simulator is
+started from and takes the band from, and every process under it, at
+each reading, so one that started after the first batch is lowered
+within a second. It begins once the --started-file exists or LOWER_AFTER
+seconds after the claim, whichever comes first: held in the band from the
+boot itself, a first start on the owner's Mac had not finished after
+almost seven minutes (on Apple silicon the system runs background work
+on the efficiency cores when it can), where it takes about 19 seconds
+at normal priority; and in the jobs GitHub cancelled, its agent kept in
+touch for the first three to four and a half minutes. In that band a process runs, reads and writes, and uses
+the network only when nothing outside it is waiting to, so GitHub's
+agent, the build and the watcher come first, and the start-up work
+still gets every moment they leave. iOS itself runs about two thirds of
+a started simulator's processes in that band; this adds the rest for
+the start-up only. `restore`, after the build (and the warm-up launch)
+and before the wait to settle (the load leaves out work in the band, so
+a wait while lowered would end at once), tells the watcher to stop lowering, waits for it to say it has, then
+returns launchd_sim and every process under it to normal priority, in
+passes until a pass finds no process it had not returned (so one started
+during a pass is returned too). It then reads launchd_sim, SpringBoard
+and backboardd back, which iOS never runs in the background, and says
+what it found in the log and the record. Returning a process clears only
+the setting this script made, so a process iOS runs in the background
+stays there, as it does on any start: on the owner's Mac, every process
+of a settled simulator read back at the priority it had before a round
+trip. When the return cannot be confirmed (launchd_sim not found, a
+process that could not be returned, or one of the three still in the
+background), `restore` fails, and scripts/test.sh stops before the
+tests rather than test on a throttled simulator (docs/DECISIONS.md,
+"Tests", 2026-11-22). Only a simulator this run started is ever lowered,
+as only its wallpaper extensions are paused.
+
+GitHub's agent. Each line also says how much of a processor GitHub's
+agent (Runner.Listener) used since the last line, its task's priority
+and how many of its threads were running or waiting for a processor,
+and the watcher's first lines name the agent's processes and their
+priority; on a Mac that runs no agent, nothing is said. They are found
+by the kernel's name for them, never by their arguments, which can hold
+the agent's credentials.
 """
 import argparse
 import ctypes
@@ -78,6 +169,42 @@ CHECK = 1.0
 # busy starting a simulator can take longer than this to start Python.
 WAIT = 15.0
 STOPPED = "Stopped."
+
+# The Mac has settled once its load has been under this many for each of
+# its processors on this many readings in a row, INTERVAL apart; `settle`
+# waits no longer than SETTLE_LIMIT seconds unless told, and says how far
+# it is every SETTLE_SAYS. The measurements behind the numbers are in the
+# module's description.
+SETTLED_LOAD = 50.0
+SETTLED_READINGS = 3
+SETTLE_LIMIT = 20 * 60.0
+SETTLE_SAYS = 60.0
+
+# macOS's background band (bsd/sys/resource.h): setpriority's
+# PRIO_DARWIN_PROCESS with PRIO_DARWIN_BG puts a process in it, and 0
+# takes it out. A task in it reads back at priority MAXPRI_THROTTLE
+# (osfmk/kern/sched.h), 4, the lowest a user's task runs at.
+PRIO_DARWIN_PROCESS = 4
+PRIO_DARWIN_BG = 0x1000
+BACKGROUND_PRIORITY = 4
+# What `restore` reads back after returning the simulator's processes:
+# none of them is ever in the background band on its own.
+NEVER_IN_BACKGROUND = (LAUNCHD_SIM, "SpringBoard", "backboardd")
+# `restore` goes over the simulator's processes until a pass finds none it
+# had not returned, at most this many times.
+RESTORE_PASSES = 5
+# GitHub's agent, by the kernel's names for its two programs (at most 16
+# characters): the listener holds the job's session, the worker runs the
+# steps.
+AGENT = ("Runner.Listener", "Runner.Worker")
+# Lowering begins at most this many seconds after the claim: three times a
+# first start of the iPad simulator on the owner's Mac (19 s), and under
+# half the time GitHub's agent kept in touch in the jobs it cancelled.
+LOWER_AFTER = 60.0
+# The lines the watcher writes when it is claimed and when it stops
+# lowering, which `restore` waits for.
+CLAIMED = "this run started the simulator"
+STOPPED_LOWERING = "stopped putting the simulator's processes in the background"
 
 
 def clock_time():
@@ -227,6 +354,23 @@ class MacProcesses:
         return ((task.total_user + task.total_system) * self.seconds_per_unit,
                 self.path.value.decode(errors="replace"))
 
+    def state(self, pid):
+        """A process's processor time so far in seconds, its task's
+        priority and how many of its threads are running or waiting for a
+        processor; None once it has ended (or if another user runs it)."""
+        task, length = self.task, ctypes.sizeof(self.task)
+        if self.lib.proc_pidinfo(pid, self.PROC_PIDTASKINFO, 0, ctypes.byref(task), length) != length:
+            return None
+        return ((task.total_user + task.total_system) * self.seconds_per_unit,
+                task.priority, task.numrunning)
+
+    @staticmethod
+    def set_background(pid, background):
+        """Puts a process in macOS's background band, or takes it out.
+        Raises ProcessLookupError once it has ended, and another OSError
+        when it cannot be changed."""
+        os.setpriority(PRIO_DARWIN_PROCESS, pid, PRIO_DARWIN_BG if background else 0)
+
     def processor_ticks(self):
         """How long each of the Mac's processors has been busy: its user,
         system and nice ticks (ticks_per_second a second), processor after
@@ -261,22 +405,27 @@ class MacProcesses:
 class ProcessFile:
     """A stand-in for MacProcesses, for scripts/test-runner.py on any
     machine: a JSON file, read afresh for each reading, of {"ticks": busy
-    ticks, "processes": [[pid, ppid, state, seconds, path, arguments],
-    ...]}. A process whose seconds are null ended before its details were
-    read."""
+    ticks, "processes": [[pid, ppid, state, seconds, path, arguments
+    (, priority, running)], ...], "refuse": [pid, ...]}. A process whose
+    seconds are null ended before its details were read; one in "refuse"
+    cannot have its priority changed. Each change of priority is added to
+    <file>.background ("on <pid>" or "off <pid>"), which every stand-in
+    reads, as the kernel would keep it, so a watcher and a `restore` run
+    as separate programs see the same simulator."""
 
     ticks_per_second = 100
 
     def __init__(self, path):
-        self.path, self.rows, self.ticks = path, {}, 0
+        self.path, self.rows, self.ticks, self.refused = path, {}, 0, set()
+        self.changes = path + ".background"
 
     def table(self):
         with open(self.path, encoding="utf-8") as file:
             data = json.load(file)
         self.rows = {row[0]: row for row in data["processes"]}
         self.ticks = data["ticks"]
-        return {pid: (ppid, "T" in state, name_of(path)[:16])
-                for pid, ppid, state, _, path, _ in self.rows.values()}
+        self.refused = set(data.get("refuse", []))
+        return {pid: (row[1], "T" in row[2], name_of(row[4])[:16]) for pid, row in self.rows.items()}
 
     def arguments(self, pid):
         return self.rows[pid][5] if pid in self.rows else None
@@ -284,6 +433,36 @@ class ProcessFile:
     def details(self, pid):
         row = self.rows.get(pid)
         return None if row is None or row[3] is None else (row[3], row[4])
+
+    def lowered(self):
+        """The pids in the background band now, from the changes so far."""
+        found = set()
+        try:
+            with open(self.changes, encoding="utf-8") as file:
+                for line in file:
+                    change, pid = line.split()
+                    (found.add if change == "on" else found.discard)(int(pid))
+        except FileNotFoundError:
+            pass
+        return found
+
+    def state(self, pid):
+        row = self.rows.get(pid)
+        if row is None or row[3] is None:
+            return None
+        priority = row[6] if len(row) > 6 else 31
+        running = row[7] if len(row) > 7 else 0
+        return (row[3], BACKGROUND_PRIORITY if pid in self.lowered() else priority, running)
+
+    def set_background(self, pid, background):
+        self.table()  # As the kernel would, it knows the processes running now.
+        row = self.rows.get(pid)
+        if row is None or row[3] is None:
+            raise ProcessLookupError(pid, "No such process")
+        if pid in self.refused:
+            raise PermissionError(1, "Operation not permitted")
+        with open(self.changes, "a", encoding="utf-8") as file:
+            file.write(f"{'on' if background else 'off'} {pid}\n")
 
     def processor_ticks(self):
         return (self.ticks, 0, 0)
@@ -312,8 +491,26 @@ def is_poster_extension(path):
     return bool(POSTER.search(name_of(path)))
 
 
+def find_root(system, table, udid):
+    """The pid of the simulator's own launchd, whose arguments name the
+    device's folder; None while the device is not running."""
+    for pid, (_, _, name) in table.items():
+        if name == LAUNCHD_SIM:
+            arguments = system.arguments(pid)
+            if arguments and f"/{udid}/" in " ".join(arguments):
+                return pid
+    return None
+
+
+def root_first(root, family):
+    """The simulator's processes with its launchd_sim first: a process
+    started under it while the rest are changed takes its band from it."""
+    return [root] + sorted(family - {root})
+
+
 class Watch:
-    def __init__(self, udid, out, pause_posters, system, clock=time.monotonic, kill=os.kill):
+    def __init__(self, udid, out, pause_posters, system, clock=time.monotonic, kill=os.kill,
+                 background=False, claimed=True, started=True):
         self.udid, self.out, self.pause_posters = udid, out, pause_posters
         self.system, self.clock, self.kill = system, clock, kill
         self.root = None  # the simulator's launchd_sim, once found
@@ -322,27 +519,147 @@ class Watch:
         self.before, self.ticks, self.at, self.listed = None, None, None, None
         self.totals = {}  # name -> cpu seconds used while watched
         self.paused = set()
+        # Pausing and lowering wait until the run says it started the
+        # simulator itself (claim), lowering until it has started too, or
+        # LOWER_AFTER seconds after the claim; it ends when `restore` asks.
+        self.background, self.claimed, self.lowering = background, claimed, background
+        self.started, self.claimed_at = started, None
+        self.lowered, self.refused = set(), set()
+        # GitHub's agent's listener at the last line: (pid, cpu seconds,
+        # when read); and whether its processes have been named.
+        self.agent, self.agent_named = None, False
 
     def write(self, line):
         self.out.write(line + "\n")
         self.out.flush()
 
     def simulator_root(self, table):
-        """The pid of the simulator's own launchd, whose arguments name the
-        device's folder; None while the device is not running. Reading a
+        """The pid of the simulator's own launchd (find_root). Reading a
         process's arguments reads its memory, so they are read once: the
         launchd_sim found stays the simulator's while it runs, and a new
         one is looked for only once it has gone."""
         if self.root in table and table[self.root][2] == LAUNCHD_SIM:
             return self.root
-        self.root = None
-        for pid, (_, _, name) in table.items():
-            if name == LAUNCHD_SIM:
-                arguments = self.system.arguments(pid)
-                if arguments and f"/{self.udid}/" in " ".join(arguments):
-                    self.root = pid
-                    break
+        self.root = find_root(self.system, table, self.udid)
         return self.root
+
+    def claim(self):
+        """This run started the simulator: pausing begins, and lowering
+        once it has started or LOWER_AFTER seconds from now."""
+        if self.claimed:
+            return
+        self.claimed, self.claimed_at = True, self.clock()
+        plans = []
+        if self.pause_posters:
+            plans.append("pausing its lock-screen wallpaper extensions")
+        if self.background:
+            plans.append("running its processes in the background until the tests, from when "
+                         f"it has started or in {LOWER_AFTER:.0f} s")
+        self.write(f"{clock_time()} {CLAIMED}" + (": " + " and ".join(plans) if plans else ""))
+
+    def mark_started(self):
+        """The simulator has finished starting (simctl bootstatus)."""
+        if self.started:
+            return
+        self.started = True
+        self.write(f"{clock_time()} the simulator has finished starting")
+
+    def may_lower(self):
+        if not (self.claimed and self.lowering):
+            return False
+        return self.started or (self.claimed_at is not None
+                                and self.clock() - self.claimed_at >= LOWER_AFTER)
+
+    def stop_lowering(self):
+        """Puts no more processes in the background (`restore` returns
+        the ones already there), and says so for `restore`."""
+        self.lowering = False
+        self.write(f"{clock_time()} {STOPPED_LOWERING} (it had put {len(self.lowered)} there)")
+
+    def lower(self, root, family, table, stamp):
+        """Puts every process of the simulator not yet lowered in the
+        background band, its launchd_sim first."""
+        first, count = not self.lowered, 0
+        for pid in root_first(root, family):
+            if pid in self.lowered or pid in self.refused:
+                continue
+            try:
+                self.system.set_background(pid, True)
+            except ProcessLookupError:
+                continue  # It ended after the list was read.
+            except OSError as error:
+                self.refused.add(pid)
+                self.write(f"{stamp} could not put {table[pid][2]} ({pid}) in the background: {error}")
+                continue
+            self.lowered.add(pid)
+            count += 1
+        if first and count:
+            why = "" if self.claimed_at is None else (
+                " (it had started)" if self.started else
+                f" ({self.clock() - self.claimed_at:.0f} s after the claim, before it had started)")
+            self.write(f"{stamp} put {count} of the simulator's processes in the background, "
+                       f"its launchd_sim first{why}")
+
+    def return_lowered(self):
+        """Returns every process this watcher lowered to normal priority,
+        when it stops before `restore` has: a run that ends early never
+        leaves a simulator in the background."""
+        if not self.lowering or not self.lowered:
+            return
+        self.lowering = False
+        # Everything running under the simulator now, its launchd_sim
+        # first, since a process started after the last reading took the
+        # band from its parent; then any recorded one not under it.
+        try:
+            table = self.system.table()
+            root = self.simulator_root(table)
+        except OSError:
+            root = None
+        current = root_first(root, descendants(root, table)) if root is not None else []
+        ordered = current + sorted(self.lowered - set(current))
+        returned = 0
+        for pid in ordered:
+            try:
+                self.system.set_background(pid, False)
+            except ProcessLookupError:
+                continue
+            except OSError as error:
+                self.write(f"could not return process {pid} to normal priority: {error}")
+                continue
+            returned += 1
+        self.write(f"Returned {returned} of the simulator's processes to normal priority (it had "
+                   f"put {len(self.lowered)} in the background), as the watcher stopped before "
+                   "the tests.")
+
+    def agent_field(self, table, now):
+        """GitHub's agent's listener: its share of a processor since the
+        last line, its task's priority and its threads running or waiting
+        for a processor, as a field of the line; empty where no agent
+        runs. The first time it is found, a line names the agent's
+        processes and their priority."""
+        state = getattr(self.system, "state", None)
+        agents = {pid: name for pid, (_, _, name) in table.items() if name in AGENT}
+        if state is None or not agents:
+            return ""
+        if not self.agent_named:
+            self.agent_named = True
+            named = []
+            for pid, name in sorted(agents.items(), key=lambda item: (AGENT.index(item[1]), item[0])):
+                found = state(pid)
+                if found is not None:
+                    named.append(f"{name} ({pid}) at priority {found[1]}")
+            if named:
+                self.write(f"{clock_time()} GitHub's agent: " + ", ".join(named))
+        listener = min((pid for pid, name in agents.items() if name == AGENT[0]), default=None)
+        found = state(listener) if listener is not None else None
+        if found is None:
+            return ""
+        seconds, priority, running = found
+        share = ""
+        if self.agent and self.agent[0] == listener:
+            share = f" {100 * (seconds - self.agent[1]) / max(now - self.agent[2], 1e-6):.0f}%"
+        self.agent = (listener, seconds, now)
+        return f" agent{share} at {priority}, {running} running"
 
     def sample(self, line=True):
         """Reads the process list and pauses any new wallpaper extension.
@@ -362,7 +679,10 @@ class Watch:
         root = self.simulator_root(table)
         processes = {}  # pid -> (stopped, cpu seconds, path, when read)
         if root is not None:
-            for pid in sorted(descendants(root, table)):
+            family = descendants(root, table)
+            if self.may_lower():
+                self.lower(root, family, table, clock_time())
+            for pid in sorted(family):
                 details = self.system.details(pid)
                 # None: it ended after the list was read.
                 if details is not None:
@@ -370,12 +690,13 @@ class Watch:
         ticks = self.system.processor_ticks() if line else None
         now = self.clock()
         stamp = clock_time()
+        agent = self.agent_field(table, now) if line else ""
         if root is None:
             if line:
                 self.write(f"{stamp} the simulator {self.udid} is not running")
                 self.before, self.ticks, self.at, self.listed = {}, ticks, now, began
             return
-        if self.pause_posters:
+        if self.pause_posters and self.claimed:
             for pid, (stopped, seconds, path, _) in processes.items():
                 if is_poster_extension(path) and not stopped and pid not in self.paused:
                     try:
@@ -410,7 +731,7 @@ class Watch:
             busiest = sorted(used.items(), key=lambda item: -item[1])[:6]
             self.write(
                 f"{stamp} simulator {100 * sum(used.values()):4.0f}% "
-                f"mac {100 * busy / elapsed:4.0f}% load {load:5.1f} list {now - began:4.2f} s | "
+                f"mac {100 * busy / elapsed:4.0f}% load {load:5.1f} list {now - began:4.2f} s{agent} | "
                 + ", ".join(f"{name} {100 * share:.0f}%" for name, share in busiest))
         self.before, self.ticks, self.at, self.listed = processes, ticks, now, began
 
@@ -418,8 +739,11 @@ class Watch:
         self.write("Processor time the simulator's processes used while watched:")
         for name, seconds in sorted(self.totals.items(), key=lambda item: -item[1])[:20]:
             self.write(f"  {seconds:8.1f} s  {name}")
-        if self.pause_posters:
+        if self.pause_posters and self.claimed:
             self.write(f"Paused {len(self.paused)} lock-screen wallpaper extension processes.")
+        if self.background and self.claimed:
+            self.write(f"Put {len(self.lowered)} of the simulator's processes in the background "
+                       "while it started.")
 
     def resume(self):
         """Lets every paused process run again. One that has ended since
@@ -452,24 +776,47 @@ def alive(pid):
 
 
 def watch(arguments, parent_alive=alive, kill=os.kill):
-    stopping = []
+    stopping, stop_lowering = [], []
+    background = getattr(arguments, "background", False)
+    claim_file = getattr(arguments, "claim_file", None)
+    started_file = getattr(arguments, "started_file", None)
 
     def stop_watching(*_):
         stopping.append(True)
 
+    # Installed before the first line, which `restore` waits for before
+    # it signals: the signal would end a watcher that had not installed
+    # its handler.
     signal.signal(signal.SIGTERM, stop_watching)
     signal.signal(signal.SIGINT, stop_watching)
+    signal.signal(signal.SIGUSR1, lambda *_: stop_lowering.append(True))
     system = ProcessFile(arguments.processes) if arguments.processes else MacProcesses()
     with open(arguments.out, "a", encoding="utf-8") as out:
-        watcher = Watch(arguments.udid, out, arguments.pause_posters, system, kill=kill)
+        watcher = Watch(arguments.udid, out, arguments.pause_posters, system, kill=kill,
+                        background=background, claimed=claim_file is None,
+                        started=claim_file is None or started_file is None)
+        plans = []
+        if arguments.pause_posters:
+            plans.append("pausing lock-screen wallpaper extensions")
+        if background:
+            plans.append("running its processes in the background until the tests")
         # The time it began: on a busy Mac that can be long after `start`.
         watcher.write(f"Watching simulator {arguments.udid}"
-                      + (", pausing lock-screen wallpaper extensions" if arguments.pause_posters else "")
+                      + ((", once this run has started it, " if claim_file else ", ")
+                         + " and ".join(plans) if plans else "")
                       + f", from {clock_time()}")
-        # Only pausing needs a reading between lines.
-        every = CHECK if arguments.pause_posters else INTERVAL
+        # Pausing and lowering need a reading between lines.
+        every = CHECK if arguments.pause_posters or background else INTERVAL
         next_line = time.monotonic()
+        answered = set()
         while not stopping:
+            if claim_file and not watcher.claimed and os.path.exists(claim_file):
+                watcher.claim()
+            if started_file and watcher.claimed and not watcher.started and os.path.exists(started_file):
+                watcher.mark_started()
+            if stop_lowering and "stopped" not in answered:
+                answered.add("stopped")
+                watcher.stop_lowering()
             line = time.monotonic() >= next_line
             if line:
                 next_line = time.monotonic() + INTERVAL
@@ -483,9 +830,14 @@ def watch(arguments, parent_alive=alive, kill=os.kill):
                     watcher.write(f"The test run ({arguments.parent}) is gone.")
                     stopping.append(True)
                     break
+                # Asked to stop lowering: answered at once, as `restore`
+                # waits for it.
+                if stop_lowering and "stopped" not in answered:
+                    break
                 time.sleep(0.2)
         watcher.summary()
         watcher.resume()
+        watcher.return_lowered()
         watcher.write(f"Processor time the watcher itself used: {time.process_time():.1f} s")
         watcher.write(STOPPED)
     return 0
@@ -520,6 +872,12 @@ def start(arguments, wait=WAIT):
                "--parent", str(arguments.parent)]
     if arguments.pause_posters:
         command.append("--pause-posters")
+    if getattr(arguments, "background", False):
+        command.append("--background")
+    if getattr(arguments, "claim_file", None):
+        command += ["--claim-file", arguments.claim_file]
+    if getattr(arguments, "started_file", None):
+        command += ["--started-file", arguments.started_file]
     if arguments.processes:
         command += ["--processes", arguments.processes]
     try:
@@ -582,6 +940,210 @@ def stop(arguments, wait=WAIT):
     return 0
 
 
+def spell(seconds):
+    """A wait's length in words: "35 s", "9 min 35 s", "20 min"."""
+    minutes, rest = divmod(round(seconds), 60)
+    if not minutes:
+        return f"{rest} s"
+    return f"{minutes} min" + (f" {rest} s" if rest else "")
+
+
+def one_minute_load():
+    """The Mac's count of tasks running or waiting for a processor,
+    averaged over the last minute."""
+    return os.getloadavg()[0]
+
+
+def add_to_record(path, line):
+    """Adds a line, with its time, to the simulator's record. One short
+    line at a time, added to the end: the watcher writes the same file."""
+    try:
+        with open(path, "a", encoding="utf-8") as record:
+            record.write(f"{clock_time()} {line}\n")
+    except OSError as error:
+        print(f"warning: could not write to {path}: {error}", file=sys.stderr)
+
+
+def settle(arguments, load=one_minute_load, processors=os.cpu_count, clock=time.monotonic,
+           sleep=time.sleep):
+    """Waits until the Mac has settled (the module's description says
+    what that is and why), or until the limit, and says which in the log
+    and in the record. Its status is 0 however the wait ends: the tests
+    run either way."""
+    count = processors() or 1
+    wanted = SETTLED_LOAD * count
+
+    def note(line):
+        add_to_record(arguments.out, line)
+
+    began = said = clock()
+    under, first = 0, True
+    while True:
+        try:
+            reading = load()
+        except OSError as error:
+            print(f"warning: the Mac's load could not be read ({error}), so the tests start "
+                  "without waiting for it to settle.", file=sys.stderr)
+            note(f"the Mac's load could not be read ({error}); the tests run without the wait")
+            break
+        now = clock()
+        waited = now - began
+        if first:
+            first = False
+            print(f"Waiting for the Mac to settle before the tests: its load is {reading:.0f}, and "
+                  f"they start once it has stayed under {wanted:.0f} ({SETTLED_LOAD:.0f} for each "
+                  f"of its {count} processors), or after {spell(arguments.limit)}.", flush=True)
+            note(f"waiting for the Mac to settle before the tests: load {reading:.1f}, "
+                 f"wanted under {wanted:.0f}")
+        under = under + 1 if reading < wanted else 0
+        if under >= SETTLED_READINGS:
+            print(f"The Mac settled after {spell(waited)}: load {reading:.0f}.", flush=True)
+            note(f"the Mac settled after {waited:.0f} s: load {reading:.1f}")
+            break
+        if waited >= arguments.limit:
+            print(f"warning: the Mac had not settled after {spell(waited)} (load {reading:.0f}, "
+                  f"wanted under {wanted:.0f}); the tests run anyway.", file=sys.stderr)
+            note(f"the Mac had not settled after {waited:.0f} s: load {reading:.1f}; "
+                 "the tests run anyway")
+            break
+        if now - said >= SETTLE_SAYS:
+            said = now
+            print(f"  still settling after {spell(waited)}: load {reading:.0f}", flush=True)
+        sleep(INTERVAL)
+    return 0
+
+
+def wait_for_line(path, text, wait, pid=None, is_alive=alive):
+    """The record's first line holding `text`, once it is written; None
+    when `wait` seconds pass first, or the watcher `pid` is gone first."""
+    deadline = time.monotonic() + wait
+    while True:
+        found = next((line for line in record_lines(path) if text in line), None)
+        if found is not None:
+            return found
+        if time.monotonic() >= deadline or (pid is not None and not is_alive(pid)):
+            return None
+        time.sleep(0.05)
+
+
+def restore(arguments, system=None, wait=WAIT, is_alive=alive, kill=os.kill):
+    """Returns the simulator's processes to normal priority before the
+    tests and checks that they are there (the module's description says
+    how and why). Status 0 once confirmed, 1 when it cannot be; either way
+    the log and the record say what was found."""
+    if system is None:
+        system = ProcessFile(arguments.processes) if arguments.processes else MacProcesses()
+
+    def say(line, failed=False):
+        print(("error: " if failed else "") + line, file=sys.stderr if failed else sys.stdout,
+              flush=True)
+        add_to_record(arguments.out, line)
+
+    pid = arguments.pid
+
+    def end_watcher(why):
+        """Ends the watcher, so it can put nothing in the background after
+        the processes are returned: asked first, so it lets the wallpaper
+        extensions it paused run again and says "Stopped.", then killed if
+        it does not."""
+        try:
+            kill(pid, signal.SIGTERM)
+        except ProcessLookupError:
+            return
+        if wait_for_line(arguments.out, STOPPED, wait, pid, is_alive) is None and is_alive(pid):
+            try:
+                kill(pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+        say(f"the simulator watcher ({pid}) {why}, so it was stopped; nothing is paused from now on")
+
+    if pid is not None and is_alive(pid):
+        # A watcher still starting (`start` leaves one to start) would
+        # find the claim and lower the simulator once it began, after the
+        # return: it is given time to begin, or ended.
+        if wait_for_line(arguments.out, "Watching simulator", wait, pid, is_alive) is None:
+            if is_alive(pid):
+                try:
+                    kill(pid, signal.SIGKILL)  # It has paused and lowered nothing.
+                except ProcessLookupError:
+                    pass
+                say(f"the simulator watcher ({pid}) had not begun within {wait:.0f} s, so it was "
+                    "stopped; it had paused and lowered nothing")
+        else:
+            try:
+                kill(pid, signal.SIGUSR1)
+            except ProcessLookupError:
+                pass
+            else:
+                if (wait_for_line(arguments.out, STOPPED_LOWERING, wait, pid, is_alive) is None
+                        and is_alive(pid)):
+                    end_watcher(f"did not say within {wait:.0f} s that it had stopped putting "
+                                "processes in the background")
+    problems, returned, ended = [], set(), set()
+    converged, passes, root = False, 0, None
+    try:
+        while True:
+            table = system.table()
+            root = find_root(system, table, arguments.udid)
+            if root is None:
+                break
+            waiting = [found for found in root_first(root, descendants(root, table))
+                       if found not in returned and found not in ended]
+            if not waiting:
+                converged = True
+                break
+            if passes == RESTORE_PASSES:
+                break
+            passes += 1
+            for found in waiting:
+                try:
+                    system.set_background(found, False)
+                except ProcessLookupError:
+                    ended.add(found)
+                except OSError as error:
+                    ended.add(found)
+                    problems.append(f"{table[found][2]} ({found}) could not be returned: {error}")
+                else:
+                    returned.add(found)
+        if root is None:
+            problems.append(f"the simulator {arguments.udid}'s launchd_sim was not found")
+        elif not converged:
+            problems.append(f"after {passes} passes new processes were still appearing")
+        readings = []
+        if root is not None:
+            table = system.table()
+            family = descendants(root, table)
+            for name in NEVER_IN_BACKGROUND:
+                found = [each for each in sorted(family) if table[each][2] == name]
+                state = system.state(found[0]) if found else None
+                if state is None:
+                    if name == LAUNCHD_SIM:
+                        problems.append("launchd_sim could not be read back")
+                    else:
+                        readings.append(f"{name} was not running")
+                    continue
+                readings.append(f"{name} at {state[1]}")
+                if state[1] <= BACKGROUND_PRIORITY:
+                    problems.append(f"{name} ({found[0]}) is still in the background")
+            states = [system.state(each) for each in family]
+            states = [state for state in states if state is not None]
+            low = sum(1 for state in states if state[1] <= BACKGROUND_PRIORITY)
+    except OSError as error:
+        problems.append(f"the process list could not be read: {error}")
+        readings, states, low = [], [], 0
+    if problems:
+        say("could not confirm that the simulator's processes are back at normal priority: "
+            + "; ".join(problems) + (" (read back: " + ", ".join(readings) + ")" if readings else ""),
+            failed=True)
+        return 1
+    say(f"returned the simulator's {len(returned)} processes to normal priority in {passes} "
+        f"pass{'es' if passes != 1 else ''}, until a pass found none it had not returned"
+        + (f" ({len(ended)} had ended)" if ended else "")
+        + "; read back: " + ", ".join(readings)
+        + f"; {low} of the {len(states)} running now are in the background as iOS runs them")
+    return 0
+
+
 def parse(arguments=None):
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     commands = parser.add_subparsers(dest="command", required=True)
@@ -591,18 +1153,30 @@ def parse(arguments=None):
         command.add_argument("--out", required=True)
         command.add_argument("--parent", type=int, required=True)
         command.add_argument("--pause-posters", action="store_true")
+        command.add_argument("--background", action="store_true")
+        command.add_argument("--claim-file")
+        command.add_argument("--started-file")
         # scripts/test-runner.py gives a stand-in for the Mac's process
         # calls (ProcessFile).
         command.add_argument("--processes", help=argparse.SUPPRESS)
     stopping = commands.add_parser("stop")
     stopping.add_argument("--pid", type=int, required=True)
     stopping.add_argument("--out", required=True)
+    restoring = commands.add_parser("restore")
+    restoring.add_argument("--udid", required=True)
+    restoring.add_argument("--out", required=True)
+    restoring.add_argument("--pid", type=int)
+    restoring.add_argument("--processes", help=argparse.SUPPRESS)
+    settling = commands.add_parser("settle")
+    settling.add_argument("--out", required=True)
+    settling.add_argument("--limit", type=float, default=SETTLE_LIMIT)
     return parser.parse_args(arguments)
 
 
 def main():
     arguments = parse()
-    return {"start": start, "watch": watch, "stop": stop}[arguments.command](arguments)
+    return {"start": start, "watch": watch, "stop": stop,
+            "settle": settle, "restore": restore}[arguments.command](arguments)
 
 
 if __name__ == "__main__":

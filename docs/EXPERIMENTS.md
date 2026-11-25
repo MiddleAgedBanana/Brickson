@@ -17,13 +17,12 @@ is a separate app in this repository (*The probe app*, below;
 docs/DECISIONS.md, "A probe app for the experiments, kept out of
 Brickson").
 
-The questions come from three studies kept outside this repository: the
-accessibility study (stage 1: questions A-1 to A-45 and B-1 to B-4, and
-its detailed experiments numbered like A1-U3), the design-language study
-(stage 2: D-01 to D-26) and the communication-app field study (stage 3:
-23 questions between G-01 and G-41, numbered by the study's sections, so
-the numbers have gaps). This file carries each question's meaning, so it can be
-run without them. Every ID keeps its own name; *Every ID, and where it
+The questions fall into three groups, each with IDs of its own: Apple's
+accessibility features (questions A-1 to A-45 and B-1 to B-4, and
+detailed experiments numbered like A1-U3), Apple's design language
+(D-01 to D-26) and other communication apps (23 questions between G-01
+and G-41, numbered by topic, so the numbers have gaps). This file
+carries each question's full meaning. Every ID keeps its own name; *Every ID, and where it
 runs*, at the end, finds any of them.
 
 ## How to read this
@@ -49,13 +48,13 @@ means" never decides a design: it says which choice the result
 supports. Changing a rule in AGENTS.md is the owner's decision alone,
 recorded in docs/DECISIONS.md first.
 
-**IDs.** A hyphen marks a study question: A-1, B-4, D-01, G-30. A study
-experiment that was merged into a question keeps its own name too
+**IDs.** A hyphen marks a research question: A-1, B-4, D-01, G-30. A
+research experiment that was merged into a question keeps its own name too
 (A1-U3 is part of A-2). IDs with no hyphen are procedures already in
 docs/DEVICE-CHECKS.md (F1, I5, S2, W1, G3 and so on); this file writes
-them as "DEVICE-CHECKS F1" where they could be mistaken for a study ID.
+them as "DEVICE-CHECKS F1" where they could be mistaken for a research ID.
 E-01 to E-11 and H-01 to H-10 are inputs for building Brickson's own
-components later (stage 5), not experiments; they are listed in the
+components later, not experiments; they are listed in the
 index only so they can be found.
 
 **Results.** Write each result the way docs/DEVICE-CHECKS.md, *Write
@@ -77,7 +76,7 @@ updates this file's step with what was found.
   on any input method.
 - **Turn off Accessibility Inspector's point-to-inspect mode** before
   judging whether a control works. A published report says that on iOS
-  27 the app receives no touches while it is on (study item B3-U11).
+  27 the app receives no touches while it is on (research item B3-U11).
 - **Never view the device in Xcode's Device Hub** during a session that
   uses the camera or the microphone: Eye Tracking, Head Tracking and
   Voice Control stop working (docs/DEVICE-CHECKS.md, *Mount the
@@ -167,17 +166,18 @@ session does next*, below, has the commands.
   Accessibility > Assistive Access. Note whether it is there. If it is,
   set it up with Brickson Probe as an app, start it, open the probe, and
   take screenshots of its list, the Snap station and the Styles station,
-  in light and dark. (b) If the Simulator does not offer it, render the
-  preview named "Assistive Access" in `BricksonProbe/App/BricksonProbeApp.swift`
-  (Xcode's canvas, or the Xcode MCP's preview rendering) and take the same
-  pictures. (c) Do the same for Brickson itself, which uses the
+  in light and dark. (b) If the Simulator does not offer it, the owner
+  opens the preview named "Assistive Access" in
+  `BricksonProbe/App/BricksonProbeApp.swift` in Xcode's canvas and takes
+  the same pictures; an agent never opens the project in Xcode (AGENTS.md,
+  *Build and test*). (c) Do the same for Brickson itself, which uses the
   full-screen key instead: note the window size and where the system's
   Back button sits.
 - **Record.** Whether each runtime offers Assistive Access; the
   screenshots; for each kind of control, its size, shape, colour and
   label as drawn.
 - **What it means.** Apple's dressing is a reference for the state
-  style stage 5 builds (E-05), not a design to copy. If the Simulator
+  style Brickson's own components build later (E-05), not a design to copy. If the Simulator
   cannot run Assistive Access, DEV-12 does (c) on a device. Brickson
   keeps its full-screen key whatever this shows (docs/DECISIONS.md,
   "Accessibility API coverage").
@@ -188,6 +188,7 @@ session does next*, below, has the commands.
   AGENTS.md keeps from agents: not done, so the pictures of Apple's
   dressing wait for the owner in Xcode or DEV-12. Part (c) moves to
   DEV-12. ([record](log/2026-11-15-experiments-simulator.md))
+
 ### SIM-2. Control sizes — D-01
 
 - **Asks.** Does `.controlSize(.extraLarge)` draw larger than `.large`
@@ -201,7 +202,7 @@ session does next*, below, has the commands.
   button's frame in Accessibility Inspector, or measure a screenshot
   taken at scale 1.
 - **Record.** Width and height of each size, per device and text size.
-- **What it means.** Equal: settled, as stage 2 expected; family
+- **What it means.** Equal: settled, as the design research expected; family
   screens may use `.extraLarge` with no gain. Larger: record the sizes
   for stage 5, and check whether any reaches a profile's floor.
 - **Found, 2026-11-15.** `.extraLarge` is exactly as tall as `.large` on
@@ -209,6 +210,7 @@ session does next*, below, has the commands.
   fills measured too). At the default text size no system size reaches
   the switch, head or eye floors.
   ([record](log/2026-11-15-experiments-simulator.md))
+
 ### SIM-3. Shapes, text sizes and the segmented picker — D-24
 
 - **Asks.** Does `buttonBorderShape` shape the glass button styles? How
@@ -248,6 +250,7 @@ session does next*, below, has the commands.
   confirmation dialog or alert. No roadmap item; Back to Talking sits at
   the trailing edge, where a sheet would put Done.
   ([record](log/2026-11-15-experiments-simulator.md))
+
 ### SIM-5. What the system says about each element — A-1a, A3-U8 (Simulator part)
 
 - **Asks.** What does the accessibility tree report for a dimmed
@@ -262,7 +265,7 @@ session does next*, below, has the commands.
 - **Record.** A table: element, what the Inspector shows.
 - **What it means.** "Not enabled" reported: the system can tell a
   dimmed button from an available one, so a "real control that is not
-  available" (the third answer in stage 1's three cases) is something
+  available" (the third answer in the accessibility research's three cases) is something
   each input method can treat differently; the device steps say how.
   Nothing reported: assistive technologies see a dimmed button as a
   normal one, and A-1's result must be read in that light.
@@ -288,12 +291,13 @@ session does next*, below, has the commands.
 - **What it means.** An effect that still moves under Reduce Motion, or
   repeats close to the rate Apple warns about, cannot be the indicator
   as it is (E-08); one that stops is a candidate.
-- **Found, 2026-11-15.** with Reduce Motion on, Variable colour, Pulse
+- **Found, 2026-11-15.** With Reduce Motion on, Variable colour, Pulse
   and Breathe all kept animating in the Simulator: Breathe still
   changing size (74 to 88 points wide), the other two changing
   brightness only; all under three repeats a second. Breathe cannot be
   the indicator as it is; DEV-10 checks a device.
   ([record](log/2026-11-15-experiments-simulator.md))
+
 ### SIM-7. Smart Invert on Home — D-14
 
 - **Asks.** What does a person using Smart Invert see on Brickson's
@@ -331,6 +335,7 @@ session does next*, below, has the commands.
   in light, dark, Increase Contrast and Reduce Transparency. The rows'
   own words under the bar, faded by design, were not measured.
   ([record](log/2026-11-15-experiments-simulator.md))
+
 ### SIM-9. An inactive iPad window — D-20
 
 - **Asks.** On iPadOS 27, with Brickson beside another app and not the
@@ -348,10 +353,11 @@ session does next*, below, has the commands.
   its ratio, that is an invariant 6 failure in a state Brickson does not
   test today, and needs a pinned pair or a style that keeps its
   contrast.
-- **Found, 2026-11-15.** an inactive Brickson window beside Settings
+- **Found, 2026-11-15.** An inactive Brickson window beside Settings
   kept Home's fills and words at their contrast (5.02 to 5.98:1; a few
   tile pixels drawn slightly darker). The probe's system styles were not
   run inactive. ([record](log/2026-11-15-experiments-simulator.md))
+
 ### SIM-10. Apple's own components in every appearance — D-21, D-02, A-33 (Simulator part: A4-U17, L1-U22)
 
 - **Asks.** Do standard controls, `Material`, toolbars, sheets and
@@ -371,12 +377,13 @@ session does next*, below, has the commands.
   `.glassProminent` with the default tint keep under 4.5:1 for their
   white words (3.52 light, 3.23 dark, 2.15 dark with Increase Contrast;
   pressed 2.59 and 2.05), `.bordered` fills stand 1.21 to 1.60:1 from
-  the page, and `.glass` stands 1.3:1 in dark. Brickson's fills hold
-  except one shipped defect: with Increase Contrast in dark,
-  `Color.accentColor` is drawn #1A7BFF and the white words on phrase
-  tiles, the selected category and Back to Talking are 3.95:1
-  (docs/HANDOFF.md, *Known gaps*). The Simulator offers no Clear or
-  Tinted Liquid Glass; opacity 0 and 1 measured the same.
+  the page, and `.glass` stands 1.3:1 in dark. Brickson's fills held,
+  except one defect in the app as it was: with Increase Contrast in
+  dark, `Color.accentColor` was drawn #1A7BFF and the white words on
+  phrase tiles, the selected category and Back to Talking were 3.95:1
+  (fixed since by pull request #116, which draws every fill from its
+  colour set). The Simulator offers no Clear or Tinted Liquid Glass;
+  opacity 0 and 1 measured the same.
   ([record](log/2026-11-15-experiments-simulator.md))
 
 ### SIM-11. The trees each tool sees — A-45 (Simulator part: B3-U8), A2-U13, A3-U17
@@ -410,6 +417,7 @@ session does next*, below, has the commands.
   measured (DEV-9). On iPad VoiceOver also reaches the window's resize
   handle; `XCUIDevice.voiceOverService` runs in the Simulator.
   ([record](log/2026-11-15-experiments-simulator.md))
+
 ### SIM-12. Window sizes and safe areas — B2-U4, B2-U6
 
 - **Asks.** What window size, safe areas and corner radius does the
@@ -422,12 +430,13 @@ session does next*, below, has the commands.
 - **What it means.** A window the layout engine's tests do not hold is
   added to them; a device with no simulator moves to HW-6.
 - **Found, 2026-11-15.** Window sizes and insets for all twelve
-  simulators; four window sizes (five simulators) are not among the
-  layout engine's tested windows (iPhone Air 420 by 912; iPad Air
-  13-inch 1024 by 1366; the 820 by 1180 iPads; the new iPad mini 756 by
-  1158, whose insets are 32 and 20). Corner radius has no public API;
-  iOS 26 not installed.
+  simulators; four window sizes (five simulators) were not among the
+  layout engine's tested windows that day (iPhone Air 420 by 912; iPad
+  Air 13-inch 1024 by 1366; the 820 by 1180 iPads; the new iPad mini 756
+  by 1158, whose insets are 32 and 20), added since by pull request
+  #120. Corner radius has no public API; iOS 26 not installed.
   ([record](log/2026-11-15-experiments-simulator.md))
+
 ### SIM-13. Checks that need only the compiler — B1-U10, B2-U10, L1-U4
 
 - **Asks.** Does `pointerStyle(_:)` compile for an iPadOS target, and
@@ -435,7 +444,7 @@ session does next*, below, has the commands.
   iPads report haptic support (Core Haptics' capability check)? When a
   system confirmation dialog opens over the button that opened it, is
   its first or destructive item now nearest the spot just activated?
-- **Why.** Each settles a stage 1 claim without a person.
+- **Why.** Each settles a claim of the accessibility research without a person.
 - **How.** A scratch file in the worktree, never committed, for the two
   compile questions. The haptics answer needs each device, so the
   Simulator only shows that the call compiles; DEV-12 reads it on the
@@ -443,7 +452,7 @@ session does next*, below, has the commands.
   `confirmationDialog`, its frames read in Accessibility Inspector.
 - **Record.** Compiles or not, with the SDK's version; the dialog's
   item frames against the button's.
-- **What it means.** The compile answers correct stage 1's notes. If a
+- **What it means.** The compile answers correct the accessibility research's notes. If a
   dialog's harmful item lands nearest the spot just activated, Brickson
   must never use a system confirmation dialog on a dwell path (it does
   not today; docs/DECISIONS.md, "Editing the library").
@@ -472,7 +481,7 @@ session does next*, below, has the commands.
 - **Record.** (G-40) Each candidate and its chain score. (G-30) Word
   reports per utterance, longest gap, and the order of reports.
 - **What it means.** (G-40) A position with no harmful nearest
-  neighbour is a candidate for stage 5 (H-02); none is a finding too.
+  neighbour is a candidate for Brickson's own components (H-02); none is a finding too.
   (G-30) Continuous reports: a message can be shaped into parts without
   losing word lighting; gaps: shaping and lighting conflict, and DEV-10
   checks it with a Personal Voice.
@@ -483,6 +492,7 @@ session does next*, below, has the commands.
   were not scored. (G-30, D-25) could not test: the Simulator's
   synthesizer drops word reports and never finishes an utterance.
   ([record](log/2026-11-15-experiments-simulator.md))
+
 ---
 
 ## Group 2. On a device, with a person
@@ -519,7 +529,7 @@ people Brickson serves.
   stop on a toggle styled as a button, and on each segment of a
   segmented picker? (B1-U4) Does it honour "does not respond" and the
   button trait on words?
-- **Why.** These decide stage 1's three cases (what to put where nothing
+- **Why.** These decide the accessibility research's three cases (what to put where nothing
   can be done right now) and the safety arguments Brickson already makes
   for dimmed controls.
 - **How.**
@@ -542,7 +552,7 @@ people Brickson serves.
   of activations and the seconds between them, per setting.
 - **What it means.**
   - **Dimmed is outlined and nothing fires:** a dimmed button is a safe
-    place to rest a look. Stage 1's third answer (a real control that is
+    place to rest a look. The accessibility research's third answer (a real control that is
     not available) holds for gaze, and Brickson's dimmed phrase tiles
     while typing are resting places.
   - **Dimmed is skipped and the pointer jumps to a neighbour:** a dimmed
@@ -676,7 +686,7 @@ people Brickson serves.
   pointer: Home stays still. **Hover effects show under the gaze
   pointer:** Brickson can show where a dwell will land with Apple's own
   effect and no gaze code (D-18); **they do not:** that idea is closed.
-  Capsule against rounded: a judgement for stage 6, with this as
+  Capsule against rounded: a judgement for the app's new design, with this as
   evidence.
 
 ### DEV-5. Corners, edges and losing the face — A-12, A-36 (probe part), A-29, A-41, A1-U8, L1-U16, G-21, A1-U15, B-4 (filmed)
@@ -826,7 +836,7 @@ people Brickson serves.
   the design must decide whether speech should pause Voice Control). A
   dimmed button with no number cannot be pressed by mistake; one with a
   number needs the same care as DEV-1's result. Custom actions that voice
-  cannot reach mean nothing important may live in one (stage 1, L-11).
+  cannot reach mean nothing important may live in one (L-11).
 
 ### DEV-9. Full Keyboard Access — A-9 (FKA part), A-10 (FKA part)
 
@@ -935,10 +945,10 @@ people Brickson serves.
 ### DEV-12. On Brickson itself — the procedures in docs/DEVICE-CHECKS.md, and A-5, A-13, A-15, A-19, A-20, A-24, A-25, A-33, A-34, A-35, A-36, A-37, A-38, A-40, D-09, D-12, D-26, G-02, G-03, G-05, G-10 to G-15, G-23, A4-U1 to A4-U5, B2-U2, B2-U10 (device), L1-U7, L1-U21
 
 Brickson's own device checks are already written step by step in
-docs/DEVICE-CHECKS.md. Run them as they say, and note these study
+docs/DEVICE-CHECKS.md. Run them as they say, and note these research
 questions with them:
 
-| Study IDs | Run with | What to add |
+| Research IDs | Run with | What to add |
 |---|---|---|
 | A-5 (the pointer after an activation) | F1, step 4 | Already the step |
 | A-13 (where the Scanner menu sits), A-15 (where the scan resumes) | I5 | Note what the Scanner menu covers in each orientation, and where the scan resumes with Focused Item After Tap set to Current Item and to First Item |
@@ -1038,7 +1048,7 @@ draft below says nothing about any person; edit freely.
   Tracking pointer is for a steady look (smoothing, typical movement in
   points) at the recommended distance, so an app can size its targets
   from it?"
-- **ASK-5 (A-27, stage 3's question).** "Can an app learn, through
+- **ASK-5 (A-27, a communication-app question too).** "Can an app learn, through
   public API, that the pointer is being driven by Eye Tracking, Head
   Tracking or an external MFi eye tracker, so it can offer a layout sized
   for gaze? If not, would Apple consider such an API?" (A Feedback
@@ -1076,7 +1086,7 @@ draft below says nothing about any person; edit freely.
   kit's values only through the owner's Figma library, the route the
   kit's licence allows, and D-15 (a pressed-in key, rendered at the
   kit's proportions, judged by eye) waits on it. Both wait for the
-  owner's answer about the design study's notes on the kit.
+  owner's answer about the design research's notes on the kit.
 
 A result can also lead to a decision: a public signal that gaze is in
 use (A-27) could let Brickson choose its gaze profile by itself; a dimmed
@@ -1135,7 +1145,7 @@ steps, no change to Brickson's code.
 
 ## Every ID, and where it runs
 
-**Stage 1 questions.** A-1: DEV-1 (first), DEV-6. A-1a: SIM-5. A-2:
+**Accessibility questions.** A-1: DEV-1 (first), DEV-6. A-1a: SIM-5. A-2:
 DEV-2, DEV-6. A-3: DEV-1, DEV-6. A-4: DEV-1. A-5: DEV-12 (DEVICE-CHECKS
 F1 step 4). A-6: DEV-3. A-7: DEV-1, DEV-6. A-8: DEV-2, DEV-6. A-9: DEV-7,
 DEV-9. A-10: DEV-7, DEV-9, ASK-3. A-11: DEV-8. A-12: DEV-5. A-13: DEV-12.
@@ -1149,10 +1159,10 @@ DEV-12. A-37: DEV-12. A-38: DEV-12. A-39: DEV-11. A-40: DEV-12. A-41:
 DEV-5. A-42: DEV-3, DEV-7. A-43: DEV-7. A-44: DEV-3, DEV-7. A-45:
 SIM-11, DEV-7.
 
-**Stage 1 closer-inspection questions.** B-1: ASK-1, OWN-3. B-2: ASK-2,
+**Accessibility closer-inspection questions.** B-1: ASK-1, OWN-3. B-2: ASK-2,
 OWN-3. B-3: ASK-3, OWN-3. B-4: ASK-4, DEV-5 (filmed jitter), OWN-3.
 
-**Stage 1 experiments, by area.** Merged into a question: A1-U1 → A-4;
+**Accessibility experiments, by area.** Merged into a question: A1-U1 → A-4;
 A1-U2 → A-7; A1-U3 → A-2; A1-U4 → A-8; A1-U5 → A-6; A1-U7 → A-20; A1-U9
 → A-29; A1-U11, A1-U13 → A-28; A1-U12 → A-27; A1-U19 → A-12; A1-U20 →
 A-3; A1-U21 → A-19. A2-U3, A2-U4 → A-10; A2-U5 → A-9; A2-U6, A2-U10 →
@@ -1188,7 +1198,7 @@ SIM-13, DEV-12. B3-U11 → *Before every session*. L1-U4 → SIM-13. L1-U7
 when it holds text: what opens?). L1-U16 → DEV-5. L1-U19 → DEV-8. L1-U20
 → DEV-11. L1-U21 → DEV-12.
 
-**Stage 2 design questions.** D-01: SIM-2. D-02: SIM-10. D-03: DEV-1.
+**Design questions.** D-01: SIM-2. D-02: SIM-10. D-03: DEV-1.
 D-04: DEV-1. D-05 (which type reads best at 45 cm) and D-06 (condensed
 type for long words): renders of neutral words at Home's sizes, made on
 the Mac (a scratch view, never committed), judged by the owner at 45 cm
@@ -1199,7 +1209,7 @@ D-13: SIM-1. D-14: SIM-7. D-15: OWN-4. D-16: DEV-13. D-17: SIM-8. D-18:
 DEV-4. D-19: DEV-4. D-20: SIM-9. D-21: SIM-10. D-22: SIM-4. D-23: OWN-4.
 D-24: SIM-3. D-25: SIM-14, DEV-10. D-26: DEV-12.
 
-**Stage 3 field questions.** G-01: DEV-3. G-02: DEV-12. G-03: DEV-12.
+**Communication-app questions.** G-01: DEV-3. G-02: DEV-12. G-03: DEV-12.
 G-05: DEV-12. G-10, G-11, G-12, G-13, G-15: DEV-12. G-14: DEV-12. G-16
 (a hot corner running Brickson's Get Attention from another app): waits
 on App Shortcuts (docs/ROADMAP.md, R2), then DEV-12. G-20: ASK-7, OWN-1.
@@ -1207,8 +1217,8 @@ G-21: DEV-5, DEV-4. G-22: HW-2. G-23: DEV-12. G-24: DEV-7 (screen
 switch), HW-1. G-25: DEV-11. G-26: DEV-11. G-30: SIM-14, DEV-10. G-31
 (do shaped pauses sound natural to listeners): the owner and a listener,
 after DEV-10. G-32: DEV-10, ASK-6. G-40: SIM-14. G-41: HW-3. These are
-all 23 questions the field study asks; it numbers them by its sections,
-so G-04, G-06 to G-09, G-17 to G-19, G-27 to G-29 and G-33 to G-39 are
+all 23 communication-app questions; they are numbered by topic, so
+G-04, G-06 to G-09, G-17 to G-19, G-27 to G-29 and G-33 to G-39 are
 not used.
 
 **Device checks already written** (docs/DEVICE-CHECKS.md). F1: DEV-12
@@ -1216,7 +1226,7 @@ not used.
 same questions on the probe's simpler screen. F2, F3, F4 and every other
 procedure there: DEV-12, as written.
 
-**Stage 5 inputs, not experiments.** E-01 to E-11 (the design-language
-study's components) and H-01 to H-10 (the field study's building
-blocks) are built only after these results; each names the questions it
-waits on in its study.
+**Inputs for Brickson's own components, not experiments.** E-01 to
+E-11 (design components) and H-01 to H-10 (building blocks seen in other
+communication apps) are built only after these results, each after the
+questions it waits on.

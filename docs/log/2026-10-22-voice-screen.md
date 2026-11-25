@@ -12,7 +12,7 @@ under a policy the app does not use yet. What changed for the family's
 Voice Settings screen, once they can reach it:
 
 - **Codex's three held fixes for PR #23** (its fourth review), applied
-  first from the patch the Settings thread left in the project files:
+  first from the patch the Settings thread left:
   - Set Up Step by Step no longer says the access answers set how large
     the buttons are, since no layout reads them yet.
   - Family Setup's opening text is at least as tall as the root's Family

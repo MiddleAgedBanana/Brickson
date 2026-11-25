@@ -236,7 +236,7 @@ private struct SetupAccessQuestion: View {
             SettingsRowLabel(title: "Clear My Choices", systemImage: "xmark.circle")
         }
         .settingsRowStyle()
-        .padding(.top, 24)
+        .padding(.top, Spacing.xLarge)
 
         if saveFailed {
             SettingsParagraph("That answer could not be saved. Try again.")

@@ -74,11 +74,11 @@ final class HomeRestBoardTests: XCTestCase {
     }
 
     /// Waits for `element` to match `format`, and fails with `message` if
-    /// it does not within ten seconds.
+    /// it does not within `UIWait.response`.
     @MainActor
     private func waitUntil(_ element: XCUIElement, matches format: String, _ message: String) {
-        let matched = expectation(for: NSPredicate(format: format), evaluatedWith: element)
-        XCTAssertEqual(XCTWaiter.wait(for: [matched], timeout: 10), .completed, message)
+        let predicate = NSPredicate(format: format)
+        waitUntil(message) { predicate.evaluate(with: element) }
     }
 
     /// Whether `choice` lies whole above Next, where it can be activated.
@@ -116,15 +116,15 @@ final class HomeRestBoardTests: XCTestCase {
     private func choose(_ identifier: String, label: String?, in app: XCUIApplication, context: String) throws {
         app.buttons["Settings"].tap()
         let backToTalking = app.buttons["backToTalking"]
-        XCTAssertTrue(backToTalking.waitForExistence(timeout: 10), "Settings did not open (\(context))")
+        waitToAppear(backToTalking, "Settings did not open (\(context))")
         for (row, title) in [("familySetup", "Family Setup"), ("guidedSetup", "Step 1 of 6"), ("guidedSetupNext", "Step 2 of 6")] {
             let control = app.buttons[row].firstMatch
-            XCTAssertTrue(control.waitForExistence(timeout: 10), "\(row) is missing (\(context))")
+            waitToAppear(control, "\(row) is missing (\(context))")
             control.tap()
-            XCTAssertTrue(app.navigationBars[title].waitForExistence(timeout: 10), "\(title) did not open (\(context))")
+            waitToAppear(app.navigationBars[title], "\(title) did not open (\(context))")
         }
-        XCTAssertTrue(
-            app.staticTexts[Self.question].waitForExistence(timeout: 10),
+        waitToAppear(
+            app.staticTexts[Self.question],
             "the second step does not ask which phrases Home shows (\(context))"
         )
         var choices = app.buttons.matching(identifier: identifier)
@@ -132,7 +132,7 @@ final class HomeRestBoardTests: XCTestCase {
             choices = choices.matching(NSPredicate(format: "label == %@", label))
         }
         let choice = choices.firstMatch
-        XCTAssertTrue(choice.waitForExistence(timeout: 10), "the second step shows no \(label ?? identifier) (\(context))")
+        waitToAppear(choice, "the second step shows no \(label ?? identifier) (\(context))")
         let everyCategory = app.buttons["restBoardEveryCategory"]
         XCTAssertTrue(
             isAboveNext(everyCategory, in: app),

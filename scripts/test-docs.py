@@ -29,6 +29,13 @@ It also checks the start of AGENTS.md. Codex reads only its first 32 KiB by
 default, so the sections listed in CODEX_MUST_READ must open the file, in
 that order, after an introduction that names project_doc_max_bytes, and
 end within that limit; and the whole file must fit within it too.
+
+It also checks docs/DECISIONS-INDEX.md, which AGENTS.md sends every agent
+to before it decides anything: each ## and ### decision in
+docs/DECISIONS.md has exactly one line, every line and every see "Title"
+names a decision that exists, the file stays within DECISION_INDEX_LIMIT,
+and AGENTS.md's opening and start of a session send every agent to it
+within the bytes every agent reads.
 """
 from functools import cache
 from pathlib import Path
@@ -642,6 +649,85 @@ def whole_file_problems(data, limit=CODEX_READ_LIMIT):
                 f'Codex reads")']
     return []
 
+
+# docs/DECISIONS-INDEX.md has one line per decision, and AGENTS.md sends
+# every agent to it before deciding anything (docs/DECISIONS.md, "A one-line
+# index of every decision").
+DECISION_INDEX = 'docs/DECISIONS-INDEX.md'
+DECISION_INDEX_LIMIT = 15 * 1024
+# Antigravity reads only the first 24,000 bytes of AGENTS.md.
+AGENTS_FIRST_READ = 24000
+LIST_ITEM = re.compile(r'[ \t]*(?:[-*+]|\d+[.)])[ \t]')
+INDEX_LINE = re.compile(r'- "(?P<title>[^"\n]+)": \S')
+SEE = re.compile(r'\bsee "(?P<title>[^"\n]+)"', re.IGNORECASE)
+INDEX_REASON = '(docs/DECISIONS.md, "A one-line index of every decision")'
+
+
+def decision_index_problems(decisions, index, limit=DECISION_INDEX_LIMIT):
+    """Every ## and ### decision in docs/DECISIONS.md has exactly one line in
+    the index, as - "Title": what it chose; every line and every see "Title"
+    names a decision that exists; and the index stays short enough to read
+    before every decision."""
+    titles = {normalize(title): title
+              for level, title, _ in headings(decisions) if level in (2, 3)}
+    problems, lines = [], {}
+    for line in index.splitlines():
+        if not LIST_ITEM.match(line):
+            continue
+        match = INDEX_LINE.match(line)
+        if not match:
+            problems.append(f'{DECISION_INDEX}: "{line.strip()}" is not a decision line. Write '
+                            f'it as - "Title": what was chosen, over what, and why {INDEX_REASON}')
+            continue
+        key = normalize(match['title'])
+        if key not in titles:
+            problems.append(f'{DECISION_INDEX}: "{match["title"]}" is not a decision in '
+                            f'docs/DECISIONS.md. Use its heading as it is now, or remove the '
+                            f'line if the decision went {INDEX_REASON}')
+        elif key in lines:
+            problems.append(f'{DECISION_INDEX}: "{match["title"]}" has two lines; keep one '
+                            f'{INDEX_REASON}')
+        lines[key] = match['title']
+    for key, title in titles.items():
+        if key not in lines:
+            problems.append(f'{DECISION_INDEX}: the decision "{title}" has no line. Add - '
+                            f'"{title}": what it chose, over what, and why, in the change that '
+                            f'adds the decision {INDEX_REASON}')
+    for see in SEE.finditer(index):
+        if normalize(see['title']) not in titles:
+            problems.append(f'{DECISION_INDEX}: see "{see["title"]}" names no decision in '
+                            f'docs/DECISIONS.md; point to the one that replaced it '
+                            f'{INDEX_REASON}')
+    size = len(index.encode())
+    if size > limit:
+        problems.append(f'{DECISION_INDEX} is {size} bytes, past its {limit}-byte limit; agents '
+                        f'read it before deciding anything. Shorten lines, never drop one '
+                        f'{INDEX_REASON}')
+    return problems
+
+
+START_OF_SESSION = re.compile(r'^- Start each session with.*?(?=^- |^#|\Z)', re.M | re.S)
+
+
+def agents_md_index_problems(agents):
+    """AGENTS.md's opening sends every agent to the index before it decides
+    anything, and *Workflow rules* starts each session with the index
+    groups the work touches, both within the first AGENTS_FIRST_READ bytes,
+    which is all Antigravity reads. A bare mention of the path elsewhere
+    does not count."""
+    text = agents.encode()[:AGENTS_FIRST_READ].decode(errors='ignore')
+    opening = ' '.join(text.split('\n## ', 1)[0].split())
+    problems = []
+    if not re.search(rf'Before deciding anything, read [^.]*`{re.escape(DECISION_INDEX)}`', opening):
+        problems.append(f'AGENTS.md: its opening no longer says "Before deciding anything, read" '
+                        f'the groups of `{DECISION_INDEX}` the work touches, within its first '
+                        f'{AGENTS_FIRST_READ} bytes {INDEX_REASON}')
+    start = START_OF_SESSION.search(text)
+    if not start or 'the index groups your work touches' not in ' '.join(start[0].split()):
+        problems.append(f'AGENTS.md: *Workflow rules* no longer starts each session with "the '
+                        f'index groups your work touches", within its first {AGENTS_FIRST_READ} '
+                        f'bytes {INDEX_REASON}')
+    return problems
 
 class CheckerTests(unittest.TestCase):
     """The checks themselves must catch what they claim to catch."""
@@ -1257,6 +1343,96 @@ class DocumentTests(unittest.TestCase):
         unused = sorted((EXTERNAL | QUOTATIONS) - used)
         self.assertEqual(unused, [], 'nothing cites these EXTERNAL or QUOTATIONS entries')
 
+
+class DecisionIndexTests(unittest.TestCase):
+    """A decision with no index line, or a line for a decision that is gone,
+    must fail (docs/DECISIONS.md, "A one-line index of every decision")."""
+
+    DECISIONS = ('# Decisions\n\nIntro.\n\n## Orientations\n\nText.\n\n'
+                 '### The fold\n\nText.\n\n## Old layout\n\n*History.*\n')
+    INDEX = ('# Decision index\n\nIntro.\n\n## Devices\n'
+             '- "Orientations": Chose portrait over all four, because of X.\n'
+             '- "The fold": Owner\'s call. A wider gap at the fold.\n'
+             '- "Old layout": History; see "Orientations".\n')
+
+    def assertProblem(self, problems, words, note=None):
+        """Exactly one problem, and it is the expected one, so a test cannot
+        pass on some other problem its edit happens to cause."""
+        self.assertEqual(len(problems), 1, note or problems)
+        self.assertIn(words, problems[0], note)
+
+    def test_a_complete_index_passes(self):
+        self.assertEqual(decision_index_problems(self.DECISIONS, self.INDEX), [])
+
+    def test_a_decision_with_no_line_fails(self):
+        for title in ['Orientations', 'The fold']:
+            index = re.sub(rf'^- "{title}":.*\n', '', self.INDEX, flags=re.M)
+            index = index.replace(f'see "{title}"', 'see "The fold"')
+            self.assertProblem(decision_index_problems(self.DECISIONS, index),
+                               f'the decision "{title}" has no line', title)
+
+    def test_a_line_for_a_decision_that_is_gone_fails(self):
+        index = self.INDEX + '- "Renamed away": Chose A over B, because C.\n'
+        self.assertProblem(decision_index_problems(self.DECISIONS, index),
+                           '"Renamed away" is not a decision in docs/DECISIONS.md')
+
+    def test_a_decision_with_two_lines_fails(self):
+        index = self.INDEX + '- "orientations.": Chose A over B, because C.\n'
+        self.assertProblem(decision_index_problems(self.DECISIONS, index),
+                           '"orientations." has two lines')
+
+    def test_a_list_item_not_in_the_line_form_fails(self):
+        for line in ['- Orientations: no quote marks.\n', '* "Orientations": wrong bullet.\n',
+                     '- "Orientations" with no colon.\n']:
+            index = self.INDEX + line
+            self.assertProblem(decision_index_problems(self.DECISIONS, index),
+                               f'"{line.strip()}" is not a decision line', line)
+
+    def test_a_pointer_to_a_decision_that_is_gone_fails(self):
+        for pointer in ['see', 'See', 'SEE']:
+            index = self.INDEX.replace('see "Orientations"', f'{pointer} "Home version 0"')
+            self.assertProblem(decision_index_problems(self.DECISIONS, index),
+                               'see "Home version 0" names no decision', pointer)
+
+    def test_an_index_past_its_limit_fails(self):
+        size = len(self.INDEX.encode())
+        self.assertEqual(decision_index_problems(self.DECISIONS, self.INDEX, limit=size), [])
+        self.assertProblem(decision_index_problems(self.DECISIONS, self.INDEX, limit=size - 1),
+                           f'is {size} bytes, past its {size - 1}-byte limit')
+
+    def test_titles_in_code_are_not_decisions(self):
+        decisions = self.DECISIONS + '\n```\n## Not a decision\n```\n'
+        self.assertEqual(decision_index_problems(decisions, self.INDEX), [])
+
+    def test_the_repositorys_index_matches_its_decisions(self):
+        problems = decision_index_problems((ROOT / 'docs/DECISIONS.md').read_text(),
+                                           (ROOT / DECISION_INDEX).read_text())
+        self.assertEqual(problems, [], '\n' + '\n'.join(problems))
+
+    AGENTS = ('# Briefing\n\nIntro. Before deciding anything, read the groups of\n'
+              '`docs/DECISIONS-INDEX.md` (one line per decision) your work touches.\n\n'
+              '## Workflow rules\n\n- Record decisions, each with its line in\n'
+              '  `docs/DECISIONS-INDEX.md`.\n- Start each session with `git status`, then read\n'
+              '  the index groups your work touches with their entries.\n- Next.\n')
+
+    def test_agents_md_sends_every_agent_to_the_index(self):
+        self.assertEqual(agents_md_index_problems(self.AGENTS), [])
+        # Claude Code reads AGENTS.md through CLAUDE.md, Codex reads it
+        # directly, and Antigravity reads only its first AGENTS_FIRST_READ bytes.
+        problems = agents_md_index_problems((ROOT / 'AGENTS.md').read_text())
+        self.assertEqual(problems, [], '\n' + '\n'.join(problems))
+
+    def test_agents_md_without_the_opening_directive_fails(self):
+        # The later "each with its line" mention must not keep this passing.
+        agents = self.AGENTS.replace('Before deciding anything, read', 'Agents may read')
+        self.assertProblem(agents_md_index_problems(agents), 'its opening no longer says')
+
+    def test_agents_md_without_the_start_of_session_step_fails(self):
+        for agents in [self.AGENTS.replace('the index groups your work touches', 'the decisions'),
+                       self.AGENTS.replace('## Workflow rules\n', '## Workflow rules\n\n'
+                                           + 'x' * AGENTS_FIRST_READ + '\n')]:
+            self.assertProblem(agents_md_index_problems(agents),
+                               'no longer starts each session')
 
 class IssueFormTests(unittest.TestCase):
     """Dropping the privacy warning, or allowing blank issues, must fail."""

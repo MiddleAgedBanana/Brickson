@@ -131,29 +131,35 @@ typing, and every word of the message and of Settings' name
 
 With Eye Tracking's sizes asked for, as they are until anyone answers
 (measured by `ProfileChoiceTests.theWindowsPeopleUseTakeTheSizesTheTableSays`,
-the same with Bold Text off and on but for the iPad mini in portrait):
+the same with Bold Text off and on but for the 744×1133 iPad mini in
+portrait):
 
 | Window | Default | xxxLarge | AX1 | AX3 | AX5 |
 |---|---|---|---|---|---|
-| Every phone tested (iPhone 17, 17 Pro Max, 16e, 375×667, 320×568) | Touch | Touch | Touch | Touch | Touch |
-| 13-inch iPad, portrait and landscape | Eye | Eye | Eye | Eye | Eye |
-| 11-inch iPad and iPad mini, portrait | Eye | Eye | Eye | Eye | Eye |
-| iPad mini, portrait, Bold Text | Head | Head | Head | Head | Head |
+| Every phone tested (iPhone 17, 17 Pro Max, 16e, Air, 375×667, 320×568) | Touch | Touch | Touch | Touch | Touch |
+| 13-inch iPad and 13-inch iPad Air, portrait and landscape | Eye | Eye | Eye | Eye | Eye |
+| 11-inch iPad, 820×1180 iPad and both iPad minis, portrait | Eye | Eye | Eye | Eye | Eye |
+| iPad mini (744×1133), portrait, Bold Text | Head | Head | Head | Head | Head |
 | 11-inch iPad, landscape | Head | Head | Head | Head | Touch |
+| 820×1180 iPad, landscape | Touch | Touch | Touch | Touch | Head |
 | 13-inch iPad, landscape, zoomed (1032×774) | Touch | Touch | Touch | Head | Touch |
-| iPad mini, landscape | Touch | Touch | Touch | Touch | Touch |
+| Both iPad minis, landscape | Touch | Touch | Touch | Touch | Touch |
 
 No phone holds even head tracking's sizes: the starter library is 84 to
 635 points short there (the iPhone 17 Pro Max least, a zoomed 375×667
 phone most), and 304 to 871 at Eye Tracking's. On the iPad mini in
-landscape head tracking's are 30 to 58 points short. On the 11-inch
+landscape head tracking's are 30 to 58 points short, and 18 to 46 on the
+iPad mini (A20 Pro). On the 820×1180 iPad in landscape head tracking's
+hold at every size but leave no room for typing until touch's leave none
+either, at AX5. On the 11-inch
 iPad in landscape at AX5, head tracking's hold but leave the safety row
 too tall for the keyboard's room, so typing would be lost; touch's keep
 it. With head tracking's or Switch Control's asked for, each window
 takes the table's sizes, capped at those. With Bold Text on the iPad
 mini in portrait, Eye Tracking's 15-point gap leaves five columns of
 130.4 points where the widest bold word needs 132, so head tracking's
-are taken.
+are taken. The iPad mini (A20 Pro)'s window, 12 points wider, leaves
+columns of 132.8 and keeps Eye Tracking's.
 
 ### Home
 
