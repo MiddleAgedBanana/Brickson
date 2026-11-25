@@ -6,20 +6,22 @@ edits this page in place and writes its record in [`docs/log/`](log/README.md);
 nothing is appended here. Plan: [`docs/ROADMAP.md`](ROADMAP.md). How the
 project runs: [`docs/SDLC.md`](SDLC.md).
 
-**State as of 2026-11-24: `main` is at `23fcd3a`, pull request #120,
-four more windows for Home's layout tests, merged 2026-11-23, after #132,
-running the simulator's start in the background so GitHub's agent keeps
-in touch
-([`log/2026-11-22-simulator-start-in-the-background.md`](log/2026-11-22-simulator-start-in-the-background.md)),
-the same day.** Since 2026-11-20, #109 (the agent bridge), #122 (UI test
-waits), #123 (a phrase the speech service never begins), #124, #127,
-#128 and #129 (the speech service's pause and carry-on reports), #130 (a
-design review sheet) and #131 (what GitHub's agent logged when a Mac job
-is cancelled) have merged too, and #108, #109's draft twin, was closed.
-Open pull requests: #115, the record of the simulator experiments; #133,
-a tap lost while Settings resets when idle; and the one adding
-`docs/DECISIONS-INDEX.md`, one line per decision, which `AGENTS.md` sends
-every agent to before it decides anything
+**State as of 2026-11-25: `main` is at `60bd9a2`, pull request #133,
+making Settings reset only after use
+([`log/2026-11-22-settings-reset-only-after-use.md`](log/2026-11-22-settings-reset-only-after-use.md)),
+merged 2026-11-25, after #120 (four more windows for Home's layout tests)
+and #132 (running the simulator's start in the background so GitHub's
+agent keeps in touch,
+[`log/2026-11-22-simulator-start-in-the-background.md`](log/2026-11-22-simulator-start-in-the-background.md))
+on 2026-11-23.** Since 2026-11-20, #109 (the agent bridge), #122 (UI
+test waits), #123 (a phrase the speech service never begins), #124,
+#127, #128 and #129 (the speech service's pause and carry-on reports),
+#130 (a design review sheet) and #131 (what GitHub's agent logged when a
+Mac job is cancelled) have merged too, and #108, #109's draft twin, was
+closed. Open pull requests: #115, the record of the simulator
+experiments; and the one adding `docs/DECISIONS-INDEX.md`, one line per
+decision, which `AGENTS.md` sends every agent to before it decides
+anything
 ([`log/2026-11-24-decision-index.md`](log/2026-11-24-decision-index.md)).
 Device checks wait for the Team ID (*Next steps, in order*, step 4).
 
@@ -925,20 +927,36 @@ release in docs/ROADMAP.md when no thread has it yet.
   bundles. *(closed 2026-11-17; the next thread whose CI shows it reopens
   it)*
 - `SettingsTests.testAnIdleSettingsReturnsToItsFirstScreenAndStaysOpen`
-  has failed once each on 2026-10-22, 2026-11-08, 2026-11-12 and
-  2026-11-17 (on `main`), on commits that did not touch it, and passed
-  on each re-run: Family Setup did not open, or its tap found no hit
-  point. The 2026-11-12 failure came 38 minutes into its job, on a
-  settled Mac (a load of 26), so the simulator's busy start
-  (docs/DECISIONS.md, "Tests", 2026-11-19) is not its cause; the
-  2026-11-17 one came ten minutes in, at a load of about 510. The 2026-11-12
-  recording stays on Settings' first screen throughout. A likely cause,
-  not proven: under `--short-timeouts` Settings' idle limit is 3
-  seconds, an untouched Settings resets every 3 seconds, and each reset
-  changes the navigation stack's identity (`.id(activity.resetCount)`)
-  even on its first screen, so a tap can land on a rebuild
-  ([`log/2026-11-12-ci-claims-narrowed.md`](log/2026-11-12-ci-claims-narrowed.md)).
-  *(a Settings thread, in its own pull request)*
+  failed now and then with "Family Setup did not open" (or its tap found
+  no hit point) on commits that did not touch it: 2026-10-22,
+  2026-11-08, 2026-11-12 (38 minutes into its job, at a load of 26),
+  2026-11-17 (at a load of about 510), 2026-11-21 (run 44902798573,
+  after the settle wait, at a load of about 125) and 2026-11-23 on
+  `main` (run 45119137212), so the machine's load did not explain it.
+  The cause, shown on the 2026-11-21 and 2026-11-23 runs and consistent
+  with the four before them as recorded, was in the app, not the test
+  (this closes kind H in
+  [`log/2026-11-19-ui-tests-wait-for-a-settled-mac.md`](log/2026-11-19-ui-tests-wait-for-a-settled-mac.md)):
+  an untouched Settings
+  rebuilt every screen at each idle limit (`.id(activity.resetCount)`),
+  for as long as it stayed open, and a tap whose touch spanned a rebuild
+  was never delivered. On CI on 2026-11-21 the tap began about 0.18 s
+  before the 3-second redraw; on 2026-11-23 each of XCTest's three tries
+  began its search for the row before a redraw and was refused after it
+  for want of a hit point, the row it had found having been replaced. On the owner's Mac, 2 of 60 taps swept across the first reset
+  were lost, then 10 of 40 aimed at it, and the app's own log showed no
+  attempt to open Family Setup in any lost one. At the real 90-second
+  limit the window was narrower but the same: an activation on Family
+  Setup at that instant did nothing. Settings now resets only after use
+  (docs/DECISIONS.md, "Settings resets when idle and never closes",
+  2026-11-22), and with it 0 of 40 aimed taps were lost
+  ([`log/2026-11-22-settings-reset-only-after-use.md`](log/2026-11-22-settings-reset-only-after-use.md)).
+  `HomeSizesTests`' failure on #130's first push, at Set Up Step by
+  Step, had another cause: Family Setup did open, then XCTest's looks at
+  the app took about 31 s each on a stalled machine (before the settle
+  wait), and Settings' real 90-second reset returned it to its first
+  screen before the tap. *(closed 2026-11-22; the next thread whose CI
+  shows it reopens it)*
 - At least twenty CI jobs from 2026-11-13 to 2026-11-22, twelve "Unit
   tests" and eight iPad UI jobs, never an iPhone one, were cancelled by
   nobody: only "The operation was canceled." in the log, no new push, far

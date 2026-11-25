@@ -95,7 +95,7 @@ What each decision in docs/DECISIONS.md chose, over what, and why. Before decidi
 - "Settings' first row, placed from Home's frames": So a held look from Home meets a row that only navigates.
 - "The first step's own rows": Learn About Each Way sits in the frame just activated; answers start below where a look rests.
 - "Speed is a set of fixed choices": Chose seven fixed speeds over Slower and Faster buttons a held look could walk.
-- "Settings resets when idle and never closes": After 90 idle seconds it returns to its root and stays open.
+- "Settings resets when idle and never closes": Only after use: it returns to its root once, 90 seconds after its last use, and stays open.
 - "Setup answers are kept as offered, never as completed": Each answer is kept when chosen; an unreadable record is moved aside, not deleted.
 - "Check-ins come every three months": A passive card in Family Setup, never on Home; answered words take its place.
 

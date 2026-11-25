@@ -16,7 +16,7 @@ one-line index of every decision").
 - `docs/DECISIONS-INDEX.md` holds one line per `##` and `###` entry of
   docs/DECISIONS.md, in 19 groups by subject, each naming the entry's
   exact title and what it chose, over what and why. Entries the layout
-  engine replaced say so and point to it. 13,964 bytes, under a 15 KiB
+  engine replaced say so and point to it. 13,995 bytes, under a 15 KiB
   limit.
 - `AGENTS.md`, which every agent reads at the start of every session,
   points to it twice. Its opening says to read the groups the work
@@ -86,9 +86,14 @@ remove each.
   the pointers in `AGENTS.md`, the decision renamed "A one-line index of
   every decision", and this record, docs/DECISIONS.md and
   docs/HANDOFF.md brought up to date.
-- The commit that adds this line: the second review's finding,
-  `agents_md_index_problems` and its tests, and the counts here, in
-  docs/DECISIONS.md and in docs/HANDOFF.md.
+- `ed5c95d`: the second review's finding, `agents_md_index_problems`
+  and its tests, and the counts here, in docs/DECISIONS.md and in
+  docs/HANDOFF.md.
+- The merge commit that adds this line: `main` at `60bd9a2`, after pull
+  request #133 merged. Its new paragraph in "Settings resets when idle
+  and never closes" (it resets only after use) changes that decision, so
+  its index line now says so; the state line of docs/HANDOFF.md, which
+  both sides rewrote, now names #133 as merged.
 
 ## Verified
 

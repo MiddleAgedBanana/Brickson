@@ -15,8 +15,15 @@ final class SettingsActivity {
         clock = SettingsIdleClock(limit: limit, startedAt: .now)
     }
 
+    /// A control was used, a screen opened or closed, or a screen scrolled.
     func recordActivity() {
         clock.recordActivity(at: .now)
+    }
+
+    /// Brickson became active again: the full wait starts again, and
+    /// nothing in Settings changed.
+    func restartWait() {
+        clock.restartWait(at: .now)
     }
 
     func setHold(_ hold: SettingsIdleHold, _ isHeld: Bool) {
@@ -73,12 +80,36 @@ private struct SettingsScrollActivityModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .onScrollPhaseChange { _, phase in
-                activity?.recordActivity()
-                activity?.setHold(.scrolling(id), phase != .idle)
+            .onScrollPhaseChange { old, phase in
+                if SettingsScrollUse.counts(from: old, to: phase) {
+                    activity?.recordActivity()
+                }
+                // Held from the first touch, so a reset never lands under a
+                // finger; a hold that ends restarts the wait without being
+                // use.
+                activity?.setHold(.scrolling(id), phase.isScrolling)
             }
             .onDisappear {
                 activity?.setHold(.scrolling(id), false)
             }
+    }
+}
+
+/// Which scroll phase changes count as use (`recordsSettingsScrolling()`):
+/// those where the screen's content moves. A scroll view that appears
+/// reports a change from idle to idle, which is not a scroll: counted, it
+/// made every screen that appeared look used, the first screen rebuilt by a
+/// reset among them. A touch that rests without moving the list (tracking)
+/// is not one either; it holds the reset while it lasts.
+nonisolated enum SettingsScrollUse {
+    static func counts(from old: ScrollPhase, to new: ScrollPhase) -> Bool {
+        moves(old) || moves(new)
+    }
+
+    private static func moves(_ phase: ScrollPhase) -> Bool {
+        switch phase {
+        case .interacting, .decelerating, .animating: true
+        case .idle, .tracking: false
+        }
     }
 }
