@@ -270,10 +270,10 @@ session does next*, below, has the commands.
   Nothing reported: assistive technologies see a dimmed button as a
   normal one, and A-1's result must be read in that light.
 - **Found, 2026-11-15.** A dimmed Button is reported as a button that is
-  not enabled by AXe, the UI test's tree and VoiceOver ("dimmed").
-  `accessibilityHidden(true)` hides a button from VoiceOver but not from
-  either automation tree; the responds-to-interaction modifiers show no
-  difference in any tool.
+  not enabled by AXe, the UI test's tree and VoiceOver's test service in
+  the Simulator ("dimmed"). `accessibilityHidden(true)` kept a button
+  out of the test service's walk but not out of either automation tree;
+  the responds-to-interaction modifiers show no difference in any tool.
   ([record](log/2026-11-15-experiments-simulator.md))
 
 ### SIM-6. The speaking indicator and Reduce Motion — D-07
@@ -409,13 +409,15 @@ session does next*, below, has the commands.
   reachability claims then need a device check (AGENTS.md, *Workflow
   rules*).
 - **Found, 2026-11-15.** AXe and the UI test agree on elements, order
-  and frames. On the probe, VoiceOver skips an `accessibilityHidden`
-  button both trees list, and `accessibilitySortPriority` on two
-  side-by-side regions changed VoiceOver's order but not the trees' or
-  Full Keyboard Access's. On Brickson's Home the tree and VoiceOver both
-  follow its sort priority; Full Keyboard Access on Home was not
-  measured (DEV-9). On iPad VoiceOver also reaches the window's resize
-  handle; `XCUIDevice.voiceOverService` runs in the Simulator.
+  and frames. In the Simulator, VoiceOver's test service
+  (`voiceOverService`) runs; on the probe its walk skipped an
+  `accessibilityHidden` button both trees list, and
+  `accessibilitySortPriority` on two side-by-side regions changed the
+  walk's order but not the trees' or Full Keyboard Access's. On
+  Brickson's Home the tree and the walk both follow its sort priority;
+  Full Keyboard Access on Home was not measured (DEV-9). On iPad the
+  walk also reached the window's resize handle. How VoiceOver moves on a
+  device stays with DEV-10.
   ([record](log/2026-11-15-experiments-simulator.md))
 
 ### SIM-12. Window sizes and safe areas — B2-U4, B2-U6

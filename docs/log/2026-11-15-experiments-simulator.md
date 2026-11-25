@@ -89,13 +89,13 @@ was checked against it, and each finding below stands as measured on
 | SIM-2 | D-01 | Yes, answered: `.extraLarge` equals `.large` (54 points at the default text size; 96 at AX5) |
 | SIM-3 | D-24 | Yes, answered: glass takes border shapes; segmented pickers stop at 48 points and ignore Dynamic Type |
 | SIM-4 | D-22 | Yes, answered: Brickson's library has no sheets to compare |
-| SIM-5 | A-1a, A3-U8 (Simulator part) | Yes, answered: a dimmed Button is reported "not enabled" ("dimmed" in VoiceOver). This is not A-1 |
+| SIM-5 | A-1a, A3-U8 (Simulator part) | Yes, answered: a dimmed Button is reported "not enabled" ("dimmed" in VoiceOver's test service). This is not A-1 |
 | SIM-6 | D-07 | Yes, answered for the Simulator: all three effects keep moving with Reduce Motion on |
 | SIM-7 | D-14 | Could not test: Smart Invert does not show in Simulator screenshots |
 | SIM-8 | D-17 | Partly: the bar's words stay above 10:1 over scrolled rows; the rows' own words under the bar not measured |
 | SIM-9 | D-20 | Partly: Home's fills keep their contrast in an inactive window; system styles not run |
 | SIM-10 | D-21, D-02, A-33 (A4-U17, L1-U22) | Yes, answered, with one defect in the app as it was: the accent under Increase Contrast in dark (3.95:1), fixed since by #116 |
-| SIM-11 | A-45 (B3-U8), A2-U13, A3-U17 | Mostly: three differences on the probe; on Home the tree and VoiceOver agree; Full Keyboard Access on Home not measured |
+| SIM-11 | A-45 (B3-U8), A2-U13, A3-U17 | Mostly: three differences on the probe; on Home the tree and VoiceOver's test service agree; Full Keyboard Access on Home not measured |
 | SIM-12 | B2-U4, B2-U6 | Mostly: all windows and insets; corner radius has no public API; no iOS 26 runtime |
 | SIM-13 | B1-U10, B2-U10, L1-U4 | Yes, answered (the haptics value itself needs devices) |
 | SIM-14 | G-40; G-30, D-25 (Simulator part) | G-40 partly: no free place outside Home's slots (non-control slots not scored); G-30 and D-25 could not test |
@@ -473,26 +473,29 @@ was checked against it, and each finding below stands as measured on
   `accessibilitySortPriority` on its regions and on controls inside them
   (`HomeView`, `HomeRegion`), so the probe's result was checked on Home
   itself: iPhone, starter library, a temporary UI test (never
-  committed) listing Home's buttons from XCTest's tree, and a VoiceOver
-  walk. The tree lists Yes, No, Emergency, Get Attention, Again,
+  committed) listing Home's buttons from XCTest's tree, and a walk with
+  VoiceOver's test service (`voiceOverService`). The tree lists Yes, No, Emergency, Get Attention, Again,
   Phrases, Type, the categories, Settings, then the tiles, which is
   Home's sort order, not the order its regions are declared in or sit
-  on screen; VoiceOver walked the same order, with the message's words
-  between Again and Phrases. Full Keyboard Access on Home could not be
+  on screen; the test service's walk took the same order, with the
+  message's words between Again and Phrases. Full Keyboard Access on Home could not be
   measured: after the iPhone simulator had been restarted, Tab presses
   sent through AXe no longer moved focus on Home or on the probe, where
   they had worked before (a tool or Simulator problem, not Brickson's).
-- **Answer.** Same elements, with three differences on the probe: a
-  button hidden with `accessibilityHidden(true)` is in both trees but
-  VoiceOver skips it (SIM-5); with the probe's two side-by-side regions,
-  `accessibilitySortPriority` changed VoiceOver's order but neither the
-  trees' order nor Full Keyboard Access's; and on iPad VoiceOver reaches
+- **Answer.** Same elements, with three differences on the probe, all
+  seen through VoiceOver's test service in the Simulator: a button
+  hidden with `accessibilityHidden(true)` is in both trees but the
+  walk skipped it (SIM-5); with the probe's two side-by-side regions,
+  `accessibilitySortPriority` changed the walk's order but neither the
+  trees' order nor Full Keyboard Access's; and on iPad the walk reached
   the system's window handle. On Brickson's Home, though, the tree and
-  VoiceOver both follow the sort priority; what makes Home differ from
-  the probe was not established.
+  the walk both follow the sort priority; what makes Home differ from
+  the probe was not established. How VoiceOver itself moves on a device
+  is DEV-10's to say.
 - **What it means.** For Home as it is, the order
-  `HomeAccessibilityOrderTests` reads is the order VoiceOver took in the
-  Simulator. Whether Full Keyboard Access follows it on Home is
+  `HomeAccessibilityOrderTests` reads is the order the Simulator's
+  VoiceOver test service took; a device check (DEV-10) still has to
+  show that VoiceOver on a device moves the same way. Whether Full Keyboard Access follows it on Home is
   unmeasured: if it behaves as it did on the probe, it would ignore the
   sort priority, and Phrases and Type could come before Yes and No; DEV-9
   checks it on a device. A new screen that relies on sort priority needs
@@ -500,11 +503,12 @@ was checked against it, and each finding below stands as measured on
   it. Brickson hides one live control with `accessibilityHidden`: a
   voice row in Voice Settings once its voice is gone, which is also
   see-through, disabled and not hit-testable; a UI test still finds it
-  there, VoiceOver would not (SIM-5). Two more are invisible copies used
+  there, and the Simulator's VoiceOver walk would not (SIM-5). Two more are invisible copies used
   only to size a layout (`FamilySetupView`, `VoiceSettingsView`). Home's empty Stop well is a
   hidden `Color.clear`, not a control, and the trees do not list it.
-  If Brickson ever sets a sort priority, `HomeAccessibilityOrderTests`
-  stops standing for VoiceOver's order. Switch Control's scan is not in
+  If Home's sort priorities change, the tree's order and the walk's
+  need comparing again before `HomeAccessibilityOrderTests` can stand
+  for both. Switch Control's scan is not in
   the Simulator, so whether its groups follow the trees stays DEV-7.
 
 ### SIM-12. Window sizes and safe areas (B2-U4, B2-U6)
