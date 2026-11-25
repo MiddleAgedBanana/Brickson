@@ -10,7 +10,8 @@ come first, and `scripts/test-docs.py` fails if the file grows past
 32 KiB. If your copy of this file ends before *Gotchas*, read the rest
 from the repository (`cat AGENTS.md`) before changing anything. Why each
 rule exists is in docs/DECISIONS.md and docs/LESSONS.md; current state is
-in docs/HANDOFF.md.
+in docs/HANDOFF.md. Before deciding anything, read the groups of
+`docs/DECISIONS-INDEX.md` (one line per decision) your work touches.
 
 ## What this is and what's at stake
 
@@ -337,7 +338,8 @@ path from a real input to the failure.
 - **Document every change** in the same pull request: one new
   `docs/log/` file (template in `docs/log/README.md`); edit untrue lines
   of `docs/HANDOFF.md` in place, never append; record decisions in
-  docs/DECISIONS.md and new rules here; edit `docs/ROADMAP.md` when an
+  docs/DECISIONS.md, each with its line in `docs/DECISIONS-INDEX.md`,
+  and new rules here; edit `docs/ROADMAP.md` when an
   item starts, lands or moves, and `README.md` when setup or behaviour
   changes. Snapshot before removing information from HANDOFF or this file
   (`docs/archive/README.md`). Record reversals and their reasons. Where
@@ -355,10 +357,12 @@ path from a real input to the failure.
   accessibility page, which never says "works with" before a real-device
   check.
 - Start each session with `git status`, `git log --oneline -15` and
-  `git fetch origin`, then read this file, docs/HANDOFF.md,
-  docs/DECISIONS.md and the newest
-  `docs/log/` records from `origin/main` before changing anything. Check
-  your own tools for build, simulator and Mac access.
+  `git fetch origin`, then read this file, docs/HANDOFF.md, the index
+  groups your work touches with their docs/DECISIONS.md entries, and the
+  newest `docs/log/` records from `origin/main` before changing
+  anything. Check your own tools for build, simulator and Mac access.
+  After a summary, re-read your work file, this file and
+  `docs/DECISIONS-INDEX.md` first.
 
 ## Working with the owner
 

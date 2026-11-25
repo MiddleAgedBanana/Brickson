@@ -8043,3 +8043,58 @@ Before: *What this is and what's at stake* was followed by *Where
 things are* and *Build and test*, ahead of the invariants; *Guardrails
 for agents* came between *Workflow rules* and *Working with the owner*;
 and *Gotchas* came last, as now.
+
+## A one-line index of every decision
+
+*2026-11-24. The owner asked on 2026-11-23 never to have to explain the
+reason behind a past decision again, to anyone or to any agent. How this
+works is a default, reversible if the owner objects, and the owner
+decides on the merge
+([`log/2026-11-24-decision-index.md`](log/2026-11-24-decision-index.md)).*
+
+**Decision.** `docs/DECISIONS-INDEX.md` holds one line per decision in
+this file, grouped by subject: the exact title to search for, then what
+it chose, over what, and why, in a sentence. `AGENTS.md`, which every
+agent reads at the start of every session (Claude Code through
+`CLAUDE.md`), sends every agent to it: its opening says to read the
+groups the work touches before deciding anything, and *Workflow rules*
+starts each session with those groups and their full entries here. The
+full entry always wins over its line.
+
+- **Why an index.** This file is over 8,000 lines, too long to read
+  before every change, so jobs acted without the reason behind an
+  earlier choice and the owner was asked to explain it again. A line per
+  decision tells a job which entries to read before it changes
+  something.
+- **Why a pointer, not the index loaded into every session.** The first
+  version of this change loaded the whole index (about 14 KB) into every
+  Claude Code session through a symlink in `.claude/rules/`. Chose a
+  short pointer in `AGENTS.md` instead: whatever loads at the start stays
+  with a job for its whole length, whether or not it decides anything,
+  while a job that decides something still reads the index first; the
+  pointer reaches Codex and Antigravity as well, inside the first 24,000
+  bytes Antigravity reads; and agent instructions stay in `AGENTS.md`,
+  never in an agent-specific file. The index stays under 15 KiB, so it
+  is one quick read.
+- **The start of a session reads the index, not this file whole.**
+  *Workflow rules* told each session to read all of this file, which at
+  over 500 KB no session does; it now names the index groups the work
+  touches and their entries here.
+- **A check keeps it true.** `scripts/test-docs.py`
+  (`decision_index_problems`) fails when a `##` or `###` decision here
+  has no line or two, when a line is malformed or names a title that no
+  longer exists, when a superseded line's `see "Title"`, in either case,
+  names none, or when the index passes 15 KiB (`DECISION_INDEX_LIMIT`);
+  `agents_md_index_problems` fails when, within the first 24,000 bytes of
+  `AGENTS.md`, its opening stops sending agents to the index before they
+  decide or *Workflow rules* stops starting each session with the index
+  groups the work touches. Each test expects its own problem and no other. It runs in CI with the
+  other document checks.
+- **The rule.** Whoever adds or changes a decision adds or changes its
+  line in the same change; after a summary, a job re-reads its work
+  file, `AGENTS.md` and the index first (`AGENTS.md`, *Workflow rules*).
+- **The owner's decision.** `AGENTS.md`, *Tests, workflows and the rules
+  themselves*, leaves a new file that agents and reviewers read, and a
+  change to the rules they follow, to the owner. The index is such a
+  file and the start of a session changed, so the pull request lists
+  both for the owner, and the merge is that decision.
