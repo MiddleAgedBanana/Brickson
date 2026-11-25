@@ -654,7 +654,7 @@ SSML.**
   Stop speaking after about 10 seconds; the log shared with the share
   sheet's Copy and read from the Simulator's clipboard.
 - **Observed.** No utterance ever finished in the Simulator. Speak
-  sentence reported 8 of its 14 words (0, 5, 9, 13, 20, 24, 36 and 55;
+  sentence reported 8 of its 13 words (0, 5, 9, 13, 20, 24, 36 and 55;
   "brown", "jumps", "over", "the" and "dog." were never reported), in
   about 1.4 seconds, then nothing until Stop; the same 8 again on a
   second try. Speak in three parts reported part 1's four words, then
@@ -681,14 +681,31 @@ SSML.**
 
 ## Commits
 
-On `claude/experiments-simulator`, `dc83b2a` to the last commit of
-pull request #115: this record (written step by step as the run went),
-the "Found, 2026-11-15" lines in docs/EXPERIMENTS.md, docs/HANDOFF.md's
-experiments line, and the stills; then a merge of `main` on 2026-11-25
-that dropped the two *Known gaps* items main had made untrue
-(*Overtaken since the run*). Nothing in `Brickson/`, `BricksonProbe/` or
-the tests changed: every temporary test, probe line and scratch file was
-removed before committing.
+On `claude/experiments-simulator`, oldest first:
+
+- `dc83b2a`: this record, with SIM-1, 2, 3, 5 and 11.
+- `60ea1f3`: SIM-4, 6, 12, 13's compile checks and 14.
+- `5345f12`: SIM-7, 8 and 9.
+- `98df3e9`: the "Found, 2026-11-15" lines in docs/EXPERIMENTS.md and
+  docs/HANDOFF.md's experiments line (with two *Known gaps* items, later
+  dropped).
+- `474fe54`: SIM-10 and the confirmation dialog, the stills, and the
+  closing sections.
+- `24a7eae`: claims narrowed to what the measurements carry.
+- `3b2fe03`: SIM-11 checked on Brickson's Home.
+- `4111118`: the first review round (SIM-1 and SIM-8 status, *Verified*,
+  `pointerStyle`).
+- `a2acf7a`: `main` merged; what main fixed since is dropped or marked
+  (*Overtaken since the run*).
+- `3249908`: VoiceOver results named as its test service's; a stale
+  sentence dropped.
+- `0aaf7e1`: `main` merged again, after #135.
+- The commit that adds this list: the third review round (SIM-10's
+  per-style figures, the word count, this list).
+
+Nothing in `Brickson/`, `BricksonProbe/` or the tests changed: every
+temporary test, probe line and scratch file was removed before
+committing.
 
 ## Verified
 

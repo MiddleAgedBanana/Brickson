@@ -373,13 +373,14 @@ session does next*, below, has the commands.
 - **Record.** Each component, appearance and pair, with its ratio.
 - **What it means.** Any pair below its bar that Brickson shows fails
   invariant 6, and is replaced or fixed and pinned in `PaletteTests`.
-- **Found, 2026-11-15.** Apple's `.borderedProminent` and
-  `.glassProminent` with the default tint keep under 4.5:1 for their
-  white words (3.52 light, 3.23 dark, 2.15 dark with Increase Contrast;
-  pressed 2.59 and 2.05), `.bordered` fills stand 1.21 to 1.60:1 from
-  the page, and `.glass` stands 1.3:1 in dark. Brickson's fills held,
-  except one defect in the app as it was: with Increase Contrast in
-  dark, `Color.accentColor` was drawn #1A7BFF and the white words on
+- **Found, 2026-11-15.** Apple's `.borderedProminent` with the default
+  tint keeps under 4.5:1 for its white words (3.52 light, 3.23 dark,
+  2.15 dark with Increase Contrast; pressed 2.59 and 2.05), and
+  `.glassProminent` too (3.57 light, 3.23 dark; not measured with
+  Increase Contrast or pressed); `.bordered` fills stand 1.21 to 1.60:1
+  from the page, and `.glass` stands 1.3:1 in dark. Brickson's fills
+  held, except one defect in the app as it was: with Increase Contrast
+  in dark, `Color.accentColor` was drawn #1A7BFF and the white words on
   phrase tiles, the selected category and Back to Talking were 3.95:1
   (fixed since by pull request #116, which draws every fill from its
   colour set). The Simulator offers no Clear or Tinted Liquid Glass;
