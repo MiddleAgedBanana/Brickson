@@ -8173,17 +8173,25 @@ the groups its work touches in both files.
 - **Why beside the index, not in `docs/archive/`.** `.coderabbit.yaml`,
   `.greptile/config.json` and `cubic.yaml` skip `docs/archive/`, and the
   archived lines still bind: a reviewer should see a change to them.
-- **No archive yet.** With this decision's line the index is 14,189 of
+- **No archive yet.** With this decision's line the index is 14,234 of
   15,360 bytes, room for about ten more lines, so the first change that
   needs the archive creates it, with the index's pointer in the same
   commit.
 - **A check keeps it true.** `decision_index_problems` in
   `scripts/test-docs.py` reads both files: each decision has exactly one
   line across them, every line and every `see "Title"` in either names a
-  decision that exists, the index names the archive once the archive
-  holds a line, and only the index counts against the limit. When the
-  index passes it, the failure says to move the oldest lines to the
-  archive and never to drop a line or raise the limit.
-- **`AGENTS.md` is unchanged.** It is within a few bytes of its 32 KiB
-  limit, and the index's opening is where an agent reading the index
-  learns of the archive.
+  decision that exists, the index's opening names the archive once the
+  archive holds a line, the archive holds a line that is not superseded
+  only once no superseded line is left in the index, and only the index
+  counts against the limit. When the index passes it, the failure says
+  to move superseded lines, then the oldest, to the archive, and never
+  to drop a line or raise the limit.
+- **What the check does not judge.** It cannot tell which lines are the
+  oldest, because an index line carries no date, so the order after the
+  superseded lines rests on the person making the change and on review.
+  Nor does it check that a moved line sits under the group it left: a
+  line's former group cannot be read from the text, and a group can
+  empty out in the index while it fills in the archive.
+- **The archive needs no change to `AGENTS.md`.** That file is within a
+  few bytes of its 32 KiB limit, and the index's opening is where an
+  agent reading the index learns of the archive.

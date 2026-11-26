@@ -661,6 +661,8 @@ DECISION_INDEX_LIMIT = 15 * 1024
 AGENTS_FIRST_READ = 24000
 LIST_ITEM = re.compile(r'[ \t]*(?:[-*+]|\d+[.)])[ \t]')
 INDEX_LINE = re.compile(r'- "(?P<title>[^"\n]+)": \S')
+# A superseded decision's line says only where its rule went.
+SUPERSEDED = re.compile(r'- "[^"\n]+": History; see ')
 SEE = re.compile(r'\bsee "(?P<title>[^"\n]+)"', re.IGNORECASE)
 INDEX_REASON = '(docs/DECISIONS.md, "A one-line index of every decision")'
 # Lines past the limit move here, superseded lines first, then the oldest
@@ -672,12 +674,15 @@ ARCHIVE_REASON = '(docs/DECISIONS.md, "When the index reaches its limit")'
 def decision_index_problems(decisions, index, limit=DECISION_INDEX_LIMIT, archive=''):
     """Every ## and ### decision in docs/DECISIONS.md has exactly one line,
     as - "Title": what it chose, in the index or in its archive; every line
-    and every see "Title" in either names a decision that exists; the index
-    names its archive once the archive holds a line; and the index alone
-    stays short enough to read before every decision."""
+    and every see "Title" in either names a decision that exists; the
+    index's opening names its archive once the archive holds a line; the
+    archive holds a live line only once no superseded line is left in the
+    index; and the index alone stays short enough to read before every
+    decision."""
     titles = {normalize(title): title
               for level, title, _ in headings(decisions) if level in (2, 3)}
     problems, lines, archived = [], {}, 0
+    live_archived, superseded_left = [], []
     for path, text in ((DECISION_INDEX, index), (DECISION_INDEX_ARCHIVE, archive)):
         for line in text.splitlines():
             if not LIST_ITEM.match(line):
@@ -689,6 +694,10 @@ def decision_index_problems(decisions, index, limit=DECISION_INDEX_LIMIT, archiv
                                 f'{INDEX_REASON}')
                 continue
             archived += path == DECISION_INDEX_ARCHIVE
+            if path == DECISION_INDEX_ARCHIVE and not SUPERSEDED.match(line):
+                live_archived.append(match['title'])
+            if path == DECISION_INDEX and SUPERSEDED.match(line):
+                superseded_left.append(match['title'])
             key = normalize(match['title'])
             if key not in titles:
                 problems.append(f'{path}: "{match["title"]}" is not a decision in '
@@ -708,10 +717,14 @@ def decision_index_problems(decisions, index, limit=DECISION_INDEX_LIMIT, archiv
             problems.append(f'{DECISION_INDEX}: the decision "{title}" has no line. Add - '
                             f'"{title}": what it chose, over what, and why, in the change that '
                             f'adds the decision {INDEX_REASON}')
-    if archived and DECISION_INDEX_ARCHIVE not in index:
+    if archived and DECISION_INDEX_ARCHIVE not in index.split('\n## ', 1)[0]:
         problems.append(f'{DECISION_INDEX} does not name {DECISION_INDEX_ARCHIVE}, which holds '
                         f'{archived} lines; say in its opening that older lines are there '
                         f'{ARCHIVE_REASON}')
+    if live_archived and superseded_left:
+        problems.append(f'{DECISION_INDEX_ARCHIVE} holds "{live_archived[0]}" while '
+                        f'{DECISION_INDEX} still holds the superseded line '
+                        f'"{superseded_left[0]}"; move superseded lines first {ARCHIVE_REASON}')
     size = len(index.encode())
     if size > limit:
         problems.append(f'{DECISION_INDEX} is {size} bytes, past its {limit}-byte limit; agents '
@@ -1421,24 +1434,42 @@ class DecisionIndexTests(unittest.TestCase):
 
     # Lines past the limit move to the archive, never the limit rising
     # (docs/DECISIONS.md, "When the index reaches its limit").
-    MOVED = '- "Orientations": Chose portrait over all four, because of X.\n'
+    MOVED = '- "Old layout": History; see "Orientations".\n'
+    LIVE = '- "Orientations": Chose portrait over all four, because of X.\n'
 
-    def moved(self):
+    def moved(self, line=MOVED):
         """The index with one line moved to the archive, naming the archive."""
-        index = self.INDEX.replace(self.MOVED, '').replace(
+        index = self.INDEX.replace(line, '').replace(
             'Intro.', f'Intro. Older lines are in `{DECISION_INDEX_ARCHIVE}`.')
-        archive = '# Older decision lines\n\nIntro.\n\n## Devices\n' + self.MOVED
+        archive = '# Older decision lines\n\nIntro.\n\n## Devices\n' + line
         return index, archive
 
     def test_a_line_moved_to_the_archive_counts(self):
-        index, archive = self.moved()
-        self.assertEqual(decision_index_problems(self.DECISIONS, index, archive=archive), [])
+        for line in [self.MOVED, self.LIVE]:
+            index, archive = self.moved(line)
+            if line == self.LIVE:
+                index, archive = index.replace(self.MOVED, ''), archive + self.MOVED
+            self.assertEqual(
+                decision_index_problems(self.DECISIONS, index, archive=archive), [], line)
 
     def test_a_decision_with_a_line_in_both_files_fails(self):
         _, archive = self.moved()
         index = self.INDEX.replace('Intro.', f'Intro. See also `{DECISION_INDEX_ARCHIVE}`.')
         self.assertProblem(decision_index_problems(self.DECISIONS, index, archive=archive),
-                           '"Orientations" has two lines')
+                           '"Old layout" has two lines')
+
+    def test_a_live_line_moved_before_a_superseded_one_fails(self):
+        index, archive = self.moved(self.LIVE)
+        self.assertProblem(decision_index_problems(self.DECISIONS, index, archive=archive),
+                           f'{DECISION_INDEX_ARCHIVE} holds "Orientations" while '
+                           f'{DECISION_INDEX} still holds the superseded line "Old layout"')
+
+    def test_only_the_indexs_opening_names_the_archive(self):
+        index, archive = self.moved()
+        index = index.replace(f' Older lines are in `{DECISION_INDEX_ARCHIVE}`.', '')
+        index = index.replace('fold.\n', f'fold. See `{DECISION_INDEX_ARCHIVE}`.\n')
+        self.assertProblem(decision_index_problems(self.DECISIONS, index, archive=archive),
+                           f'{DECISION_INDEX} does not name {DECISION_INDEX_ARCHIVE}')
 
     def test_the_archive_is_not_counted_against_the_limit(self):
         index, archive = self.moved()

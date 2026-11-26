@@ -55,20 +55,24 @@ works, and the decision index has a rule for the day it fills up.
   `docs/DECISIONS-INDEX-ARCHIVE.md`, beside the index rather than in
   `docs/archive/`, which all three reviewers skip. The limit never
   rises and no line is dropped. The archive does not exist yet: the
-  index is at 14,189 bytes, room for about ten more lines.
+  index is at 14,234 bytes, room for about ten more lines.
 - `scripts/test-docs.py` reads the archive when it exists:
   `decision_index_problems` takes it, every decision needs exactly one
   line across both files, the archive's lines and `see "Title"`
-  pointers are checked like the index's, the index must name the
-  archive once it holds a line, only the index counts against the
-  limit, and the failure at the limit says to move superseded lines,
-  then the oldest, and never to raise the limit. Six new tests in
-  `DecisionIndexTests`.
+  pointers are checked like the index's, the index's opening must name
+  the archive once it holds a line, the archive may hold a line that is
+  not superseded only once no superseded line is left in the index,
+  only the index counts against the limit, and the failure at the limit
+  says to move superseded lines, then the oldest, and never to raise
+  the limit. Eight new tests in `DecisionIndexTests`. The check does
+  not judge which lines are the oldest (an index line carries no date)
+  or that a moved line keeps its group (its former group cannot be read
+  from the text); the decision says so.
 - The "A check keeps it true" bullet of "A one-line index of every
   decision" lost its garbled "in either case" (it meant either letter
   case) and its overlong line, and names the archive.
 - `docs/DECISIONS-INDEX.md` has the new decision's line and the
-  *Code review* line brought up to date.
+  *Code review* line brought up to date, Copilot's pause included.
 - `docs/HANDOFF.md`: the state names #135 as merged and `main` at
   `4744efc`, lists this pull request as open, and the reviewer
   paragraph says what each reviewer does now.
@@ -82,13 +86,15 @@ pull request makes four:
 - the ask rule in `AGENTS.md`: CodeRabbit once a round, cubic only if
   it has not reviewed, no ask to Greptile, and no Copilot request until
   the next month after one fails for credits (it asks reviewers less
-  often; it weakens no invariant or review rule);
+  often and never asks Greptile, which *Code Review Rules* counts as a
+  weaker review rule, so merging it is the owner's acceptance);
 - `cubic.yaml`'s skip list (cubic stops reviewing the archive and the
   evidence files, as the other two already do);
 - the two removed `.coderabbit.yaml` keys (no effect today, per
   CodeRabbit's schema);
 - the index-archive decision and the `scripts/test-docs.py` change that
-  enforces it (the check gains rules; none is dropped).
+  enforces it (the check gains rules and relaxes one: a decision's line
+  may sit in the archive instead of the index).
 
 ## Commits
 
@@ -97,19 +103,26 @@ pull request makes four:
 - `a2355d2`: the index-limit decision, the archive support in
   `scripts/test-docs.py` and its tests, the fixed bullet, the two index
   lines, docs/HANDOFF.md and this record.
-- The third commit, after a report-only check of the branch: cubic
-  reviews by itself (it had been written as reviewing only on request),
-  the Copilot "never retried" rule kept, the limit message names
-  superseded lines first, and this record lists what the owner
-  decides.
+- `ff6214d`, after a report-only check of the branch: cubic reviews by
+  itself (it had been written as reviewing only on request), the
+  Copilot "never retried" rule kept, the limit message names superseded
+  lines first, and this record lists what the owner decides.
+- The commit that adds this line, after the first review round: the
+  index's opening alone counts as naming the archive, superseded lines
+  must leave the index before any other line enters the archive (two
+  new tests), the decision says what the check does not judge and why,
+  the index's *Code review* line names Copilot's pause, and this record
+  names what the owner accepts more exactly.
 
 ## Verified
 
 In the cloud session (Linux, no Mac):
 
-- `python3 scripts/test-docs.py` runs 78 tests. With the archive left
-  out of `decision_index_problems`, each of the five tests that build an
-  archive failed, so none passes without the new code.
+- `python3 scripts/test-docs.py` runs 80 tests. With the archive left
+  out of `decision_index_problems`, each of the tests that build an
+  archive failed, so none passes without the new code. The two tests
+  added after review fail when the opening-only search or the
+  superseded-first rule is taken out.
 - The other Python checks of *Build and test*, and the privacy check
   on the outgoing commits with `--no-list` (no private list in a cloud
   session) and on the pull request text.
@@ -134,10 +147,13 @@ In the cloud session (Linux, no Mac):
 
 ## Follow-ups
 
-- `AGENTS.md` has 9 bytes left under its 32 KiB limit: the next rule
-  added there needs a trim first, with its snapshot in `docs/archive/`.
-- The index has about 1,171 bytes left; the first change that passes
-  15 KiB creates the archive, as the new decision says.
-- After 2026-11-29, check what Gitar posts once its trial ends, and
-  correct docs/DECISIONS.md and docs/HANDOFF.md if it differs.
-- Copilot reviews resume from 2026-12-01.
+- `AGENTS.md` has 9 bytes left under its 32 KiB limit: the next agent
+  that adds a rule there trims first, with its snapshot in
+  `docs/archive/`.
+- The index has about 1,126 bytes left; the first agent change that
+  passes 15 KiB creates the archive, as the new decision says.
+- After 2026-11-29, an agent checks what Gitar posts once its trial
+  ends, and corrects docs/DECISIONS.md and docs/HANDOFF.md if it
+  differs.
+- From 2026-12-01, agents ask Copilot for reviews again under the
+  `AGENTS.md` rule.
