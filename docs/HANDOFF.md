@@ -1442,9 +1442,11 @@ leaves ([`log/2026-11-04-device-procedures.md`](log/2026-11-04-device-procedures
 2026-11-14 asked for have one ordered run sheet,
 [docs/EXPERIMENTS.md](EXPERIMENTS.md), and a probe app to run them,
 `BricksonProbe/`, which never ships (docs/DECISIONS.md, "A probe app for
-the experiments, kept out of Brickson"): a Mac session builds the probe
-and runs the simulator group first (its *What the Mac session does
-next*); its device group starts with A-1 and needs the Team ID. R0 in
+the experiments, kept out of Brickson"): a Mac session ran its
+simulator group on 2026-11-15
+([`log/2026-11-15-experiments-simulator.md`](log/2026-11-15-experiments-simulator.md),
+which lists what each step found and what moves to a device); its
+device group starts with A-1 and needs the Team ID. R0 in
 [docs/ROADMAP.md](ROADMAP.md), in order; the owner's
 long-term vision, the direction behind it, is its *Where this goes*.
 The next pull requests, in order, with which may run side by side and
