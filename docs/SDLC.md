@@ -223,11 +223,12 @@ which agents also act through, can bypass it (*Deploy*).
 - **Into `main`.** Codex reviews every push to a pull request against
   AGENTS.md, *Code Review Rules*, which is this project's `REVIEW.md`
   (p39); Greptile reviews once by itself, when a pull request opens;
-  CodeRabbit and cubic review when a comment asks (`@coderabbitai
-  review`, `@cubic-dev-ai review this PR`); and Copilot reviews once on a
-  pull request that changes code, when the agent asks right after opening
-  it, its local Codex review answered (`request_copilot_review`, never on
-  one that changes only documents).
+  cubic reviews by itself when one opens and after each push, and is
+  asked (`@cubic-dev-ai review this PR`) only if it has not reviewed;
+  CodeRabbit reviews when a comment asks (`@coderabbitai review`); and
+  Copilot reviews once on a pull request that changes code, when the
+  agent asks right after opening it, its local Codex review answered
+  (`request_copilot_review`, never on one that changes only documents).
   Reviewers review and never write the code. Their
   findings inform the owner; they never approve or block on their own
   (p38). The agent that opened the pull request answers every finding,

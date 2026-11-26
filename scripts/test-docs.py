@@ -715,9 +715,9 @@ def decision_index_problems(decisions, index, limit=DECISION_INDEX_LIMIT, archiv
     size = len(index.encode())
     if size > limit:
         problems.append(f'{DECISION_INDEX} is {size} bytes, past its {limit}-byte limit; agents '
-                        f'read it before deciding anything. Shorten lines, or move the oldest '
-                        f'lines to {DECISION_INDEX_ARCHIVE}; never drop one or raise the limit '
-                        f'{ARCHIVE_REASON}')
+                        f'read it before deciding anything. Shorten lines, or move superseded '
+                        f'lines, then the oldest, to {DECISION_INDEX_ARCHIVE}; never drop one '
+                        f'or raise the limit {ARCHIVE_REASON}')
     return problems
 
 
@@ -1472,7 +1472,8 @@ class DecisionIndexTests(unittest.TestCase):
     def test_the_limit_names_the_archive(self):
         size = len(self.INDEX.encode())
         self.assertProblem(decision_index_problems(self.DECISIONS, self.INDEX, limit=size - 1),
-                           f'move the oldest lines to {DECISION_INDEX_ARCHIVE}')
+                           f'move superseded lines, then the oldest, to '
+                           f'{DECISION_INDEX_ARCHIVE}')
 
     def test_the_repositorys_index_matches_its_decisions(self):
         archive = ROOT / DECISION_INDEX_ARCHIVE

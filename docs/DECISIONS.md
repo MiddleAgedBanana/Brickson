@@ -7382,8 +7382,9 @@ review setup does not quietly break them.
     keys left the file: CodeRabbit's schema now says the Docstring
     Coverage check and docstring generation are retired and their
     settings have no effect, so what it does did not change.
-  - **`cubic.yaml`.** Reviews turned on (since 2026-11-26 an agent asks
-    for each one: the 2026-11-26 bullet below); never approves;
+  - **`cubic.yaml`.** Reviews turned on (it reviews when a pull request
+    opens and after each push, and an agent asks only if it has not: the
+    2026-11-26 bullet below); never approves;
     never resolves its own threads (the agent answers each finding and
     resolves it); writes no pull request description (the first two
     lines of every description are attribution lines agents keep); and
@@ -7630,17 +7631,18 @@ review setup does not quietly break them.
     footer on #135 says "Your plan provides up to 1 included review per
     hour". An agent asks once, after a round's last push, and never
     again within the hour.
-  - **cubic** reviews when asked (`@cubic-dev-ai review this PR`), and
-    an agent asks once a round if it has not reviewed. `cubic.yaml` now
-    skips the same records as the other two, and cubic's documentation
-    says its file filters apply to requested reviews too. Whether it
-    also reviews by itself is watched on #136, the pull request that
-    made this change, and noted there.
+  - **cubic** reviews by itself when a pull request opens and after
+    each push (`incremental_commits: true`): it did on #133 and #134
+    with no ask. An agent asks once a round (`@cubic-dev-ai review this
+    PR`) only if it has not reviewed. `cubic.yaml` now skips the same
+    records as the other two, and cubic's documentation says its file
+    filters apply to requested reviews too.
   - **Copilot** has nothing left to review with until 2026-12-01: on
-    #132 it said the requester "has insufficient remaining quota". After
-    a request fails that way, the agent says so in the pull request and
-    the thread and asks for none until the 1st of the next month, when
-    the monthly allowance renews (the 2026-11-08 bullet).
+    #132 it said the requester "has insufficient remaining quota". A
+    request that fails that way is said in the pull request and the
+    thread and never retried, and none is asked for until the 1st of the
+    next month: GitHub's Copilot billing documentation says the
+    allowance resets on the 1st of each month at 00:00 UTC.
   - **Gitar** still comments as pushes arrive, but its trial ends about
     2026-11-29 (its footer on #135, 2026-11-25: "Your trial ends in 4
     days"); after that it gives summaries only. Auto-apply stays off.
@@ -8171,7 +8173,7 @@ the groups its work touches in both files.
 - **Why beside the index, not in `docs/archive/`.** `.coderabbit.yaml`,
   `.greptile/config.json` and `cubic.yaml` skip `docs/archive/`, and the
   archived lines still bind: a reviewer should see a change to them.
-- **No archive yet.** With this decision's line the index is 14,171 of
+- **No archive yet.** With this decision's line the index is 14,189 of
   15,360 bytes, room for about ten more lines, so the first change that
   needs the archive creates it, with the index's pointer in the same
   commit.

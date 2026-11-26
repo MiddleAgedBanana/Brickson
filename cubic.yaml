@@ -14,9 +14,10 @@
 version: 1
 
 reviews:
-  # Reviews are on. An agent asks for one with `@cubic-dev-ai review this
-  # PR` when cubic has not reviewed (AGENTS.md, "Reviews and updates on
-  # GitHub"; docs/DECISIONS.md, *Code review*).
+  # Reviews are on: cubic reviews when a pull request opens and after each
+  # push. An agent asks with `@cubic-dev-ai review this PR` only when cubic
+  # has not reviewed (AGENTS.md, "Reviews and updates on GitHub";
+  # docs/DECISIONS.md, *Code review*).
   enabled: true
   incremental_commits: true
   # Skip files that are records, not code or rules: the same set

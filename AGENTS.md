@@ -445,7 +445,7 @@ UI_TEST_PART=2 SIMULATOR_FAMILY=ipad scripts/test.sh ui  # one part, as CI runs 
   and answer its findings, or say in the pull request that it could not
   run; right after opening, ask for one Copilot review, only through
   `request_copilot_review`. One that fails for lack of credits is said in
-  the pull request and the thread, and none is asked for until the 1st of
+  the pull request and thread and never retried; none is asked for until
   the next month. Documents-only pull requests get none. Where Codex posts
   an environment notice instead of a review, say so: a pull request that
   changes privacy or a workflow then waits for the owner's security review

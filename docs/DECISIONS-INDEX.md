@@ -139,7 +139,7 @@ What each decision in docs/DECISIONS.md chose, over what, and why. Before decidi
 
 ## Reviews and GitHub
 - "Reviews, updates and GitHub settings": The settings live on GitHub; this records what they are meant to be.
-- "Code review": Several reviewers, each configured in a file; Greptile on open; CodeRabbit (once an hour) and cubic on request; Copilot once per code pull request.
+- "Code review": Several reviewers, each configured in a file; Greptile on open; cubic on open and each push; CodeRabbit on request, once an hour; Copilot once per code pull request.
 - "Dependencies": No packages; actions pinned by commit in a lockfile; grouped monthly Dependabot after a 7-day wait.
 - "Code scanning": Chose CodeQL default setup for actions and Python over a Swift scan, which needs a Mac runner.
 - "SonarQube Cloud's alerts": Every alert on a pull request is answered before merge, without making it a required check.

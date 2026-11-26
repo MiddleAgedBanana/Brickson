@@ -1838,10 +1838,10 @@ settings, date) and summarise it here.
   Scan is off since that day; Copilot has no credits until
   2026-12-01);
   Greptile reviews once, when a pull request opens; cubic reviews when
-  asked, `@cubic-dev-ai review this PR`, once a round if it has not
-  reviewed; CodeRabbit reviews when a comment asks,
-  `@coderabbitai review`, at most once an hour, asked once after a
-  round's last push. Since
+  one opens and after each push, and is asked with
+  `@cubic-dev-ai review this PR` only if it has not reviewed; CodeRabbit
+  reviews when a comment asks, `@coderabbitai review`, at most once an
+  hour, asked once after a round's last push. Since
   2026-11-07 each one's settings are in the repository
   (`.coderabbit.yaml`, `cubic.yaml`, `.greptile/`), with every feature
   that writes code and has a setting turned off, and AGENTS.md's rule
