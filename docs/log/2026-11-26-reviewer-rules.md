@@ -107,22 +107,26 @@ pull request makes four:
   itself (it had been written as reviewing only on request), the
   Copilot "never retried" rule kept, the limit message names superseded
   lines first, and this record lists what the owner decides.
-- The commit that adds this line, after the first review round: the
-  index's opening alone counts as naming the archive, superseded lines
-  must leave the index before any other line enters the archive (two
-  new tests), the decision says what the check does not judge and why,
-  the index's *Code review* line names Copilot's pause, and this record
-  names what the owner accepts more exactly.
+- `9de5546`, after the first review round: the index's opening alone
+  counts as naming the archive, superseded lines must leave the index
+  before any other line enters the archive (two new tests), the
+  decision says what the check does not judge and why, the index's
+  *Code review* line names Copilot's pause, and this record names what
+  the owner accepts more exactly.
+- The commit that adds this line, after the second review round: a
+  superseded line counts in any letter case, as the decision now says
+  (one new test).
 
 ## Verified
 
 In the cloud session (Linux, no Mac):
 
-- `python3 scripts/test-docs.py` runs 80 tests. With the archive left
+- `python3 scripts/test-docs.py` runs 81 tests. With the archive left
   out of `decision_index_problems`, each of the tests that build an
   archive failed, so none passes without the new code. The two tests
-  added after review fail when the opening-only search or the
-  superseded-first rule is taken out.
+  added after the first review fail when the opening-only search or the
+  superseded-first rule is taken out, and the one added after the
+  second fails without the letter-case flag.
 - The other Python checks of *Build and test*, and the privacy check
   on the outgoing commits with `--no-list` (no private list in a cloud
   session) and on the pull request text.

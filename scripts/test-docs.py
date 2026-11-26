@@ -662,7 +662,7 @@ AGENTS_FIRST_READ = 24000
 LIST_ITEM = re.compile(r'[ \t]*(?:[-*+]|\d+[.)])[ \t]')
 INDEX_LINE = re.compile(r'- "(?P<title>[^"\n]+)": \S')
 # A superseded decision's line says only where its rule went.
-SUPERSEDED = re.compile(r'- "[^"\n]+": History; see ')
+SUPERSEDED = re.compile(r'- "[^"\n]+": History; see ', re.IGNORECASE)
 SEE = re.compile(r'\bsee "(?P<title>[^"\n]+)"', re.IGNORECASE)
 INDEX_REASON = '(docs/DECISIONS.md, "A one-line index of every decision")'
 # Lines past the limit move here, superseded lines first, then the oldest
@@ -1463,6 +1463,13 @@ class DecisionIndexTests(unittest.TestCase):
         self.assertProblem(decision_index_problems(self.DECISIONS, index, archive=archive),
                            f'{DECISION_INDEX_ARCHIVE} holds "Orientations" while '
                            f'{DECISION_INDEX} still holds the superseded line "Old layout"')
+
+    def test_a_superseded_line_counts_in_any_letter_case(self):
+        for words in ['History; See', 'HISTORY; SEE', 'history; see']:
+            index, archive = self.moved(self.LIVE)
+            index = index.replace('History; see', words)
+            self.assertProblem(decision_index_problems(self.DECISIONS, index, archive=archive),
+                               'still holds the superseded line "Old layout"', words)
 
     def test_only_the_indexs_opening_names_the_archive(self):
         index, archive = self.moved()

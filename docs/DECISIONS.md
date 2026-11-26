@@ -8154,10 +8154,10 @@ decides on the merge
 15 KiB (`DECISION_INDEX_LIMIT`), it first shortens long lines, then
 moves whole lines to `docs/DECISIONS-INDEX-ARCHIVE.md`, under the same
 group headings, until the index fits. Superseded lines (those that say
-"History; see") move first, then the lines of the earliest-dated
-decisions. No line is dropped and the limit never rises. Once the
-archive holds a line, the index's opening names it, and an agent reads
-the groups its work touches in both files.
+"History; see", in any letter case) move first, then the lines of the
+earliest-dated decisions. No line is dropped and the limit never rises.
+Once the archive holds a line, the index's opening names it, and an
+agent reads the groups its work touches in both files.
 
 - **Why not raise the limit.** Every agent reads the index before it
   decides anything, at about 100 bytes a line. A limit that rises with
