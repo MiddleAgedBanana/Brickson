@@ -42,14 +42,6 @@ reviews:
     - "!docs/evidence/**/*.txt"
     - "**/*.lock"
 
-  pre_merge_checks:
-    docstrings:
-      # Brickson has no rule about docstrings, so a warning about their
-      # coverage is a conversation to resolve with nothing to fix.
-      # "off" is quoted so that every YAML reader takes it as the word,
-      # not as false.
-      mode: "off"
-
   tools:
     languagetool:
       # Grammar and style suggestions on prose. They are style only
@@ -62,9 +54,9 @@ reviews:
     # Each of these has CodeRabbit write commits or open pull requests
     # itself. Code written that way skips the failing test first, the
     # docs/log record and the rest of AGENTS.md, "Workflow rules", so
-    # CodeRabbit reviews and never writes the code.
-    docstrings:
-      enabled: false
+    # CodeRabbit reviews and never writes the code. Docstring generation is
+    # not listed: CodeRabbit's schema says it is retired and its setting has
+    # no effect.
     unit_tests:
       enabled: false
     simplify:

@@ -7378,14 +7378,20 @@ review setup does not quietly break them.
     fix CI, resolve merge conflicts). The brief's draft missed fix CI,
     which is on by default and which open-source projects get.
     `docs/archive/` and the JSON and text captures in `docs/evidence/`
-    are skipped. Every other tool stays on.
-  - **`cubic.yaml`.** Reviews on open and on each push; never approves;
+    are skipped. Every other tool stays on. On 2026-11-26 both docstring
+    keys left the file: CodeRabbit's schema now says the Docstring
+    Coverage check and docstring generation are retired and their
+    settings have no effect, so what it does did not change.
+  - **`cubic.yaml`.** Reviews turned on (since 2026-11-26 an agent asks
+    for each one: the 2026-11-26 bullet below); never approves;
     never resolves its own threads (the agent answers each finding and
     resolves it); writes no pull request description (the first two
     lines of every description are attribution lines agents keep); and
     every fix feature off ("Fix with cubic" buttons, fixes asked for in
-    a comment, auto-fix). cubic reads it from `main` only, so it applies
-    from the merge on. Its GitHub app is the owner's to install.
+    a comment, auto-fix); and, since 2026-11-26, the same records
+    skipped as CodeRabbit and Greptile. cubic reads it from `main` only,
+    so it applies from the merge on. Its GitHub app is the owner's to
+    install.
   - **`.greptile/`.** The one-credit Base review, once per pull request
     when it opens (pushes do not spend credits), logic and syntax
     comments but no style ones, the same skipped records as CodeRabbit,
@@ -7614,6 +7620,41 @@ review setup does not quietly break them.
   cubic's app was installed on 2026-11-15 and has reviewed since #114.
   None of the eight approves, and every conversation any of them opens
   is one the ruleset requires resolved (*`main` ruleset*, below).
+- **2026-11-26: who reviews when, and when an agent asks.** What each
+  reviewer does now, from its own words on the pull requests:
+  - **Codex** reviews every push by itself; no agent asks it.
+  - **Greptile** reviews once, when a pull request opens
+    (`.greptile/config.json`, `"autoReview": ["open"]`), so no agent
+    asks it.
+  - **CodeRabbit** reviews when asked, at most once an hour: its
+    footer on #135 says "Your plan provides up to 1 included review per
+    hour". An agent asks once, after a round's last push, and never
+    again within the hour.
+  - **cubic** reviews when asked (`@cubic-dev-ai review this PR`), and
+    an agent asks once a round if it has not reviewed. `cubic.yaml` now
+    skips the same records as the other two, and cubic's documentation
+    says its file filters apply to requested reviews too. Whether it
+    also reviews by itself is watched on the pull request that made
+    this change and noted in its log record.
+  - **Copilot** has nothing left to review with until 2026-12-01: on
+    #132 it said the requester "has insufficient remaining quota". After
+    a request fails that way, the agent says so in the pull request and
+    the thread and asks for none until the 1st of the next month, when
+    the monthly allowance renews (the 2026-11-08 bullet).
+  - **Gitar** still comments as pushes arrive, but its trial ends about
+    2026-11-29 (its footer on #135, 2026-11-25: "Your trial ends in 4
+    days"); after that it gives summaries only. Auto-apply stays off.
+  - **Graphify** is paused: on #130 to #133 it posted "Graphify reviews
+    are paused for this workspace" instead of a review. Resuming it is
+    the owner's choice, on Graphify's website.
+  - **SonarQube Cloud** is unchanged.
+
+  Why: an ask a reviewer cannot serve either fails or spends its one
+  review of the hour on a head that is about to change, and each extra
+  review is more conversations to resolve, so each reviewer is asked
+  only when it can answer. Rule: AGENTS.md, "Reviews and updates on
+  GitHub". Record:
+  [`log/2026-11-26-reviewer-rules.md`](log/2026-11-26-reviewer-rules.md).
 
 ### Dependencies
 
