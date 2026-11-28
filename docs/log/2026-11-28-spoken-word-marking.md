@@ -55,8 +55,10 @@ word being spoken is marked").
   message fits (the first review round).
 - `649fd27` Answer the first review round in the records, device check and
   website.
-- The commit that adds this line, correcting this record after the
-  report-only verifier's check.
+- `14d3006` Correct the word marking's record, and name it in the README
+  (after the report-only verifier's check).
+- The commit that adds this line: a person can keep typing while typed
+  words are spoken (the second review round).
 
 ## Review, first round
 
@@ -92,9 +94,16 @@ and a 13-inch iPad Pro (M5), in portrait:
   (their audio does not start, so "Speaking" never leaves):
   `testLargestTextKeepsQuickControlWordsVisible`, which is not changed
   here, and the new `testSpeakingTypedWordsLeavesTheFieldAsItIs`. On the
-  iPad the new test also once found no keyboard element right after Speak,
-  though its screen recording shows the keyboard up; that check, about
-  something this change does not touch, was taken out in `3c06006`. On
+  iPad the new test also once found no keyboard element right after Speak.
+  Its screen recording shows the keyboard on screen in every frame from
+  Type until Phrases (the bottom of the screen holds the keyboard's
+  brightness throughout, before, during and after Speak), so the element
+  was missed by one immediate query, not gone; and this change adds no
+  view and moves no focus while typing (the marked message is not on
+  screen then). The check was taken out in `3c06006`; after review the
+  test instead types more while the words are spoken and checks they
+  arrive, which shows the keyboard is still the person's (device check
+  S7, step 4, does the same on a device). On
   GitHub's simulators both tests passed: the new one on the iPad in the
   first CI run and on the iPhone and iPad in the second (the iPhone part
   that holds it ran no tests in the first run, and another iPhone part ran
@@ -139,8 +148,8 @@ and a 13-inch iPad Pro (M5), in portrait:
   message (`MarkedMessage`); the UI test checks frames and one element.
 - The mark moving from word to word on Home: this Mac's simulator voice
   reports its first word, then stalls (S7).
-- Whether Speak keeps the software keyboard open on iPad, which this
-  change does not touch (see *Verified*).
+- Typing on while the words are spoken, on a real device and with each
+  input method (S7, step 4); on simulators it is the UI test's.
 - Differentiate Without Colour, Reduce Motion, Reduce Transparency, Bold
   Text and Smart Invert with a word marked: from the code only.
 - VoiceOver while words are marked, sound, and whether real voices, a

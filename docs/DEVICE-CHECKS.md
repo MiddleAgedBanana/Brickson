@@ -746,6 +746,10 @@ reports (docs/DECISIONS.md, "The word being spoken is marked").
    are marked. Then, while a long phrase is still being spoken, swipe to
    the message. *Passes* when VoiceOver reads the whole message once, as
    before, and the mark goes on moving.
+4. **Owner:** type a message, choose Speak, and at once go on typing while
+   it is spoken, by touch and then with the input method in use. *Passes*
+   when the keyboard stays up the whole time and every letter typed goes
+   into the message.
 
 ## Speed and stamina
 

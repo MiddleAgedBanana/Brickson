@@ -145,10 +145,12 @@ final class TypingOnHomeTests: XCTestCase {
     /// so nothing is drawn over it (docs/DECISIONS.md, "The word being
     /// spoken is marked"). Speak leaves the field exactly as it was, its
     /// frame and its words, and adds no second copy of the message beside
-    /// it; once the phrases are back the message shows as one element with
-    /// the whole message as its label, however far the voice has got.
-    /// Fails if speaking typed words moves or changes the field, or puts the
-    /// message in a second element.
+    /// it; the person can go on typing while the words are spoken; and once
+    /// the phrases are back the message shows as one element with the whole
+    /// message as its label, however far the voice has got. Fails if
+    /// speaking typed words moves or changes the field, stops the typing
+    /// (no keyboard, or letters that do not arrive), or puts the message in
+    /// a second element.
     @MainActor
     func testSpeakingTypedWordsLeavesTheFieldAsItIs() throws {
         let app = launchedApp()
@@ -166,9 +168,16 @@ final class TypingOnHomeTests: XCTestCase {
         XCTAssertEqual(field.value as? String, message, "speaking changed the field's words (\(context))")
         XCTAssertFalse(app.staticTexts[message].exists, "a second copy of the message showed beside the field (\(context))")
 
+        // A person can keep typing while the words are spoken: the
+        // keyboard is still theirs, and what they type goes into the field.
+        app.typeText(" now")
+        let added = message + " now"
+        waitForField(field, toHold: added, "typing did not go on while the message was spoken (\(context))")
+        Self.expectSameFrame(field.frame, before, "the field, typed in as its words are spoken,", context)
+
         waitForSpeechToFinish(in: app, context: context)
         Self.expectSameFrame(field.frame, before, "the field, once its words were spoken,", context)
-        XCTAssertEqual(field.value as? String, message, "the field's words changed once spoken (\(context))")
+        XCTAssertEqual(field.value as? String, added, "the field's words changed once spoken (\(context))")
 
         showPhrases(in: app, context: context)
         app.buttons["Again"].tap()
