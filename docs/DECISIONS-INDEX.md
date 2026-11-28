@@ -38,7 +38,7 @@ What each decision in docs/DECISIONS.md chose, over what, and why. Before decidi
 - "A phrase the system cuts off": An early finish counts as cut off only with an interruption within 3 s.
 - "A phrase that does not start": Chose a 15 s start limit over a watchdog, because an unheard phrase showed Speaking.
 - "Audio session notices": One adapter, also reading iOS 27's deactivation notice; Brickson never resumes by itself.
-- "The word being spoken is marked": Chose following the synthesizer's word reports, drawn by a TextRenderer, over timing guesses; nothing moves, VoiceOver is not told.
+- "The word being spoken is marked": Chose following the synthesizer's word reports, drawn by a TextRenderer, over timing guesses; nothing moves, VoiceOver is not told. Owner's call, open: the bar touching an accent on the line below.
 
 ## Devices and windows
 - "Orientations": iPhone portrait only for now; iPad all four, as multitasking needs.

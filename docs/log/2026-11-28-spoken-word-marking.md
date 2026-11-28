@@ -57,8 +57,11 @@ word being spoken is marked").
   website.
 - `14d3006` Correct the word marking's record, and name it in the README
   (after the report-only verifier's check).
-- The commit that adds this line: a person can keep typing while typed
-  words are spoken (the second review round).
+- `6dc45e4` Show a person can keep typing while typed words are spoken
+  (the second review round).
+- The commit that adds this line, the third round: typing now starts while
+  "Speaking" shows, and the bar touching an accent below is put to the
+  owner, since the review rules leave a new exception to the owner.
 
 ## Review, first round
 

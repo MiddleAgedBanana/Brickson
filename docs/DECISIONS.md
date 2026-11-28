@@ -1292,10 +1292,16 @@ and see at a glance that the voice is under way.
   lines, as before, so no part of a hidden line shows); no frame changes.
   A report that names no character of any word (only a space, or an
   empty place) leaves the mark where it was.
-  Where a line below the marked word starts with a tall accented capital
-  (É, Å), the bar can touch the top of its accent: the lines have no room
-  between them that a bar fits in, and adding room would move the words.
-  The word being spoken keeps its descenders clear, which matters more.
+- **Owner's call, open: the bar and an accent on the line below.** Where
+  the line under the word being spoken has a tall accented capital (É, Å)
+  beneath it, the bar can touch the top of that accent while the word is
+  spoken. The lines have no room between them that a 3-point bar fits in.
+  Recommended: accept it, as built, because it is rare in English, lasts
+  only while that one word is spoken, and the word being spoken keeps its
+  own descenders clear. Otherwise: the bar sits inside its own line,
+  crossing the descenders (g, j, p, q, y) of every word it marks; or room
+  is added between the message's lines, which sets fewer words in the
+  same space. Until the owner answers, it stays as built.
 - **Measured, and readable in every setting.** The words to come are
   primary ink at 60% (75% with Increase Contrast) over the screen, pinned
   at 4.5:1 or better in every appearance, the lifted dark screen included

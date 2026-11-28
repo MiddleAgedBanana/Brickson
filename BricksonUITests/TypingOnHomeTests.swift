@@ -156,24 +156,24 @@ final class TypingOnHomeTests: XCTestCase {
         let app = launchedApp()
         let context = Self.context(app)
         startTyping(in: app, context: context)
-        let message = "Green apples and pears please"
+        // Long enough to be still speaking while more is typed.
+        let message = "Green apples and pears please, with a glass of cold water and warm toast"
         app.typeText(message)
         let field = Self.field(in: app)
         waitForField(field, toHold: message, "the field did not take the words (\(context))")
         let before = field.frame
 
-        app.buttons["Speak"].tap()
-        waitUntil(app.buttons["Speak"], "isEnabled == true", "Speak turned off after speaking (\(context))")
-        Self.expectSameFrame(field.frame, before, "the field, as its words are spoken,", context)
-        XCTAssertEqual(field.value as? String, message, "speaking changed the field's words (\(context))")
-        XCTAssertFalse(app.staticTexts[message].exists, "a second copy of the message showed beside the field (\(context))")
-
         // A person can keep typing while the words are spoken: the
         // keyboard is still theirs, and what they type goes into the field.
+        // "Speaking" shows from the moment the message is handed to the
+        // voice until it ends, so typing starts while it is spoken.
+        app.buttons["Speak"].tap()
+        waitToAppear(app.staticTexts["Speaking"], "the message was not spoken (\(context))")
         app.typeText(" now")
         let added = message + " now"
         waitForField(field, toHold: added, "typing did not go on while the message was spoken (\(context))")
         Self.expectSameFrame(field.frame, before, "the field, typed in as its words are spoken,", context)
+        XCTAssertFalse(app.staticTexts[message].exists, "a second copy of the message showed beside the field (\(context))")
 
         waitForSpeechToFinish(in: app, context: context)
         Self.expectSameFrame(field.frame, before, "the field, once its words were spoken,", context)
