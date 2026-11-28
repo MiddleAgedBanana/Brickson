@@ -65,7 +65,7 @@ The checks already waiting come first, because they decide open design
 questions before any larger-size build goes to App Review (docs/ROADMAP.md,
 *The quality bar*, Q2, Q12 and Q13). Q4 puts sound first; here the dwell
 checks run before it because they decide those questions, and Q4
-passes only once S1 to S6 have passed. The order of sessions changes no
+passes only once S1 to S7 have passed. The order of sessions changes no
 pass or fail (docs/DECISIONS.md, "The queued dwell checks run before
 sound").
 
@@ -75,7 +75,7 @@ sound").
 | Any day the device is on the cable | A1, Brickson's UI tests on the device | Agent | One to two hours per device, unattended |
 | First session | F1 Snap to Item and Dwell measured, then F2 the three dwell hazards, then F4 Settings by a stray dwell | Owner | Two to three hours with rests |
 | Second session | F3 the floors | Owner (the testers repeat its list in the pilot) | About two hours |
-| Then, in any order | Sound (S1 to S6), Personal Voice (P1 to P5), every input method (I1 to I7), windows (W1 to W4), Apple's doors (G1 to G5), look (L1 to L4) | Owner, some with an agent | A session each |
+| Then, in any order | Sound (S1 to S7), Personal Voice (P1 to P5), every input method (I1 to I7), windows (W1 to W4), Apple's doors (G1 to G5), look (L1 to L4) | Owner, some with an agent | A session each |
 | On the release candidate | A2 to A4, M1 to M3 | Agent and owner | A day for M3 |
 | Through TestFlight | The long sessions (I7), H1 to H6 | Owner, then the testers | Weeks |
 
@@ -721,6 +721,35 @@ person's words.
    and VoiceOver can still be heard), and cut a phrase off with a call.
    *Passes* when VoiceOver announces each once, in full, without moving
    its focus.
+
+### S7. The word being spoken keeps time
+
+The mark under the word being spoken follows only what each voice
+reports (docs/DECISIONS.md, "The word being spoken is marked").
+
+1. **Owner:** in the Personal Voice, then an enhanced system voice, then
+   the default voice, speak the longest starter phrase at the normal speed
+   and at the fastest of Voice Settings' speeds, and watch Home's message.
+   Then type a message of about ten words, choose Speak, and at once
+   choose Phrases while it is still being spoken (the open typing field
+   is not marked), and watch Home's message. *Passes* when, in each voice,
+   the bar sits under the word being heard, never more than one word ahead
+   or behind, and every word is in full ink once the voice stops. A voice
+   that leaves the whole message dimmed until it ends reports no words:
+   note which, since that is allowed but worth knowing.
+2. **Owner:** speak a long phrase, then choose another phrase while it
+   speaks; then speak a long phrase and cut it off with a call. *Passes*
+   when the first phrase's mark is gone at once (the new phrase starts with
+   no word marked), and after the call the message is drawn as before.
+3. **Owner:** with VoiceOver on, choose a long phrase and listen while it
+   is spoken. *Passes* when VoiceOver says nothing about the words as they
+   are marked. Then, while a long phrase is still being spoken, swipe to
+   the message. *Passes* when VoiceOver reads the whole message once, as
+   before, and the mark goes on moving.
+4. **Owner:** type a message, choose Speak, and at once go on typing while
+   it is spoken, by touch and then with the input method in use. *Passes*
+   when the keyboard stays up the whole time and every letter typed goes
+   into the message.
 
 ## Speed and stamina
 
@@ -1438,6 +1467,7 @@ first words:
 | What the real software keyboard covers | A1, I8 |
 | Typing on Home by touch, Switch Control | I8 |
 | Get Attention heard from the next room | S5 |
+| The word being spoken keeps time with each voice | S7 |
 | A phrase spoken while Get Attention sounds | S5 |
 | A phone call, Siri and another app's alarm | S2 |
 | Lock the device during a long phrase | S3 |
@@ -1481,7 +1511,7 @@ or answers:
 |---|---|
 | Q2 No open dwell hazard | F1, F2, H5 |
 | Q3 Every floor named | H5 (a thread measures) |
-| Q4 Every device check, sound first | S1 to S6, then every row above |
+| Q4 Every device check, sound first | S1 to S7, then every row above |
 | Q5 No crash and no hang | A3 |
 | Q6 It speaks at once | M1 |
 | Q7 It opens fast and comes back as it was | A2, M2 |

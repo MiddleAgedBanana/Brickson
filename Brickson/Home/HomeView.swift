@@ -473,6 +473,9 @@ private struct MessageText: View {
     @Environment(\.legibilityWeight) private var legibilityWeight
     @Environment(\.showsSetupHint) private var showsSetupHint
 
+    /// The lines of the message always shown; a longer message scrolls.
+    private static let shownLines = 2
+
     var body: some View {
         let font = LabelFont.message
         let text = speech.lastSpokenText ?? (showsSetupHint ? FirstRunHint.text : String(
@@ -482,35 +485,112 @@ private struct MessageText: View {
 
         Text(verbatim: " ")
             .font(font.font)
-            .lineLimit(2, reservesSpace: true)
+            .lineLimit(Self.shownLines, reservesSpace: true)
             .frame(maxWidth: .infinity)
             .hidden()
             .accessibilityHidden(true)
             .overlay(alignment: .topLeading) {
                 GeometryReader { proxy in
                     let fit = font.legible(legibilityWeight).messageFit(for: text, at: dynamicTypeSize, width: proxy.size.width)
-                    ScrollView {
+                    // The bar may reach below the lines shown only when no
+                    // further line waits there, scrolled out of sight, whose
+                    // tallest glyphs it would uncover.
+                    MessageViewport(
+                        startCount: speech.phraseStartCount,
+                        roomBelow: fit.lines.map { $0.count <= Self.shownLines } ?? false
+                    ) {
                         // Primary ink, not the system's secondary gray, which
                         // measures under 4.5:1 (invariant 6). The same view
                         // whichever way it fits, so the audit compares it
-                        // with itself as the text grows.
-                        Text(verbatim: fit.lines.map { $0.joined(separator: "\n") } ?? text)
-                            .font(font.font)
-                            .lineLimit(fit.lines.map { max($0.count, 1) })
-                            .minimumScaleFactor(fit.smallestScale)
-                            .textSize(fit.cap)
-                            // The words without the line breaks, for
-                            // VoiceOver, Voice Control and the UI tests.
-                            .accessibilityLabel(Text(verbatim: text))
-                            .frame(maxWidth: .infinity, alignment: .leading)
+                        // with itself as the text grows. Its words are laid
+                        // out here once; only the mark, which `MarkedMessage`
+                        // reads, changes as the voice speaks, so this fit is
+                        // not measured again for every word.
+                        MarkedMessage(
+                            words: MessageWords(text),
+                            content: SpokenMessageText.text(for: text, setIn: fit.lines)
+                        )
+                        .font(font.font)
+                        .lineLimit(fit.lines.map { max($0.count, 1) })
+                        .minimumScaleFactor(fit.smallestScale)
+                        .textSize(fit.cap)
+                        // The words without the line breaks, for
+                        // VoiceOver, Voice Control and the UI tests. The
+                        // mark is never announced: VoiceOver would talk
+                        // over the voice.
+                        .accessibilityLabel(Text(verbatim: text))
+                        .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .scrollBounceBehavior(.basedOnSize)
-                    // A new view, so a new scroll position, on every phrase
-                    // start: Again and the same phrase chosen again show the
-                    // first words too, not where the last reader left it.
-                    .id(speech.phraseStartCount)
                 }
             }
+    }
+}
+
+/// The message's words with the word being spoken marked
+/// (docs/DECISIONS.md, "The word being spoken is marked"). Only this view
+/// and `MessageViewport` read the speech's progress, so each word report
+/// redraws the words and lays out nothing. A message is marked only while
+/// the phrase being spoken
+/// is that very message; a Settings voice sample never marks it.
+private struct MarkedMessage: View {
+    @Environment(SpeechService.self) private var speech
+    @Environment(\.colorSchemeContrast) private var contrast
+    let words: MessageWords
+    let content: Text
+
+    var body: some View {
+        SpokenMessageWords(
+            content: content,
+            marking: marking,
+            style: SpokenWordStyle(increasedContrast: contrast == .increased)
+        )
+    }
+
+    private var marking: WordMarking? {
+        guard let phrase = speech.phraseInProgress, phrase.text == words.message else { return nil }
+        return words.marking(reported: phrase.latestWord)
+    }
+}
+
+/// The message's scrolling lines. While a phrase is being spoken, and the
+/// whole message fits the lines shown (`roomBelow`), the words are clipped
+/// a few points below those lines, so the bar under a word on the last of
+/// them is not cut off; it reaches into the gap above the status line, and
+/// nothing moves for it. A longer message, with a line waiting below, and
+/// any message at other times, are clipped to the lines themselves, as
+/// always, so no part of a hidden line ever shows. Like `MarkedMessage`,
+/// this reads the speech's progress itself, so a word report never
+/// measures the message again.
+private struct MessageViewport<Content: View>: View {
+    @Environment(SpeechService.self) private var speech
+    /// Counts phrase starts (`SpeechService.phraseStartCount`).
+    let startCount: Int
+    /// Whether the bar may reach below the lines shown: only when the
+    /// message has no further line hidden below them.
+    let roomBelow: Bool
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        ScrollView {
+            content
+        }
+        .scrollBounceBehavior(.basedOnSize)
+        .scrollClipDisabled()
+        .clipShape(RoomBelow(points: roomBelow && speech.phraseInProgress != nil ? SpokenWordStyle.mostRoomBelow : 0))
+        // A new view, so a new scroll position, on every phrase start:
+        // Again and the same phrase chosen again show the first words too,
+        // not where the last reader left it.
+        .id(startCount)
+    }
+}
+
+/// A view's own bounds, reaching `points` further down: the clip that keeps
+/// room for the bar under the message's last line.
+private nonisolated struct RoomBelow: Shape {
+    let points: CGFloat
+
+    func path(in rect: CGRect) -> Path {
+        Path(CGRect(x: rect.minX, y: rect.minY, width: rect.width, height: rect.height + points))
     }
 }
 

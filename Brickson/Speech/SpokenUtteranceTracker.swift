@@ -39,6 +39,14 @@ nonisolated enum UtteranceEnding: Equatable, Sendable {
     case endedBeforeItsFinalWord
 }
 
+/// A phrase being spoken, as Home's message marks it: its words, and the
+/// place of the latest word the voice reported, in UTF-16 units of those
+/// words (nil until the voice reports one). Never a Settings voice sample.
+nonisolated struct PhraseInProgress: Equatable, Sendable {
+    let text: String
+    let latestWord: Range<Int>?
+}
+
 /// Bookkeeping for the utterance currently being spoken, and the rule for
 /// absorbing a repeated activation of the phrase just chosen.
 ///
@@ -112,6 +120,9 @@ nonisolated struct SpokenUtteranceTracker<ID: Equatable & Sendable>: Sendable {
         /// The furthest UTF-16 offset the synthesizer has said it reached;
         /// nil until it reports a spoken range.
         var spokenThrough: Int?
+        /// The place of the latest word reported inside a phrase's text, for
+        /// Home's mark; nil until one is, and always nil for a sample.
+        var latestWord: Range<Int>?
     }
 
     private var active: Active?
@@ -132,6 +143,15 @@ nonisolated struct SpokenUtteranceTracker<ID: Equatable & Sendable>: Sendable {
     /// The utterance currently believed to be playing, if any.
     var activeID: ID? { active?.id }
 
+    /// The phrase being spoken now and the latest word reported in it; nil
+    /// when nothing is, or a Settings sample is. Every way an utterance
+    /// ends clears `active`, so this clears with it: no word stays marked
+    /// after its voice stops.
+    var phraseInProgress: PhraseInProgress? {
+        guard let active, case let .phrase(text) = active.source else { return nil }
+        return PhraseInProgress(text: text, latestWord: active.latestWord)
+    }
+
     mutating func began(_ id: ID, text: String, at instant: ContinuousClock.Instant) {
         began(id, source: .phrase(text), at: instant)
     }
@@ -148,7 +168,8 @@ nonisolated struct SpokenUtteranceTracker<ID: Equatable & Sendable>: Sendable {
             hasBegun: false,
             lastProgressAt: instant,
             finalWordStart: finalWordStart,
-            spokenThrough: nil
+            spokenThrough: nil,
+            latestWord: nil
         )
         endedEarlyAt = nil
     }
@@ -184,6 +205,45 @@ nonisolated struct SpokenUtteranceTracker<ID: Equatable & Sendable>: Sendable {
         let delay = Self.markBegun(&current, at: instant)
         active = current
         return delay
+    }
+
+    /// A word callback with the place of the word the synthesizer is about
+    /// to speak, in UTF-16 units of the utterance's text, or nil when the
+    /// report named none. Its end records how far the voice has got exactly
+    /// as `recordProgress(_:reaching:at:)` does. Inside a phrase the place
+    /// becomes the word Home marks, but only moving forward and only when
+    /// it covers part of one of the phrase's words (as Home splits them,
+    /// `WordFit.words(in:)`): a stray report, earlier than the one already
+    /// marked, empty, past the end or over only a space or line break,
+    /// leaves the mark where it was.
+    /// Returns how long after `began` the utterance started, when this is
+    /// the first sign that it did (`recordStart`).
+    @discardableResult
+    mutating func recordProgress(
+        _ id: ID,
+        speaking range: Range<Int>?,
+        at instant: ContinuousClock.Instant
+    ) -> Duration? {
+        guard let range else { return recordProgress(id, at: instant) }
+        let delay = recordProgress(id, reaching: range.upperBound, at: instant)
+        guard var current = active, current.id == id, case let .phrase(text) = current.source else { return delay }
+        let movesForward = current.latestWord.map { range.lowerBound >= $0.lowerBound } ?? true
+        if movesForward, Self.namesAWord(range, in: text) {
+            current.latestWord = range
+            active = current
+        }
+        return delay
+    }
+
+    /// Whether `range`, in UTF-16 units of `text`, covers at least one
+    /// character of one of its words.
+    private static func namesAWord(_ range: Range<Int>, in text: String) -> Bool {
+        // An empty place names no character, even inside a word.
+        guard !range.isEmpty else { return false }
+        return WordFit.words(in: text).contains { word in
+            word.startIndex.utf16Offset(in: text) < range.upperBound
+                && range.lowerBound < word.endIndex.utf16Offset(in: text)
+        }
     }
 
     /// The synthesizer said it began speaking the utterance. Returns how long

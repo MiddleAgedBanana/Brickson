@@ -87,9 +87,16 @@ final class FakeSpeechSynthesizer: SpeechSynthesizing {
     }
 
     /// Reports that the latest request (or `token`) is about to speak the
-    /// text up to `offset`.
+    /// text up to `offset`: an empty place there, which records how far the
+    /// voice has got and marks no word.
     func reportProgress(through offset: Int, for token: UtteranceToken? = nil) {
-        send(.willSpeak(through: offset, at: now()), for: token)
+        send(.willSpeak(range: offset..<offset, at: now()), for: token)
+    }
+
+    /// Reports that the latest request (or `token`) is about to speak the
+    /// word at `range`, in UTF-16 units of its text, as the system does.
+    func reportWord(_ range: Range<Int>, for token: UtteranceToken? = nil) {
+        send(.willSpeak(range: range, at: now()), for: token)
     }
 
     /// Reports that the latest request (or `token`) began speaking.

@@ -1,6 +1,10 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%@" : {
+      "comment" : "Joins the words of a person's message for Home's message. Nothing to translate.",
+      "shouldTranslate" : false
+    },
     "%@ Phrases %@" : {
 
     },

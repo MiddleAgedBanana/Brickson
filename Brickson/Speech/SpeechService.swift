@@ -69,6 +69,13 @@ final class SpeechService {
     /// finishes or is cancelled. Drives the speaking indicator on Home.
     var isSpeaking: Bool { utterances.isSpeaking }
 
+    /// The phrase being spoken and the latest word its voice reported, for
+    /// Home's message to mark (docs/DECISIONS.md, "The word being spoken is
+    /// marked"); nil when nothing is, or a Settings sample is. It ends with
+    /// the utterance, however that ends. Reading it never waits: each word
+    /// report only records a place.
+    var phraseInProgress: PhraseInProgress? { utterances.phraseInProgress }
+
     private var speechInterruptionStatus = SpeechInterruptionStatus()
     private var utterances = SpokenUtteranceTracker<UtteranceToken>()
     @ObservationIgnored private var synthesizer: any SpeechSynthesizing
@@ -313,8 +320,8 @@ final class SpeechService {
         switch event {
         case let .started(at: instant):
             noteBeginning(utterances.recordStart(token, at: instant), of: token)
-        case let .willSpeak(through: offset, at: instant):
-            noteBeginning(utterances.recordProgress(token, reaching: offset, at: instant), of: token)
+        case let .willSpeak(range: range, at: instant):
+            noteBeginning(utterances.recordProgress(token, speaking: range, at: instant), of: token)
         case let .finished(at: instant):
             if utterances.ended(token, at: instant) == .endedBeforeItsFinalWord {
                 // Not shown on its own: some voices skip reporting the last

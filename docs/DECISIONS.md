@@ -1253,6 +1253,80 @@ beginning matters, since its ending would only be a cue to resume, which
 Brickson never does by itself. Drop the old notice once the minimum iOS
 version is 27.
 
+## The word being spoken is marked
+
+*2026-11-28. Default: chosen by the project, reversible if the owner
+objects.*
+
+While a phrase or a typed message is spoken, Home's message marks the word
+the voice is saying: the words already said in full ink, the word being
+said in full ink with a bar under it, and the words still to come dimmed.
+It helps the person and the people beside them follow what is being said,
+and see at a glance that the voice is under way.
+
+- **Only the voice moves the mark.** The synthesizer reports each word it
+  is about to say (`speechSynthesizer(_:willSpeakRangeOfSpeechString:utterance:)`,
+  which Apple documents for exactly this), and the mark follows those
+  reports and nothing else: no timer guesses where the voice is. Before the
+  first report every word is still to come, and a voice that reports no
+  words leaves the whole message dimmed until it ends. A report that names
+  no place, or a place earlier than the one marked, or one past the end of
+  the words, moves nothing; it still counts as progress, so the start limit
+  and the cut-off rule read exactly what they read before ("A phrase that
+  does not start", "A phrase the system cuts off"). The mark is kept with
+  the utterance in `SpokenUtteranceTracker`, so every way speech ends
+  (finished, cancelled by the system, Stop, an interruption, a
+  media-services reset, the watchdog) clears it with nothing else to
+  remember. A Settings voice sample never marks Home's message.
+- **A word is a drawn word.** Words are split where the message's lines
+  are (between spaces and line breaks), so the mark always covers one whole
+  word as drawn, punctuation and all, even when a voice reports part of it.
+- **Nothing moves.** The words are laid out once, from the message alone;
+  a `TextRenderer` only changes how brightly each is drawn and draws the
+  bar, so no word moves, grows or changes weight, no control moves, and
+  nothing waits: each report only records a place. The bar sits a point
+  below its line. Under the last line shown it reaches into the gap above
+  the status line, so while a phrase is spoken, and the whole message fits
+  the lines shown, the message is clipped that much lower (at other times,
+  and for a longer message, whose next line waits hidden below, at its
+  lines, as before, so no part of a hidden line shows); no frame changes.
+  A report that names no character of any word (only a space, or an
+  empty place) leaves the mark where it was.
+- **Owner's call, open: the bar and an accent on the line below.** Where
+  the line under the word being spoken has a tall accented capital (É, Å)
+  beneath it, the bar can touch the top of that accent while the word is
+  spoken. The lines have no room between them that a 3-point bar fits in.
+  Recommended: accept it, as built, because it is rare in English, lasts
+  only while that one word is spoken, and the word being spoken keeps its
+  own descenders clear. Otherwise: the bar sits inside its own line,
+  crossing the descenders (g, j, p, q, y) of every word it marks; or room
+  is added between the message's lines, which sets fewer words in the
+  same space. Until the owner answers, it stays as built.
+- **Measured, and readable in every setting.** The words to come are
+  primary ink at 60% (75% with Increase Contrast) over the screen, pinned
+  at 4.5:1 or better in every appearance, the lifted dark screen included
+  (`PaletteTests`). The bar is primary ink, 3 points thick (4 with Increase
+  Contrast). It is a shape, so the mark never rests on colour or brightness
+  alone (Differentiate Without Colour). The mark steps from word to word
+  with no animation in every setting, so Reduce Motion has nothing to stop.
+- **Drawn, never announced.** The message keeps one accessibility label,
+  the whole message, so VoiceOver reads it as before and never talks over
+  the voice.
+- **Typed words inside the field are not marked.** While typing, the
+  message is Apple's own text field: it scrolls to the cursor, stays
+  editable while the voice speaks, and shows the cursor, and drawing marked
+  words over it cannot be shown to line up without a jump. So the field is
+  left exactly as it is, and a typed message is marked wherever the message
+  shows it once typing is put away.
+- **Not yet:** a long message is not followed as it is spoken. Home's
+  message shows two lines and scrolls, so in a message longer than that the
+  word being spoken can be below the lines shown. Following it by whole
+  lines comes with the work that gives the message more lines. A soft glow
+  behind the word and a short slide between words were left out too: the
+  glow would lower the contrast of the dimmed words beside it on today's
+  light screen, and the slide waits for the one place every animation's
+  timing will come from.
+
 ## Orientations
 
 *2026-10-10. Default, from the reference app (its D2).*
@@ -5193,8 +5267,8 @@ hardware) are the first procedures the owner runs (docs/DEVICE-CHECKS.md,
 *The order*), although Q4 of docs/ROADMAP.md, *The quality bar*, a
 default of 2026-10-30, puts sound first. Those checks decide open design
 questions (Q2, Q12 and Q13) that later work builds on. No pass or fail
-changes: Q4 still passes only once every sound check (S1 to S6) has
-passed. To run sound first instead, swap the sessions in *The order*;
+changes: Q4 still passes only once every sound check (S1 to S7 since
+2026-11-28, when the word marking added S7) has passed. To run sound first instead, swap the sessions in *The order*;
 nothing else moves.
 
 ## Check-ins come every three months

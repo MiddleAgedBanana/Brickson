@@ -492,6 +492,37 @@ struct PaletteTests {
         }
     }
 
+    /// While a message is spoken, the words still to come are primary ink
+    /// drawn at `SpokenWordStyle.dimOpacity` over the screen
+    /// (`SpokenWordRenderer`), which with Increase Contrast is higher. As
+    /// words people read they need 4.5:1, on the base screen in every
+    /// appearance and on the lifted dark screen iPad multitasking can show.
+    /// The bar under the word being spoken is primary ink itself, measured
+    /// above. Fails if a dimmed word comes under 4.5:1 anywhere, or if
+    /// Increase Contrast makes the dimmed words fainter.
+    @Test func wordsStillToComeAreReadableOnTheScreen() {
+        for appearance in Appearance.allCases {
+            let style = SpokenWordStyle(increasedContrast: appearance.hasIncreasedContrast)
+            for lifted in appearance.isDark ? [false, true] : [false] {
+                let traits = appearance.traits(lifted: lifted)
+                let ink = Self.srgb(UIColor.label.resolvedColor(with: traits))
+                let screen = Self.srgb(UIColor.systemBackground.resolvedColor(with: traits))
+                let dimmed = Self.blend(ink, at: style.dimOpacity, over: screen)
+                let ratio = ColourArithmetic.contrast(dimmed, screen)
+                let name = "\(appearance.name)\(lifted ? ", lifted" : "")"
+                #expect(ratio >= 4.5, "words to come on the screen, \(name): \(ratio):1")
+                if appearance.hasIncreasedContrast {
+                    let plainStyle = SpokenWordStyle(increasedContrast: false)
+                    let plainTraits = appearance.withoutIncreasedContrast.traits(lifted: lifted)
+                    let plainScreen = Self.srgb(UIColor.systemBackground.resolvedColor(with: plainTraits))
+                    let plainInk = Self.srgb(UIColor.label.resolvedColor(with: plainTraits))
+                    let plainRatio = ColourArithmetic.contrast(Self.blend(plainInk, at: plainStyle.dimOpacity, over: plainScreen), plainScreen)
+                    #expect(ratio >= plainRatio, "words to come, \(name): \(ratio):1, without it \(plainRatio):1")
+                }
+            }
+        }
+    }
+
     /// The pressed ring every Home control shows (`HomeButtonStyle`): primary
     /// ink drawn inside the edge of the control's fill. As a control edge it
     /// needs 3:1 against each fill it can sit on.
@@ -642,6 +673,15 @@ struct PaletteTests {
         #expect(abs(simulated[2] - 0.2852) < tolerance)
         #expect(try colour("#0a60d6").hex == "#0A60D6")
         #expect(SRGB(hex: "#12345") == nil)
+    }
+
+    /// `top` drawn at `alpha` over `bottom`, each channel blended in sRGB
+    /// as the screen composites it, then rounded to the 8-bit value drawn.
+    private static func blend(_ top: SRGB, at alpha: Double, over bottom: SRGB) -> SRGB {
+        func channel(_ upper: Double, _ lower: Double) -> Double {
+            ((upper * alpha + lower * (1 - alpha)) * 255).rounded() / 255
+        }
+        return SRGB(red: channel(top.red, bottom.red), green: channel(top.green, bottom.green), blue: channel(top.blue, bottom.blue))
     }
 
     /// WCAG 2.x contrast between two UIKit colours, as drawn.

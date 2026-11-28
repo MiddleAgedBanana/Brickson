@@ -51,6 +51,10 @@ The initial implementation includes:
   keyboard shows. On the smallest windows at the largest text sizes,
   where the keyboard would cover Emergency, Yes, No or Get Attention,
   Type is dimmed instead.
+- While a message is spoken, it shows where the voice is: the words
+  already said in full ink, the word being said with a bar under it, and
+  the words still to come dimmed, following only what iOS reports about
+  each word.
 - Settings for the family, opened from Home's Settings button: voices,
   setup guides and the privacy policy.
 - Phrases and Categories, in Settings' Family Setup: a family adds,

@@ -84,7 +84,11 @@ speaks at once, in the person's Personal Voice when one exists and is
 allowed (in the system's voice while the voice list is being read,
 which nothing waits for: docs/DECISIONS.md, "The voice list never holds
 up launch"); the sentence stays on screen in the message's reserved lines,
-and a longer message scrolls inside them. A phrase the system's speech
+and a longer message scrolls inside them. While it is spoken, the message
+marks the word the voice is saying, from the voice's own word reports:
+said words in full ink, the word being said with a bar under it, words to
+come dimmed; nothing moves, and VoiceOver is not told (docs/DECISIONS.md,
+"The word being spoken is marked"). A phrase the system's speech
 service has not begun 15 seconds after it was chosen is stopped, and Home
 shows "Stopped — Again" in place of "Speaking" (docs/DECISIONS.md, "A
 phrase that does not start"). The phrase grid keeps native
@@ -469,6 +473,19 @@ Xcode 27.1 (27A9275); PR #20 landed in `d79d836`.
 Each names who closes it: *(owner)*, the thread working on it, or the
 release in docs/ROADMAP.md when no thread has it yet.
 
+- The word marking (2026-11-28) does not follow a long message: Home's
+  message shows two lines and scrolls, so the word being spoken can be
+  below the lines shown. Following it by whole lines comes with the work
+  that gives the message more lines *(no thread yet)*. Typed words in
+  the open typing field are not marked word by word; they are marked once
+  the phrases are back (docs/DECISIONS.md, "The word being spoken is
+  marked"). Nobody has seen the mark keep time with a voice on a device
+  (S7). The design review capture script does not measure the sheet's
+  word-marking samples; their contrast is pinned by `PaletteTests` instead
+  (declined in the review of pull request #137). *(owner)* Whether the
+  bar may touch the accent of a tall accented capital on the line below
+  the word being spoken is the owner's open call (same decision; the
+  recommended answer, accept, is what is built).
 - Home's larger sizes (2026-10-30) have not been tried by a person on
   a device: the switch and head floors are proposals, and no phone holds
   more than touch's sizes, so a gaze, head or switch answer on a phone
@@ -1616,6 +1633,7 @@ settings, date) and summarise it here.
 |---|---|
 | Speech plays with the silent switch on, and after a phone call | Audio session handling (invariant 4) |
 | A phrase cut off by a call shows "Stopped, Again" | The cut-off rule (code audit M1) |
+| The word being spoken keeps time with each voice, a Personal Voice included, and VoiceOver says nothing while it is marked | Whether the word marking follows real voices (docs/DECISIONS.md, "The word being spoken is marked") |
 | D1: with no question at launch, a Personal Voice allowed after a phrase has been spoken speaks in the next phrase, after a voice-list refresh, a rebuilt synthesizer or only a relaunch (docs/recon/2026-10-15/directions/onboarding-and-settings.md, 2.5). Run from Xcode with `--personal-voice=ask-from-settings` added to the scheme's arguments (Product > Scheme > Edit Scheme > Run > Arguments), and ask with Voice Settings' Ask to Use Personal Voice | Whether the app may switch to `PersonalVoiceAskPolicy.fromSettings` (docs/DECISIONS.md, "Personal Voice permission is asked at launch, for now") |
 | In the same run: iOS's question appears over Voice Settings, which is still there after a wait of over 90 seconds; after Allow or Don't Allow the card shows the answer, "Answered. …" sits where the button was, nothing below the card moved, and Open Personal Voice Settings appears only after leaving and reopening Voice Settings; and, under Dwell or Head Tracking, a look kept where iOS's answer button was meets nothing that speaks, changes the voice or leaves Brickson | "Asking for Personal Voice from Voice Settings", "Voice Settings, reached with a held look" |
 | D4: Personal Voice access turned off in the Settings app while Brickson waits in the background; on return a phrase speaks in another voice, and turning access back on brings the Personal Voice back | "A Personal Voice is used only while it is allowed" |
