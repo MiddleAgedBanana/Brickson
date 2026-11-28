@@ -473,6 +473,9 @@ private struct MessageText: View {
     @Environment(\.legibilityWeight) private var legibilityWeight
     @Environment(\.showsSetupHint) private var showsSetupHint
 
+    /// The lines of the message always shown; a longer message scrolls.
+    private static let shownLines = 2
+
     var body: some View {
         let font = LabelFont.message
         let text = speech.lastSpokenText ?? (showsSetupHint ? FirstRunHint.text : String(
@@ -482,14 +485,20 @@ private struct MessageText: View {
 
         Text(verbatim: " ")
             .font(font.font)
-            .lineLimit(2, reservesSpace: true)
+            .lineLimit(Self.shownLines, reservesSpace: true)
             .frame(maxWidth: .infinity)
             .hidden()
             .accessibilityHidden(true)
             .overlay(alignment: .topLeading) {
                 GeometryReader { proxy in
                     let fit = font.legible(legibilityWeight).messageFit(for: text, at: dynamicTypeSize, width: proxy.size.width)
-                    MessageViewport(startCount: speech.phraseStartCount) {
+                    // The bar may reach below the lines shown only when no
+                    // further line waits there, scrolled out of sight, whose
+                    // tallest glyphs it would uncover.
+                    MessageViewport(
+                        startCount: speech.phraseStartCount,
+                        roomBelow: fit.lines.map { $0.count <= Self.shownLines } ?? false
+                    ) {
                         // Primary ink, not the system's secondary gray, which
                         // measures under 4.5:1 (invariant 6). The same view
                         // whichever way it fits, so the audit compares it
@@ -543,17 +552,22 @@ private struct MarkedMessage: View {
     }
 }
 
-/// The message's scrolling lines. While a phrase is being spoken the words
-/// are clipped a few points below the lines shown, so the bar under a word
-/// on the last of them is not cut off; it reaches into the gap above the
-/// status line, and nothing moves for it. At other times they are clipped
-/// to the lines themselves, as always. Like `MarkedMessage`, this reads
-/// the speech's progress itself, so a word report never measures the
-/// message again.
+/// The message's scrolling lines. While a phrase is being spoken, and the
+/// whole message fits the lines shown (`roomBelow`), the words are clipped
+/// a few points below those lines, so the bar under a word on the last of
+/// them is not cut off; it reaches into the gap above the status line, and
+/// nothing moves for it. A longer message, with a line waiting below, and
+/// any message at other times, are clipped to the lines themselves, as
+/// always, so no part of a hidden line ever shows. Like `MarkedMessage`,
+/// this reads the speech's progress itself, so a word report never
+/// measures the message again.
 private struct MessageViewport<Content: View>: View {
     @Environment(SpeechService.self) private var speech
     /// Counts phrase starts (`SpeechService.phraseStartCount`).
     let startCount: Int
+    /// Whether the bar may reach below the lines shown: only when the
+    /// message has no further line hidden below them.
+    let roomBelow: Bool
     @ViewBuilder let content: Content
 
     var body: some View {
@@ -562,7 +576,7 @@ private struct MessageViewport<Content: View>: View {
         }
         .scrollBounceBehavior(.basedOnSize)
         .scrollClipDisabled()
-        .clipShape(RoomBelow(points: speech.phraseInProgress == nil ? 0 : SpokenWordStyle.mostRoomBelow))
+        .clipShape(RoomBelow(points: roomBelow && speech.phraseInProgress != nil ? SpokenWordStyle.mostRoomBelow : 0))
         // A new view, so a new scroll position, on every phrase start:
         // Again and the same phrase chosen again show the first words too,
         // not where the last reader left it.

@@ -802,6 +802,24 @@ struct SpokenUtteranceTrackerTests {
         #expect(tracker.phraseInProgress?.latestWord == 7..<11)
     }
 
+    /// A report over only the space between two words, or an empty one,
+    /// names no word, so the word already marked keeps its mark rather
+    /// than losing its bar until the next word. Fails if such a report
+    /// moves the mark.
+    @Test func aReportOverOnlyASpaceKeepsThePlace() {
+        var tracker = SpokenUtteranceTracker<Int>()
+        let text = "Please turn  me over."
+        tracker.began(1, text: text, at: start)
+        tracker.recordProgress(1, speaking: 7..<11, at: start + .seconds(0.2))
+
+        tracker.recordProgress(1, speaking: 11..<13, at: start + .seconds(0.3))
+        #expect(tracker.phraseInProgress?.latestWord == 7..<11)
+        tracker.recordProgress(1, speaking: 14..<14, at: start + .seconds(0.4))
+        #expect(tracker.phraseInProgress?.latestWord == 7..<11)
+        tracker.recordProgress(1, speaking: 12..<15, at: start + .seconds(0.5))
+        #expect(tracker.phraseInProgress?.latestWord == 12..<15)
+    }
+
     /// A report that names no place (the system's NSNotFound, say) still
     /// shows the phrase began, so the start limit does not stop it, and
     /// moves no mark. Fails if such a report stops counting as a start.

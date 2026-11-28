@@ -56,26 +56,55 @@ struct SpokenWordFramesTests {
         }
     }
 
-    /// The word being spoken has its bar, and only while it is spoken.
-    /// Fails if the bar is not drawn, or is drawn with no word marked.
-    @Test func theBarIsDrawnOnlyUnderTheWordBeingSpoken() throws {
+    /// The word being spoken has its bar, under that word and as wide as
+    /// it, and only while it is spoken. Fails if the bar is not drawn, is
+    /// drawn with no word marked, or sits under another stretch of the line
+    /// than the word the voice reported.
+    @Test(arguments: [0, 2])
+    func theBarIsDrawnUnderTheWordBeingSpoken(word index: Int) throws {
         let words = MessageWords(Self.message)
         let style = SpokenWordStyle(increasedContrast: false)
         let lines = try recordLines()
         let first = try #require(lines.first)
+        let word = try #require(first.words[index], "word \(index) is not on the first line")
         let barRows = Int(((first.baseline + first.descent + SpokenWordStyle.barGap) * Self.scale).rounded(.up))
             ..< Int(((first.baseline + first.descent + style.roomBelow) * Self.scale).rounded(.down))
 
-        func barInk(_ image: AlphaImage) -> Int {
-            barRows.reduce(0) { sum, y in sum + (0..<image.width).filter { image.alpha($0, y) > 0.5 }.count }
+        /// The columns, in points, with bar ink in every one of the bar's rows.
+        func barColumns(_ image: AlphaImage) -> [CGFloat] {
+            (0..<image.width).filter { x in barRows.allSatisfy { image.alpha(x, $0) > 0.5 } }.map { CGFloat($0) / Self.scale }
         }
         let plain = try render(marking: nil, increasedContrast: false)
-        let marked = try render(marking: words.marking(reported: words.places[0]), increasedContrast: false)
+        let marked = try render(marking: words.marking(reported: words.places[index]), increasedContrast: false)
         let nothingYet = try render(marking: .nothingReported, increasedContrast: false)
 
-        #expect(barInk(plain) == 0)
-        #expect(barInk(nothingYet) == 0)
-        #expect(barInk(marked) > 0)
+        #expect(barColumns(plain).isEmpty)
+        #expect(barColumns(nothingYet).isEmpty)
+        let bar = barColumns(marked)
+        let covered = Double(bar.count) / Double(Self.scale) / Double(word.width)
+        #expect(covered > 0.9, "the bar covers \(covered) of the word's width")
+        #expect(bar.allSatisfy { $0 >= word.minX - 1 && $0 <= word.maxX + 1 }, "bar ink outside \(word)")
+    }
+
+    /// Words still to come are drawn at the style's share of their ink:
+    /// with no word reported yet, every glyph of the message is drawn at
+    /// `dimOpacity`. Fails if the renderer draws them at full ink, or
+    /// fainter than the share that `PaletteTests` measures.
+    @Test(arguments: [false, true])
+    func wordsToComeAreDrawnAtTheirShareOfTheInk(increasedContrast: Bool) throws {
+        let style = SpokenWordStyle(increasedContrast: increasedContrast)
+        let plain = try render(marking: nil, increasedContrast: increasedContrast)
+        let toCome = try render(marking: .nothingReported, increasedContrast: increasedContrast)
+        var solid = 0
+        var offShare = 0
+        for y in 0..<plain.height {
+            for x in 0..<plain.width where plain.alpha(x, y) > 0.95 {
+                solid += 1
+                if abs(toCome.alpha(x, y) - style.dimOpacity) > 0.05 { offShare += 1 }
+            }
+        }
+        #expect(solid > 100, "too few solid glyph pixels to judge: \(solid)")
+        #expect(offShare == 0, "\(offShare) of \(solid) glyph pixels are not at \(style.dimOpacity) of the ink")
     }
 
     /// A typed message may be 2,000 characters long (docs/DECISIONS.md,
@@ -147,6 +176,8 @@ private nonisolated struct LineRecorder: TextRenderer {
     struct Line: Sendable {
         let baseline: CGFloat
         let descent: CGFloat
+        /// Where each tagged word on the line is drawn, by its order.
+        var words: [Int: CGRect] = [:]
     }
 
     final class Box: @unchecked Sendable {
@@ -156,7 +187,15 @@ private nonisolated struct LineRecorder: TextRenderer {
     let box: Box
 
     func draw(layout: Text.Layout, in context: inout GraphicsContext) {
-        box.lines = layout.map { Line(baseline: $0.typographicBounds.origin.y, descent: $0.typographicBounds.descent) }
+        box.lines = layout.map { line in
+            var recorded = Line(baseline: line.typographicBounds.origin.y, descent: line.typographicBounds.descent)
+            for run in line {
+                if let index = run[SpokenWordIndex.self]?.index {
+                    recorded.words[index] = recorded.words[index].map { $0.union(run.typographicBounds.rect) } ?? run.typographicBounds.rect
+                }
+            }
+            return recorded
+        }
         for line in layout {
             context.draw(line)
         }

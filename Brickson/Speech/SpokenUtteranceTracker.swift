@@ -211,9 +211,11 @@ nonisolated struct SpokenUtteranceTracker<ID: Equatable & Sendable>: Sendable {
     /// to speak, in UTF-16 units of the utterance's text, or nil when the
     /// report named none. Its end records how far the voice has got exactly
     /// as `recordProgress(_:reaching:at:)` does. Inside a phrase the place
-    /// becomes the word Home marks, but only moving forward and only while
-    /// it starts inside the phrase's words: a stray report, earlier than the
-    /// one already marked or past the end, leaves the mark where it was.
+    /// becomes the word Home marks, but only moving forward and only when
+    /// it covers part of one of the phrase's words (as Home splits them,
+    /// `WordFit.words(in:)`): a stray report, earlier than the one already
+    /// marked, empty, past the end or over only a space or line break,
+    /// leaves the mark where it was.
     /// Returns how long after `began` the utterance started, when this is
     /// the first sign that it did (`recordStart`).
     @discardableResult
@@ -225,13 +227,23 @@ nonisolated struct SpokenUtteranceTracker<ID: Equatable & Sendable>: Sendable {
         guard let range else { return recordProgress(id, at: instant) }
         let delay = recordProgress(id, reaching: range.upperBound, at: instant)
         guard var current = active, current.id == id, case let .phrase(text) = current.source else { return delay }
-        let startsInside = range.lowerBound < text.utf16.count
         let movesForward = current.latestWord.map { range.lowerBound >= $0.lowerBound } ?? true
-        if startsInside, movesForward {
+        if movesForward, Self.namesAWord(range, in: text) {
             current.latestWord = range
             active = current
         }
         return delay
+    }
+
+    /// Whether `range`, in UTF-16 units of `text`, covers at least one
+    /// character of one of its words.
+    private static func namesAWord(_ range: Range<Int>, in text: String) -> Bool {
+        // An empty place names no character, even inside a word.
+        guard !range.isEmpty else { return false }
+        return WordFit.words(in: text).contains { word in
+            word.startIndex.utf16Offset(in: text) < range.upperBound
+                && range.lowerBound < word.endIndex.utf16Offset(in: text)
+        }
     }
 
     /// The synthesizer said it began speaking the utterance. Returns how long
