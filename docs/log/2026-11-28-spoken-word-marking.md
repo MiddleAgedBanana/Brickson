@@ -29,9 +29,10 @@ word being spoken is marked").
   tagged words built from the message alone; the renderer only changes
   brightness and draws the bar, so nothing moves. Only a small view reads
   the speech's progress, so a word report lays nothing out again.
-- The bar reaches a few points below the last line shown, so Home's
-  message is clipped that much lower, into the gap above the status line.
-  No frame changes.
+- The bar reaches a few points below the last line shown, so while a
+  phrase is spoken Home's message is clipped that much lower, into the gap
+  above the status line; at other times it is clipped at its lines, as
+  before. No frame changes.
 - SwiftUI drew nothing at all of a `Text` that interpolated more than 128
   pieces (measured on iOS 27.2: a message of 65 words, with the spaces
   between them, came out blank). The message is therefore joined in
@@ -42,14 +43,60 @@ word being spoken is marked").
 
 ## Commits
 
-COMMITS
+- `87969b4` Mark the word being spoken in Home's message.
+- `1ff5f69` Record the word marking: decision, work file, checks and the
+  website.
+- `3c06006` Clip lower only while speaking, and mark no word for an empty
+  place (after the Codex review run before opening).
+- This record's own commit.
 
 ## Verified
 
-VERIFIED
+On the owner's Mac with Xcode 27.2, on iOS 27.2 simulators of an iPhone 17
+and a 13-inch iPad Pro (M5), in portrait:
+
+- `scripts/test.sh` (the documents, hooks, privacy, agent-bridge and
+  forbidden-code checks, then every unit test) on the iPhone: 1,150 tests,
+  none failed (1 skipped and 12 expected failures, as on `main`); the
+  String Catalog up to date.
+- `scripts/test.sh ui` with `LaunchTests`, `TypingOnHomeTests` and
+  `HomeLayoutTests`, on the iPhone and on the iPad: 14 of 16 passed on
+  each, with the full software keyboard. Apple's accessibility audit
+  passed on Home in light and dark. The two that failed wait for speech to
+  finish, which this Mac's simulators never do (their audio does not
+  start, so "Speaking" never leaves): `testLargestTextKeepsQuickControlWordsVisible`,
+  which is not changed here, and the new
+  `testSpeakingTypedWordsLeavesTheFieldAsItIs`. Each failed only at that
+  wait. GitHub's simulators speak and finish.
+- Home on the iPad, from the UI test's own screen recording: after Again
+  with a typed message, the simulator's voice reported its first word, and
+  Home showed "Green" in full ink with the bar under it, the rest of the
+  message dimmed, and "Speaking" on the status line, with every control in
+  its place. (The voice then stalled, as this Mac's simulators do.)
+- The debug review sheet on the iPad in light, dark, light and dark with
+  Increase Contrast, and at the largest text size: every word in its
+  place, the bar under the word being spoken (thicker with Increase
+  Contrast), the words to come dimmed and readable, and at the largest
+  size a bar under a first-line word clear of the line below.
+- `SpokenWordFramesTests` fails when the marked word is drawn 3 points
+  higher (tried once, then put back). `everyWordOfTheLongestTypedMessageIsTagged`
+  failed before the message was joined in groups, which is how the
+  128-piece limit was found; a 400-word message is now built and drawn in
+  about 40 ms on the simulator.
+- `codex review --base origin/main` before opening: three findings fixed
+  (an empty place inside a word, the lower clip when nothing is marked,
+  and the debug button's edge), two answered in the pull request (an
+  accent on the line below, and the UI test's wait for real speech).
 
 ## Not verified
 
+- GitHub CI, at the time of writing.
+- Landscape, iPhone Duo and Split View; the UI tests other than the
+  three classes above; the mark moving on from word to word on Home (this
+  Mac's simulator voice reported the first word and then stalled).
+- Differentiate Without Colour, Reduce Motion, Reduce Transparency and
+  Smart Invert were not captured: by the code nothing changes under the
+  first three, and Smart Invert was not looked at.
 - Sound, and whether any real voice, a Personal Voice included, reports
   its words in time: simulators prove nothing about either (device check
   S7, added).

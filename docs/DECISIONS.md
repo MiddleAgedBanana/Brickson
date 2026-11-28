@@ -1284,9 +1284,14 @@ and see at a glance that the voice is under way.
 - **Nothing moves.** The words are laid out once, from the message alone;
   a `TextRenderer` only changes how brightly each is drawn and draws the
   bar, so no word moves, grows or changes weight, no control moves, and
-  nothing waits: each report only records a place. The bar reaches a few
-  points below the last line shown, into the gap above the status line, so
-  the message is clipped that much lower; no frame changes.
+  nothing waits: each report only records a place. The bar sits a point
+  below its line. Under the last line shown it reaches into the gap above
+  the status line, so while a phrase is spoken the message is clipped that
+  much lower (at other times, at its lines, as before); no frame changes.
+  Where a line below the marked word starts with a tall accented capital
+  (É, Å), the bar can touch the top of its accent: the lines have no room
+  between them that a bar fits in, and adding room would move the words.
+  The word being spoken keeps its descenders clear, which matters more.
 - **Measured, and readable in every setting.** The words to come are
   primary ink at 60% (75% with Increase Contrast) over the screen, pinned
   at 4.5:1 or better in every appearance, the lifted dark screen included
