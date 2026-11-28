@@ -6,11 +6,15 @@ edits this page in place and writes its record in [`docs/log/`](log/README.md);
 nothing is appended here. Plan: [`docs/ROADMAP.md`](ROADMAP.md). How the
 project runs: [`docs/SDLC.md`](SDLC.md).
 
-**State as of 2026-11-25: `main` is at `27d894c`, pull request #134,
-adding `docs/DECISIONS-INDEX.md`, one line per decision, which
-`AGENTS.md` sends every agent to before it decides anything
+**State as of 2026-11-26: `main` is at `4744efc`, pull request #135,
+making the design review sheet's instructions work the first time from
+its README alone
+([`log/2026-11-25-design-review-readme.md`](log/2026-11-25-design-review-readme.md)),
+merged 2026-11-25, after #134, adding `docs/DECISIONS-INDEX.md`, one
+line per decision, which `AGENTS.md` sends every agent to before it
+decides anything
 ([`log/2026-11-24-decision-index.md`](log/2026-11-24-decision-index.md)),
-merged 2026-11-25, after #133, making Settings reset only after use
+and #133, making Settings reset only after use
 ([`log/2026-11-22-settings-reset-only-after-use.md`](log/2026-11-22-settings-reset-only-after-use.md)),
 the same day, and #120 (four more windows for Home's layout tests) and
 #132 (running the simulator's start in the background so GitHub's agent
@@ -22,9 +26,10 @@ test waits), #123 (a phrase the speech service never begins), #124,
 #130 (a design review sheet) and #131 (what GitHub's agent logged when a
 Mac job is cancelled) have merged too, and #108, #109's draft twin, was
 closed. Open pull requests: #115, the record of the simulator
-experiments; and #135, which makes the design review sheet's
-instructions work the first time from its README alone
-([`log/2026-11-25-design-review-readme.md`](log/2026-11-25-design-review-readme.md)).
+experiments; and #136, which tightens when agents ask each reviewer,
+records what each one does now and says what happens when the decision
+index reaches its limit
+([`log/2026-11-26-reviewer-rules.md`](log/2026-11-26-reviewer-rules.md)).
 Device checks wait for the Team ID (*Next steps, in order*, step 4).
 
 ## What the app does today
@@ -1845,20 +1850,23 @@ settings, date) and summarise it here.
 - Codex reviews every push to a pull request; Copilot reviews a pull
   request that changes code once, when the agent asks right after
   opening it, its local Codex review answered (since 2026-11-08; AI
-  Scan is off since that day);
-  Greptile reviews when a pull request opens, as far as its free plan's
-  credits allow; cubic reviews when one opens and after each push (its
-  app since 2026-11-15); CodeRabbit reviews only when a comment
-  asks, `@coderabbitai review`, since the owner's trial ended. Since
+  Scan is off since that day; Copilot has no credits until
+  2026-12-01);
+  Greptile reviews once, when a pull request opens; cubic reviews when
+  one opens and after each push, and is asked with
+  `@cubic-dev-ai review this PR` only if it has not reviewed; CodeRabbit
+  reviews when a comment asks, `@coderabbitai review`, at most once an
+  hour, asked once after a round's last push. Since
   2026-11-07 each one's settings are in the repository
   (`.coderabbit.yaml`, `cubic.yaml`, `.greptile/`), with every feature
   that writes code and has a setting turned off, and AGENTS.md's rule
   holds the rest (docs/DECISIONS.md, *Code review*).
-  Three more of the owner's reviewers comment by themselves, never
-  approve, and no agent asks them: Gitar (its auto-apply off), Graphify
-  (one summary review per pull request so far) and SonarQube Cloud (a
-  quality-gate comment and check runs of its own, none of them
-  required); docs/DECISIONS.md, *Code review*, 2026-11-19.
+  Three more of the owner's reviewers never approve and no agent asks
+  them: Gitar comments by itself (its auto-apply off; its trial ends
+  about 2026-11-29, then summaries only), Graphify is paused since #130,
+  and SonarQube Cloud posts a quality-gate comment and check runs of its
+  own, none of them required; docs/DECISIONS.md, *Code review*,
+  2026-11-19 and 2026-11-26.
   None reviews Dependabot's pull requests by itself. The AI credits
   Copilot's reviews use show only in Settings → Billing → AI usage;
   the owner budgets 35 to 50 reviews a month (docs/DECISIONS.md,

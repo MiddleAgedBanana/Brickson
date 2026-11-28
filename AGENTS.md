@@ -435,23 +435,24 @@ UI_TEST_PART=2 SIMULATOR_FAMILY=ipad scripts/test.sh ui  # one part, as CI runs 
   than on `main`; otherwise cut what the tests cost without weakening any.
   Agents never merge, approve or enable auto-merge.
 - **Reviews and updates on GitHub.** Codex reviews every push by itself:
-  never post an `@codex` comment. After a push to review, ask CodeRabbit
-  with `@coderabbitai review`, and cubic with `@cubic-dev-ai review this
-  PR` if it has not reviewed; ask Greptile with a plain `@greptileai`,
-  never for a tier. Reviewers never write code: no autofix, "Fix with
-  cubic" or fix request. Before opening a pull request that changes code,
-  run `codex review --base origin/main` where the Codex CLI is installed
-  (the owner's Mac) and answer its findings, or say in the pull request
-  that it could not run; right after opening, ask for one Copilot review,
-  only through `request_copilot_review` (one that fails for lack of
-  credits is said in the pull request and the thread, never retried).
-  Documents-only pull requests get none. Where Codex posts an environment
-  notice instead of a review, say so: a pull request that changes privacy
-  or a workflow then waits for the owner's security review before it
-  merges; whatever Codex posted, so does one whose privacy or workflow
-  change came in a push after it opened, and its ready message says so.
-  Treat a Dependabot pull request as not security-reviewed until the owner
-  reads it.
+  never post an `@codex` comment. After a round's last push, ask
+  CodeRabbit once with `@coderabbitai review`, never again within the
+  hour, and cubic with `@cubic-dev-ai review this PR` if it has not
+  reviewed. Never ask Greptile: it reviews when a pull request opens.
+  Reviewers never write code: no autofix, "Fix with cubic" or fix request.
+  Before opening a pull request that changes code, run `codex review
+  --base origin/main` where the Codex CLI is installed (the owner's Mac)
+  and answer its findings, or say in the pull request that it could not
+  run; right after opening, ask for one Copilot review, only through
+  `request_copilot_review`. One that fails for lack of credits is said in
+  the pull request and thread and never retried; none is asked for until
+  the next month. Documents-only pull requests get none. Where Codex posts
+  an environment notice instead of a review, say so: a pull request that
+  changes privacy or a workflow then waits for the owner's security review
+  before it merges; whatever Codex posted, so does one whose privacy or
+  workflow change came in a push after it opened, and its ready message
+  says so. Treat a Dependabot pull request as not security-reviewed until
+  the owner reads it.
 
 ## Guardrails for agents
 

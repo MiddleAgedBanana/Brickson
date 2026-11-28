@@ -7442,14 +7442,21 @@ review setup does not quietly break them.
     fix CI, resolve merge conflicts). The brief's draft missed fix CI,
     which is on by default and which open-source projects get.
     `docs/archive/` and the JSON and text captures in `docs/evidence/`
-    are skipped. Every other tool stays on.
-  - **`cubic.yaml`.** Reviews on open and on each push; never approves;
+    are skipped. Every other tool stays on. On 2026-11-26 both docstring
+    keys left the file: CodeRabbit's schema now says the Docstring
+    Coverage check and docstring generation are retired and their
+    settings have no effect, so what it does did not change.
+  - **`cubic.yaml`.** Reviews turned on (it reviews when a pull request
+    opens and after each push, and an agent asks only if it has not: the
+    2026-11-26 bullet below); never approves;
     never resolves its own threads (the agent answers each finding and
     resolves it); writes no pull request description (the first two
     lines of every description are attribution lines agents keep); and
     every fix feature off ("Fix with cubic" buttons, fixes asked for in
-    a comment, auto-fix). cubic reads it from `main` only, so it applies
-    from the merge on. Its GitHub app is the owner's to install.
+    a comment, auto-fix); and, since 2026-11-26, the same records
+    skipped as CodeRabbit and Greptile. cubic reads it from `main` only,
+    so it applies from the merge on. Its GitHub app is the owner's to
+    install.
   - **`.greptile/`.** The one-credit Base review, once per pull request
     when it opens (pushes do not spend credits), logic and syntax
     comments but no style ones, the same skipped records as CodeRabbit,
@@ -7678,6 +7685,42 @@ review setup does not quietly break them.
   cubic's app was installed on 2026-11-15 and has reviewed since #114.
   None of the eight approves, and every conversation any of them opens
   is one the ruleset requires resolved (*`main` ruleset*, below).
+- **2026-11-26: who reviews when, and when an agent asks.** What each
+  reviewer does now, from its own words on the pull requests:
+  - **Codex** reviews every push by itself; no agent asks it.
+  - **Greptile** reviews once, when a pull request opens
+    (`.greptile/config.json`, `"autoReview": ["open"]`), so no agent
+    asks it.
+  - **CodeRabbit** reviews when asked, at most once an hour: its
+    footer on #135 says "Your plan provides up to 1 included review per
+    hour". An agent asks once, after a round's last push, and never
+    again within the hour.
+  - **cubic** reviews by itself when a pull request opens and after
+    each push (`incremental_commits: true`): it did on #133 and #134
+    with no ask. An agent asks once a round (`@cubic-dev-ai review this
+    PR`) only if it has not reviewed. `cubic.yaml` now skips the same
+    records as the other two, and cubic's documentation says its file
+    filters apply to requested reviews too.
+  - **Copilot** has nothing left to review with until 2026-12-01: on
+    #132 it said the requester "has insufficient remaining quota". A
+    request that fails that way is said in the pull request and the
+    thread and never retried, and none is asked for until the 1st of the
+    next month: GitHub's Copilot billing documentation says the
+    allowance resets on the 1st of each month at 00:00 UTC.
+  - **Gitar** still comments as pushes arrive, but its trial ends about
+    2026-11-29 (its footer on #135, 2026-11-25: "Your trial ends in 4
+    days"); after that it gives summaries only. Auto-apply stays off.
+  - **Graphify** is paused: on #130 to #133 it posted "Graphify reviews
+    are paused for this workspace" instead of a review. Resuming it is
+    the owner's choice, on Graphify's website.
+  - **SonarQube Cloud** is unchanged.
+
+  Why: an ask a reviewer cannot serve either fails or spends its one
+  review of the hour on a head that is about to change, and each extra
+  review is more conversations to resolve, so each reviewer is asked
+  only when it can answer. Rule: AGENTS.md, "Reviews and updates on
+  GitHub". Record:
+  [`log/2026-11-26-reviewer-rules.md`](log/2026-11-26-reviewer-rules.md).
 
 ### Dependencies
 
@@ -8146,14 +8189,16 @@ full entry always wins over its line.
   touches and their entries here.
 - **A check keeps it true.** `scripts/test-docs.py`
   (`decision_index_problems`) fails when a `##` or `###` decision here
-  has no line or two, when a line is malformed or names a title that no
-  longer exists, when a superseded line's `see "Title"`, in either case,
-  names none, or when the index passes 15 KiB (`DECISION_INDEX_LIMIT`);
-  `agents_md_index_problems` fails when, within the first 24,000 bytes of
-  `AGENTS.md`, its opening stops sending agents to the index before they
-  decide or *Workflow rules* stops starting each session with the index
-  groups the work touches. Each test expects its own problem and no other. It runs in CI with the
-  other document checks.
+  has no line, or more than one, across the index and its archive; when
+  a line is malformed or names a title that no longer exists; when a
+  superseded line's `see "Title"`, in any letter case, names no
+  decision; or when the index passes 15 KiB (`DECISION_INDEX_LIMIT`;
+  what happens then: "When the index reaches its limit", below).
+  `agents_md_index_problems` fails when, within the first 24,000 bytes
+  of `AGENTS.md`, its opening stops sending agents to the index before
+  they decide or *Workflow rules* stops starting each session with the
+  index groups the work touches. Each test expects its own problem and
+  no other. It runs in CI with the other document checks.
 - **The rule.** Whoever adds or changes a decision adds or changes its
   line in the same change; after a summary, a job re-reads its work
   file, `AGENTS.md` and the index first (`AGENTS.md`, *Workflow rules*).
@@ -8162,3 +8207,55 @@ full entry always wins over its line.
   change to the rules they follow, to the owner. The index is such a
   file and the start of a session changed, so the pull request lists
   both for the owner, and the merge is that decision.
+
+## When the index reaches its limit
+
+*2026-11-26. A default, reversible if the owner objects; the owner
+decides on the merge
+([`log/2026-11-26-reviewer-rules.md`](log/2026-11-26-reviewer-rules.md)).*
+
+**Decision.** When a change would take `docs/DECISIONS-INDEX.md` past
+15 KiB (`DECISION_INDEX_LIMIT`), it first shortens long lines, then
+moves whole lines to `docs/DECISIONS-INDEX-ARCHIVE.md`, under the same
+group headings, until the index fits. Superseded lines (those that say
+"History; see", in any letter case) move first, then the lines of the
+earliest-dated decisions. No line is dropped and the limit never rises.
+Once the archive holds a line, the index's opening names it, and an
+agent reads the groups its work touches in both files.
+
+- **Why not raise the limit.** Every agent reads the index before it
+  decides anything, at about 100 bytes a line. A limit that rises with
+  each decision stops being one quick read, which is the reason the
+  index exists ("A one-line index of every decision").
+- **Why superseded lines first.** They hold no rule of their own: each
+  points to the decision that replaced it, which keeps its line in the
+  index.
+- **Why the oldest next.** The earliest decisions, from October 2026,
+  are mostly foundations `AGENTS.md` already states as rules (no outside
+  packages, warnings are errors, the generated Xcode project), so an
+  agent meets them before it opens the index.
+- **Why beside the index, not in `docs/archive/`.** `.coderabbit.yaml`,
+  `.greptile/config.json` and `cubic.yaml` skip `docs/archive/`, and the
+  archived lines still bind: a reviewer should see a change to them.
+- **No archive yet.** With this decision's line the index is 14,234 of
+  15,360 bytes, room for about ten more lines, so the first change that
+  needs the archive creates it, with the index's pointer in the same
+  commit.
+- **A check keeps it true.** `decision_index_problems` in
+  `scripts/test-docs.py` reads both files: each decision has exactly one
+  line across them, every line and every `see "Title"` in either names a
+  decision that exists, the index's opening names the archive once the
+  archive holds a line, the archive holds a line that is not superseded
+  only once no superseded line is left in the index, and only the index
+  counts against the limit. When the index passes it, the failure says
+  to move superseded lines, then the oldest, to the archive, and never
+  to drop a line or raise the limit.
+- **What the check does not judge.** It cannot tell which lines are the
+  oldest, because an index line carries no date, so the order after the
+  superseded lines rests on the person making the change and on review.
+  Nor does it check that a moved line sits under the group it left: a
+  line's former group cannot be read from the text, and a group can
+  empty out in the index while it fills in the archive.
+- **The archive needs no change to `AGENTS.md`.** That file is within a
+  few bytes of its 32 KiB limit, and the index's opening is where an
+  agent reading the index learns of the archive.

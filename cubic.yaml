@@ -14,9 +14,20 @@
 version: 1
 
 reviews:
-  # Review each pull request when it opens, and each push after that.
+  # Reviews are on: cubic reviews when a pull request opens and after each
+  # push. An agent asks with `@cubic-dev-ai review this PR` only when cubic
+  # has not reviewed (AGENTS.md, "Reviews and updates on GitHub";
+  # docs/DECISIONS.md, *Code review*).
   enabled: true
   incremental_commits: true
+  # Skip files that are records, not code or rules: the same set
+  # CodeRabbit (`.coderabbit.yaml`) and Greptile (`.greptile/`) skip.
+  # cubic applies these filters to requested reviews too.
+  ignore:
+    files:
+      - "docs/archive/**"
+      - "docs/evidence/**/*.json"
+      - "docs/evidence/**/*.txt"
   # When a later commit addresses a finding, only update the comment and
   # leave its thread open (true, the default, resolves it): the agent that
   # opened the pull request answers every finding and then resolves the
