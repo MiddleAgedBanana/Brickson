@@ -1286,8 +1286,12 @@ and see at a glance that the voice is under way.
   bar, so no word moves, grows or changes weight, no control moves, and
   nothing waits: each report only records a place. The bar sits a point
   below its line. Under the last line shown it reaches into the gap above
-  the status line, so while a phrase is spoken the message is clipped that
-  much lower (at other times, at its lines, as before); no frame changes.
+  the status line, so while a phrase is spoken, and the whole message fits
+  the lines shown, the message is clipped that much lower (at other times,
+  and for a longer message, whose next line waits hidden below, at its
+  lines, as before, so no part of a hidden line shows); no frame changes.
+  A report that names no character of any word (only a space, or an
+  empty place) leaves the mark where it was.
   Where a line below the marked word starts with a tall accented capital
   (É, Å), the bar can touch the top of its accent: the lines have no room
   between them that a bar fits in, and adding room would move the words.

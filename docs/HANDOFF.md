@@ -480,7 +480,9 @@ release in docs/ROADMAP.md when no thread has it yet.
   the open typing field are not marked word by word; they are marked once
   the phrases are back (docs/DECISIONS.md, "The word being spoken is
   marked"). Nobody has seen the mark keep time with a voice on a device
-  (S7).
+  (S7). The design review capture script does not measure the sheet's
+  word-marking samples; their contrast is pinned by `PaletteTests` instead
+  (declined in the review of pull request #137).
 - Home's larger sizes (2026-10-30) have not been tried by a person on
   a device: the switch and head floors are proposals, and no phone holds
   more than touch's sizes, so a gaze, head or switch answer on a phone

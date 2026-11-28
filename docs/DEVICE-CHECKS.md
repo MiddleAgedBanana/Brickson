@@ -728,20 +728,24 @@ The mark under the word being spoken follows only what each voice
 reports (docs/DECISIONS.md, "The word being spoken is marked").
 
 1. **Owner:** in the Personal Voice, then an enhanced system voice, then
-   the default voice, speak the longest starter phrase and a typed message
-   of about ten words, at the normal speed and at the fastest of Voice
-   Settings' speeds. Watch Home's message. *Passes* when, in each voice,
+   the default voice, speak the longest starter phrase at the normal speed
+   and at the fastest of Voice Settings' speeds, and watch Home's message.
+   Then type a message of about ten words, choose Speak, and at once
+   choose Phrases while it is still being spoken (the open typing field
+   is not marked), and watch Home's message. *Passes* when, in each voice,
    the bar sits under the word being heard, never more than one word ahead
    or behind, and every word is in full ink once the voice stops. A voice
    that leaves the whole message dimmed until it ends reports no words:
    note which, since that is allowed but worth knowing.
-2. **Owner:** speak a phrase, then choose Stop while it speaks; speak it
-   again and cut it off with a call. *Passes* when the mark is gone at
-   once each time and the message is drawn as before.
-3. **Owner:** with VoiceOver on, choose a phrase, then swipe to the
-   message once the voice has finished. *Passes* when VoiceOver says
-   nothing while the words are marked, and reads the whole message once,
-   as before.
+2. **Owner:** speak a long phrase, then choose another phrase while it
+   speaks; then speak a long phrase and cut it off with a call. *Passes*
+   when the first phrase's mark is gone at once (the new phrase starts with
+   no word marked), and after the call the message is drawn as before.
+3. **Owner:** with VoiceOver on, choose a long phrase and listen while it
+   is spoken. *Passes* when VoiceOver says nothing about the words as they
+   are marked. Then, while a long phrase is still being spoken, swipe to
+   the message. *Passes* when VoiceOver reads the whole message once, as
+   before, and the mark goes on moving.
 
 ## Speed and stamina
 

@@ -1,6 +1,6 @@
 # The word being spoken is marked in Home's message
 
-*2026-11-28. Pull request #PR (`claude/spoken-word-marking`). A Claude
+*2026-11-28. Pull request #137 (`claude/spoken-word-marking`). A Claude
 thread on the owner's Mac.*
 
 ## What changed and why
@@ -30,8 +30,9 @@ word being spoken is marked").
   brightness and draws the bar, so nothing moves. Only a small view reads
   the speech's progress, so a word report lays nothing out again.
 - The bar reaches a few points below the last line shown, so while a
-  phrase is spoken Home's message is clipped that much lower, into the gap
-  above the status line; at other times it is clipped at its lines, as
+  phrase is spoken, and the whole message fits the lines shown, Home's
+  message is clipped that much lower, into the gap above the status line;
+  at other times, and for a longer message, it is clipped at its lines, as
   before. No frame changes.
 - SwiftUI drew nothing at all of a `Text` that interpolated more than 128
   pieces (measured on iOS 27.2: a message of 65 words, with the spaces
@@ -48,7 +49,24 @@ word being spoken is marked").
   website.
 - `3c06006` Clip lower only while speaking, and mark no word for an empty
   place (after the Codex review run before opening).
-- This record's own commit.
+- The commit that adds this line, answering the first review round.
+
+## Review, first round
+
+CodeRabbit, cubic, Gitar and Greptile reviewed the first push; Copilot could
+not (the requester's quota was used up; not retried). Fixed: a report over
+only a space moved the mark off its word (the tracker now moves it only for
+a report naming a word's character, with a test); the lower clip showed the
+top of a hidden third line in a longer message (it now reaches lower only
+when the message fits the lines shown); the pixel tests now check that the
+words to come are drawn at their share of the ink and that the bar lies
+under the reported word, each tried once against a broken renderer; the
+device check now leaves typing before watching a typed message, cuts a
+phrase off with another phrase (Home's Stop ends the alarm, not speech),
+and checks VoiceOver while the words are marked; the website's date; and
+this record's number and commit line. Declined: measuring the review
+sheet's samples in the capture script (their contrast is pinned in
+`PaletteTests`; *Known gaps*). `main` was merged in, after #136.
 
 ## Verified
 
@@ -67,7 +85,9 @@ and a 13-inch iPad Pro (M5), in portrait:
   start, so "Speaking" never leaves): `testLargestTextKeepsQuickControlWordsVisible`,
   which is not changed here, and the new
   `testSpeakingTypedWordsLeavesTheFieldAsItIs`. Each failed only at that
-  wait. GitHub's simulators speak and finish.
+  wait. On GitHub's iPad simulator, in the pull request's first CI run,
+  `TypingOnHomeTests` passed, the new test with it (its iPhone part ran no
+  tests: the runner's simulator never settled).
 - Home on the iPad, from the UI test's own screen recording: after Again
   with a typed message, the simulator's voice reported its first word, and
   Home showed "Green" in full ink with the bar under it, the rest of the
