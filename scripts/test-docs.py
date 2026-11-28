@@ -32,10 +32,12 @@ end within that limit; and the whole file must fit within it too.
 
 It also checks docs/DECISIONS-INDEX.md, which AGENTS.md sends every agent
 to before it decides anything: each ## and ### decision in
-docs/DECISIONS.md has exactly one line, every line and every see "Title"
-names a decision that exists, the file stays within DECISION_INDEX_LIMIT,
-and AGENTS.md's opening and start of a session send every agent to it
-within the bytes every agent reads.
+docs/DECISIONS.md has exactly one line, in the index or in
+DECISION_INDEX_ARCHIVE, where lines move once the index would pass
+DECISION_INDEX_LIMIT; every line and every see "Title" names a decision
+that exists; the index names its archive once the archive holds a line;
+and AGENTS.md's opening and start of a session send every agent to the
+index within the bytes every agent reads.
 """
 from functools import cache
 from pathlib import Path
@@ -659,50 +661,76 @@ DECISION_INDEX_LIMIT = 15 * 1024
 AGENTS_FIRST_READ = 24000
 LIST_ITEM = re.compile(r'[ \t]*(?:[-*+]|\d+[.)])[ \t]')
 INDEX_LINE = re.compile(r'- "(?P<title>[^"\n]+)": \S')
+# A superseded decision's line says only where its rule went.
+SUPERSEDED = re.compile(r'- "[^"\n]+": History; see ', re.IGNORECASE)
 SEE = re.compile(r'\bsee "(?P<title>[^"\n]+)"', re.IGNORECASE)
 INDEX_REASON = '(docs/DECISIONS.md, "A one-line index of every decision")'
+# Lines past the limit move here, superseded lines first, then the oldest
+# (docs/DECISIONS.md, "When the index reaches its limit").
+DECISION_INDEX_ARCHIVE = 'docs/DECISIONS-INDEX-ARCHIVE.md'
+ARCHIVE_REASON = '(docs/DECISIONS.md, "When the index reaches its limit")'
 
 
-def decision_index_problems(decisions, index, limit=DECISION_INDEX_LIMIT):
-    """Every ## and ### decision in docs/DECISIONS.md has exactly one line in
-    the index, as - "Title": what it chose; every line and every see "Title"
-    names a decision that exists; and the index stays short enough to read
-    before every decision."""
+def decision_index_problems(decisions, index, limit=DECISION_INDEX_LIMIT, archive=''):
+    """Every ## and ### decision in docs/DECISIONS.md has exactly one line,
+    as - "Title": what it chose, in the index or in its archive; every line
+    and every see "Title" in either names a decision that exists; the
+    index's opening names its archive once the archive holds a line; the
+    archive holds a live line only once no superseded line is left in the
+    index; and the index alone stays short enough to read before every
+    decision."""
     titles = {normalize(title): title
               for level, title, _ in headings(decisions) if level in (2, 3)}
-    problems, lines = [], {}
-    for line in index.splitlines():
-        if not LIST_ITEM.match(line):
-            continue
-        match = INDEX_LINE.match(line)
-        if not match:
-            problems.append(f'{DECISION_INDEX}: "{line.strip()}" is not a decision line. Write '
-                            f'it as - "Title": what was chosen, over what, and why {INDEX_REASON}')
-            continue
-        key = normalize(match['title'])
-        if key not in titles:
-            problems.append(f'{DECISION_INDEX}: "{match["title"]}" is not a decision in '
-                            f'docs/DECISIONS.md. Use its heading as it is now, or remove the '
-                            f'line if the decision went {INDEX_REASON}')
-        elif key in lines:
-            problems.append(f'{DECISION_INDEX}: "{match["title"]}" has two lines; keep one '
-                            f'{INDEX_REASON}')
-        lines[key] = match['title']
+    problems, lines, archived = [], {}, 0
+    live_archived, superseded_left = [], []
+    for path, text in ((DECISION_INDEX, index), (DECISION_INDEX_ARCHIVE, archive)):
+        for line in text.splitlines():
+            if not LIST_ITEM.match(line):
+                continue
+            match = INDEX_LINE.match(line)
+            if not match:
+                problems.append(f'{path}: "{line.strip()}" is not a decision line. Write it '
+                                f'as - "Title": what was chosen, over what, and why '
+                                f'{INDEX_REASON}')
+                continue
+            archived += path == DECISION_INDEX_ARCHIVE
+            if path == DECISION_INDEX_ARCHIVE and not SUPERSEDED.match(line):
+                live_archived.append(match['title'])
+            if path == DECISION_INDEX and SUPERSEDED.match(line):
+                superseded_left.append(match['title'])
+            key = normalize(match['title'])
+            if key not in titles:
+                problems.append(f'{path}: "{match["title"]}" is not a decision in '
+                                f'docs/DECISIONS.md. Use its heading as it is now, or remove '
+                                f'the line if the decision went {INDEX_REASON}')
+            elif key in lines:
+                problems.append(f'{path}: "{match["title"]}" has two lines across the index '
+                                f'and its archive; keep one {INDEX_REASON}')
+            lines[key] = match['title']
+        for see in SEE.finditer(text):
+            if normalize(see['title']) not in titles:
+                problems.append(f'{path}: see "{see["title"]}" names no decision in '
+                                f'docs/DECISIONS.md; point to the one that replaced it '
+                                f'{INDEX_REASON}')
     for key, title in titles.items():
         if key not in lines:
             problems.append(f'{DECISION_INDEX}: the decision "{title}" has no line. Add - '
                             f'"{title}": what it chose, over what, and why, in the change that '
                             f'adds the decision {INDEX_REASON}')
-    for see in SEE.finditer(index):
-        if normalize(see['title']) not in titles:
-            problems.append(f'{DECISION_INDEX}: see "{see["title"]}" names no decision in '
-                            f'docs/DECISIONS.md; point to the one that replaced it '
-                            f'{INDEX_REASON}')
+    if archived and DECISION_INDEX_ARCHIVE not in index.split('\n## ', 1)[0]:
+        problems.append(f'{DECISION_INDEX} does not name {DECISION_INDEX_ARCHIVE}, which holds '
+                        f'{archived} lines; say in its opening that older lines are there '
+                        f'{ARCHIVE_REASON}')
+    if live_archived and superseded_left:
+        problems.append(f'{DECISION_INDEX_ARCHIVE} holds "{live_archived[0]}" while '
+                        f'{DECISION_INDEX} still holds the superseded line '
+                        f'"{superseded_left[0]}"; move superseded lines first {ARCHIVE_REASON}')
     size = len(index.encode())
     if size > limit:
         problems.append(f'{DECISION_INDEX} is {size} bytes, past its {limit}-byte limit; agents '
-                        f'read it before deciding anything. Shorten lines, never drop one '
-                        f'{INDEX_REASON}')
+                        f'read it before deciding anything. Shorten lines, or move superseded '
+                        f'lines, then the oldest, to {DECISION_INDEX_ARCHIVE}; never drop one '
+                        f'or raise the limit {ARCHIVE_REASON}')
     return problems
 
 
@@ -1404,9 +1432,92 @@ class DecisionIndexTests(unittest.TestCase):
         decisions = self.DECISIONS + '\n```\n## Not a decision\n```\n'
         self.assertEqual(decision_index_problems(decisions, self.INDEX), [])
 
+    # Lines past the limit move to the archive, never the limit rising
+    # (docs/DECISIONS.md, "When the index reaches its limit").
+    MOVED = '- "Old layout": History; see "Orientations".\n'
+    LIVE = '- "Orientations": Chose portrait over all four, because of X.\n'
+
+    def moved(self, line=MOVED):
+        """The index with one line moved to the archive, naming the archive."""
+        index = self.INDEX.replace(line, '').replace(
+            'Intro.', f'Intro. Older lines are in `{DECISION_INDEX_ARCHIVE}`.')
+        archive = '# Older decision lines\n\nIntro.\n\n## Devices\n' + line
+        return index, archive
+
+    def test_a_line_moved_to_the_archive_counts(self):
+        for line in [self.MOVED, self.LIVE]:
+            index, archive = self.moved(line)
+            if line == self.LIVE:
+                index, archive = index.replace(self.MOVED, ''), archive + self.MOVED
+            self.assertEqual(
+                decision_index_problems(self.DECISIONS, index, archive=archive), [], line)
+
+    def test_a_decision_with_a_line_in_both_files_fails(self):
+        _, archive = self.moved()
+        index = self.INDEX.replace('Intro.', f'Intro. See also `{DECISION_INDEX_ARCHIVE}`.')
+        self.assertProblem(decision_index_problems(self.DECISIONS, index, archive=archive),
+                           '"Old layout" has two lines')
+
+    def test_a_live_line_moved_before_a_superseded_one_fails(self):
+        index, archive = self.moved(self.LIVE)
+        self.assertProblem(decision_index_problems(self.DECISIONS, index, archive=archive),
+                           f'{DECISION_INDEX_ARCHIVE} holds "Orientations" while '
+                           f'{DECISION_INDEX} still holds the superseded line "Old layout"')
+
+    def test_a_superseded_line_counts_in_any_letter_case(self):
+        for words in ['History; See', 'HISTORY; SEE', 'history; see']:
+            index, archive = self.moved(self.LIVE)
+            index = index.replace('History; see', words)
+            self.assertProblem(decision_index_problems(self.DECISIONS, index, archive=archive),
+                               'still holds the superseded line "Old layout"', words)
+
+    def test_only_the_indexs_opening_names_the_archive(self):
+        index, archive = self.moved()
+        index = index.replace(f' Older lines are in `{DECISION_INDEX_ARCHIVE}`.', '')
+        index = index.replace('fold.\n', f'fold. See `{DECISION_INDEX_ARCHIVE}`.\n')
+        self.assertProblem(decision_index_problems(self.DECISIONS, index, archive=archive),
+                           f'{DECISION_INDEX} does not name {DECISION_INDEX_ARCHIVE}')
+
+    def test_the_archive_is_not_counted_against_the_limit(self):
+        index, archive = self.moved()
+        archive += '- "The fold": ' + 'Long. ' * 5000 + '\n'
+        index = index.replace('- "The fold": Owner\'s call. A wider gap at the fold.\n', '')
+        size = len(index.encode())
+        self.assertEqual(
+            decision_index_problems(self.DECISIONS, index, limit=size, archive=archive), [])
+
+    def test_an_archive_the_index_does_not_name_fails(self):
+        index, archive = self.moved()
+        index = index.replace(f' Older lines are in `{DECISION_INDEX_ARCHIVE}`.', '')
+        self.assertProblem(decision_index_problems(self.DECISIONS, index, archive=archive),
+                           f'{DECISION_INDEX} does not name {DECISION_INDEX_ARCHIVE}')
+
+    def test_the_archives_lines_and_pointers_are_checked(self):
+        index, archive = self.moved()
+        fold = '- "The fold": Owner\'s call. A wider gap at the fold.\n'
+        for line, words in [('- Orientations: no quote marks.\n',
+                             '"- Orientations: no quote marks." is not a decision line'),
+                            ('- "Gone": Chose A over B, because C.\n',
+                             '"Gone" is not a decision'),
+                            ('- "The fold": History; see "Home version 0".\n',
+                             'see "Home version 0" names no decision')]:
+            # A moved line leaves the index, so only the archive's problem shows.
+            moved_index = index.replace(fold, '') if '"The fold"' in line else index
+            self.assertProblem(
+                decision_index_problems(self.DECISIONS, moved_index, archive=archive + line),
+                f'{DECISION_INDEX_ARCHIVE}: {words}', line)
+
+    def test_the_limit_names_the_archive(self):
+        size = len(self.INDEX.encode())
+        self.assertProblem(decision_index_problems(self.DECISIONS, self.INDEX, limit=size - 1),
+                           f'move superseded lines, then the oldest, to '
+                           f'{DECISION_INDEX_ARCHIVE}')
+
     def test_the_repositorys_index_matches_its_decisions(self):
-        problems = decision_index_problems((ROOT / 'docs/DECISIONS.md').read_text(),
-                                           (ROOT / DECISION_INDEX).read_text())
+        archive = ROOT / DECISION_INDEX_ARCHIVE
+        problems = decision_index_problems(
+            (ROOT / 'docs/DECISIONS.md').read_text(), (ROOT / DECISION_INDEX).read_text(),
+            archive=archive.read_text() if archive.exists() else '')
         self.assertEqual(problems, [], '\n' + '\n'.join(problems))
 
     AGENTS = ('# Briefing\n\nIntro. Before deciding anything, read the groups of\n'
