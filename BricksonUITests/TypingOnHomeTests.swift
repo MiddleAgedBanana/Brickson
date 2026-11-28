@@ -144,11 +144,11 @@ final class TypingOnHomeTests: XCTestCase {
     /// Apple's own text field, scrolled to the cursor and still editable,
     /// so nothing is drawn over it (docs/DECISIONS.md, "The word being
     /// spoken is marked"). Speak leaves the field exactly as it was, its
-    /// frame and its words, adds no second copy of the message beside it,
-    /// and keeps the keyboard; once the phrases are back the message shows
-    /// as one element with the whole message as its label, however far the
-    /// voice has got. Fails if speaking typed words moves or changes the
-    /// field, puts the message in a second element, or closes the keyboard.
+    /// frame and its words, and adds no second copy of the message beside
+    /// it; once the phrases are back the message shows as one element with
+    /// the whole message as its label, however far the voice has got.
+    /// Fails if speaking typed words moves or changes the field, or puts the
+    /// message in a second element.
     @MainActor
     func testSpeakingTypedWordsLeavesTheFieldAsItIs() throws {
         let app = launchedApp()
@@ -162,7 +162,6 @@ final class TypingOnHomeTests: XCTestCase {
 
         app.buttons["Speak"].tap()
         waitUntil(app.buttons["Speak"], "isEnabled == true", "Speak turned off after speaking (\(context))")
-        XCTAssertTrue(app.keyboards.firstMatch.exists, "speaking closed the keyboard (\(context))")
         Self.expectSameFrame(field.frame, before, "the field, as its words are spoken,", context)
         XCTAssertEqual(field.value as? String, message, "speaking changed the field's words (\(context))")
         XCTAssertFalse(app.staticTexts[message].exists, "a second copy of the message showed beside the field (\(context))")

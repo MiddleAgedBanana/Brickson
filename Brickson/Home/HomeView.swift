@@ -489,7 +489,7 @@ private struct MessageText: View {
             .overlay(alignment: .topLeading) {
                 GeometryReader { proxy in
                     let fit = font.legible(legibilityWeight).messageFit(for: text, at: dynamicTypeSize, width: proxy.size.width)
-                    ScrollView {
+                    MessageViewport(startCount: speech.phraseStartCount) {
                         // Primary ink, not the system's secondary gray, which
                         // measures under 4.5:1 (invariant 6). The same view
                         // whichever way it fits, so the audit compares it
@@ -512,17 +512,6 @@ private struct MessageText: View {
                         .accessibilityLabel(Text(verbatim: text))
                         .frame(maxWidth: .infinity, alignment: .leading)
                     }
-                    .scrollBounceBehavior(.basedOnSize)
-                    // The bar under a word on the last line shown reaches a
-                    // few points below the lines, into the gap above the
-                    // status line, so the words are clipped that much lower
-                    // than the lines themselves. Nothing moves for it.
-                    .scrollClipDisabled()
-                    .clipShape(RoomBelow(points: SpokenWordStyle.mostRoomBelow))
-                    // A new view, so a new scroll position, on every phrase
-                    // start: Again and the same phrase chosen again show the
-                    // first words too, not where the last reader left it.
-                    .id(speech.phraseStartCount)
                 }
             }
     }
@@ -530,8 +519,9 @@ private struct MessageText: View {
 
 /// The message's words with the word being spoken marked
 /// (docs/DECISIONS.md, "The word being spoken is marked"). Only this view
-/// reads the speech's progress, so each word report redraws the words and
-/// lays out nothing. A message is marked only while the phrase being spoken
+/// and `MessageViewport` read the speech's progress, so each word report
+/// redraws the words and lays out nothing. A message is marked only while
+/// the phrase being spoken
 /// is that very message; a Settings voice sample never marks it.
 private struct MarkedMessage: View {
     @Environment(SpeechService.self) private var speech
@@ -550,6 +540,33 @@ private struct MarkedMessage: View {
     private var marking: WordMarking? {
         guard let phrase = speech.phraseInProgress, phrase.text == words.message else { return nil }
         return words.marking(reported: phrase.latestWord)
+    }
+}
+
+/// The message's scrolling lines. While a phrase is being spoken the words
+/// are clipped a few points below the lines shown, so the bar under a word
+/// on the last of them is not cut off; it reaches into the gap above the
+/// status line, and nothing moves for it. At other times they are clipped
+/// to the lines themselves, as always. Like `MarkedMessage`, this reads
+/// the speech's progress itself, so a word report never measures the
+/// message again.
+private struct MessageViewport<Content: View>: View {
+    @Environment(SpeechService.self) private var speech
+    /// Counts phrase starts (`SpeechService.phraseStartCount`).
+    let startCount: Int
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        ScrollView {
+            content
+        }
+        .scrollBounceBehavior(.basedOnSize)
+        .scrollClipDisabled()
+        .clipShape(RoomBelow(points: speech.phraseInProgress == nil ? 0 : SpokenWordStyle.mostRoomBelow))
+        // A new view, so a new scroll position, on every phrase start:
+        // Again and the same phrase chosen again show the first words too,
+        // not where the last reader left it.
+        .id(startCount)
     }
 }
 

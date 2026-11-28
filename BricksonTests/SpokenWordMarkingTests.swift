@@ -78,13 +78,17 @@ struct SpokenWordMarkingTests {
         #expect(states(message, start..<(start + 40)) == [.spoken, .beingSpoken])
     }
 
-    /// An empty report names no word: none is marked as being spoken, and
-    /// the words wholly before it count as said.
+    /// An empty report names no word, even one that falls inside a word:
+    /// none is marked as being spoken, and the words wholly before it count
+    /// as said. Fails if an empty place inside a word marks that word.
     @Test func anEmptyRangeMarksNoWordAsBeingSpoken() throws {
         let message = "I would like some water."
         let start = try place(of: "like", in: message).lowerBound
         #expect(states(message, start..<start) == [.spoken, .spoken, .toCome, .toCome, .toCome])
         #expect(states(message, 0..<0) == Array(repeating: .toCome, count: 5))
+        // Inside a word too: an empty place there names none of its letters.
+        #expect(states(message, (start + 2)..<(start + 2)) == [.spoken, .spoken, .toCome, .toCome, .toCome])
+        #expect(states("Try this", 1..<1) == [.toCome, .toCome])
     }
 
     /// A person's own punctuation stays part of the word it is drawn

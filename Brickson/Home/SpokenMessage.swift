@@ -56,6 +56,9 @@ nonisolated struct MessageWords: Equatable, Sendable {
         guard place.lowerBound < length else { return .nothingReported }
         let reported = place.lowerBound..<min(place.upperBound, length)
         let spoken = places.prefix { $0.upperBound <= reported.lowerBound }.count
+        // An empty place names no characters, even inside a word, so it
+        // marks no word as being spoken.
+        guard !reported.isEmpty else { return WordMarking(spoken: spoken, beingSpoken: 0) }
         let beingSpoken = places[spoken...].prefix { $0.lowerBound < reported.upperBound && reported.lowerBound < $0.upperBound }.count
         return WordMarking(spoken: spoken, beingSpoken: beingSpoken)
     }

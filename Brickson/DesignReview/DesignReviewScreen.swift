@@ -113,8 +113,13 @@ struct DesignReviewScreen: View {
                             steppedWord = next < Self.spokenWords.places.count ? next : nil
                         } label: {
                             Text(verbatim: "Next word")
+                                .font(LabelFont.quickControl.font)
+                                .frame(minWidth: 160, minHeight: Self.controlHeight)
                         }
-                        .buttonStyle(.bordered)
+                        // Home's own style, whose fill and edge are measured
+                        // in `PaletteTests`.
+                        .buttonStyle(HomeButtonStyle(fill: Palette.controlFill))
+                        .fixedSize()
                     }
                 }
                 section("Spacing scale") {
