@@ -49,7 +49,14 @@ word being spoken is marked").
   website.
 - `3c06006` Clip lower only while speaking, and mark no word for an empty
   place (after the Codex review run before opening).
-- The commit that adds this line, answering the first review round.
+- `5e8752d` Say what ran, what it showed and what did not run.
+- `a816220` Merge `main` after #136.
+- `1171ead` Move the mark only for a word, and reach below only when the
+  message fits (the first review round).
+- `649fd27` Answer the first review round in the records, device check and
+  website.
+- The commit that adds this line, correcting this record after the
+  report-only verifier's check.
 
 ## Review, first round
 
@@ -78,16 +85,23 @@ and a 13-inch iPad Pro (M5), in portrait:
   none failed (1 skipped and 12 expected failures, as on `main`); the
   String Catalog up to date.
 - `scripts/test.sh ui` with `LaunchTests`, `TypingOnHomeTests` and
-  `HomeLayoutTests`, on the iPhone and on the iPad: 14 of 16 passed on
-  each, with the full software keyboard. Apple's accessibility audit
-  passed on Home in light and dark. The two that failed wait for speech to
-  finish, which this Mac's simulators never do (their audio does not
-  start, so "Speaking" never leaves): `testLargestTextKeepsQuickControlWordsVisible`,
-  which is not changed here, and the new
-  `testSpeakingTypedWordsLeavesTheFieldAsItIs`. Each failed only at that
-  wait. On GitHub's iPad simulator, in the pull request's first CI run,
-  `TypingOnHomeTests` passed, the new test with it (its iPhone part ran no
-  tests: the runner's simulator never settled).
+  `HomeLayoutTests`, on the iPhone and on the iPad, before `3c06006`: 14 of
+  16 passed on each, with the full software keyboard. Apple's
+  accessibility audit passed on Home in light and dark. The two that
+  failed wait for speech to finish, which this Mac's simulators never do
+  (their audio does not start, so "Speaking" never leaves):
+  `testLargestTextKeepsQuickControlWordsVisible`, which is not changed
+  here, and the new `testSpeakingTypedWordsLeavesTheFieldAsItIs`. On the
+  iPad the new test also once found no keyboard element right after Speak,
+  though its screen recording shows the keyboard up; that check, about
+  something this change does not touch, was taken out in `3c06006`. On
+  GitHub's simulators both tests passed: the new one on the iPad in the
+  first CI run and on the iPhone and iPad in the second (the iPhone part
+  that holds it ran no tests in the first run, and another iPhone part ran
+  none in the second: each time the runner's simulator never settled).
+- At `649fd27` the report-only verifier ran `CI=true scripts/test.sh unit`
+  here: 1,152 unit tests, none failed (1 skipped and 12 expected failures,
+  as on `main`), and the privacy check found nothing.
 - Home on the iPad, from the UI test's own screen recording: after Again
   with a typed message, the simulator's voice reported its first word, and
   Home showed "Green" in full ink with the bar under it, the rest of the
@@ -98,8 +112,10 @@ and a 13-inch iPad Pro (M5), in portrait:
   place, the bar under the word being spoken (thicker with Increase
   Contrast), the words to come dimmed and readable, and at the largest
   size a bar under a first-line word clear of the line below.
-- `SpokenWordFramesTests` fails when the marked word is drawn 3 points
-  higher (tried once, then put back). `everyWordOfTheLongestTypedMessageIsTagged`
+- `SpokenWordFramesTests` failed when the marked word was drawn 3 points
+  higher, and, after `1171ead`, when the words to come were drawn at full
+  ink and when the bar was shifted 20 points (each tried once, then put
+  back). `everyWordOfTheLongestTypedMessageIsTagged`
   failed before the message was joined in groups, which is how the
   128-piece limit was found; a 400-word message is now built and drawn in
   about 40 ms on the simulator.
@@ -110,20 +126,29 @@ and a 13-inch iPad Pro (M5), in portrait:
 
 ## Not verified
 
-- GitHub CI, at the time of writing.
-- Landscape, iPhone Duo and Split View; the UI tests other than the
-  three classes above; the mark moving on from word to word on Home (this
-  Mac's simulator voice reported the first word and then stalled).
-- Differentiate Without Colour, Reduce Motion, Reduce Transparency and
-  Smart Invert were not captured: by the code nothing changes under the
-  first three, and Smart Invert was not looked at.
-- Sound, and whether any real voice, a Personal Voice included, reports
-  its words in time: simulators prove nothing about either (device check
-  S7, added).
-- How VoiceOver behaves on a device while the words are marked (S7).
-- The review sheet's capture script (`scripts/design-review/review.py`)
-  does not measure the new samples; their contrast is pinned by
-  `PaletteTests` arithmetic instead.
+- Home's marked message on an iPhone, in dark, at accessibility text
+  sizes, in landscape, in Split View or Slide Over, and on iPhone Duo. The
+  only capture of the mark on Home is one iPad, light, default size,
+  portrait, from before `3c06006`; the debug sheet was seen on the iPad
+  only, also before it. The pixel tests draw the words alone (light,
+  default size, 320 points wide), not in Home's lines or clip.
+- The lower clip while speaking (`MessageViewport`, `RoomBelow`): no test
+  fails if it stops reaching below the lines, or reaches below while a
+  hidden line waits.
+- Home's wiring: no test fails if Home stops passing the marking to its
+  message (`MarkedMessage`); the UI test checks frames and one element.
+- The mark moving from word to word on Home: this Mac's simulator voice
+  reports its first word, then stalls (S7).
+- Whether Speak keeps the software keyboard open on iPad, which this
+  change does not touch (see *Verified*).
+- Differentiate Without Colour, Reduce Motion, Reduce Transparency, Bold
+  Text and Smart Invert with a word marked: from the code only.
+- VoiceOver while words are marked, sound, and whether real voices, a
+  Personal Voice included, report their words in time (S7).
+- The bar touching a tall accented capital on the line below: described,
+  not captured.
+- The review sheet's capture script does not measure the new samples;
+  their contrast is pinned by `PaletteTests` (*Known gaps*).
 
 ## Follow-ups
 
