@@ -97,6 +97,9 @@
 <h3>Personal Voice</h3>
 <p>If you have made a Personal Voice and allow Brickson to use it, Brickson speaks your phrases in your own voice, unless another voice is chosen in Brickson's Voice Settings. iOS speaks the words; Brickson never receives the voice itself. While iOS is still telling Brickson which voices are on the device, as it does just after Brickson opens, Brickson does not wait for the answer: it hands each phrase to iOS straight away, to speak in iOS's own voice.</p>
 <p class="small"><strong>How it's checked:</strong> unit tests of how the voice is chosen, and that a phrase is handed to iOS without waiting for the list of voices. Nobody has heard Brickson speak on a real device yet.</p>
+<h3>Following the words as they are spoken</h3>
+<p>While Brickson speaks, the message on Home shows where the voice is: the words already said in full ink, the word being said with a bar under it, and the words still to come dimmed. The mark follows only what iOS reports about each word, so a voice that reports none leaves the whole message dimmed until it ends. Nothing on the screen moves, the mark steps from word to word without sliding, and VoiceOver reads the message as a whole, without being told about each word. When speech ends, stops or is cut off, the message is drawn as before.</p>
+<p class="small"><strong>How it's checked:</strong> unit tests of which words are marked for each report, that every way speech ends clears the mark, that a Settings voice sample marks nothing, that marking a word moves no other word, and that the dimmed words measure 4.5 to 1 or better in light, dark and Increase Contrast. A UI test checks that speaking a typed message leaves the typing box as it was. Nobody has watched the mark keep time with a voice on a real device, or with a Personal Voice.</p>
 <h3>When speech is cut off</h3>
 <p>If a phrase is cut off, for example by a phone call, Siri or unplugged headphones, Brickson shows "Stopped" on screen, and Again says the phrase again. A line on screen also says when the volume is very low. These words sit in space kept for them, so nothing else on the screen moves.</p>
 <p class="small"><strong>How it's checked:</strong> unit tests of when "Stopped" and the volume line show, and of Again. The kept space is from a reading of the code. Calls and headphones need a real device, so this has not been seen in use yet.</p>
@@ -126,6 +129,7 @@
 <li>On the narrowest windows with Bold Text on, the longest starter word can be wider than the message beside Phrases and Type, so it can break across two lines there.</li>
 <li>Get Attention and Stop are on Home only, not in Settings. While Settings is open, choose Back to Talking to reach them. If the tone fails or stops while Settings is open, the line at the foot of Settings says "No alert — Back".</li>
 <li>While "Alert failed" or "Alert stopped" shows, another warning, such as "Stopped" for a phrase cut off or very low volume, does not show on that line until Get Attention plays again. VoiceOver still announces each one.</li>
+<li>The message on Home shows two lines and scrolls, so in a longer message the word being spoken can be below the lines shown; the message does not yet follow it. While the typing box is open, the words in it are not marked as they are spoken; they are marked once the phrases are back.</li>
 <li>Brickson is in English only.</li>
 </ul>
 
