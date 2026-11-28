@@ -51,6 +51,22 @@ struct DesignReviewScreen: View {
 
     /// The space the window gives the sheet, for the readout.
     @State private var window = CGSize.zero
+    /// The word "Next word" has marked on the stepped sample; nil before
+    /// the first.
+    @State private var steppedWord: Int?
+    @Environment(\.colorSchemeContrast) private var contrast
+
+    /// The sentence the word marking is shown on.
+    private static let spokenWords = MessageWords("Could you please bring me a glass of water?")
+    /// The fixed places the sheet marks: before any word is reported, the
+    /// first, a middle and the last word, and not speaking at all.
+    private static let spokenSpecimens: [(name: String, marking: WordMarking?)] = [
+        ("Speaking, no word reported yet", .nothingReported),
+        ("First word", spokenWords.marking(reported: spokenWords.places[0])),
+        ("Middle word", spokenWords.marking(reported: spokenWords.places[4])),
+        ("Last word", spokenWords.marking(reported: spokenWords.places[spokenWords.places.count - 1])),
+        ("Not speaking", nil),
+    ]
 
     var body: some View {
         ScrollView {
@@ -77,6 +93,28 @@ struct DesignReviewScreen: View {
                                     .accessibilityIdentifier(identifier)
                             }
                         }
+                    }
+                }
+                section("Word being spoken") {
+                    // Home's message as it is drawn while a phrase is
+                    // spoken, at fixed places, and a button that steps the
+                    // mark one word at a time. The full width, as on Home.
+                    VStack(alignment: .leading, spacing: Spacing.large) {
+                        ForEach(Self.spokenSpecimens, id: \.name) { specimen in
+                            self.specimen(specimen.name) { spokenSample(marking: specimen.marking) }
+                        }
+                        self.specimen("Stepped by hand: \(steppedWord.map { "word \($0 + 1)" } ?? "nothing reported")") {
+                            spokenSample(marking: steppedWord.map { Self.spokenWords.marking(reported: Self.spokenWords.places[$0]) } ?? .nothingReported)
+                        }
+                        // Debug only, like the whole sheet, so its words
+                        // stay out of the String Catalog.
+                        Button {
+                            let next = (steppedWord ?? -1) + 1
+                            steppedWord = next < Self.spokenWords.places.count ? next : nil
+                        } label: {
+                            Text(verbatim: "Next word")
+                        }
+                        .buttonStyle(.bordered)
                     }
                 }
                 section("Spacing scale") {
@@ -153,6 +191,23 @@ struct DesignReviewScreen: View {
     }
 
     // MARK: - Specimens
+
+    /// The sample sentence drawn as Home's message draws it
+    /// (`SpokenMessageWords`), with `marking`.
+    private func spokenSample(marking: WordMarking?) -> some View {
+        SpokenMessageWords(
+            content: SpokenMessageText.text(for: Self.spokenWords.message, setIn: nil),
+            marking: marking,
+            style: SpokenWordStyle(increasedContrast: contrast == .increased)
+        )
+        .font(LabelFont.message.font)
+        .foregroundStyle(.primary)
+        .padding(Spacing.small)
+        .padding(.bottom, SpokenWordStyle.mostRoomBelow)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(verbatim: Self.spokenWords.message))
+    }
 
     private func fill(_ role: Catalogue.Role) -> Color {
         Palette.fills.first { $0.asset == role.asset }?.color ?? Palette.controlFill

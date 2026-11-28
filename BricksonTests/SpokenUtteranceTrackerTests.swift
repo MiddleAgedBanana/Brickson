@@ -721,4 +721,114 @@ struct SpokenUtteranceTrackerTests {
         let outputLossCutOff3 = tracker.outputLossCutOffAPhrase(at: start + .seconds(0.6))
         #expect(!outputLossCutOff3)
     }
+
+    // MARK: - The word being spoken (docs/DECISIONS.md, "The word being spoken is marked")
+
+    /// A phrase being spoken is named with its words and the latest place
+    /// the voice reported, so Home can mark that word. Before any report
+    /// the place is nil. Fails if a word report does not reach it.
+    @Test func thePhraseBeingSpokenCarriesTheLatestReportedPlace() {
+        var tracker = SpokenUtteranceTracker<Int>()
+        tracker.began(1, text: "I would like water.", at: start)
+        #expect(tracker.phraseInProgress == PhraseInProgress(text: "I would like water.", latestWord: nil))
+
+        tracker.recordProgress(1, speaking: 2..<7, at: start + .seconds(0.2))
+        #expect(tracker.phraseInProgress == PhraseInProgress(text: "I would like water.", latestWord: 2..<7))
+        tracker.recordProgress(1, speaking: 8..<12, at: start + .seconds(0.4))
+        #expect(tracker.phraseInProgress?.latestWord == 8..<12)
+    }
+
+    /// Every way a phrase ends clears its place, so no word stays marked
+    /// after the voice stops: a finish, a cancel and a reset (which
+    /// `SpeechService` uses for Stop, an interruption and a media reset).
+    @Test func everyEndingClearsThePlace() {
+        var finished = SpokenUtteranceTracker<Int>()
+        finished.began(1, text: "Yes.", at: start)
+        finished.recordProgress(1, speaking: 0..<3, at: start)
+        finished.ended(1, at: start + .seconds(1))
+        #expect(finished.phraseInProgress == nil)
+
+        var cancelled = SpokenUtteranceTracker<Int>()
+        cancelled.began(1, text: "Yes.", at: start)
+        cancelled.recordProgress(1, speaking: 0..<3, at: start)
+        _ = cancelled.cancelled(1)
+        #expect(cancelled.phraseInProgress == nil)
+
+        var reset = SpokenUtteranceTracker<Int>()
+        reset.began(1, text: "Yes.", at: start)
+        reset.recordProgress(1, speaking: 0..<3, at: start)
+        reset.reset()
+        #expect(reset.phraseInProgress == nil)
+    }
+
+    /// A Settings voice sample is never shown on Home, so it never names a
+    /// phrase in progress. Fails if a sample's words would be marked over
+    /// the person's last message.
+    @Test func aVoiceSampleIsNeverAPhraseInProgress() {
+        var tracker = SpokenUtteranceTracker<Int>()
+        tracker.began(1, source: .preview(.previewVoice), at: start)
+        tracker.recordProgress(1, speaking: 0..<4, at: start + .seconds(0.1))
+        #expect(tracker.isSpeaking)
+        #expect(tracker.phraseInProgress == nil)
+    }
+
+    /// A late report for the phrase that was replaced never marks a word of
+    /// the new one.
+    @Test func aLateReportForAReplacedPhraseMarksNothing() {
+        var tracker = SpokenUtteranceTracker<Int>()
+        tracker.began(1, text: "First message.", at: start)
+        tracker.began(2, text: "Second message.", at: start + .seconds(1))
+
+        tracker.recordProgress(1, speaking: 6..<13, at: start + .seconds(1.1))
+        #expect(tracker.phraseInProgress == PhraseInProgress(text: "Second message.", latestWord: nil))
+    }
+
+    /// A report that names a place before the one already reported, or no
+    /// place of this phrase at all, leaves the mark where it was: the mark
+    /// only follows the voice forward, through this phrase's own words.
+    /// Both still count as progress, so the start limit and the cut-off rule
+    /// read exactly what they did. Fails if a stray report moves the mark
+    /// back, or past the end of the words.
+    @Test func aReportBackwardsOrPastTheEndKeepsThePlace() {
+        var tracker = SpokenUtteranceTracker<Int>()
+        let text = "Please turn me over."
+        tracker.began(1, text: text, at: start)
+        tracker.recordProgress(1, speaking: 7..<11, at: start + .seconds(0.2))
+
+        tracker.recordProgress(1, speaking: 0..<6, at: start + .seconds(0.3))
+        #expect(tracker.phraseInProgress?.latestWord == 7..<11)
+        let length = (text as NSString).length
+        tracker.recordProgress(1, speaking: length..<(length + 5), at: start + .seconds(0.4))
+        #expect(tracker.phraseInProgress?.latestWord == 7..<11)
+    }
+
+    /// A report that names no place (the system's NSNotFound, say) still
+    /// shows the phrase began, so the start limit does not stop it, and
+    /// moves no mark. Fails if such a report stops counting as a start.
+    @Test func aReportWithNoPlaceStillShowsThePhraseBegan() {
+        var tracker = SpokenUtteranceTracker<Int>()
+        tracker.began(1, text: "Yes.", at: start)
+        let delay = tracker.recordProgress(1, speaking: nil, at: start + .seconds(2))
+
+        #expect(delay == .seconds(2))
+        #expect(!tracker.hasFailedToStart(1, at: start + SpokenUtteranceTracker<Int>.startLimit))
+        #expect(tracker.phraseInProgress == PhraseInProgress(text: "Yes.", latestWord: nil))
+    }
+
+    /// Reporting a place records how far the voice has got exactly as the
+    /// end offset did before places were kept, so the cut-off rule reads
+    /// the same: a phrase whose reports reach its final word ended whole,
+    /// one whose reports stop short ended early.
+    @Test func aReportedPlaceFeedsTheCutOffRuleByItsEnd() {
+        var whole = SpokenUtteranceTracker<Int>()
+        whole.began(1, text: Self.helpNow, at: start)
+        let final = SpokenUtteranceTracker<Int>.finalWordStart(in: Self.helpNow) ?? 0
+        whole.recordProgress(1, speaking: final..<(final + 3), at: start + .seconds(0.2))
+        #expect(whole.ended(1, at: start + .seconds(0.3)) == .finished)
+
+        var short = SpokenUtteranceTracker<Int>()
+        short.began(1, text: Self.helpNow, at: start)
+        short.recordProgress(1, speaking: 0..<final, at: start + .seconds(0.2))
+        #expect(short.ended(1, at: start + .seconds(0.3)) == .endedBeforeItsFinalWord)
+    }
 }

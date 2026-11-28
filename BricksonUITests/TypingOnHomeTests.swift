@@ -140,6 +140,47 @@ final class TypingOnHomeTests: XCTestCase {
         waitToAppear(app.staticTexts["Blue kites"], "Return did not say the message (\(context))")
     }
 
+    /// Typed words are not marked word by word inside the field: it is
+    /// Apple's own text field, scrolled to the cursor and still editable,
+    /// so nothing is drawn over it (docs/DECISIONS.md, "The word being
+    /// spoken is marked"). Speak leaves the field exactly as it was, its
+    /// frame and its words, adds no second copy of the message beside it,
+    /// and keeps the keyboard; once the phrases are back the message shows
+    /// as one element with the whole message as its label, however far the
+    /// voice has got. Fails if speaking typed words moves or changes the
+    /// field, puts the message in a second element, or closes the keyboard.
+    @MainActor
+    func testSpeakingTypedWordsLeavesTheFieldAsItIs() throws {
+        let app = launchedApp()
+        let context = Self.context(app)
+        startTyping(in: app, context: context)
+        let message = "Green apples and pears please"
+        app.typeText(message)
+        let field = Self.field(in: app)
+        waitForField(field, toHold: message, "the field did not take the words (\(context))")
+        let before = field.frame
+
+        app.buttons["Speak"].tap()
+        waitUntil(app.buttons["Speak"], "isEnabled == true", "Speak turned off after speaking (\(context))")
+        XCTAssertTrue(app.keyboards.firstMatch.exists, "speaking closed the keyboard (\(context))")
+        Self.expectSameFrame(field.frame, before, "the field, as its words are spoken,", context)
+        XCTAssertEqual(field.value as? String, message, "speaking changed the field's words (\(context))")
+        XCTAssertFalse(app.staticTexts[message].exists, "a second copy of the message showed beside the field (\(context))")
+
+        waitForSpeechToFinish(in: app, context: context)
+        Self.expectSameFrame(field.frame, before, "the field, once its words were spoken,", context)
+        XCTAssertEqual(field.value as? String, message, "the field's words changed once spoken (\(context))")
+
+        showPhrases(in: app, context: context)
+        app.buttons["Again"].tap()
+        let shown = app.staticTexts.matching(NSPredicate(format: "label == %@", message))
+        waitUntil("the message did not show once the phrases were back (\(context))") { shown.count == 1 }
+        let speaking = shown.firstMatch.frame
+        waitForSpeechToFinish(in: app, context: context)
+        XCTAssertEqual(shown.count, 1, "the message showed in more than one element (\(context))")
+        Self.expectSameFrame(shown.firstMatch.frame, speaking, "the message, from speaking to spoken,", context)
+    }
+
     /// Fails if Clear does not empty the message, or Put Back does not
     /// bring back what Clear took.
     @MainActor

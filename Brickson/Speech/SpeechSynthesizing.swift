@@ -28,11 +28,14 @@ nonisolated enum SpeechSynthesisEvent: Equatable, Sendable {
     /// treated as one that will not be heard (docs/DECISIONS.md, "A phrase
     /// that does not start").
     case started(at: ContinuousClock.Instant)
-    /// It is about to speak the text up to `offset`: the end of the unit
-    /// (generally a word) it reported, in UTF-16 units of the utterance's
-    /// text, which is what `NSRange` counts. `instant` is when the report
-    /// arrived, taken before it crossed to the main actor.
-    case willSpeak(through: Int, at: ContinuousClock.Instant)
+    /// It is about to speak the unit (generally a word) at `range`, in
+    /// UTF-16 units of the utterance's text, which is what `NSRange`
+    /// counts: Home marks that word (docs/DECISIONS.md, "The word being
+    /// spoken is marked"), and its end says how far the voice has got. Nil
+    /// when the report names no place (`place(of:)`); it still shows that
+    /// speech is under way. `instant` is when the report arrived, taken
+    /// before it crossed to the main actor.
+    case willSpeak(range: Range<Int>?, at: ContinuousClock.Instant)
     case finished(at: ContinuousClock.Instant)
     case cancelled
     /// It paused the utterance. Brickson never pauses speech (it stops
@@ -131,8 +134,18 @@ final class SpeechSynthesizerEvents: NSObject, AVSpeechSynthesizerDelegate {
         // Monotonic time, never `Date` (docs/LESSONS.md, "Timers use
         // ContinuousClock").
         let instant = ContinuousClock.now
-        let end = characterRange.location + characterRange.length
-        forward(utterance, .willSpeak(through: end, at: instant))
+        forward(utterance, .willSpeak(range: Self.place(of: characterRange), at: instant))
+    }
+
+    /// A reported range as a place in the utterance's text, or nil when it
+    /// names none: the system's NSNotFound, a negative location or length,
+    /// or an end past the largest number, which would trap on this
+    /// background thread if added up unchecked.
+    nonisolated static func place(of range: NSRange) -> Range<Int>? {
+        guard range.location != NSNotFound, range.location >= 0, range.length >= 0 else { return nil }
+        let (end, overflowed) = range.location.addingReportingOverflow(range.length)
+        guard !overflowed, end != NSNotFound else { return nil }
+        return range.location..<end
     }
 
     nonisolated func speechSynthesizer(

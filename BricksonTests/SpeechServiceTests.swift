@@ -1408,4 +1408,101 @@ struct SpeechServiceTests {
         #expect(SpeechService.rateKey == "speechRate")
         #expect(SpeechService.automaticPersonalVoiceIDKey == "automaticPersonalVoiceID")
     }
+
+    // MARK: The word being spoken (docs/DECISIONS.md, "The word being spoken is marked")
+
+    /// The synthesizer's word reports reach the phrase in progress, which
+    /// Home marks, and speaking it changes nothing else: the phrase is handed
+    /// over at once, as before. Fails if a report does not reach it or names
+    /// another phrase's words.
+    @Test func wordReportsReachThePhraseInProgress() {
+        let harness = AudioHarness()
+        harness.speech.speak("I would like water.")
+        #expect(harness.synthesizer.requests.map(\.text) == ["I would like water."])
+        #expect(harness.speech.phraseInProgress == PhraseInProgress(text: "I would like water.", latestWord: nil))
+
+        harness.synthesizer.reportWord(2..<7)
+        #expect(harness.speech.phraseInProgress == PhraseInProgress(text: "I would like water.", latestWord: 2..<7))
+        #expect(harness.speech.lastSpokenText == harness.speech.phraseInProgress?.text)
+    }
+
+    /// The ways a phrase can stop being spoken, each of which must leave no
+    /// word marked.
+    enum Ending: CaseIterable, CustomTestStringConvertible {
+        case finished, systemCancel, stop, interruption, mediaReset, wentQuiet, neverBegan, anotherPhrase, voiceSample
+
+        var testDescription: String { "\(self)" }
+    }
+
+    /// Every ending clears the mark: the voice finishing, the system
+    /// cancelling, Stop, an interruption, a media-services reset, the
+    /// watchdog finding the voice gone quiet or never begun, a new phrase,
+    /// and a Settings voice sample. A new phrase starts with no word
+    /// marked. Fails if any ending leaves a word marked after its voice
+    /// stopped.
+    @Test(arguments: Ending.allCases)
+    func everyEndingClearsTheMark(_ ending: Ending) async {
+        let harness = AudioHarness()
+        harness.speech.speak("I need help now.")
+        harness.synthesizer.reportWord(2..<6)
+        #expect(harness.speech.phraseInProgress?.latestWord == 2..<6)
+
+        switch ending {
+        case .finished:
+            harness.synthesizer.finish()
+        case .systemCancel:
+            harness.synthesizer.cancel()
+        case .stop:
+            harness.speech.stop()
+        case .interruption:
+            harness.notifications.interruptionBegan()
+        case .mediaReset:
+            harness.notifications.mediaServicesReset()
+        case .wentQuiet:
+            #expect(await waitUntil { harness.speechSleeper.isAnyoneSleeping })
+            harness.synthesizer.goQuietWithoutReporting()
+            #expect(await harness.speechSleeper.wakeAll())
+            #expect(await harness.speechSleeper.wakeAll())
+        case .neverBegan:
+            harness.speech.speak("Yes.")
+            #expect(await waitUntil { harness.speechSleeper.isAnyoneSleeping })
+            harness.clock.advance(by: SpokenUtteranceTracker<UtteranceToken>.startLimit)
+            #expect(await harness.speechSleeper.wakeAll())
+            #expect(await harness.speechSleeper.wakeAll())
+        case .anotherPhrase:
+            harness.speech.speak("Yes.")
+            #expect(harness.speech.phraseInProgress == PhraseInProgress(text: "Yes.", latestWord: nil))
+            harness.synthesizer.finish()
+        case .voiceSample:
+            harness.speech.preview(from: .previewVoice)
+            #expect(harness.speech.isSpeaking)
+        }
+
+        #expect(harness.speech.phraseInProgress == nil)
+    }
+
+    /// A repeat of the phrase being spoken is absorbed and keeps its mark
+    /// where the voice is, rather than starting the words again.
+    @Test func anAbsorbedRepeatKeepsTheMark() {
+        let harness = AudioHarness()
+        harness.speech.speak("I need help now.")
+        harness.synthesizer.reportWord(2..<6)
+
+        harness.speech.speak("I need help now.")
+
+        #expect(harness.synthesizer.requests.count == 1)
+        #expect(harness.speech.phraseInProgress?.latestWord == 2..<6)
+    }
+
+    /// Again speaks the same words as a new phrase, marked from the start.
+    @Test func againStartsTheMarkFromTheFirstWord() {
+        let harness = AudioHarness()
+        harness.speech.speak("I need help now.")
+        harness.synthesizer.reportWord(12..<15)
+        harness.synthesizer.finish()
+
+        harness.speech.repeatLast()
+
+        #expect(harness.speech.phraseInProgress == PhraseInProgress(text: "I need help now.", latestWord: nil))
+    }
 }

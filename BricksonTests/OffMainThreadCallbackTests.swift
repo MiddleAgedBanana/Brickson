@@ -65,7 +65,7 @@ struct OffMainThreadCallbackTests {
 
         #expect(arrived)
         #expect(received.contains { if case .started = $0 { true } else { false } })
-        #expect(received.contains { if case .willSpeak(through: 11, at: _) = $0 { true } else { false } })
+        #expect(received.contains { if case .willSpeak(range: 6..<11, at: _) = $0 { true } else { false } })
         #expect(received.contains { if case .finished = $0 { true } else { false } })
         #expect(received.contains(.cancelled))
     }
@@ -135,8 +135,63 @@ struct OffMainThreadCallbackTests {
         let cancels = received.enumerated().filter { !$0.offset.isMultiple(of: 2) }.map(\.element)
         #expect(cancels.allSatisfy { $0 == .cancelled })
         #expect(progress.enumerated().allSatisfy { item in
-            if case let .willSpeak(through: offset, at: _) = item.element { offset == item.offset + 1 } else { false }
+            if case let .willSpeak(range: range, at: _) = item.element { range == item.offset..<(item.offset + 1) } else { false }
         })
+    }
+
+    /// The word report carries the place of the word, which Home marks.
+    /// It crosses to the main actor whole: where the word starts as well
+    /// as where it ends. A report that names no place (the system's
+    /// NSNotFound, or a length that would run past the largest number)
+    /// still arrives as progress, with no place, and never traps on the
+    /// background thread. Fails if the start of the word is lost, or if
+    /// working out the end overflows there.
+    @Test @MainActor func aWordsPlaceCrossesToTheMainActorWhole() async {
+        let events = SpeechSynthesizerEvents()
+        var received: [SpeechSynthesisEvent] = []
+        events.onEvent = { _, event in received.append(event) }
+        let synthesizer = Unchecked(AVSpeechSynthesizer())
+        let utterance = Unchecked(AVSpeechUtterance(string: "I would like water."))
+
+        await Task.detached {
+            for range in [
+                NSRange(location: 8, length: 4),
+                NSRange(location: NSNotFound, length: 3),
+                NSRange(location: 5, length: Int.max),
+                NSRange(location: 13, length: 0),
+            ] {
+                events.speechSynthesizer(synthesizer.value, willSpeakRangeOfSpeechString: range, utterance: utterance.value)
+            }
+        }.value
+        let arrived = await waitUntil { received.count == 4 }
+
+        #expect(arrived)
+        let places: [Range<Int>?] = received.map { if case let .willSpeak(range: range, at: _) = $0 { range } else { 0..<0 } }
+        #expect(places == [8..<12, nil, nil, 13..<13])
+    }
+
+    /// Everything that decides how the marked words are drawn is plain,
+    /// nonisolated and Sendable, so SwiftUI may draw the message on whichever
+    /// thread it renders on: which words are said, being said or to come,
+    /// each word's look, and where the bar goes. Called here from a
+    /// background thread. Fails if any of it becomes main-actor isolated,
+    /// which traps there.
+    @Test func theMarkingIsDecidedOffTheMainThread() async {
+        let message = "I would like some water."
+        let decided = await Task.detached { () -> [SpokenWordLook] in
+            let words = MessageWords(message)
+            let marking = words.marking(reported: words.places[2])
+            let renderer = SpokenWordRenderer(marking: marking, style: SpokenWordStyle(increasedContrast: false))
+            _ = renderer.style.bar(underWordAt: CGRect(x: 0, y: 0, width: 40, height: 33), baseline: 27, descent: 6)
+            _ = renderer.displayPadding
+            return words.places.indices.map { renderer.look(ofWord: $0) }
+        }.value
+
+        let style = SpokenWordStyle(increasedContrast: false)
+        #expect(decided == [
+            style.look(for: .spoken), style.look(for: .spoken), style.look(for: .beingSpoken),
+            style.look(for: .toCome), style.look(for: .toCome),
+        ])
     }
 
     /// The Personal Voice answer arrives on an arbitrary queue.
